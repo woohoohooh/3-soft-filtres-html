@@ -1,0 +1,472 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Игровые мобы</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            touch-action: none;
+        }
+        body {
+            overflow: hidden;
+            background: #000;
+            height: 100vh;
+            position: relative;
+            font-family: monospace;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+
+        let currentMob = 0;
+        const mobs = [
+            { id: 1, health: 1, maxHealth: 1, scaleFactor: 2.0 },
+            { id: 2, health: 1, maxHealth: 1, scaleFactor: 2.0 },
+            { id: 3, health: 1, maxHealth: 1, scaleFactor: 2.0 },
+            { id: 4, health: 1, maxHealth: 1, scaleFactor: 2.0 },
+            { id: 5, health: 1, maxHealth: 1, scaleFactor: 2.0 },
+            { id: 6, health: 1, maxHealth: 1, scaleFactor: 2.0 },
+            { id: 7, health: 1, maxHealth: 1, scaleFactor: 2.0 },
+            { id: 8, health: 1, maxHealth: 1, scaleFactor: 2.0 },
+            { id: 9, health: 1, maxHealth: 1, scaleFactor: 2.0 },
+            { id: 10, health: 1, maxHealth: 1, scaleFactor: 2.0 }
+        ];
+
+        let damageEffects = [];
+        let mobPosition = { x: 0, y: 0 };
+        let mobScale = 1;
+        let mobRotation = 0;
+        let isMobAlive = true;
+        let attackAnimation = 0;
+        let deathAnimation = 0;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            mobPosition.x = canvas.width / 2;
+            mobPosition.y = canvas.height / 2;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class DamageEffect {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.life = 1.0;
+                this.size = type === 'hit' ? 20 : 50;
+                this.particles = [];
+
+                if(type === 'hit') {
+                    for(let i = 0; i < 8; i++) {
+                        this.particles.push({
+                            x: 0,
+                            y: 0,
+                            vx: (Math.random() - 0.5) * 10,
+                            vy: (Math.random() - 0.5) * 10 - 5,
+                            life: 1.0
+                        });
+                    }
+                } else {
+                    for(let i = 0; i < 20; i++) {
+                        this.particles.push({
+                            x: 0,
+                            y: 0,
+                            vx: (Math.random() - 0.5) * 15,
+                            vy: (Math.random() - 0.5) * 15 - 8,
+                            life: 1.0,
+                            color: `hsl(${Math.random() * 60}, 100%, 60%)`
+                        });
+                    }
+                }
+            }
+
+            update() {
+                this.life -= 0.03;
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.3;
+                    p.life -= 0.02;
+                });
+                return this.life > 0;
+            }
+
+            draw() {
+                if(this.type === 'hit') {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+
+                    ctx.fillStyle = `rgba(255, 50, 50, ${this.life * 0.7})`;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * this.life, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    this.particles.forEach(p => {
+                        if(p.life > 0) {
+                            ctx.fillStyle = `rgba(255, 100, 100, ${p.life})`;
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, 3 * p.life, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    });
+
+                    ctx.restore();
+                } else {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+
+                    ctx.fillStyle = `rgba(255, 200, 50, ${this.life * 0.5})`;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * (1 - this.life), 0, Math.PI * 2);
+                    ctx.fill();
+
+                    this.particles.forEach(p => {
+                        if(p.life > 0) {
+                            ctx.fillStyle = p.color.replace(')', `, ${p.life})`).replace('hsl', 'hsla');
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, 4 * p.life, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    });
+
+                    ctx.restore();
+                }
+            }
+        }
+
+        function drawMobCore(x, y, baseColor, pulseSpeed, size) {
+            const pulse = Math.sin(Date.now() * pulseSpeed) * 0.2 + 0.8;
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * 0.8);
+            gradient.addColorStop(0, baseColor);
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, size * pulse, 0, Math.PI * 2);
+            ctx.fill();
+            return pulse;
+        }
+
+        function drawMobEye(x, y, size, pulseFactor, color, timeOffset) {
+            const time = Date.now() * 0.002 + timeOffset;
+            const pupilShift = Math.sin(time) * 3;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, size * 0.8, size * 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = color;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(pupilShift * 0.5, pupilShift * 0.3, size * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawMobAura(x, y, radius, color1, color2, segments, rotationSpeed) {
+            const time = Date.now() * rotationSpeed;
+            for(let i = 0; i < segments; i++) {
+                const angle = (Math.PI * 2 / segments) * i + time;
+                const x1 = x + Math.cos(angle) * radius;
+                const y1 = y + Math.sin(angle) * radius;
+                const gradient = ctx.createRadialGradient(x1, y1, 0, x1, y1, 20);
+                gradient.addColorStop(0, color1);
+                gradient.addColorStop(1, color2);
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x1, y1, 12 + Math.sin(time * 2 + i) * 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawMob1() {
+            ctx.save();
+            ctx.translate(mobPosition.x, mobPosition.y);
+            ctx.scale(mobScale * mobs[currentMob].scaleFactor, mobScale * mobs[currentMob].scaleFactor);
+            ctx.rotate(mobRotation);
+            if(attackAnimation > 0) ctx.translate(Math.sin(attackAnimation * 30) * 5, 0);
+            const pulse = drawMobCore(0, 0, 'rgba(180, 100, 230, 0.9)', 0.002, 40);
+            drawMobAura(0, 0, 70, 'rgba(200,150,250,0.7)', 'rgba(130,50,200,0)', 8, 0.0005);
+            drawMobEye(-20, -20, 10, pulse, 'rgba(200,50,200,1)', 0);
+            drawMobEye(20, -20, 10, pulse, 'rgba(200,50,200,1)', 2);
+            ctx.restore();
+        }
+
+        function drawMob2() {
+            ctx.save();
+            ctx.translate(mobPosition.x, mobPosition.y);
+            ctx.scale(mobScale * mobs[currentMob].scaleFactor, mobScale * mobs[currentMob].scaleFactor);
+            ctx.rotate(mobRotation);
+            if(attackAnimation > 0) ctx.translate(Math.sin(attackAnimation * 30) * 5, 0);
+            drawMobCore(0, 0, 'rgba(80, 150, 255, 0.9)', 0.003, 45);
+            const time = Date.now() * 0.0005;
+            for(let i=0;i<5;i++) {
+                const angle = time + i * 1.2;
+                ctx.fillStyle = `rgba(100,200,255,${0.5+Math.sin(time*2+i)*0.3})`;
+                ctx.beginPath();
+                ctx.arc(Math.cos(angle)*60, Math.sin(angle)*60, 8, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            drawMobEye(0, -10, 12, 1, 'rgba(0,200,255,1)', 0);
+            ctx.restore();
+        }
+
+        function drawMob3() {
+            ctx.save();
+            ctx.translate(mobPosition.x, mobPosition.y);
+            ctx.scale(mobScale * mobs[currentMob].scaleFactor, mobScale * mobs[currentMob].scaleFactor);
+            ctx.rotate(mobRotation);
+            if(attackAnimation > 0) ctx.translate(Math.sin(attackAnimation * 30) * 5, 0);
+            const pulse = drawMobCore(0, 0, 'rgba(255, 150, 50, 0.9)', 0.004, 35);
+            for(let i=0;i<6;i++) {
+                const angle = i * 1.0 + Date.now()*0.001;
+                ctx.strokeStyle = `rgba(255,200,100,0.6)`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(0,0);
+                ctx.lineTo(Math.cos(angle)*80, Math.sin(angle)*80);
+                ctx.stroke();
+            }
+            drawMobEye(-15, -15, 9, pulse, 'rgba(255,100,0,1)', 1);
+            drawMobEye(15, -15, 9, pulse, 'rgba(255,100,0,1)', 3);
+            ctx.restore();
+        }
+
+        function drawMob4() {
+            ctx.save();
+            ctx.translate(mobPosition.x, mobPosition.y);
+            ctx.scale(mobScale * mobs[currentMob].scaleFactor, mobScale * mobs[currentMob].scaleFactor);
+            ctx.rotate(mobRotation);
+            if(attackAnimation > 0) ctx.translate(Math.sin(attackAnimation * 30) * 5, 0);
+            drawMobCore(0, 0, 'rgba(50, 200, 150, 0.9)', 0.0015, 50);
+            const time = Date.now()*0.003;
+            for(let i=0;i<4;i++) {
+                const angle = i*1.57 + time;
+                ctx.fillStyle = `rgba(100,255,200,0.8)`;
+                ctx.beginPath();
+                ctx.arc(Math.cos(angle)*40, Math.sin(angle)*40, 12+Math.sin(time*3+i)*3, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            drawMobEye(0, 0, 14, 1, 'rgba(0,150,100,1)', 0);
+            ctx.restore();
+        }
+
+        function drawMob5() {
+            ctx.save();
+            ctx.translate(mobPosition.x, mobPosition.y);
+            ctx.scale(mobScale * mobs[currentMob].scaleFactor, mobScale * mobs[currentMob].scaleFactor);
+            ctx.rotate(mobRotation);
+            if(attackAnimation > 0) ctx.translate(Math.sin(attackAnimation * 30) * 5, 0);
+            const pulse = drawMobCore(0, 0, 'rgba(200, 50, 150, 0.9)', 0.0025, 40);
+            for(let i=0;i<7;i++) {
+                const angle = i*0.9 + Date.now()*0.002;
+                ctx.fillStyle = `rgba(255,100,200,${0.5+Math.sin(angle)*0.3})`;
+                ctx.beginPath();
+                ctx.arc(Math.cos(angle)*55, Math.sin(angle)*55, 10, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            drawMobEye(-20, -5, 11, pulse, 'rgba(200,0,100,1)', 2);
+            drawMobEye(20, -5, 11, pulse, 'rgba(200,0,100,1)', 4);
+            ctx.restore();
+        }
+
+        function drawMob6() {
+            ctx.save();
+            ctx.translate(mobPosition.x, mobPosition.y);
+            ctx.scale(mobScale * mobs[currentMob].scaleFactor, mobScale * mobs[currentMob].scaleFactor);
+            ctx.rotate(mobRotation);
+            if(attackAnimation > 0) ctx.translate(Math.sin(attackAnimation * 30) * 5, 0);
+            drawMobCore(0, 0, 'rgba(100, 255, 100, 0.9)', 0.005, 30);
+            const time = Date.now()*0.001;
+            for(let i=0;i<3;i++) {
+                const angle = i*2.09 + time;
+                ctx.strokeStyle = `rgba(150,255,150,0.7)`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(0, 0, 40+i*15, angle, angle+1.5);
+                ctx.stroke();
+            }
+            drawMobEye(-10, -10, 8, 1, 'rgba(0,200,0,1)', 0);
+            drawMobEye(10, -10, 8, 1, 'rgba(0,200,0,1)', 1);
+            ctx.restore();
+        }
+
+        function drawMob7() {
+            ctx.save();
+            ctx.translate(mobPosition.x, mobPosition.y);
+            ctx.scale(mobScale * mobs[currentMob].scaleFactor, mobScale * mobs[currentMob].scaleFactor);
+            ctx.rotate(mobRotation);
+            if(attackAnimation > 0) ctx.translate(Math.sin(attackAnimation * 30) * 5, 0);
+            const pulse = drawMobCore(0, 0, 'rgba(150, 100, 255, 0.9)', 0.001, 60);
+            for(let i=0;i<8;i++) {
+                const angle = i*0.785 + Date.now()*0.0008;
+                ctx.fillStyle = `rgba(200,150,255,0.6)`;
+                ctx.beginPath();
+                ctx.arc(Math.cos(angle)*45, Math.sin(angle)*45, 7+Math.sin(angle*2)*3, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            drawMobEye(0, 0, 20, pulse, 'rgba(100,50,200,1)', 0);
+            ctx.restore();
+        }
+
+        function drawMob8() {
+            ctx.save();
+            ctx.translate(mobPosition.x, mobPosition.y);
+            ctx.scale(mobScale * mobs[currentMob].scaleFactor, mobScale * mobs[currentMob].scaleFactor);
+            ctx.rotate(mobRotation);
+            if(attackAnimation > 0) ctx.translate(Math.sin(attackAnimation * 30) * 5, 0);
+            drawMobCore(0, 0, 'rgba(255, 80, 80, 0.9)', 0.003, 45);
+            const time = Date.now()*0.002;
+            for(let i=0;i<5;i++) {
+                const x = Math.cos(time + i)*50;
+                const y = Math.sin(time*1.3 + i)*50;
+                ctx.fillStyle = `rgba(255,150,150,0.7)`;
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            drawMobEye(-15, -5, 12, 1, 'rgba(200,0,0,1)', 0);
+            drawMobEye(15, -5, 12, 1, 'rgba(200,0,0,1)', 2);
+            ctx.restore();
+        }
+
+        function drawMob9() {
+            ctx.save();
+            ctx.translate(mobPosition.x, mobPosition.y);
+            ctx.scale(mobScale * mobs[currentMob].scaleFactor, mobScale * mobs[currentMob].scaleFactor);
+            ctx.rotate(mobRotation);
+            if(attackAnimation > 0) ctx.translate(Math.sin(attackAnimation * 30) * 5, 0);
+            const pulse = drawMobCore(0, 0, 'rgba(200, 200, 0, 0.9)', 0.004, 35);
+            for(let i=0;i<6;i++) {
+                const angle = i + Date.now()*0.003;
+                ctx.shadowColor = 'yellow';
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = `rgba(255,255,100,0.8)`;
+                ctx.beginPath();
+                ctx.arc(Math.cos(angle)*70, Math.sin(angle)*70, 6, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+            drawMobEye(-15, -10, 10, pulse, 'rgba(150,150,0,1)', 1);
+            drawMobEye(15, -10, 10, pulse, 'rgba(150,150,0,1)', 3);
+            ctx.restore();
+        }
+
+        function drawMob10() {
+            ctx.save();
+            ctx.translate(mobPosition.x, mobPosition.y);
+            ctx.scale(mobScale * mobs[currentMob].scaleFactor, mobScale * mobs[currentMob].scaleFactor);
+            ctx.rotate(mobRotation);
+            if(attackAnimation > 0) ctx.translate(Math.sin(attackAnimation * 30) * 5, 0);
+            drawMobCore(0, 0, 'rgba(0, 200, 200, 0.9)', 0.002, 55);
+            const time = Date.now()*0.0015;
+            for(let i=0;i<4;i++) {
+                const angle = i*1.57 + time;
+                ctx.fillStyle = `rgba(100,255,255,0.7)`;
+                ctx.beginPath();
+                ctx.ellipse(Math.cos(angle)*40, Math.sin(angle)*40, 15, 8, angle, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            drawMobEye(0, -10, 14, 1, 'rgba(0,150,150,1)', 0);
+            ctx.restore();
+        }
+
+        const mobDrawers = [
+            drawMob1, drawMob2, drawMob3, drawMob4, drawMob5,
+            drawMob6, drawMob7, drawMob8, drawMob9, drawMob10
+        ];
+
+        function updateMob() {
+            mobScale = 1;
+            mobRotation = 0;
+            isMobAlive = true;
+            deathAnimation = 0;
+            mobPosition.x = canvas.width / 2;
+            mobPosition.y = canvas.height / 2;
+        }
+
+        function damageMob() {
+            if(!isMobAlive) return;
+            mobs[currentMob].health--;
+            damageEffects.push(new DamageEffect(mobPosition.x, mobPosition.y, 'hit'));
+            attackAnimation = 1.0;
+            mobScale = 0.9;
+            if(mobs[currentMob].health <= 0) {
+                isMobAlive = false;
+                deathAnimation = 1.0;
+                damageEffects.push(new DamageEffect(mobPosition.x, mobPosition.y, 'death'));
+                setTimeout(() => {
+                    currentMob = (currentMob + 1) % mobs.length;
+                    mobs[currentMob].health = mobs[currentMob].maxHealth;
+                    updateMob();
+                }, 0);
+            }
+        }
+
+        function drawScene() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if(attackAnimation > 0) {
+                attackAnimation -= 0.05;
+                mobScale = Math.min(mobScale + 0.02, 1);
+            }
+            if(deathAnimation > 0) {
+                deathAnimation -= 0.02;
+                mobScale *= 0.98;
+                mobRotation += 0.1;
+            }
+            if(isMobAlive || deathAnimation > 0) {
+                mobDrawers[currentMob]();
+            }
+            damageEffects = damageEffects.filter(effect => effect.update());
+            damageEffects.forEach(effect => effect.draw());
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if(!isMobAlive) return;
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            const distance = Math.sqrt(
+                Math.pow(clickX - mobPosition.x, 2) +
+                Math.pow(clickY - mobPosition.y, 2)
+            );
+            if(distance < 150 * mobs[currentMob].scaleFactor) {
+                damageMob();
+            }
+        });
+
+        updateMob();
+
+        function gameLoop() {
+            drawScene();
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+    </script>
+</body>
+</html>
+```
