@@ -1,0 +1,651 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS · platform development</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #fbfcfe;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: #11131f;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* modern sans fallback */
+        h1, h2, h3, button, .stat-item, .tab, .toggle-label, th {
+            font-family: 'Inter', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+            font-weight: 500;
+        }
+
+        h1 { font-size: clamp(80px, 8vw, 96px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+        h2 { font-size: clamp(48px, 6vw, 56px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+        h3 { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; }
+        .body-large { font-size: 20px; }
+        .body-base { font-size: 18px; }
+
+        .container {
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 0 48px;
+        }
+
+        /* ----- sticky header (shrinks) ----- */
+        .site-header {
+            position: sticky;
+            top: 0;
+            background: rgba(251, 252, 254, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(19, 47, 106, 0.08);
+            z-index: 50;
+            transition: padding 0.2s ease;
+            padding: 24px 0;
+        }
+        .site-header.shrink {
+            padding: 12px 0;
+            box-shadow: 0 4px 20px rgba(0,20,50,0.02);
+        }
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-weight: 600;
+            font-size: 24px;
+            color: #132f6a;
+            letter-spacing: -0.02em;
+        }
+        .nav-placeholder {
+            display: flex;
+            gap: 40px;
+            color: #2d3b5a;
+            font-weight: 500;
+        }
+        .nav-placeholder span { cursor: default; }
+
+        /* ----- hero 100vh ----- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: center;
+            height: 100%;
+        }
+        .hero-left { max-width: 580px; }
+        .hero-sub {
+            font-size: 22px;
+            color: #2d3b5a;
+            margin: 32px 0 36px;
+            font-weight: 400;
+            max-width: 500px;
+        }
+        .btn-primary {
+            background-color: #1d3b7a;
+            border: none;
+            color: white;
+            font-size: 20px;
+            font-weight: 500;
+            padding: 18px 44px;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            box-shadow: 0 8px 22px rgba(26, 55, 120, 0.18);
+            letter-spacing: 0.2px;
+        }
+        .btn-primary:hover { background-color: #0f2a5a; transform: scale(1.02); }
+        .stat-row {
+            display: flex;
+            gap: 48px;
+            margin-top: 56px;
+        }
+        .stat-item .stat-num {
+            font-size: 32px;
+            font-weight: 700;
+            color: #132f6a;
+        }
+        .stat-label {
+            font-size: 16px;
+            color: #4d5a77;
+            letter-spacing: 0.3px;
+        }
+
+        /* ---------- right side ecosystem (no abstract, pure modules) ---------- */
+        .ecosystem {
+            background: #ffffff;
+            border-radius: 40px;
+            box-shadow: 0 30px 50px -20px rgba(19,47,106,0.2);
+            padding: 28px 24px;
+            border: 1px solid rgba(19,47,106,0.08);
+            width: 100%;
+            max-width: 560px;
+            margin-left: auto;
+        }
+        .main-dashboard {
+            background: #f6f8ff;
+            border-radius: 28px;
+            padding: 22px 20px;
+            border: 1px solid #e1e8f5;
+            box-shadow: inset 0 2px 4px #ffffff, 0 4px 12px rgba(0,0,0,0.02);
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .tabs {
+            display: flex;
+            gap: 16px;
+        }
+        .tab {
+            font-size: 15px;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 40px;
+            color: #1d3b7a;
+            font-weight: 500;
+            border: 1px solid #d6e0f0;
+            transition: all 0.2s;
+            cursor: default;
+        }
+        .tab.active {
+            background: #1d3b7a;
+            color: white;
+            border-color: #1d3b7a;
+        }
+        .cards-module {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 24px 0 20px;
+        }
+        .ui-card {
+            background: white;
+            border-radius: 20px;
+            padding: 18px 14px;
+            border: 1px solid #eaeef9;
+            box-shadow: 0 4px 12px rgba(0,20,50,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .card-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .svg-icon {
+            width: 24px;
+            height: 24px;
+            stroke: #1d3b7a;
+            stroke-width: 1.8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .svg-icon-small {
+            width: 20px;
+            height: 20px;
+            stroke: #1d3b7a;
+            stroke-width: 2;
+            fill: none;
+        }
+        .connection-lines {
+            display: flex;
+            justify-content: space-around;
+            margin: 16px 0 8px;
+            position: relative;
+        }
+        .line-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #1d3b7a;
+            border-radius: 1px;
+            opacity: 0.5;
+        }
+        .badge {
+            background: #edf2ff;
+            color: #1d3b7a;
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+        }
+        .live-data {
+            display: flex;
+            gap: 12px;
+            margin: 18px 0 8px;
+            font-size: 15px;
+            color: #1d3b7a;
+            font-weight: 500;
+        }
+        .data-pulse {
+            background: #e8edff;
+            padding: 6px 14px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* spacing */
+        .section {
+            margin-top: 140px;
+        }
+        .section:first-of-type {
+            margin-top: 0;
+        }
+
+        /* fade animation base */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* cards grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin: 64px 0;
+        }
+        .feature-card {
+            background: #ffffff;
+            padding: 32px;
+            border-radius: 40px;
+            box-shadow: 0 12px 30px rgba(19,47,106,0.04);
+            border: 1px solid #eef2f9;
+        }
+        .feature-card svg {
+            margin-bottom: 28px;
+        }
+        .module-tag {
+            color: #1d3b7a;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        /* table */
+        .comparison {
+            background: white;
+            border-radius: 40px;
+            padding: 48px 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.02);
+            border: 1px solid #e9eefa;
+            margin: 80px 0;
+        }
+        .toggle-switch {
+            display: flex;
+            justify-content: flex-end;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        .toggle-option {
+            font-size: 20px;
+            font-weight: 500;
+            color: #6f7d9c;
+            cursor: pointer;
+            padding: 8px 20px;
+            border-radius: 60px;
+            background: #f0f4fe;
+            transition: all 0.15s;
+        }
+        .toggle-option.active {
+            background: #1d3b7a;
+            color: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 24px 16px 16px 0;
+            font-size: 20px;
+            color: #11131f;
+            border-bottom: 2px solid #dbe2f0;
+        }
+        td {
+            padding: 20px 16px 20px 0;
+            border-bottom: 1px solid #e9eefa;
+            font-size: 18px;
+        }
+        .highlight-col {
+            background-color: #f6f9ff;
+            border-radius: 16px;
+        }
+        .price {
+            font-weight: 700;
+            color: #132f6a;
+            font-size: 24px;
+        }
+
+        /* timeline */
+        .timeline {
+            display: flex;
+            gap: 16px;
+            margin: 64px 0;
+        }
+        .milestone {
+            flex: 1;
+            padding: 32px 24px;
+            background: white;
+            border-radius: 32px;
+            border: 1px solid #e2ebf6;
+        }
+
+        /* accordion */
+        .faq-item {
+            border-bottom: 1px solid #d9e2f0;
+            padding: 24px 0;
+        }
+        .faq-question {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 22px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .faq-answer {
+            margin-top: 16px;
+            color: #404e6b;
+            font-size: 18px;
+            display: none;
+        }
+        .faq-item.open .faq-answer {
+            display: block;
+        }
+
+        .cta-block {
+            text-align: center;
+            background: #f2f7ff;
+            border-radius: 90px;
+            padding: 100px 40px;
+            margin: 120px 0 80px;
+        }
+
+        footer {
+            padding: 40px 0 80px;
+            color: #6d7b99;
+            border-top: 1px solid #e0e8f2;
+        }
+        .button-outline {
+            background: transparent;
+            border: 2px solid #1d3b7a;
+            color: #1d3b7a;
+            font-size: 20px;
+            padding: 16px 44px;
+            border-radius: 60px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .button-outline:hover {
+            background: #1d3b7a;
+            color: white;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #e2ecfe;
+            margin: 40px 0;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header" id="stickyHeader">
+        <div class="container header-inner">
+            <div class="logo">◎ platform.dev</div>
+            <div class="nav-placeholder">
+                <span>Product</span>
+                <span>Solutions</span>
+                <span>Pricing</span>
+                <span>Docs</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- hero 100vh -->
+        <section class="hero">
+            <div class="container hero-grid">
+                <div class="hero-left">
+                    <h1>SaaS Platform Development</h1>
+                    <div class="hero-sub">Build multi‑tenant, cloud‑native products with modular architecture, real‑time collaboration, and enterprise uptime.</div>
+                    <button class="btn-primary">Build Your SaaS Platform →</button>
+                    <div class="stat-row">
+                        <div class="stat-item"><span class="stat-num">980+</span> <div class="stat-label">platforms launched</div></div>
+                        <div class="stat-item"><span class="stat-num">99.99%</span> <div class="stat-label">uptime SLA</div></div>
+                        <div class="stat-item"><span class="stat-num">340</span> <div class="stat-label">enterprise clients</div></div>
+                    </div>
+                </div>
+                <div class="ecosystem">
+                    <div class="main-dashboard">
+                        <div class="dashboard-header">
+                            <div class="tabs" id="liveTabs">
+                                <span class="tab active">overview</span>
+                                <span class="tab">users</span>
+                                <span class="tab">billing</span>
+                            </div>
+                            <span class="badge">live · 3s</span>
+                        </div>
+                        <!-- central panel representation -->
+                        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
+                            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/></svg>
+                            <span style="font-weight: 500;">main dashboard · api metrics</span>
+                        </div>
+                        <!-- modular cards -->
+                        <div class="cards-module">
+                            <div class="ui-card"><div class="card-row"><svg class="svg-icon-small" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg><span>user mgmt</span></div><span style="color:#1d3b7a; font-size:15px;">42 active</span></div>
+                            <div class="ui-card"><div class="card-row"><svg class="svg-icon-small" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3v4M8 3v4"/></svg><span>subscr.</span></div><span style="color:#1d3b7a;">trial → pro</span></div>
+                        </div>
+                        <!-- connection lines + live data -->
+                        <div class="connection-lines">
+                            <span class="line-group"><span class="dot"></span><span class="dot"></span><span class="dot"></span> modular bus</span>
+                            <span class="line-group"><span class="dot"></span><span class="dot"></span> sync</span>
+                        </div>
+                        <div class="live-data">
+                            <div class="data-pulse" id="liveUpdate1">📦 api calls 4.3k</div>
+                            <div class="data-pulse" id="liveUpdate2">⚙️ tenants 128</div>
+                        </div>
+                        <div style="display:flex; gap:12px; margin-top:14px;">
+                            <span style="background:#e2eaff; padding:6px 16px; border-radius:30px; font-size:14px; color:#1d3b7a;">admin</span>
+                            <span style="background:#e2eaff; padding:6px 16px; border-radius:30px; font-size:14px; color:#1d3b7a;">developer</span>
+                            <span style="background:#e2eaff; padding:6px 16px; border-radius:30px; font-size:14px; color:#1d3b7a;">billing</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- sections with spacing 120px+ -->
+        <div class="container">
+            <!-- 1. Platform architecture -->
+            <section class="section fade-up">
+                <h2>Architecture that scales</h2>
+                <div style="display:flex; gap: 80px; margin: 48px 0;">
+                    <div><h3>isolated tenants</h3><p class="body-base" style="max-width:360px;">Data, logic, and UI per customer, with central orchestration.</p></div>
+                    <div><h3>modular core</h3><p class="body-base">Swap any module without touching the kernel.</p></div>
+                </div>
+            </section>
+
+            <!-- 2. Core modules grid -->
+            <section class="section fade-up">
+                <h2>Core modules</h2>
+                <div class="feature-grid">
+                    <div class="feature-card"><svg width="32" height="32" viewBox="0 0 24 24" stroke="#1d3b7a" stroke-width="1.8" fill="none"><rect x="2" y="2" width="20" height="20" rx="2"/></svg><div class="module-tag">identity</div><p>Unified directory with SSO, MFA, and SCIM.</p></div>
+                    <div class="feature-card"><svg width="32" height="32" viewBox="0 0 24 24" stroke="#1d3b7a" stroke-width="1.8" fill="none"><path d="M21 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><div class="module-tag">billing hub</div><p>Recurring, usage‑based, and metered billing.</p></div>
+                    <div class="feature-card"><svg width="32" height="32" viewBox="0 0 24 24" stroke="#1d3b7a" stroke-width="1.8" fill="none"><path d="M20 20H4V4"/><path d="M8 16v-4"/><path d="M12 16v-8"/><path d="M16 16v-2"/></svg><div class="module-tag">analytics</div><p>Real‑time per‑tenant metrics.</p></div>
+                </div>
+            </section>
+
+            <!-- 3. Multi-tenant capability -->
+            <section class="section fade-up">
+                <h2>Multi‑tenant by design</h2>
+                <p class="body-large" style="max-width: 800px;">Isolated data, shared efficiency. Row‑level security, tenant routing, and noise reduction.</p>
+            </section>
+
+            <!-- 4. subscription billing block -->
+            <section class="section fade-up">
+                <div style="background:#ffffff; border-radius: 60px; padding: 72px; border:1px solid #e6edfa;">
+                    <h2>Subscription & billing engine</h2>
+                    <p class="body-large" style="margin: 24px 0 16px;">Recurring, one‑off, proration, dunning — fully automated.</p>
+                </div>
+            </section>
+
+            <!-- 5. Interactive comparison table with toggle -->
+            <section class="section fade-up comparison">
+                <div class="toggle-switch" id="billingToggle">
+                    <span class="toggle-option active" data-plan="monthly">Monthly</span>
+                    <span class="toggle-option" data-plan="annual">Annual (save 20%)</span>
+                </div>
+                <table id="priceTable">
+                    <tr><th>Feature</th><th>Starter</th><th class="highlight-col">Pro (popular)</th><th>Enterprise</th></tr>
+                    <tr><td>Price</td><td class="price" data-monthly="$49" data-annual="$39">$49</td><td class="price highlight-col" data-monthly="$99" data-annual="$79">$99</td><td class="price" data-monthly="$249" data-annual="$199">$249</td></tr>
+                    <tr><td>Tenants</td><td>1</td><td>10</td><td>unlimited</td></tr>
+                    <tr><td>API rate</td><td>1k/min</td><td>10k/min</td><td>custom</td></tr>
+                </table>
+            </section>
+
+            <!-- 6. Development timeline -->
+            <section class="section fade-up">
+                <h2>Development process</h2>
+                <div class="timeline">
+                    <div class="milestone">1. Foundation & auth</div>
+                    <div class="milestone">2. Core modules</div>
+                    <div class="milestone">3. Multi‑tenant wiring</div>
+                    <div class="milestone">4. Billing & launch</div>
+                </div>
+            </section>
+
+            <!-- 7. Pricing tiers (compact) -->
+            <section class="section fade-up">
+                <h2>Pricing for scale</h2>
+                <div class="feature-grid">
+                    <div><h3>Starter</h3><p>$49/mo</p></div>
+                    <div><h3>Pro</h3><p>$99/mo</p></div>
+                    <div><h3>Enterprise</h3><p>custom</p></div>
+                </div>
+            </section>
+
+            <!-- 8. FAQ accordion -->
+            <section class="section fade-up">
+                <h2>FAQ</h2>
+                <div class="faq-item open">
+                    <div class="faq-question">Can I migrate from monthly to annual? <span style="font-size:32px;">−</span></div>
+                    <div class="faq-answer">Yes, switch anytime. We’ll credit remaining balance.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">Do you support custom domains per tenant? <span style="font-size:32px;">+</span></div>
+                    <div class="faq-answer">Yes, via dedicated module.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">Is the platform SOC2 compliant? <span style="font-size:32px;">+</span></div>
+                    <div class="faq-answer">We provide SOC2 type II reports for enterprise plans.</div>
+                </div>
+            </section>
+
+            <!-- 9. Final CTA -->
+            <section class="cta-block">
+                <h2 style="margin-bottom: 32px;">Launch Your SaaS Platform</h2>
+                <button class="button-outline">Schedule Strategy Call →</button>
+            </section>
+            <hr>
+            <footer>
+                <p>© platform.dev — enterprise SaaS foundation</p>
+            </footer>
+        </div>
+    </main>
+
+    <script>
+        (function() {
+            // sticky shrink
+            const header = document.getElementById('stickyHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) header.classList.add('shrink');
+                else header.classList.remove('shrink');
+            });
+
+            // intersection observer (fade)
+            const faders = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(e => e.isIntersecting && e.target.classList.add('visible'));
+            }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+            faders.forEach(f => observer.observe(f));
+
+            // live ecosystem updates (simulate animation)
+            const tabs = document.querySelectorAll('#liveTabs .tab');
+            let idx = 0;
+            setInterval(() => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabs[idx].classList.add('active');
+                idx = (idx + 1) % tabs.length;
+            }, 3200);
+
+            const live1 = document.getElementById('liveUpdate1');
+            const live2 = document.getElementById('liveUpdate2');
+            let calls = 4.3, tenants = 128;
+            setInterval(() => {
+                calls = (calls + 0.2).toFixed(1);
+                tenants = tenants + Math.floor(Math.random()*2);
+                if (live1) live1.innerText = `📦 api calls ${calls}k`;
+                if (live2) live2.innerText = `⚙️ tenants ${tenants}`;
+            }, 4000);
+
+            // billing toggle (table update)
+            const toggleOptions = document.querySelectorAll('.toggle-option');
+            const priceCells = document.querySelectorAll('.price');
+            toggleOptions.forEach(opt => {
+                opt.addEventListener('click', function() {
+                    toggleOptions.forEach(o => o.classList.remove('active'));
+                    this.classList.add('active');
+                    const plan = this.dataset.plan; // 'monthly' or 'annual'
+                    priceCells.forEach(cell => {
+                        cell.textContent = cell.dataset[plan];
+                    });
+                });
+            });
+
+            // faq accordion
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const q = item.querySelector('.faq-question');
+                q.addEventListener('click', () => {
+                    item.classList.toggle('open');
+                    const span = q.querySelector('span');
+                    if (span) span.innerText = item.classList.contains('open') ? '−' : '+';
+                });
+            });
+        })();
+    </script>
+    <!-- no extra, pure html/css/js internal -->
+</body>
+</html>
+All done!
+```
