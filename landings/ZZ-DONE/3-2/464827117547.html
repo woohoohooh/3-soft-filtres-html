@@ -1,0 +1,611 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовый навигатор | Александр Воронов</title>
+    <!-- Font Awesome 6 (стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f4f7fb;
+            color: #1a2639;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* кастомный скролл */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e0e7ff; }
+        ::-webkit-scrollbar-thumb { background: #2d3b5a; border-radius: 8px; }
+
+        /* якорное меню — фиксированное, с эффектом сжатия */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1200px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 80px;
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 999;
+            box-shadow: 0 15px 35px rgba(0, 10, 30, 0.15);
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .navbar.scrolled {
+            top: 12px;
+            padding: 0.4rem 1.8rem;
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 8px 25px rgba(17, 34, 68, 0.2);
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #0b1e33, #2d4b75);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            transition: 0.2s;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 500;
+            color: #1f2b44;
+            font-size: 0.95rem;
+            transition: 0.25s;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav-links a:hover {
+            border-bottom-color: #2d4b75;
+            color: #0b1e33;
+        }
+
+        /* блоки */
+        section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6rem 2rem;
+            position: relative;
+            will-change: transform, opacity;
+        }
+
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* анимация появления при скролле */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.9s cubic-bezier(0.2, 0.7, 0.1, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* блок 1 — шапка с мощной анимацией js */
+        .header-block {
+            background: linear-gradient(145deg, #f0f5fe 0%, #e9f0fa 100%);
+            position: relative;
+            isolation: isolate;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 4rem;
+        }
+
+        .header-left h1 {
+            font-size: 3.8rem;
+            font-weight: 800;
+            line-height: 1.2;
+            background: linear-gradient(to right, #102a43, #1f4a6e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .header-left p {
+            font-size: 1.3rem;
+            color: #2b3f5e;
+            margin: 1.5rem 0 2rem;
+            max-width: 550px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1.2rem;
+        }
+
+        .btn-primary, .btn-outline {
+            padding: 0.9rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: 0.3s;
+            cursor: default;
+            border: 1.5px solid transparent;
+        }
+
+        .btn-primary {
+            background: #1e3b5c;
+            color: white;
+            box-shadow: 0 12px 25px -10px #1e3b5c;
+        }
+        .btn-primary:hover { background: #143049; transform: scale(1.05); }
+
+        .btn-outline {
+            border-color: #1e3b5c;
+            color: #1e3b5c;
+        }
+        .btn-outline:hover { background: rgba(30,59,92,0.05); }
+
+        /* Анимированный "умный" график (pure js canvas) */
+        .header-right {
+            width: 400px;
+            height: 320px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 48px;
+            box-shadow: 20px 25px 50px -15px rgba(17,34,68,0.25);
+            backdrop-filter: blur(5px);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-title {
+            font-weight: 600; color: #1e2e4a; margin-bottom: 12px; font-size: 0.95rem;
+        }
+
+        #animatedChart {
+            width: 100%;
+            flex: 1;
+            background: rgba(255,255,255,0.4);
+            border-radius: 28px;
+        }
+
+        /* блок 2 — цифры/доверие */
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 2.5rem;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 3.3rem;
+            font-weight: 800;
+            color: #102a43;
+            letter-spacing: -0.02em;
+        }
+        .stat-label {
+            font-size: 1.1rem;
+            color: #3b4f6e;
+            max-width: 200px;
+        }
+
+        /* блок 3 — услуги (иконки font awesome) */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 2.5rem;
+            margin-top: 2rem;
+        }
+        .service-card {
+            background: white;
+            padding: 2rem 1.8rem;
+            border-radius: 40px;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            text-align: center;
+            border: 1px solid #ffffff50;
+        }
+        .service-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 30px 45px -10px #102a4330;
+        }
+        .service-card i {
+            font-size: 2.6rem;
+            color: #1f4a6e;
+            margin-bottom: 1.5rem;
+        }
+        .service-card h3 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+        .service-card p { color: #3b4f6e; }
+
+        /* блок 4 — кейсы (акцент) */
+        .cases-grid {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .case-item {
+            background: white;
+            border-radius: 32px;
+            padding: 2rem;
+            flex: 1 1 250px;
+            box-shadow: 0 8px 25px #d9e2ef;
+            border-left: 6px solid #1e3b5c;
+        }
+        .case-item .result {
+            font-weight: 800; font-size: 2rem; color: #143049;
+        }
+
+        /* блок 5 — процесс / как работаем */
+        .process-steps {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .step {
+            background: white;
+            border-radius: 100px 100px 40px 40px;
+            padding: 2rem 2rem 2rem 2rem;
+            width: 220px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        .step .step-num {
+            background: #1e3b5c; color: white; width: 50px; height: 50px;
+            border-radius: 30px; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.2rem; font-weight: 700; font-size: 1.5rem;
+        }
+
+        /* блок 6 — отзыв (слайдер эфект) */
+        .testimonial-card {
+            background: white;
+            border-radius: 50px;
+            padding: 3rem 4rem;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 35px 55px -25px #1f2b44;
+        }
+        .testimonial-card i { color: #abc0d4; font-size: 3rem; opacity: 0.4; position: absolute; top: 20px; left: 30px; }
+
+        /* блок 7 — частые вопросы */
+        .faq-item {
+            background: white;
+            border-radius: 28px;
+            padding: 1.2rem 2rem;
+            margin-bottom: 1rem;
+            cursor: default;
+            transition: 0.2s;
+        }
+        .faq-question {
+            font-weight: 700; font-size: 1.25rem; display: flex; justify-content: space-between;
+        }
+
+        /* блок 8 — контакты */
+        .contact-grid {
+            display: flex;
+            gap: 4rem;
+            background: white;
+            border-radius: 70px;
+            padding: 3.5rem;
+            box-shadow: 0 30px 45px -15px #102a4330;
+        }
+        .contact-info i { color: #1e3b5c; width: 35px; font-size: 1.3rem; }
+
+        /* футер */
+        .footer-block {
+            min-height: auto;
+            background: #0c1a2b;
+            color: #b7c9e2;
+            padding: 2.5rem 2rem;
+            text-align: center;
+        }
+
+        /* адаптация под ПК — без планшетов/мобил, но чтоб не ломалось */
+        @media (max-width: 1000px) {
+            .header-content { flex-direction: column; text-align: center; }
+            .btn-group { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- фиксированная шапка-меню (блок 0) -->
+<nav class="navbar" id="navbar">
+    <span class="logo"><i class="fas fa-chart-line" style="margin-right: 8px; color: #1e3b5c;"></i>FinVoronov</span>
+    <div class="nav-links">
+        <a href="#home">Главная</a>
+        <a href="#about">О нас</a>
+        <a href="#services">Услуги</a>
+        <a href="#cases">Кейсы</a>
+        <a href="#contact">Контакты</a>
+    </div>
+</nav>
+
+<!-- БЛОК 1: шапка с анимацией canvas (Home) -->
+<section id="home" class="header-block" style="padding-top: 8rem;">
+    <div class="container header-content">
+        <div class="header-left reveal">
+            <h1>Ваш личный <br>финансовый навигатор</h1>
+            <p>Страхование, инвестиции, капитал. Прозрачно, надёжно, с заботой о вас.</p>
+            <div class="btn-group">
+                <span class="btn-primary">Консультация</span>
+                <span class="btn-outline">Кейсы</span>
+            </div>
+        </div>
+        <div class="header-right reveal">
+            <div class="chart-title"><i class="fas fa-chart-simple" style="margin-right: 5px;"></i> динамика роста капитала</div>
+            <canvas id="animatedChart" width="340" height="200"></canvas>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 2: цифры доверия -->
+<section id="about">
+    <div class="container">
+        <h2 style="font-size: 2.6rem; margin-bottom: 3rem; font-weight: 600;" class="reveal">Финансовая уверенность в цифрах</h2>
+        <div class="stats-grid">
+            <div class="stat-item reveal"><div class="stat-number">+14 лет</div><div class="stat-label">работы на рынке</div></div>
+            <div class="stat-item reveal"><div class="stat-number">250+</div><div class="stat-label">частных клиентов</div></div>
+            <div class="stat-item reveal"><div class="stat-number">47</div><div class="stat-label">бизнес-партнёров</div></div>
+            <div class="stat-item reveal"><div class="stat-number">₽2,3 млрд</div><div class="stat-label">капитал под управлением</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 3: услуги (иконки) -->
+<section id="services" style="background: #ecf3fa;">
+    <div class="container">
+        <h2 style="font-size: 2.6rem; margin-bottom: 1rem;" class="reveal">Что я предлагаю</h2>
+        <div class="services-grid">
+            <div class="service-card reveal"><i class="fas fa-umbrella"></i><h3>Страхование</h3><p>Жизнь, здоровье, имущество — точечные решения.</p></div>
+            <div class="service-card reveal"><i class="fas fa-chart-pie"></i><h3>Инвест-портфели</h3><p>Сбалансированные стратегии под ваш риск-профиль.</p></div>
+            <div class="service-card reveal"><i class="fas fa-hand-holding-usd"></i><h3>Накопления</h3><p>Долгосрочные планы с защитой капитала.</p></div>
+            <div class="service-card reveal"><i class="fas fa-file-invoice"></i><h3>Аудит финансов</h3><p>Проверка и оптимизация личного бюджета.</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 4: кейсы (акцент на результат) -->
+<section id="cases">
+    <div class="container">
+        <h2 class="reveal" style="font-size: 2.6rem;">Реальные истории</h2>
+        <div class="cases-grid">
+            <div class="case-item reveal"><span class="result">+34%</span> дохода</div>
+            <div class="case-item reveal"><span class="result">₽4,2 млн</span> налоговый вычет</div>
+            <div class="case-item reveal"><span class="result">15 лет</span> пенсион. программы</div>
+            <div class="case-item reveal"><span class="result">48 ч</span> урегулирование страхового случая</div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 5: пошаговая работа -->
+<section style="background: #ecf3fa;">
+    <div class="container">
+        <h2 class="reveal" style="font-size: 2.6rem;">Как мы выстраиваем стратегию</h2>
+        <div class="process-steps">
+            <div class="step reveal"><div class="step-num">1</div><h3>Анализ</h3><p>Цели, активы, риски</p></div>
+            <div class="step reveal"><div class="step-num">2</div><h3>План</h3><p>Подбор инструментов</p></div>
+            <div class="step reveal"><div class="step-num">3</div><h3>Реализация</h3><p>Сопровождение сделок</p></div>
+            <div class="step reveal"><div class="step-num">4</div><h3>Мониторинг</h3><p>Ежеквартальные отчёты</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 6: testimonial / отзыв -->
+<section>
+    <div class="container">
+        <div class="testimonial-card reveal">
+            <i class="fas fa-quote-right"></i>
+            <p style="font-size: 1.5rem; font-style: italic; margin-bottom: 2rem;">«Александр не просто страховой агент — он семейный финансовый директор. Всё разложил по полочкам, спасли капитал в турбулентность.»</p>
+            <p style="font-weight: 700;">— Екатерина М., владелец студии</p>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 7: FAQ (частые вопросы) -->
+<section style="background: #ecf3fa;">
+    <div class="container" style="max-width: 900px;">
+        <h2 class="reveal">Частые вопросы</h2>
+        <div class="faq-item reveal"><div class="faq-question">С чего начать? <i class="fas fa-chevron-down" style="color:#1e3b5c;"></i></div><p style="margin-top: 0.7rem; color: #365273;">Записаться на 20-минутный звонок-знакомство.</p></div>
+        <div class="faq-item reveal"><div class="faq-question">Какие компании в партнёрской сети? <i class="fas fa-chevron-down"></i></div><p style="margin-top: 0.7rem; color: #365273;">Только страховщики уровня А+ и ведущие УК.</p></div>
+        <div class="faq-item reveal"><div class="faq-question">Налоговые вычеты — это сложно? <i class="fas fa-chevron-down"></i></div><p style="margin-top: 0.7rem; color: #365273;">Я помогаю с документами, вы просто получаете возврат.</p></div>
+    </div>
+</section>
+
+<!-- БЛОК 8: контакты -->
+<section id="contact">
+    <div class="container">
+        <div class="contact-grid reveal">
+            <div style="flex: 1">
+                <h2 style="font-size: 2rem;">Свяжитесь</h2>
+                <p style="margin: 1.5rem 0;">Один шаг до финансовой уверенности.</p>
+                <div class="contact-info">
+                    <p><i class="fas fa-phone-alt"></i> +7 (495) 220-10-19</p>
+                    <p><i class="fas fa-envelope"></i> a.voronov@finnav.ru</p>
+                    <p><i class="fas fa-map-pin"></i> Москва, Пресненская наб., 12</p>
+                    <p><i class="fab fa-telegram"></i> @finvoronov</p>
+                </div>
+            </div>
+            <div style="flex: 1; background: #f2f7ff; border-radius: 50px; padding: 2rem;">
+                <p style="font-weight: 600;">Запишитесь на аудит «без воды»</p>
+                <p style="margin-top: 0.8rem; background: white; border-radius: 40px; padding: 0.8rem;">→ оставьте заявку онлайн</p>
+                <p style="margin-top: 0.8rem;">(или просто позвоните)</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ФУТЕР (блок 9) -->
+<footer class="footer-block">
+    <div class="container">
+        <p style="font-size: 1.2rem;">© 2025 Финансовый советник Александр Воронов — доверие, проверенное годами</p>
+        <p style="margin-top: 1rem; opacity: 0.6;">Лицензия ЦБ РФ № 1234, ИНН 7712345678</p>
+    </div>
+</footer>
+
+<script>
+    (function() {
+        // ---- меню сжатие при скролле ----
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 30) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // ---- анимация появления блоков reveal ----
+        const reveals = document.querySelectorAll('.reveal');
+        function checkReveals() {
+            for (let el of reveals) {
+                const windowHeight = window.innerHeight;
+                const elTop = el.getBoundingClientRect().top;
+                const elBottom = el.getBoundingClientRect().bottom;
+                if (elTop < windowHeight - 80 && elBottom > 50) {
+                    el.classList.add('active');
+                } else {
+                    // можно убрать, если не хотим повторного скрытия (оставим активными)
+                    // но по условию — анимация при появлении, один раз сработает
+                }
+            }
+        }
+        window.addEventListener('scroll', checkReveals);
+        window.addEventListener('load', checkReveals);
+
+        // ---- canvas анимация (умный график) ----
+        const canvas = document.getElementById('animatedChart');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = 340;
+            let height = canvas.height = 200;
+            let points = [];
+            let phase = 0;
+
+            function initPoints() {
+                for (let i = 0; i <= 20; i++) {
+                    points.push({
+                        x: i * (width / 20),
+                        y: height / 2 + Math.sin(i * 0.5) * 25
+                    });
+                }
+            }
+            initPoints();
+
+            function drawChart(offset) {
+                ctx.clearRect(0, 0, width, height);
+                // фон сетки
+                ctx.beginPath();
+                ctx.strokeStyle = '#b3c7e3';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i <= 4; i++) {
+                    let y = 40 + i * 40;
+                    ctx.beginPath();
+                    ctx.moveTo(20, y);
+                    ctx.lineTo(width-20, y);
+                    ctx.strokeStyle = '#c7d6ec';
+                    ctx.stroke();
+                }
+
+                // рисуем линию
+                ctx.beginPath();
+                ctx.strokeStyle = '#1e3b5c';
+                ctx.lineWidth = 3.5;
+                ctx.shadowColor = '#2d4b75';
+                ctx.shadowBlur = 8;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+
+                for (let i = 0; i < points.length; i++) {
+                    let p = points[i];
+                    let y = p.y + Math.sin(phase + i * 0.25) * 8; // динамическая рябь
+                    if (i === 0) ctx.moveTo(p.x, y);
+                    else ctx.lineTo(p.x, y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // заполнение под линией
+                ctx.globalAlpha = 0.2;
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, height-20);
+                for (let i = 0; i < points.length; i++) {
+                    let p = points[i];
+                    let y = p.y + Math.sin(phase + i * 0.25) * 8;
+                    ctx.lineTo(p.x, y);
+                }
+                ctx.lineTo(points[points.length-1].x, height-20);
+                ctx.closePath();
+                ctx.fillStyle = '#1e3b5c';
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+
+                // точки
+                ctx.fillStyle = '#102a43';
+                ctx.shadowBlur = 5;
+                for (let i = 0; i < points.length; i+=2) {
+                    let p = points[i];
+                    let y = p.y + Math.sin(phase + i * 0.25) * 8;
+                    ctx.beginPath();
+                    ctx.arc(p.x, y, 3, 0, 2*Math.PI);
+                    ctx.fillStyle = '#143249';
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+                phase += 0.03;
+                requestAnimationFrame(() => drawChart(phase));
+            }
+            drawChart(0);
+        }
+
+        // якоря (плавный скролл без изменения стандартного поведения)
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href');
+                const target = document.querySelector(targetId);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    })();
+</script>
+
+<!-- завершение -->
+</body>
+</html>
+All done!
+```

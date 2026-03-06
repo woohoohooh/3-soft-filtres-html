@@ -1,0 +1,757 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram Bot Development · automation studio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #ffffff;
+      font-family: system-ui, -apple-system, 'Inter', 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #11181c;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+    }
+
+    /* sticky header */
+    header {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+      z-index: 100;
+      transition: padding 0.2s ease, box-shadow 0.2s;
+      padding: 1.2rem 0;
+    }
+
+    header.shrink {
+      padding: 0.6rem 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 64px;
+    }
+
+    .header-flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
+      color: #0b1a2b;
+    }
+
+    .logo span {
+      color: #2563eb; /* deep blue accent */
+      font-weight: 500;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      font-weight: 500;
+      color: #2f3e4e;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: inherit;
+      font-size: 1rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #2563eb;
+    }
+
+    /* main spacing */
+    section {
+      margin-bottom: 140px;
+    }
+
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .hero .container {
+      display: flex;
+      align-items: center;
+      gap: 80px;
+      width: 100%;
+    }
+
+    .hero-left {
+      flex: 1;
+    }
+
+    .hero-left h1 {
+      font-size: 92px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: #0b1f33;
+      margin-bottom: 32px;
+    }
+
+    .hero-sub {
+      font-size: 20px;
+      color: #33475b;
+      max-width: 500px;
+      margin-bottom: 40px;
+      font-weight: 400;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      border: none;
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+      padding: 18px 42px;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 10px 25px -8px rgba(37,99,235,0.3);
+      margin-bottom: 48px;
+    }
+
+    .btn-primary:hover {
+      background: #1a4fcf;
+      transform: scale(1.02);
+      box-shadow: 0 20px 30px -10px rgba(37,99,235,0.4);
+    }
+
+    .stats {
+      display: flex;
+      gap: 48px;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0b1f33;
+    }
+
+    .stat-label {
+      font-size: 16px;
+      color: #5e6f82;
+      letter-spacing: 0.3px;
+    }
+
+    /* right side — telegram chat animation */
+    .hero-right {
+      flex: 1;
+      background: #ffffff;
+      border-radius: 32px;
+      box-shadow: 0 30px 50px -20px rgba(0,20,40,0.2);
+      padding: 28px 20px 30px 20px;
+      border: 1px solid rgba(0,0,0,0.03);
+      max-width: 500px;
+      margin-left: auto;
+    }
+
+    .chat-window {
+      background: #f5f7fb;
+      border-radius: 24px;
+      overflow: hidden;
+      font-size: 15px;
+      border: 1px solid #eaeef2;
+    }
+
+    .chat-header {
+      background: #ffffff;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #eef2f6;
+    }
+
+    .chat-dot {
+      width: 12px;
+      height: 12px;
+      background: #28c46f;
+      border-radius: 50%;
+    }
+
+    .chat-title {
+      font-weight: 600;
+      color: #1e2b38;
+    }
+
+    .chat-body {
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: #f5f7fb;
+      min-height: 400px;
+    }
+
+    .message-row {
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      animation: fadeSlideIn 0.4s forwards;
+    }
+
+    .message-row.user {
+      align-items: flex-end;
+    }
+
+    .bubble {
+      max-width: 80%;
+      padding: 12px 18px;
+      border-radius: 22px;
+      background: white;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.02);
+      line-height: 1.5;
+      color: #1d2b3a;
+      border: 1px solid #e9edf2;
+    }
+
+    .message-row.user .bubble {
+      background: #2563eb;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message-row.bot .bubble {
+      border-bottom-left-radius: 4px;
+      background: #ffffff;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 6px;
+      padding: 14px 20px;
+      background: white;
+      width: fit-content;
+      border-radius: 30px;
+      margin-bottom: 6px;
+    }
+
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: #9aaebb;
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    .inline-keyboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 4px;
+    }
+
+    .keyboard-btn {
+      background: white;
+      border: 1px solid #cdd9e6;
+      padding: 10px 18px;
+      border-radius: 40px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1f2e3f;
+      cursor: default;
+      transition: background 0.15s;
+    }
+
+    .keyboard-btn:hover {
+      background: #eaf0f8;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #4e687e;
+      margin: 10px 0 4px;
+    }
+
+    .blue-dot {
+      width: 10px;
+      height: 10px;
+      background: #2563eb;
+      border-radius: 10px;
+      opacity: 0.7;
+    }
+
+    /* animations */
+    @keyframes fadeSlideIn {
+      0% { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes typingBounce {
+      0%,60%,100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    .delay-1 { animation-delay: 0.3s; }
+    .delay-2 { animation-delay: 1.0s; }
+    .delay-3 { animation-delay: 2.0s; }
+    .delay-4 { animation-delay: 2.8s; }
+    .delay-5 { animation-delay: 3.8s; }
+
+    /* section headers */
+    h2 {
+      font-size: 54px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #0b1f33;
+      margin-bottom: 20px;
+      line-height: 1.2;
+    }
+
+    .section-desc {
+      font-size: 20px;
+      color: #3e5569;
+      max-width: 560px;
+      margin-bottom: 64px;
+    }
+
+    /* cards grid */
+    .grid-3, .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 32px 28px;
+      box-shadow: 0 5px 30px rgba(0,0,0,0.02);
+      border: 1px solid #f0f4fa;
+      transition: transform 0.2s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 25px 35px -12px rgba(37,99,235,0.08);
+    }
+
+    .icon-svg {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 28px;
+      color: #2563eb;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+    }
+
+    .card h3 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .card p {
+      color: #425c74;
+      font-size: 18px;
+    }
+
+    /* flow example */
+    .flow-strip {
+      background: #f8fbfe;
+      border-radius: 60px;
+      padding: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid #e9edf2;
+    }
+
+    .flow-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+    }
+
+    .flow-arrow {
+      font-size: 28px;
+      color: #2563eb;
+      font-weight: 300;
+    }
+
+    /* pricing toggle */
+    .pricing-toggle {
+      display: flex;
+      background: #f1f5f9;
+      width: fit-content;
+      border-radius: 60px;
+      padding: 6px;
+      margin-bottom: 48px;
+    }
+
+    .toggle-option {
+      padding: 12px 36px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 18px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #3b4f64;
+      transition: 0.1s;
+    }
+
+    .toggle-option.active {
+      background: #2563eb;
+      color: white;
+    }
+
+    .pricing-cards {
+      display: flex;
+      gap: 30px;
+    }
+
+    .price-card {
+      flex: 1;
+      background: white;
+      border-radius: 32px;
+      padding: 40px 32px;
+      border: 1px solid #e6ecf3;
+    }
+
+    .price {
+      font-size: 42px;
+      font-weight: 700;
+      margin: 24px 0 20px;
+      color: #0b1f33;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid #e2e9f2;
+      padding: 28px 0;
+    }
+
+    .faq-question {
+      font-size: 24px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .faq-answer {
+      margin-top: 20px;
+      color: #3d576d;
+      font-size: 18px;
+      display: none;
+    }
+
+    .faq-item.open .faq-answer {
+      display: block;
+    }
+
+    .cta-block {
+      background: linear-gradient(125deg, #f1f6fc, #ffffff);
+      border-radius: 80px;
+      padding: 96px 64px;
+      text-align: center;
+      border: 1px solid #e2e9f2;
+    }
+
+    .cta-block h2 {
+      font-size: 68px;
+      margin-bottom: 32px;
+    }
+
+    .btn-telegram {
+      background: transparent;
+      border: 2px solid #2563eb;
+      color: #2563eb;
+      font-size: 26px;
+      font-weight: 600;
+      padding: 22px 60px;
+      border-radius: 90px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-telegram:hover {
+      background: #2563eb;
+      color: white;
+    }
+
+    hr {
+      margin: 80px 0 40px;
+      border: none;
+      border-top: 1px solid #e2eaf2;
+    }
+
+    /* IA observer fade */
+    .fade-slide {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-slide.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .all-done-marker {
+      margin-top: 20px;
+      text-align: right;
+      color: #b1c6da;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header id="stickyHeader">
+    <div class="container header-flex">
+      <div class="logo">bot<span>automation</span></div>
+      <div class="nav-links">
+        <a href="#">use cases</a>
+        <a href="#">capabilities</a>
+        <a href="#">pricing</a>
+        <a href="#">faq</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- hero 100vh -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-left fade-slide visible">
+          <h1>Telegram Bot Development</h1>
+          <div class="hero-sub">Automated conversational flows · smart inline keyboards · CRM & payment integrations · no‑code editor for business logic</div>
+          <button class="btn-primary">Build Your Telegram Bot</button>
+          <div class="stats">
+            <div class="stat-item"><span class="stat-number">840+</span><span class="stat-label">bots delivered</span></div>
+            <div class="stat-item"><span class="stat-number">3.2k</span><span class="stat-label">automations</span></div>
+            <div class="stat-item"><span class="stat-number">190+</span><span class="stat-label">clients served</span></div>
+          </div>
+        </div>
+        <div class="hero-right fade-slide visible">
+          <div class="chat-window">
+            <div class="chat-header"><span class="chat-dot"></span><span class="chat-title">Telegram · support_bot</span></div>
+            <div class="chat-body" id="chatBody">
+              <!-- messages injected via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- use cases -->
+    <section class="container fade-slide"><h2>Telegram Bot Use Cases</h2><div class="section-desc">From customer support to internal operations</div>
+      <div class="grid-3">
+        <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 4h16v16H4V4z" stroke="currentColor" fill="none"/><circle cx="12" cy="12" r="3" stroke="currentColor"/></svg><h3>Client support</h3><p>24/7 automated answers, ticketing, handoff to human</p></div>
+        <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 10h18M6 14h6M6 18h10" stroke="currentColor" stroke-linecap="round"/><rect x="2" y="4" width="20" height="16" stroke="currentColor" fill="none"/></svg><h3>Order & booking</h3><p>inline calendars, confirmations, payment links</p></div>
+        <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20" stroke="currentColor"/><circle cx="12" cy="12" r="4" stroke="currentColor"/></svg><h3>Internal tools</h3><p>database queries, admin alerts, log monitoring</p></div>
+      </div>
+    </section>
+
+    <!-- capabilities grid -->
+    <section class="container fade-slide"><h2>Bot Capabilities</h2><div class="grid-4">
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" stroke="currentColor" fill="none"/><path d="M7 7h10M7 12h8M7 17h6" stroke="currentColor"/></svg><h3>Menus & commands</h3></div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M6 8L12 4L18 8L12 12L6 8Z" stroke="currentColor" fill="none"/><path d="M6 16L12 20L18 16" stroke="currentColor"/></svg><h3>Inline keyboards</h3></div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 20L20 4M20 20L4 4" stroke="currentColor"/></svg><h3>API integration</h3></div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3" stroke="currentColor"/><circle cx="12" cy="16" r="3" stroke="currentColor"/></svg><h3>Webhook flows</h3></div>
+    </div></section>
+
+    <!-- automation flow example -->
+    <section class="container fade-slide"><h2>Example Automation Flows</h2>
+      <div class="flow-strip">
+        <div class="flow-step"><span>/subscribe</span> <span class="status-indicator"><span class="blue-dot"></span> user request</span></div><span class="flow-arrow">→</span>
+        <div class="flow-step"><span>plan selection</span> <span>inline keyboard</span></div><span class="flow-arrow">→</span>
+        <div class="flow-step"><span>payment link</span> <span>invoice sent</span></div><span class="flow-arrow">→</span>
+        <div class="flow-step"><span>confirmation</span> <span>➕ CRM record</span></div>
+      </div>
+    </section>
+
+    <!-- integrations -->
+    <section class="container fade-slide"><h2>Integrations</h2><div class="grid-3">
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20" stroke="currentColor"/></svg><h3>CRM sync</h3><p>HubSpot, Salesforce, Pipedrive</p></div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="10" stroke="currentColor"/><circle cx="12" cy="13" r="1.5" fill="currentColor"/></svg><h3>Stripe / PayPal</h3><p>one‑click payments</p></div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M6 19L12 13L18 19M6 5L12 11L18 5" stroke="currentColor"/></svg><h3>REST APIs</h3><p>any JSON endpoint</p></div>
+    </div></section>
+
+    <!-- development process -->
+    <section class="container fade-slide"><h2>Development Process</h2><div class="grid-3">
+      <div class="card"><h3>1. Discovery</h3><p>map user flows & commands</p></div>
+      <div class="card"><h3>2. Prototype</h3><p>interactive keyboard mockup</p></div>
+      <div class="card"><h3>3. Deploy</h3><p>webhook & go live</p></div>
+    </div></section>
+
+    <!-- pricing with toggle -->
+    <section class="container fade-slide">
+      <h2>pricing · bot automation</h2>
+      <div class="pricing-toggle" id="pricingToggle">
+        <button class="toggle-option active" data-plan="basic">Basic</button>
+        <button class="toggle-option" data-plan="advanced">Advanced</button>
+      </div>
+      <div class="pricing-cards" id="pricingCards">
+        <!-- dynamic JS -->
+      </div>
+    </section>
+
+    <!-- FAQ accordion -->
+    <section class="container fade-slide"><h2>FAQ</h2>
+      <div class="faq-item open"><div class="faq-question">Can I integrate my own API? <span>−</span></div><div class="faq-answer">Yes, any REST/JSON service via webhooks.</div></div>
+      <div class="faq-item"><div class="faq-question">Do you provide analytics? <span>+</span></div><div class="faq-answer">Bot metrics & conversation logs included.</div></div>
+      <div class="faq-item"><div class="faq-question">How long does development take? <span>+</span></div><div class="faq-answer">Simple bot 3–5 days, complex 2–3 weeks.</div></div>
+    </section>
+
+    <!-- final CTA -->
+    <section class="container fade-slide">
+      <div class="cta-block">
+        <h2>Launch Your Telegram Bot</h2>
+        <button class="btn-telegram">Contact via Telegram</button>
+      </div>
+    </section>
+    <hr>
+    <div class="container all-done-marker">All done!</div>
+  </main>
+
+  <script>
+    (function() {
+      // sticky header
+      const header = document.getElementById('stickyHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) header.classList.add('shrink');
+        else header.classList.remove('shrink');
+      });
+
+      // chat animation messages
+      const chatBody = document.getElementById('chatBody');
+      const messages = [
+        { type: 'user', text: '/start', delay: 'delay-1' },
+        { type: 'bot', text: 'Welcome! Choose an option:', delay: 'delay-2' },
+        { type: 'keyboard', delay: 'delay-3' },
+        { type: 'bot', text: 'You selected “order status”.', delay: 'delay-4' },
+        { type: 'user', text: 'ORD-442', delay: 'delay-5' },
+      ];
+
+      function renderChat() {
+        chatBody.innerHTML = '';
+        messages.forEach((msg, idx) => {
+          if (msg.type === 'user') {
+            const row = document.createElement('div');
+            row.className = `message-row user ${msg.delay}`;
+            row.innerHTML = `<div class="bubble">${msg.text}</div>`;
+            chatBody.appendChild(row);
+          } else if (msg.type === 'bot') {
+            const row = document.createElement('div');
+            row.className = `message-row bot ${msg.delay}`;
+            row.innerHTML = `<div class="bubble">${msg.text}</div>`;
+            chatBody.appendChild(row);
+            if (msg.text.includes('Choose')) {
+              const typing = document.createElement('div');
+              typing.className = `typing-indicator ${msg.delay}`;
+              typing.innerHTML = '<span></span><span></span><span></span>';
+              chatBody.appendChild(typing);
+            }
+          } else if (msg.type === 'keyboard') {
+            const row = document.createElement('div');
+            row.className = `message-row bot ${msg.delay}`;
+            row.innerHTML = `<div class="inline-keyboard"><span class="keyboard-btn">📦 order status</span><span class="keyboard-btn">🔄 return</span><span class="keyboard-btn">📞 support</span></div>`;
+            chatBody.appendChild(row);
+          }
+        });
+        // status indicator
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'status-indicator delay-5';
+        statusDiv.innerHTML = '<span class="blue-dot"></span> bot typing · auto-scroll active';
+        chatBody.appendChild(statusDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+      renderChat();
+
+      // pricing toggle & cards
+      const basicPrices = [
+        { name: 'Starter bot', price: '$1,890', desc: '5 commands, basic replies' },
+        { name: 'Business bot', price: '$4,490', desc: 'keyboards, payments, CRM' },
+        { name: 'Advanced automation', price: '$8,990', desc: 'multi-api, admin panel' }
+      ];
+      const advancedPrices = [
+        { name: 'Starter bot', price: '$2,490', desc: '➕ analytics & logs' },
+        { name: 'Business bot', price: '$5,990', desc: '➕ custom integration' },
+        { name: 'Advanced automation', price: '$12,900', desc: '➕ SLA & priority' }
+      ];
+
+      const pricingContainer = document.getElementById('pricingCards');
+      function renderPricing(plan) {
+        const data = plan === 'basic' ? basicPrices : advancedPrices;
+        pricingContainer.innerHTML = data.map(p => 
+          `<div class="price-card"><h3>${p.name}</h3><div class="price">${p.price}</div><p>${p.desc}</p></div>`
+        ).join('');
+      }
+      renderPricing('basic');
+
+      const toggleBtns = document.querySelectorAll('.toggle-option');
+      toggleBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          toggleBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderPricing(btn.dataset.plan);
+        });
+      });
+
+      // FAQ accordion
+      const faqItems = document.querySelectorAll('.faq-item');
+      faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        question.addEventListener('click', () => {
+          item.classList.toggle('open');
+          const span = question.querySelector('span');
+          span.textContent = item.classList.contains('open') ? '−' : '+';
+        });
+      });
+
+      // intersection observer
+      const fadeElements = document.querySelectorAll('.fade-slide');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+      }, { threshold: 0.15 });
+      fadeElements.forEach(el => observer.observe(el));
+    })();
+  </script>
+  <div style="height:1px;"></div>
+</body>
+</html>
+```

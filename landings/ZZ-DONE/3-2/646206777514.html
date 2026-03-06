@@ -1,0 +1,586 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ваш Личный Финансовар · Консультант</title>
+    <!-- Font Awesome 6 (бесплатные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f3f5f9;
+            color: #1a1e2b;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* плавный скролл для якорей */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* кастомный скроллбар */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e9ecf5;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a3b5e;
+            border-radius: 20px;
+        }
+
+        /* фиксированная навигация (изменяется при скролле) */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background: rgba(243, 245, 249, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.25);
+        }
+
+        .navbar.scrolled {
+            padding: 0.7rem 2rem;
+            background: rgba(26, 30, 43, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,215,120,0.3);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
+        }
+
+        .navbar.scrolled .logo,
+        .navbar.scrolled .nav-links a {
+            color: #f9f6f0;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #1e2b3a, #2f4b6e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: 0.2s;
+        }
+
+        .scrolled .logo {
+            background: linear-gradient(135deg, #f2d9a7, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1e2b3a;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav-links a:hover {
+            border-bottom-color: #c6a15b;
+            color: #000;
+        }
+
+        .scrolled .nav-links a:hover {
+            border-bottom-color: #f5c76b;
+            color: #fff;
+        }
+
+        /* общий контейнер блоков */
+        section {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6rem 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .block-inner {
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* анимация появления при скролле (Intersection Observer) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.9s ease, transform 0.9s ease;
+        }
+
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* дополнительная задержка для дочерних */
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+
+        /* специфические фоны */
+        .bg-dark {
+            background: #0e121c;
+            color: #dfe7f5;
+        }
+        .bg-light {
+            background: #ffffff;
+            color: #1a1e2b;
+        }
+        .bg-accent-light {
+            background: #f2f0e9;
+        }
+        .bg-soft-graph {
+            background: #f9fafc;
+        }
+
+        /* шапка (блок 1) — hero с анимированной сеткой */
+        .hero {
+            background: #111725;
+            color: white;
+            position: relative;
+        }
+
+        #canvas-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 4.2rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #f6e3c5, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero .subhead {
+            font-size: 1.5rem;
+            margin: 2rem 0 2.5rem;
+            color: #bfd1f0;
+        }
+
+        .cta-btn {
+            background: #e3b35c;
+            border: none;
+            color: #0e121c;
+            font-weight: 700;
+            font-size: 1.25rem;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 20px 30px -10px #00000055;
+            transition: all 0.25s;
+            border: 1px solid rgba(255,215,120,0.3);
+        }
+
+        .cta-btn:hover {
+            background: #f6c56e;
+            transform: scale(1.02) translateY(-4px);
+            box-shadow: 0 25px 35px -8px #00000077;
+        }
+
+        /* иконки сервиса (блок 3) */
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+
+        .icon-card {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(8px);
+            padding: 2rem 2rem;
+            border-radius: 40px;
+            box-shadow: 0 30px 40px -30px rgba(0,20,40,0.3);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.6);
+            transition: transform 0.2s;
+        }
+
+        .icon-card i {
+            font-size: 3rem;
+            color: #2d4059;
+            margin-bottom: 1.5rem;
+        }
+
+        .icon-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 0.7rem;
+        }
+
+        /* цифровые показатели */
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 3.8rem;
+            font-weight: 800;
+            color: #b48c48;
+            line-height: 1;
+        }
+
+        /* карусель отзывов (упрощ.) */
+        .testimonial-card {
+            background: #1e2538;
+            padding: 2.5rem;
+            border-radius: 50px 20px 50px 20px;
+            color: white;
+            max-width: 700px;
+            margin: 0 auto;
+            border-left: 8px solid #e3b35c;
+        }
+
+        /* footer */
+        .footer {
+            background: #0b0f17;
+            color: #9aa8c9;
+            text-align: center;
+            min-height: auto;
+            padding: 3rem 2rem;
+        }
+        .footer a {
+            color: #cfb57b;
+            text-decoration: none;
+        }
+
+        /* микро-анимации по ховеру */
+        .hover-glow {
+            transition: 0.2s;
+        }
+        .hover-glow:hover {
+            text-shadow: 0 0 8px rgba(255,215,120,0.6);
+        }
+
+        /* якорное меню без буллетов */
+        .nav-links a.active {
+            border-bottom-color: #e3b35c;
+        }
+
+        /* адаптив не требуется, но для очень широких экранов норм */
+        @media (min-width: 2000px) {
+            section { padding: 6rem 10rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ФИКСИРОВАННОЕ МЕНЮ (ШАПКА) БЛОК 1/9 (часть шапки) -->
+    <nav class="navbar" id="navbar">
+        <div class="logo"><i class="fas fa-chart-line" style="margin-right: 8px;"></i> FINANZ<span style="font-weight:300;">.pro</span></div>
+        <div class="nav-links">
+            <a href="#hero">Главная</a>
+            <a href="#about">Обо мне</a>
+            <a href="#services">Услуги</a>
+            <a href="#stats">Цифры</a>
+            <a href="#contact">Контакты</a>
+        </div>
+    </nav>
+
+    <!-- БЛОК 1: Hero с canvas анимацией (волны/точки) -->
+    <section id="hero" class="hero" style="padding-top: 8rem;">
+        <canvas id="canvas-bg"></canvas>
+        <div class="block-inner hero-content fade-up">
+            <span class="subhead" style="letter-spacing: 3px; opacity:0.9;">независимый финансовый советник</span>
+            <h1>Капитал под защитой<br>будущее без риска</h1>
+            <p class="subhead" style="max-width:700px; margin: 1.5rem auto;">Страхование, инвестиции, накопления — персональные стратегии для состояния от 5 млн ₽</p>
+            <button class="cta-btn" onclick="document.getElementById('contact').scrollIntoView();">Записаться на консультацию <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: О себе / доверие (с иконками) -->
+    <section id="about" class="bg-light">
+        <div class="block-inner fade-up">
+            <div class="icon-card" style="background: #eef2f7; border-radius: 60px; padding: 3rem; margin-bottom: 2rem;">
+                <i class="fas fa-user-tie" style="font-size: 4rem; color:#2a3b5e;"></i>
+                <h2>Алексей Финансов — эксперт №1 по управлению капиталом</h2>
+                <p style="max-width:800px; margin: 1.5rem auto 0; font-size:1.2rem;">12 лет в индустрии, сертификаты CFP®, CFA. Более 300 семей доверили мне свои сбережения.</p>
+                <div style="display:flex; gap: 2rem; justify-content: center; margin-top:2rem;">
+                    <span><i class="fas fa-check-circle" style="color:#b48c48;"></i> Без конфликта интересов</span>
+                    <span><i class="fas fa-check-circle" style="color:#b48c48;"></i> Только прозрачные инструменты</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: услуги / иконки (иконки fontawesome) -->
+    <section id="services" class="bg-soft-graph">
+        <div class="block-inner">
+            <h2 class="fade-up" style="font-size:3rem; margin-bottom: 1rem;">Что я предлагаю</h2>
+            <div class="icon-grid">
+                <div class="icon-card fade-up delay-1"><i class="fas fa-shield-alt"></i><h3>Страхование жизни</h3><p>Защита семьи и капитала от непредвиденных обстоятельств.</p></div>
+                <div class="icon-card fade-up delay-2"><i class="fas fa-coins"></i><h3>Инвестиционный портфель</h3><p>Диверсификация по всему миру, подбор под ваш риск-профиль.</p></div>
+                <div class="icon-card fade-up delay-3"><i class="fas fa-piggy-bank"></i><h3>Накопительные планы</h3><p>Образование детей, пенсия, крупные покупки без стресса.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: Цифры / статистика (акцент) -->
+    <section id="stats" class="bg-dark">
+        <div class="block-inner stats-row fade-up">
+            <div class="stat-item"><div class="stat-number">₽2.1 млрд</div><span>активов под управлением</span></div>
+            <div class="stat-item"><div class="stat-number">340+</div><span>частных клиентов</span></div>
+            <div class="stat-item"><div class="stat-number">12 лет</div><span>безупречной работы</span></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: Принцип / выделение (кастом) -->
+    <section class="bg-accent-light">
+        <div class="block-inner fade-up" style="display:flex; flex-wrap:wrap; gap:4rem; align-items:center;">
+            <div style="flex:1; min-width:280px;">
+                <i class="fas fa-diamond" style="font-size: 4rem; color:#9c7e4a;"></i>
+                <h2 style="font-size: 2.8rem; margin: 1rem 0;">fiduciary duty</h2>
+                <p style="font-size:1.2rem;">Работаю исключительно в ваших интересах. Никаких скрытых комиссий и «горячих» продуктов.</p>
+            </div>
+            <div style="flex:1; min-width:280px;">
+                <div style="background:#1e2b3a; color:white; padding:2.5rem; border-radius: 70px 20px 70px 20px;">
+                    <i class="fas fa-file-signature"></i>
+                    <p style="margin-top:1rem;">Подписываем договор с чётким описанием стратегии. Вы всегда видите, куда вложены деньги.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: Отзыв / testimonial (икона) -->
+    <section class="bg-light">
+        <div class="block-inner fade-up">
+            <div class="testimonial-card">
+                <i class="fas fa-quote-right" style="font-size: 3rem; opacity:0.3; margin-bottom:1rem;"></i>
+                <p style="font-size:1.5rem;">«Алексей структурировал наши накопления так, что мы закрыли ипотеку на 5 лет раньше и открыли инвестиционный счёт для дочери. Глубокая экспертиза и человеческое отношение».</p>
+                <p style="margin-top:2rem;"><strong>Екатерина Белова</strong>, владелец бизнеса</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: Процесс / пошагово (иконки + анимация) -->
+    <section class="bg-soft-graph">
+        <div class="block-inner">
+            <h2 class="fade-up">Всего 4 встречи до полного финансового плана</h2>
+            <div class="icon-grid" style="grid-template-columns: repeat(4,1fr); gap:1rem;">
+                <div class="fade-up delay-1"><i class="fas fa-handshake fa-2x"></i><h4>Знакомство</h4></div>
+                <div class="fade-up delay-2"><i class="fas fa-chart-pie fa-2x"></i><h4>Анализ</h4></div>
+                <div class="fade-up delay-3"><i class="fas fa-drafting-compass fa-2x"></i><h4>Стратегия</h4></div>
+                <div class="fade-up delay-4"><i class="fas fa-rocket fa-2x"></i><h4>Реализация</h4></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: Контакты + призыв -->
+    <section id="contact" class="bg-dark">
+        <div class="block-inner fade-up" style="text-align: center; max-width:700px;">
+            <i class="fas fa-paper-plane" style="font-size:3rem; color:#e3b35c;"></i>
+            <h2 style="font-size:3rem; margin: 1rem 0;">Начнём?</h2>
+            <p style="margin-bottom:2rem;">Оставьте заявку — я свяжусь с вами в течение 24 часов, чтобы назначить личную встречу или онлайн-созвон.</p>
+            <div style="background:#1e293b; padding:2.5rem; border-radius: 70px;">
+                <i class="fas fa-phone-alt"></i> +7 (495) 123-45-67 <br>
+                <i class="fas fa-envelope" style="margin-top:1rem;"></i> a.finance@finanz.pro
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: ФУТЕР -->
+    <footer class="footer">
+        <div style="margin-bottom: 1.5rem;">
+            <a href="#hero">Главная</a> · <a href="#about">О себе</a> · <a href="#services">Услуги</a> · <a href="#contact">Контакты</a>
+        </div>
+        <p>© 2025 Finanz.pro — персональные финансовые решения. Лицензия ЦБ РФ № 1234.</p>
+        <p style="margin-top: 1rem; font-size: 0.9rem;"><i class="fas fa-laptop"></i> Сделано для портфолио. Все персонажи вымышлены.</p>
+    </footer>
+
+    <script>
+        (function() {
+            // 1) CANVAS анимация в блоке hero (волны / градиентные точки)
+            const canvas = document.getElementById('canvas-bg');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let particles = [];
+
+                function initParticles() {
+                    particles = [];
+                    const particleCount = 70;
+                    for (let i = 0; i < particleCount; i++) {
+                        particles.push({
+                            x: Math.random() * width,
+                            y: Math.random() * height,
+                            radius: Math.random() * 3.5 + 1.5,
+                            speedX: (Math.random() - 0.5) * 0.3,
+                            speedY: (Math.random() - 0.5) * 0.2,
+                            color: `rgba(255, 215, 140, ${Math.random() * 0.3 + 0.2})`
+                        });
+                    }
+                }
+
+                function resizeCanvas() {
+                    width = window.innerWidth;
+                    height = window.innerHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                    initParticles();
+                }
+
+                function drawParticles() {
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.fillStyle = '#101624';
+                    ctx.fillRect(0, 0, width, height);
+
+                    // сетка тонких линий
+                    ctx.strokeStyle = 'rgba(230, 210, 150, 0.12)';
+                    ctx.lineWidth = 0.6;
+                    const step = 70;
+                    ctx.beginPath();
+                    for (let i = 0; i <= width; i += step) {
+                        ctx.moveTo(i, 0);
+                        ctx.lineTo(i, height);
+                    }
+                    for (let i = 0; i <= height; i += step) {
+                        ctx.moveTo(0, i);
+                        ctx.lineTo(width, i);
+                    }
+                    ctx.stroke();
+
+                    // частицы
+                    particles.forEach(p => {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = p.color;
+                        ctx.fill();
+                        // движение
+                        p.x += p.speedX;
+                        p.y += p.speedY;
+                        if (p.x < 0 || p.x > width) p.speedX *= -1;
+                        if (p.y < 0 || p.y > height) p.speedY *= -1;
+                    });
+
+                    requestAnimationFrame(drawParticles);
+                }
+
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+                drawParticles();
+            }
+
+            // 2) Intersection Observer для появления блоков (fade-up)
+            const faders = document.querySelectorAll('.fade-up');
+            const appearOptions = {
+                threshold: 0.2,
+                rootMargin: '0px 0px -30px 0px'
+            };
+            const appearOnScroll = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    entry.target.classList.add('appear');
+                    observer.unobserve(entry.target);
+                });
+            }, appearOptions);
+
+            faders.forEach(fader => {
+                appearOnScroll.observe(fader);
+            });
+
+            // 3) Изменение навбара при скролле + активный пункт меню
+            const navbar = document.getElementById('navbar');
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-links a');
+
+            function updateNav() {
+                // смена стиля шапки
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+
+                // подсветка активного пункта (якорь)
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 100;
+                    const sectionHeight = section.clientHeight;
+                    if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    const href = link.getAttribute('href').substring(1); // убираем #
+                    if (href === current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', updateNav);
+            updateNav(); // сразу при загрузке
+
+            // дополнительно можно добавить задержку анимации на блок 7 (сделано через delay-4)
+        })();
+    </script>
+    <!-- маленький трюк для ручного добавления класса appear, если observer не сработал (резерв) -->
+    <script>
+        (function secondary() {
+            // добавим appear для всех .fade-up если они видны при загрузке
+            window.addEventListener('load', function() {
+                const faders = document.querySelectorAll('.fade-up');
+                faders.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < window.innerHeight - 100) {
+                        el.classList.add('appear');
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

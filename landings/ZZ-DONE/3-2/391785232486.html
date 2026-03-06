@@ -1,0 +1,634 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мастер-визажист • Элина Берг • До/После в кадре</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f7f5f2;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: #1e1b1b;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* ===== CUSTOM SCROLLBAR & SELECTION ===== */
+        ::selection {
+            background: #c7a17b;
+            color: #fff;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #ece8e2;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #b28b6f;
+            border-radius: 8px;
+        }
+
+        /* ===== FIXED NAV (умная адаптация) ===== */
+        .nav-bar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 0.8rem 1.8rem;
+            box-shadow: 0 15px 35px -10px rgba(0,0,0,0.15);
+            z-index: 999;
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: all 0.3s cubic-bezier(0.25,0.1,0.25,1);
+        }
+
+        .nav-bar.scrolled {
+            top: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0.5rem 1.4rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-radius: 40px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            color: #2c2825;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .nav-links a i {
+            margin-right: 6px;
+            font-size: 0.9rem;
+            color: #b28b6f;
+            transition: transform 0.2s;
+        }
+
+        .nav-links a:hover i {
+            transform: translateY(-2px);
+            color: #7f5c44;
+        }
+
+        .nav-links a:hover {
+            color: #7f5c44;
+        }
+
+        /* ===== HEADER (блок 1) с JS-анимацией ===== */
+        .header-block {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: #f0eae2;
+            position: relative;
+            overflow: hidden;
+            padding: 0 1.5rem;
+        }
+
+        #canvas-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            max-width: 900px;
+        }
+
+        .header-block h1 {
+            font-size: clamp(3rem, 12vw, 6rem);
+            font-weight: 400;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+            color: #2e2823;
+        }
+
+        .header-block h1 span {
+            font-weight: 700;
+            background: linear-gradient(135deg, #9f7b5c, #4e3e32);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subhead {
+            font-size: 1.3rem;
+            color: #5f4e41;
+            margin: 1.5rem 0 2.5rem;
+            max-width: 600px;
+            border-left: 3px solid #c7a17b;
+            padding-left: 1.5rem;
+            text-align: left;
+            backdrop-filter: blur(5px);
+        }
+
+        .scroll-chevron {
+            margin-top: 3rem;
+            animation: bounce 2.2s infinite;
+            font-size: 2rem;
+            color: #7f5c44;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-20px);}
+            60% {transform: translateY(-10px);}
+        }
+
+        /* общие стили блоков */
+        .block {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .block.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .block-title {
+            font-size: 2.5rem;
+            font-weight: 350;
+            margin-bottom: 2rem;
+            letter-spacing: -0.5px;
+            border-bottom: 2px solid #e1cfbf;
+            padding-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        .block-title i {
+            color: #b28b6f;
+            margin-right: 10px;
+        }
+
+        /* БЛОК 2 — услуги (иконки стильные) */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .service-card {
+            background: #ffffffd6;
+            backdrop-filter: blur(8px);
+            padding: 2rem 1.8rem;
+            border-radius: 40px 12px 40px 12px;
+            box-shadow: 0 20px 40px -20px rgba(89,67,51,0.2);
+            transition: all 0.25s;
+            border: 1px solid #fff;
+        }
+
+        .service-card:hover {
+            transform: scale(1.02) translateY(-8px);
+            border-color: #dcc2ae;
+            box-shadow: 0 30px 40px -20px #b28b6f;
+        }
+
+        .service-card i {
+            font-size: 2.6rem;
+            color: #b28b6f;
+            margin-bottom: 1.2rem;
+        }
+
+        .service-card h3 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1.7rem;
+        }
+
+        /* БЛОК 3 — портфолио ДО/ПОСЛЕ (без картинок, только иконки-заглушки) */
+        .demo-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            justify-content: center;
+        }
+
+        .demo-item {
+            background: #dccfc4;
+            min-width: 200px;
+            flex: 1 1 200px;
+            border-radius: 120px 20px 120px 20px;
+            padding: 3rem 1rem;
+            text-align: center;
+            background: linear-gradient(145deg, #ece2d9, #d9cbbd);
+            box-shadow: inset 3px 3px 7px #b7a18e, inset -3px -3px 7px #fffbf6;
+            transition: 0.25s;
+        }
+
+        .demo-item i {
+            font-size: 3rem;
+            color: #6a4f3b;
+            opacity: 0.8;
+        }
+
+        .demo-item .badge {
+            background: #7f5c44;
+            color: white;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+
+        /* БЛОК 4 — преимущества / доверие */
+        .trust-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .trust-card {
+            background: rgba(255,247,240,0.7);
+            backdrop-filter: blur(4px);
+            padding: 2rem;
+            border-radius: 30px 8px 30px 8px;
+            border-left: 5px solid #c7a17b;
+            transition: all 0.2s;
+        }
+
+        .trust-card i {
+            font-size: 2.2rem;
+            color: #8d6b50;
+        }
+
+        /* БЛОК 5 — отзывы (иконки, аватарки нет) */
+        .reviews {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .review-item {
+            background: white;
+            border-radius: 30px;
+            padding: 2rem;
+            flex: 1 1 250px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+            position: relative;
+        }
+
+        .review-item i.fa-quote-right {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 2.5rem;
+            color: #eddacb;
+        }
+
+        /* БЛОК 6 — прайс (красиво) */
+        .price-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed #c7a17b;
+            padding: 1rem 0;
+            font-size: 1.3rem;
+        }
+
+        .price-row span:last-child {
+            font-weight: 700;
+            background: #e5d5c8;
+            padding: 0.3rem 1.5rem;
+            border-radius: 40px;
+        }
+
+        /* БЛОК 7 — контакты / соцсети */
+        .contact-flex {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .contact-info {
+            background: #e8dbd0;
+            padding: 2rem;
+            border-radius: 60px 12px 60px 12px;
+            flex: 1 1 200px;
+        }
+
+        .contact-info i {
+            margin-right: 12px;
+            color: #6f523e;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 2.2rem;
+            margin-top: 2rem;
+        }
+
+        .social-links a {
+            color: #2c2825;
+            transition: all 0.2s;
+        }
+        .social-links a:hover {
+            color: #c7a17b;
+            transform: scale(1.2);
+        }
+
+        /* FOOTER (блок 9) */
+        .footer-block {
+            background: #28221e;
+            color: #ddd2c7;
+            padding: 3rem 2rem;
+            text-align: center;
+            border-radius: 60px 60px 0 0;
+            margin-top: 3rem;
+        }
+
+        .footer-block a {
+            color: #c7a17b;
+        }
+
+        /* JS hover/ animation helper */
+        .highlight-text {
+            transition: all 0.2s;
+        }
+        .highlight-text:hover {
+            background: #fff1e4;
+            box-shadow: -10px 0 0 #fff1e4, 10px 0 0 #fff1e4;
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #b28b6f, transparent);
+            margin: 3rem 0;
+        }
+
+        /* небольшая адаптация под ПК (ширина) */
+        @media (min-width: 1400px) {
+            .block { max-width: 1300px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- FIXED NAV (умная) -->
+    <nav class="nav-bar" id="smartNav">
+        <ul class="nav-links">
+            <li><a href="#home"><i class="fas fa-spa"></i>Элина</a></li>
+            <li><a href="#services"><i class="fas fa-paint-brush"></i>услуги</a></li>
+            <li><a href="#portfolio"><i class="fas fa-images"></i>портфолио</a></li>
+            <li><a href="#price"><i class="fas fa-tag"></i>прайс</a></li>
+            <li><a href="#contact"><i class="fas fa-envelope"></i>контакт</a></li>
+        </ul>
+    </nav>
+
+    <!-- БЛОК 1: HEADER (анимация канвас) -->
+    <header id="home" class="header-block">
+        <canvas id="canvas-bg"></canvas>
+        <div class="header-content">
+            <h1>Элина <span>Берг</span></h1>
+            <div class="subhead">визажист для кадра & живых событий — создаю чистый образ, который запоминается.</div>
+            <div style="display: flex; gap: 1.5rem; justify-content: center;">
+                <i class="fas fa-arrow-down scroll-chevron"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- БЛОК 2: Услуги -->
+    <section id="services" class="block">
+        <h2 class="block-title"><i class="fas fa-star"></i> арт-визаж</h2>
+        <div class="services-grid">
+            <div class="service-card"><i class="fas fa-crown"></i><h3>Вечерний</h3><p>Smoky eyes, сложные текстуры, стойкость 12ч</p></div>
+            <div class="service-card"><i class="fas fa-camera-retro"></i><h3>Свадебный</h3><p>Проба, акцент на нежность и фотогеничность</p></div>
+            <div class="service-card"><i class="fas fa-feather-alt"></i><h3>Дневной</h3><p>Натуральный тон, сияние, быстрый (40 мин)</p></div>
+            <div class="service-card"><i class="fas fa-venus"></i><h3>Makeup-урок</h3><p>Индивидуальный разбор + схема</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: портфолио (до/after) иконки вместо фото -->
+    <section id="portfolio" class="block">
+        <h2 class="block-title"><i class="fas fa-clone"></i> до / после</h2>
+        <div class="demo-grid">
+            <div class="demo-item"><i class="fas fa-sun"></i><div class="badge">до</div><i class="fas fa-moon" style="margin-left:1rem;"></i><div class="badge">после</div></div>
+            <div class="demo-item"><i class="fas fa-eye"></i><div class="badge">до</div><i class="fas fa-eye-dropper" style="margin-left:1rem;"></i><div class="badge">после</div></div>
+            <div class="demo-item"><i class="fas fa-lips"></i><div class="badge">до</div><i class="fas fa-laugh-beam" style="margin-left:1rem;"></i><div class="badge">после</div></div>
+            <div class="demo-item"><i class="fas fa-female"></i><div class="badge">до</div><i class="fas fa-user-tie" style="margin-left:1rem;"></i><div class="badge">после</div></div>
+        </div>
+        <p style="margin-top:2rem; text-align:center; opacity:0.7;"><i class="fas fa-long-arrow-alt-right"></i> более 300+ образов в портфолио (предоставлю по запросу)</p>
+    </section>
+
+    <!-- БЛОК 4: почему доверяют (акцент) -->
+    <section class="block">
+        <h2 class="block-title"><i class="fas fa-shield-alt"></i> доверие</h2>
+        <div class="trust-grid">
+            <div class="trust-card"><i class="fas fa-certificate"></i><h3>Сертифицированный эксперт</h3><p>Дипломы London College of Beauty, опыт 8 лет</p></div>
+            <div class="trust-card"><i class="fas fa-hand-sparkles"></i><h3>Гипоаллергенно</h3><p>Только премиум-косметика без отдушек</p></div>
+            <div class="trust-card"><i class="fas fa-clock"></i><h3>Точно в срок</h3><p>Выезд 24/7, не подводила ни разу</p></div>
+            <div class="trust-card"><i class="fas fa-file-signature"></i><h3>Договор</h3><p>Официально, для свадеб и съемок</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: отзывы -->
+    <section class="block">
+        <h2 class="block-title"><i class="fas fa-comment-dots"></i> голоса</h2>
+        <div class="reviews">
+            <div class="review-item"><i class="fas fa-quote-right"></i><p>«Элина спасла мой образ за час до выхода. Макияж продержался до утра, все фотки — огонь!»</p><h4>— Екатерина, невеста</h4></div>
+            <div class="review-item"><i class="fas fa-quote-right"></i><p>«Работали на коммерческой съемке. Визажист с чувством кадра, цветопередача идеальная.»</p><h4>— Антон, фотограф</h4></div>
+            <div class="review-item"><i class="fas fa-quote-right"></i><p>«Хожу только к ней, кожа дышит, а стрелки — как у Хепберн.»</p><h4>— Виктория, адвокат</h4></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: прайс (стильно) -->
+    <section id="price" class="block">
+        <h2 class="block-title"><i class="fas fa-coins"></i> вложения в красоту</h2>
+        <div class="price-list">
+            <div class="price-row"><span><i class="fas fa-makeup"></i> Вечерний макияж</span><span>4 500 ₽</span></div>
+            <div class="price-row"><span><i class="fas fa-heart"></i> Свадебный (с пробой)</span><span>9 900 ₽</span></div>
+            <div class="price-row"><span><i class="fas fa-graduation-cap"></i> Индивидуальный урок</span><span>6 500 ₽</span></div>
+            <div class="price-row"><span><i class="fas fa-brush"></i> Экспресс (ресницы/тон)</span><span>2 800 ₽</span></div>
+            <div class="price-row"><span><i class="fas fa-tools"></i> Выезд (Москва, центр)</span><span>бесплатно</span></div>
+        </div>
+        <p style="margin-top: 2rem; background: #fff5ec; padding: 0.7rem; border-radius: 100px; text-align: center;">действует система абонементов</p>
+    </section>
+
+    <!-- БЛОК 7: контакты (без карты) -->
+    <section id="contact" class="block">
+        <h2 class="block-title"><i class="fas fa-paper-plane"></i> связаться</h2>
+        <div class="contact-flex">
+            <div class="contact-info"><i class="fas fa-phone-alt"></i> +7 (916) 330-80-80</div>
+            <div class="contact-info"><i class="fas fa-at"></i> hello@elinabeauty.ru</div>
+            <div class="contact-info"><i class="fas fa-map-pin"></i> Москва, Тверская 16</div>
+        </div>
+        <div class="social-links">
+            <a href="#"><i class="fab fa-telegram"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-vk"></i></a>
+            <a href="#"><i class="fab fa-whatsapp"></i></a>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: доп. услуги / бонус (7 основных + шапка + футер = 9) — этот 8 блок -->
+    <section class="block" style="background: #fcf8f4; border-radius: 100px 20px 100px 20px;">
+        <h2 class="block-title"><i class="fas fa-gem"></i> бьюти-партнеры</h2>
+        <p>Сотрудничаю с топ-стилистами, фотографами и салонами. Вам не нужно искать команду — приду с оборудованием.</p>
+        <div style="display: flex; gap: 2rem; margin-top: 2rem; justify-content: space-evenly; flex-wrap: wrap;">
+            <span><i class="fas fa-check-circle" style="color:#9f7b5c;"></i> Стилист</span>
+            <span><i class="fas fa-check-circle" style="color:#9f7b5c;"></i> Фотограф</span>
+            <span><i class="fas fa-check-circle" style="color:#9f7b5c;"></i> Визаж ассистент</span>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: FOOTER -->
+    <footer class="footer-block">
+        <p><i class="fas fa-copyright"></i> Элина Берг, мастер визажа — 2025</p>
+        <p style="margin-top: 1.2rem; font-size: 0.9rem;">все образы защищены любовью <i class="fas fa-heart" style="color:#c7a17b;"></i></p>
+        <p><a href="#home"><i class="fas fa-chevron-circle-up"></i> наверх</a></p>
+    </footer>
+
+    <!-- ========== JS анимации, канвас, скролл ========== -->
+    <script>
+        (function() {
+            // 1) header canvas (эффект "струящихся частиц")
+            const canvas = document.getElementById('canvas-bg');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                particles = [];
+                const particleCount = 60;
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 3 + 1.5,
+                        speedX: (Math.random() - 0.5) * 0.6,
+                        speedY: (Math.random() - 0.5) * 0.3,
+                        color: `rgba(177, 139, 111, ${Math.random() * 0.3})`
+                    });
+                }
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    // движение
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    // границы
+                    if (p.x < 0 || p.x > width) p.speedX *= -1;
+                    if (p.y < 0 || p.y > height) p.speedY *= -1;
+                });
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', () => {
+                initCanvas();
+            });
+
+            initCanvas();
+            drawParticles();
+
+            // 2) smart nav (фиксированное меню адаптируется при скролле)
+            const nav = document.getElementById('smartNav');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 40) {
+                    nav.classList.add('scrolled');
+                } else {
+                    nav.classList.remove('scrolled');
+                }
+            });
+
+            // 3) Reveal блоков (появление при скролле + подсветка текста)
+            const blocks = document.querySelectorAll('.block');
+            function checkBlocks() {
+                const triggerBottom = window.innerHeight * 0.8;
+                blocks.forEach(block => {
+                    const blockTop = block.getBoundingClientRect().top;
+                    if (blockTop < triggerBottom) {
+                        block.classList.add('revealed');
+                    } else {
+                        // можно убрать, но оставим чтобы при скролле вверх снова не исчезали — поэтому только добавление
+                        // block.classList.remove('revealed'); — закомментировано (эффект одноразовый)
+                    }
+                });
+            }
+            // дополнительно: трендовая подсветка строк при ховере (уже есть .highlight-text в css) но добавим парам
+            window.addEventListener('scroll', checkBlocks);
+            checkBlocks(); // сразу при загрузке
+
+            // 4) оригинальный эффект: при наведении на любой блок, он мягко меняет фон (по желанию, добавим на .block)
+            // (опционально) - но уже достаточно.
+        })();
+    </script>
+    <script>
+        // маленькая дополнительная анимация на иконки меню + параллакс-подобное
+        window.addEventListener('mousemove', (e) => {
+            // легкое смещение частиц на canvas? уже есть, пропустим.
+        });
+        // но добавим изюминку: при скролле числа в прайсе слегка изменяют opacity (игра)
+        const priceRows = document.querySelectorAll('.price-row');
+        window.addEventListener('scroll', () => {
+            let scrolled = window.scrollY;
+            priceRows.forEach((row, idx) => {
+                let speed = 0.2 + (idx * 0.05);
+                let opacity = 0.9 + Math.sin(scrolled * speed) * 0.1;
+                row.style.opacity = Math.min(1, Math.max(0.8, opacity));
+            });
+        });
+    </script>
+
+    <!-- В самом конце -->
+    All done!
+</body>
+</html>
+```

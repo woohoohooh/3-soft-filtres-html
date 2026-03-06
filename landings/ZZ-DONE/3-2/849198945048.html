@@ -1,0 +1,510 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avocato · стратегическая защита</title>
+    <!-- Font Awesome 6 (free) для стильных иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #fafafc;
+            color: #1e1e2f;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* Плавный скролл + кастомные анимации появления */
+        .section {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+            will-change: opacity, transform;
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* зеркальный блеск для заголовков при скролле (эффект highlight) */
+        .highlight-glow {
+            transition: text-shadow 0.3s ease, color 0.2s;
+        }
+        .highlight-glow.active-glow {
+            color: #2a2a4a;
+            text-shadow: 0 0 8px rgba(100, 100, 255, 0.4), 0 0 20px rgba(180, 180, 255, 0.3);
+        }
+
+        /* фиксированная навигация с динамикой */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 12px 28px;
+            box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255,255,255,0.9) inset;
+            z-index: 100;
+            display: flex;
+            gap: 36px;
+            transition: all 0.4s;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .navbar.compact {
+            top: 10px;
+            padding: 8px 22px;
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.2);
+            gap: 28px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #1e1e2f;
+            font-weight: 500;
+            font-size: 1.05rem;
+            letter-spacing: 0.3px;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .navbar a:hover {
+            border-bottom-color: #4f4f9f;
+            color: #2a2a55;
+        }
+
+        /* header блок с анимацией js */
+        .header-block {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 24px;
+            background: linear-gradient(145deg, #f1f0fa 0%, #eae9f5 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #header-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            max-width: 1000px;
+        }
+
+        .header-content h1 {
+            font-size: clamp(3.2rem, 12vw, 5.2rem);
+            font-weight: 700;
+            line-height: 1.1;
+            background: linear-gradient(130deg, #191938, #3a3a70);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .header-content p {
+            font-size: 1.5rem;
+            color: #3e3e5e;
+            max-width: 700px;
+            margin: 0 auto 30px;
+        }
+
+        .cta-button {
+            background: #1e1e3f;
+            border: none;
+            color: white;
+            padding: 18px 48px;
+            border-radius: 50px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 20px 30px -8px rgba(30, 30, 63, 0.3);
+            cursor: pointer;
+            transition: 0.25s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .cta-button:hover {
+            background: #2b2b5c;
+            transform: scale(1.03);
+            box-shadow: 0 25px 35px -8px #25254b;
+        }
+
+        /* общие стили */
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        h2 {
+            font-size: 2.9rem;
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            margin-bottom: 25px;
+            color: #191934;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .icon-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 40px;
+            box-shadow: 0 25px 40px -20px rgba(0,0,0,0.1);
+            transition: transform 0.25s ease, box-shadow 0.4s;
+            border: 1px solid #ffffff50;
+            backdrop-filter: blur(5px);
+            text-align: center;
+        }
+
+        .icon-card i {
+            font-size: 3.3rem;
+            color: #40407a;
+            margin-bottom: 20px;
+        }
+
+        .icon-card h3 {
+            font-size: 1.7rem;
+            margin-bottom: 10px;
+        }
+
+        .icon-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 40px 60px -18px #26264e;
+        }
+
+        .case-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            background: #ffffffc9;
+            border-radius: 50px;
+            padding: 45px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 30px 40px -20px #17172e;
+        }
+
+        .case-item {
+            flex: 1 1 250px;
+            border-left: 4px solid #3d3d78;
+            padding-left: 25px;
+        }
+
+        .case-item span {
+            font-size: 1rem;
+            text-transform: uppercase;
+            color: #53538b;
+        }
+
+        .footer-block {
+            background: #12121f;
+            color: #dddcf0;
+            padding: 60px 0;
+            border-radius: 50px 50px 0 0;
+            margin-top: 40px;
+        }
+
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .social-links i {
+            font-size: 2rem;
+            margin-right: 25px;
+            color: #b9b9f0;
+            transition: 0.2s;
+        }
+
+        .social-links i:hover {
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1e1e42;
+        }
+
+        hr {
+            margin: 40px 0;
+            border: 1px solid #dad9ef;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- якорное меню (фиксированное, с динамикой compact) -->
+    <nav class="navbar" id="navbar">
+        <a href="#home">Начало</a>
+        <a href="#practice">Практика</a>
+        <a href="#cases">Кейсы</a>
+        <a href="#process">Процесс</a>
+        <a href="#contact">Контакты</a>
+    </nav>
+
+    <!-- БЛОК 1: шапка (header) с canvas анимацией -->
+    <section id="home" class="section header-block visible">
+        <canvas id="header-animation"></canvas>
+        <div class="header-content">
+            <h1>Avocato<br>стратегия & защита</h1>
+            <p>Арбитраж, корпоративные споры, юридический аудит. Работаем с 2012 года.</p>
+            <button class="cta-button" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});">Защитить интересы →</button>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: практика / направления -->
+    <section id="practice" class="section container" style="margin-top: 60px;">
+        <h2 class="highlight-glow">ключевые компетенции</h2>
+        <div class="card-grid">
+            <div class="icon-card"><i class="fas fa-gavel"></i><h3>Арбитраж</h3><p>Споры с госорганами, долги, банкротство</p></div>
+            <div class="icon-card"><i class="fas fa-briefcase"></i><h3>Корпоративное право</h3><p>Слияния, due diligence, уставные документы</p></div>
+            <div class="icon-card"><i class="fas fa-shield-alt"></i><h3>Юридическая защита</h3><p>Претензии, суды, исполнительное производство</p></div>
+            <div class="icon-card"><i class="fas fa-file-signature"></i><h3>Договорной аудит</h3><p>Экспертиза контрактов, минимизация рисков</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: цифры/доверие (акцент) -->
+    <section class="section container" style="margin-top: 100px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-around; background: #f4f3fe; border-radius: 100px; padding: 60px 30px;">
+            <div><span class="stat-number">150+</span> <p>выигранных дел</p></div>
+            <div><span class="stat-number">₽2.3B</span> <p>сумма защищённых активов</p></div>
+            <div><span class="stat-number">98%</span> <p>довольных клиентов</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: кейсы (успешные истории) -->
+    <section id="cases" class="section container" style="margin-top: 100px;">
+        <h2 class="highlight-glow">успешные кейсы</h2>
+        <div class="case-wrapper">
+            <div class="case-item"><span>дело №1</span><h3>Строительный холдинг vs налоговая</h3><p>Доначисления 78 млн ₽ сняты полностью</p></div>
+            <div class="case-item"><span>дело №2</span><h3>Банкротство физлица</h3><p>Освобождение от долгов 4,2 млн ₽ за 8 мес.</p></div>
+            <div class="case-item"><span>дело №3</span><h3>Международный контракт</h3><p>Взыскано €350k с иностранного поставщика</p></div>
+            <div class="case-item"><span>дело №4</span><h3>Корпоративный спор</h3><p>Сохранён контроль над 49% долей ООО</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: процесс работы / схема -->
+    <section id="process" class="section container" style="margin-top: 100px;">
+        <h2 class="highlight-glow">алгоритм защиты</h2>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+            <div style="flex:1; min-width:200px; background:white; border-radius: 30px; padding: 30px;"><i class="fas fa-search" style="font-size:2.5rem; color:#39397e;"></i><h3>1. Анализ</h3><p>Изучение документов, рисков, стратегии</p></div>
+            <div style="flex:1; min-width:200px; background:white; border-radius: 30px; padding: 30px;"><i class="fas fa-balance-scale" style="font-size:2.5rem; color:#39397e;"></i><h3>2. Досудебное</h3><p>Претензии, переговоры, медиация</p></div>
+            <div style="flex:1; min-width:200px; background:white; border-radius: 30px; padding: 30px;"><i class="fas fa-building" style="font-size:2.5rem; color:#39397e;"></i><h3>3. Суд / процесс</h3><p>Полное представительство, защита</p></div>
+            <div style="flex:1; min-width:200px; background:white; border-radius: 30px; padding: 30px;"><i class="fas fa-check-double" style="font-size:2.5rem; color:#39397e;"></i><h3>4. Исполнение</h3><p>Получение денег, работа с приставами</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: отзывы / клиенты (стильные цитаты) -->
+    <section class="section container" style="margin-top: 100px;">
+        <h2 class="highlight-glow">рекомендации</h2>
+        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+            <div style="flex:1; background:#f6f5ff; border-radius: 45px; padding: 40px;"><i class="fas fa-quote-left" style="color:#5c5ca5;"></i> <p style="font-size:1.3rem;">«Avocato вернули нам лицензию и спасли бизнес. Тактичный, жёсткий подход»</p> <b>— А. Градов, сеть АЗС</b></div>
+            <div style="flex:1; background:#f6f5ff; border-radius: 45px; padding: 40px;"><i class="fas fa-quote-left" style="color:#5c5ca5;"></i> <p style="font-size:1.3rem;">«Лучшие в интеллектуальных спорах. Выиграли патентный иск за 3 месяца»</p> <b>— Е. Коршунова, бренд KOR</b></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: контактная форма / призыв + контакты -->
+    <section id="contact" class="section container" style="margin-top: 100px; margin-bottom: 50px;">
+        <div style="background: linear-gradient(125deg, #e3e2fc, #cdccf5); border-radius: 70px; padding: 70px 40px;">
+            <h2 class="highlight-glow" style="color:#191934;">нужна консультация?</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 50px; align-items: center;">
+                <div style="flex:2; min-width:300px;">
+                    <p style="font-size:1.4rem;"><i class="fas fa-phone-alt"></i> +7 (495) 400-20-20</p>
+                    <p style="font-size:1.4rem;"><i class="fas fa-envelope"></i> hello@avocato.ru</p>
+                    <p style="font-size:1.4rem;"><i class="fas fa-map-pin"></i> Москва, Гагаринский пер., 9</p>
+                </div>
+                <div style="flex:1; min-width:200px;">
+                    <button class="cta-button" style="background: #2e2e62; padding: 18px 35px;" onclick="alert('Заявка принята (демо-режим)');">написать партнёру</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: футер (с иконками и доп ссылками) -->
+    <footer class="footer-block">
+        <div class="container footer-inner">
+            <div><i class="fas fa-scale-balanced" style="font-size:2.2rem;"></i> <span style="font-size:1.8rem; font-weight:500;">Avocato</span><br>юридическая компания</div>
+            <div class="social-links">
+                <i class="fab fa-telegram"></i>
+                <i class="fab fa-whatsapp"></i>
+                <i class="fab fa-linkedin"></i>
+                <i class="fab fa-youtube"></i>
+            </div>
+            <div>© 2025 — защита интересов <br>лицензия № 77/984</div>
+        </div>
+        <div class="container" style="text-align: center; margin-top: 35px;">
+            <span style="opacity:0.7;">Политика конфиденциальности · реквизиты</span>
+        </div>
+    </footer>
+
+    <!-- БЛОК 9: дополнительный блок с партнёрами/доверием (последний перед футером считаем как 9) 
+         на самом деле блоков уже 9, если считать header, практику, цифры, кейсы, процесс, отзывы, контакт, футер — 8, 
+         плюс этот дополнительный блок "партнёры" — будет ровно 9. -->
+    <section class="section container" style="margin: 60px auto 20px;">
+        <div style="display: flex; gap: 30px; flex-wrap: wrap; justify-content: space-between; opacity:0.8; padding: 20px 0;">
+            <span style="font-size:1.5rem; font-weight:200;">СБЕР</span>
+            <span style="font-size:1.5rem; font-weight:200;">РОСАТОМ</span>
+            <span style="font-size:1.5rem; font-weight:200;">МТС</span>
+            <span style="font-size:1.5rem; font-weight:200;">X5 GROUP</span>
+        </div>
+        <hr>
+    </section>
+
+    <!-- скрипты: анимация появления (Intersection Observer), навбар compact, canvas header, и подсветка заголовков highlight-->
+    <script>
+        (function() {
+            // Intersection Observer для блоков .section
+            const sections = document.querySelectorAll('.section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px' });
+            sections.forEach(s => observer.observe(s));
+
+            // ховер-подсветка заголовков (highlight-glow) при скролле через другой Observer
+            const glowElements = document.querySelectorAll('.highlight-glow');
+            const glowObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active-glow');
+                    } else {
+                        entry.target.classList.remove('active-glow');
+                    }
+                });
+            }, { threshold: 0.3 });
+            glowElements.forEach(el => glowObserver.observe(el));
+
+            // динамика навбара (compact при скролле > 50)
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('compact');
+                } else {
+                    navbar.classList.remove('compact');
+                }
+            });
+
+            // canvas анимация в шапке (эффект частиц / сетки)
+            const canvas = document.getElementById('header-animation');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = document.querySelector('.header-block').offsetHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // анимированные линии / точки
+            let particles = [];
+            const PARTICLE_COUNT = 70;
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.2,
+                    radius: Math.random() * 2.2 + 0.8,
+                });
+            }
+
+            function drawParticles() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#32327a';
+                ctx.globalAlpha = 0.3;
+                for (let p of particles) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // соединяем близкие частицы линиями
+                ctx.strokeStyle = '#4d4d9a';
+                ctx.lineWidth = 0.5;
+                ctx.globalAlpha = 0.15;
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i+1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx*dx + dy*dy);
+                        if (distance < 110) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            function updateParticles() {
+                for (let p of particles) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    // границы
+                    if (p.x < 0 || p.x > width) p.vx *= -1;
+                    if (p.y < 0 || p.y > height) p.vy *= -1;
+                    p.x = Math.min(width, Math.max(0, p.x));
+                    p.y = Math.min(height, Math.max(0, p.y));
+                }
+                drawParticles();
+                requestAnimationFrame(updateParticles);
+            }
+            updateParticles();
+
+            // дополнительно: при клике на якоря меню добавим плавность (и без того smooth)
+            // и заставим пересчитать canvas при изменении размера блока (на всякий)
+        })();
+    </script>
+
+    <!-- финальный акцент: параллаксный стиль уже не нужен, но всё готово -->
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,625 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram bot development · automation studio</title>
+  <style>
+    /* === reset === */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* === base === */
+    body {
+      background: linear-gradient(145deg, #ffffff 0%, #f7f9fc 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.6;
+      font-size: 18px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* sticky header */
+    .site-header {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      padding: 24px 40px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+      z-index: 50;
+      transition: padding 0.2s ease;
+    }
+    .site-header.shrink { padding: 16px 40px; }
+    .header-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-weight: 600;
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+    }
+    .logo span { color: #2563eb; }
+    .nav-links { display: flex; gap: 48px; }
+    .nav-links a {
+      text-decoration: none;
+      color: #334155;
+      font-weight: 500;
+      font-size: 16px;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: #2563eb; }
+
+    /* main containers */
+    section { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+    .spacer { height: 120px; }
+    .spacer-lg { height: 160px; }
+
+    /* typography */
+    h1 { font-size: 92px; font-weight: 700; line-height: 1.0; letter-spacing: -0.03em; color: #0b1e33; }
+    h2 { font-size: 54px; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; color: #0f172a; }
+    h3 { font-size: 30px; font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; color: #1e293b; }
+    .body-large { font-size: 20px; color: #475569; }
+
+    /* hero */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 0 40px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .hero-left { display: flex; flex-direction: column; gap: 32px; }
+    .hero-sub {
+      font-size: 22px;
+      color: #334155;
+      max-width: 90%;
+      font-weight: 400;
+    }
+    .btn-primary {
+      background: #2563eb;
+      border: none;
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+      padding: 18px 40px;
+      border-radius: 60px;
+      width: fit-content;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 12px 24px -8px rgba(37,99,235,0.3);
+    }
+    .btn-primary:hover { background: #1d4ed8; transform: scale(1.02); }
+
+    /* stat row */
+    .stat-row {
+      display: flex;
+      gap: 40px;
+      margin-top: 16px;
+    }
+    .stat-item { display: flex; align-items: center; gap: 12px; }
+    .stat-icon { width: 32px; height: 32px; color: #2563eb; }
+    .stat-number { font-weight: 700; font-size: 24px; color: #0f172a; }
+    .stat-label { font-size: 16px; color: #64748b; }
+
+    /* right side – telegram chat simulation (critical animated) */
+    .chat-window {
+      background: #ffffff;
+      border-radius: 32px;
+      box-shadow: 0 30px 60px -20px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.02);
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      width: 100%;
+      max-width: 420px;
+      margin-left: auto;
+      border: 1px solid #eef2f6;
+    }
+    .chat-header {
+      background: #f8fafc;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e9edf2;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .chat-dots { display: flex; gap: 6px; }
+    .chat-dot { width: 12px; height: 12px; border-radius: 50%; background: #d1d9e6; }
+    .chat-title { font-weight: 600; color: #1e293b; font-size: 16px; }
+    .chat-body {
+      padding: 24px 16px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 460px;
+    }
+    /* messages */
+    .msg-row { display: flex; align-items: flex-end; gap: 8px; }
+    .msg-row.user { justify-content: flex-end; }
+    .msg-bubble {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 20px;
+      font-size: 15px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .msg-bubble.user {
+      background: #2563eb;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .msg-bubble.bot {
+      background: #f1f4f9;
+      color: #0f172a;
+      border-bottom-left-radius: 4px;
+    }
+    .typing-indicator {
+      background: #f1f4f9;
+      padding: 14px 18px;
+      border-radius: 24px;
+      width: fit-content;
+      display: flex;
+      gap: 6px;
+    }
+    .typing-dot {
+      width: 8px; height: 8px; background: #64748b; border-radius: 50%;
+      animation: typingPulse 1.4s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingPulse { 0%,60%,100%{ opacity:0.4; transform:scale(1);} 30%{ opacity:1; transform:scale(1.2);} }
+
+    .inline-keyboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 6px 0 4px 0;
+    }
+    .keyboard-btn {
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 40px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1e293b;
+      transition: 0.1s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .keyboard-btn:hover { border-color: #2563eb; color: #2563eb; cursor: default; }
+    .menu-row {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin: 8px 0;
+    }
+    .menu-btn {
+      background: #eef2f6;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 40px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #1e293b;
+    }
+    /* animated auto scroll (js will add new messages) */
+    #chat-messages-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* icons (inline monochrome) */
+    .icon-svg {
+      width: 28px;
+      height: 28px;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* cards & grid */
+    .grid-2, .grid-3, .grid-4 { display: grid; gap: 40px; }
+    .grid-2 { grid-template-columns: repeat(2,1fr); }
+    .grid-3 { grid-template-columns: repeat(3,1fr); }
+    .grid-4 { grid-template-columns: repeat(4,1fr); }
+    .card {
+      background: white;
+      padding: 40px 32px;
+      border-radius: 32px;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.04);
+      border: 1px solid #f0f4fa;
+    }
+
+    /* pricing toggle (no dropdown) */
+    .toggle-switch {
+      display: flex;
+      gap: 12px;
+      background: #f1f5f9;
+      padding: 6px;
+      border-radius: 60px;
+      width: fit-content;
+      margin: 40px auto;
+    }
+    .toggle-option {
+      padding: 12px 32px;
+      border-radius: 40px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .toggle-option.active {
+      background: #2563eb;
+      color: white;
+    }
+    .price-card .price-value { font-size: 44px; font-weight: 700; margin: 20px 0; }
+    .price-card .feature-list { list-style: none; margin: 30px 0; }
+    .price-card .feature-list li { padding: 10px 0; border-bottom: 1px solid #eef2f6; }
+
+    /* faq */
+    .faq-item {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 24px 0;
+    }
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 22px;
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      color: #475569;
+      padding-right: 40px;
+    }
+    .faq-item.open .faq-answer { max-height: 200px; margin-top: 16px; }
+
+    /* final cta */
+    .cta-block {
+      background: #0f172a;
+      border-radius: 60px;
+      padding: 80px 60px;
+      text-align: center;
+      color: white;
+    }
+    .cta-block h2 { color: white; }
+    .btn-outline-light {
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+      padding: 16px 48px;
+      border-radius: 60px;
+      font-size: 20px;
+      font-weight: 600;
+      margin-top: 40px;
+      display: inline-block;
+      text-decoration: none;
+      transition: 0.2s;
+    }
+    .btn-outline-light:hover { background: white; color: #0f172a; }
+
+    /* animation on scroll (fade up) */
+    .fade-up { opacity: 0; transform: translateY(30px); transition: 0.8s ease; }
+    .fade-up.appear { opacity: 1; transform: translateY(0); }
+
+    footer { text-align: center; padding: 40px; color: #64748b; }
+    hr { border: none; border-top: 1px solid #e9edf2; margin: 40px 0; }
+  </style>
+</head>
+<body>
+  <header class="site-header" id="mainHeader">
+    <div class="header-container">
+      <div class="logo">automaton<span>.bot</span></div>
+      <div class="nav-links">
+        <a href="#">use cases</a>
+        <a href="#">capabilities</a>
+        <a href="#">process</a>
+        <a href="#">pricing</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO 100vh -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-left">
+        <h1>Telegram Bot Development</h1>
+        <div class="hero-sub">Fully automated conversational interfaces — sync with CRM, take payments, and handle complex logic 24/7 without human oversight.</div>
+        <button class="btn-primary">Build Your Telegram Bot</button>
+        <div class="stat-row">
+          <div class="stat-item">
+            <svg class="icon-svg stat-icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div><span class="stat-number">340+</span> <span class="stat-label">bots delivered</span></div>
+          </div>
+          <div class="stat-item">
+            <svg class="icon-svg stat-icon" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <div><span class="stat-number">1.2k</span> <span class="stat-label">automations</span></div>
+          </div>
+          <div class="stat-item">
+            <svg class="icon-svg stat-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <div><span class="stat-number">218</span> <span class="stat-label">clients</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- RIGHT SIDE: animated telegram chat -->
+      <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+          <div class="chat-dots"><span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span></div>
+          <div class="chat-title">Telegram · support_bot</div>
+        </div>
+        <div class="chat-body" id="chatBody">
+          <div id="chat-messages-container">
+            <!-- initial messages, will be extended by js -->
+            <div class="msg-row"><div class="msg-bubble bot">Welcome! I’m your automated assistant.</div></div>
+            <div class="msg-row user"><div class="msg-bubble user">/start</div></div>
+            <div class="msg-row"><div class="msg-bubble bot">Hello! Choose an option:</div></div>
+            <div class="inline-keyboard">
+              <span class="keyboard-btn">📦 Track order</span>
+              <span class="keyboard-btn">💰 Pricing</span>
+              <span class="keyboard-btn">🔧 Support</span>
+            </div>
+            <div class="msg-row user"><div class="msg-bubble user">💰 Pricing</div></div>
+            <div class="typing-indicator" id="typingDemo"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
+          </div>
+          <div class="menu-row">
+            <span class="menu-btn">☰ Menu</span>
+            <span class="menu-btn">⚙️ Settings</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="spacer-lg"></div>
+
+  <!-- Use cases -->
+  <section class="fade-up">
+    <h2>Telegram Bot Use Cases</h2>
+    <div class="grid-3" style="margin-top: 60px;">
+      <div class="card"><h3>📋 Order notifications</h3><p class="body-large">Real‑time updates, delivery status, and ETA without agents.</p></div>
+      <div class="card"><h3>💳 Payment collection</h3><p class="body-large">Secure checkout via Telegram Payments / Stripe integration.</p></div>
+      <div class="card"><h3>🔄 CRM sync</h3><p class="body-large">Two‑way contact & deal sync with HubSpot / Salesforce.</p></div>
+    </div>
+  </section>
+
+  <div class="spacer"></div>
+
+  <!-- Bot capabilities grid -->
+  <section class="fade-up">
+    <h2>Bot Capabilities</h2>
+    <div class="grid-4" style="margin-top: 60px;">
+      <div class="card"><svg class="icon-svg" style="width:36px;height:36px;" viewBox="0 0 24 24"><path d="M21 10.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9.5"/><polyline points="16 2 22 8 16 8"/><line x1="10" y1="14" x2="21" y2="14"/><line x1="10" y1="18" x2="18" y2="18"/></svg><h3 style="margin: 20px 0 12px;">Webhooks & APIs</h3><p>Connect to any JSON API, fetch live data.</p></div>
+      <div class="card"><svg class="icon-svg" style="width:36px;height:36px;" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><h3 style="margin:20px 0 12px;">Inline keyboards</h3><p>Native buttons, menus, and interactive flows.</p></div>
+      <div class="card"><svg class="icon-svg" style="width:36px;height:36px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><h3 style="margin:20px 0 12px;">Scheduled jobs</h3><p>Daily reports, reminders, alerts.</p></div>
+      <div class="card"><svg class="icon-svg" style="width:36px;height:36px;" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><h3 style="margin:20px 0 12px;">File handling</h3><p>Receive PDF, images, voice – auto‑process.</p></div>
+    </div>
+  </section>
+
+  <div class="spacer"></div>
+
+  <!-- Example automation flows (two cards) -->
+  <section class="fade-up">
+    <h2>Example Automation Flows</h2>
+    <div class="grid-2" style="margin-top: 60px;">
+      <div class="card"><h3>📦 Order ➔ CRM ➔ invoice</h3><p>User sends order ID, bot fetches from CRM, creates PDF invoice, sends back.</p></div>
+      <div class="card"><h3>📅 Appointment booking</h3><p>User picks date via inline calendar → bot checks API → confirms slot → adds to Google Calendar.</p></div>
+    </div>
+  </section>
+
+  <div class="spacer"></div>
+
+  <!-- integrations -->
+  <section class="fade-up">
+    <h2>Integrations</h2>
+    <div class="grid-4" style="margin-top: 40px;">
+      <div class="card">HubSpot</div><div class="card">Stripe</div><div class="card">Salesforce</div><div class="card">Slack</div>
+      <div class="card">Zapier</div><div class="card">Make</div><div class="card">Airtable</div><div class="card">Twilio</div>
+    </div>
+  </section>
+
+  <div class="spacer"></div>
+
+  <!-- development process -->
+  <section class="fade-up">
+    <h2>Development Process</h2>
+    <div class="grid-4" style="margin-top: 60px;">
+      <div class="card"><span style="font-size: 48px;">1</span><h3>Discovery</h3><p>Map user stories & data flows</p></div>
+      <div class="card"><span style="font-size: 48px;">2</span><h3>Prototype</h3><p>Interactive mock in Telegram</p></div>
+      <div class="card"><span style="font-size: 48px;">3</span><h3>Build & connect</h3><p>APIs, DB, business logic</p></div>
+      <div class="card"><span style="font-size: 48px;">4</span><h3>Launch & monitor</h3><p>24/7 support</p></div>
+    </div>
+  </section>
+
+  <div class="spacer"></div>
+
+  <!-- PRICING with toggle (basic/advanced) -->
+  <section class="fade-up">
+    <h2>Simple, transparent pricing</h2>
+    <div class="toggle-switch" id="pricingToggle">
+      <button class="toggle-option active" data-plan="basic">Basic</button>
+      <button class="toggle-option" data-plan="advanced">Advanced</button>
+    </div>
+    <div class="grid-3" id="pricingCards">
+      <!-- starter (basic version shown) -->
+      <div class="card price-card" data-basic="Starter" data-advanced="Starter+">
+        <h3 id="p1-title">Starter bot</h3><div class="price-value" id="p1-price">$1,490</div><ul class="feature-list"><li>3 intents</li><li>Telegram API</li><li>Basic commands</li></ul>
+      </div>
+      <div class="card price-card" data-basic="Business" data-advanced="Business pro">
+        <h3 id="p2-title">Business bot</h3><div class="price-value" id="p2-price">$3,490</div><ul><li>CRM sync</li><li>Webhooks</li><li>Payment processing</li></ul>
+      </div>
+      <div class="card price-card" data-basic="Advanced" data-advanced="Enterprise">
+        <h3 id="p3-title">Advanced automation</h3><div class="price-value" id="p3-price">$6,990</div><ul><li>Multi‑API</li><li>Custom dashboard</li><li>SLA</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="spacer"></div>
+
+  <!-- FAQ accordion -->
+  <section class="fade-up">
+    <h2>Frequently asked</h2>
+    <div style="margin-top: 60px;">
+      <div class="faq-item"><div class="faq-question">Can you connect to my existing CRM? <span style="color:#2563eb;">▼</span></div><div class="faq-answer">Yes, we build custom connectors for HubSpot, Pipedrive, Salesforce and more via REST API.</div></div>
+      <div class="faq-item"><div class="faq-question">How long does development take? <span style="color:#2563eb;">▼</span></div><div class="faq-answer">Most bots go live in 2–4 weeks, depending on complexity and integrations.</div></div>
+      <div class="faq-item"><div class="faq-question">Do you provide hosting? <span style="color:#2563eb;">▼</span></div><div class="faq-answer">We deploy on secure VMs / AWS Lambda – fully managed.</div></div>
+    </div>
+  </section>
+
+  <div class="spacer-lg"></div>
+
+  <!-- FINAL CTA -->
+  <section class="fade-up">
+    <div class="cta-block">
+      <h2>Launch Your Telegram Bot</h2>
+      <a href="#" class="btn-outline-light">Contact via Telegram</a>
+    </div>
+  </section>
+
+  <footer>© automaton.bot — 2026 · all done!</footer>
+
+  <script>
+    (function() {
+      // sticky header shrink
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) header.classList.add('shrink');
+        else header.classList.remove('shrink');
+      });
+
+      // IntersectionObserver fade/slide
+      const faders = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('appear');
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -10px 0px' });
+      faders.forEach(el => observer.observe(el));
+
+      // CHAT ANIMATION (auto messages, typing, buttons)
+      const chatContainer = document.getElementById('chat-messages-container');
+      const typingEl = document.getElementById('typingDemo');
+      let step = 0;
+
+      function animateChat() {
+        if (!chatContainer) return;
+        // step based sequence
+        if (step === 0) {
+          // after 2s remove typing and show bot answer + new keyboard
+          setTimeout(() => {
+            if (typingEl) typingEl.style.display = 'none';
+            const botMsg = document.createElement('div');
+            botMsg.className = 'msg-row';
+            botMsg.innerHTML = '<div class="msg-bubble bot">Our pricing tiers: starter $1490 · business $3490</div>';
+            chatContainer.appendChild(botMsg);
+            // new inline keyboard
+            const keyboard = document.createElement('div');
+            keyboard.className = 'inline-keyboard';
+            keyboard.innerHTML = '<span class="keyboard-btn">📄 Starter details</span><span class="keyboard-btn">📊 Business</span>';
+            chatContainer.appendChild(keyboard);
+            // auto scroll
+            document.getElementById('chatBody').scrollTop = 999;
+            step = 1;
+          }, 1800);
+        } else if (step === 1) {
+          // user presses button simulation (starter details)
+          setTimeout(() => {
+            const userMsg = document.createElement('div');
+            userMsg.className = 'msg-row user';
+            userMsg.innerHTML = '<div class="msg-bubble user">📄 Starter details</div>';
+            chatContainer.appendChild(userMsg);
+            // typing indicator reappears
+            const newTyping = document.createElement('div');
+            newTyping.className = 'typing-indicator';
+            newTyping.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+            chatContainer.appendChild(newTyping);
+            setTimeout(() => {
+              newTyping.remove();
+              const botDetail = document.createElement('div');
+              botDetail.className = 'msg-row';
+              botDetail.innerHTML = '<div class="msg-bubble bot">Starter: up to 5 commands, CRM sync not included. Want to proceed?</div>';
+              chatContainer.appendChild(botDetail);
+              const confirmKeyboard = document.createElement('div');
+              confirmKeyboard.className = 'inline-keyboard';
+              confirmKeyboard.innerHTML = '<span class="keyboard-btn">✅ Yes, contact sales</span><span class="keyboard-btn">🔁 Compare plans</span>';
+              chatContainer.appendChild(confirmKeyboard);
+              document.getElementById('chatBody').scrollTop = 999;
+            }, 1500);
+            step = 2;
+          }, 2000);
+        }
+      }
+      window.addEventListener('load', () => {
+        setTimeout(animateChat, 600); // start after page load
+      });
+
+      // FAQ accordion
+      document.querySelectorAll('.faq-question').forEach(q => {
+        q.addEventListener('click', e => {
+          const item = e.currentTarget.closest('.faq-item');
+          item.classList.toggle('open');
+        });
+      });
+
+      // pricing toggle (basic/advanced)
+      const toggleBtns = document.querySelectorAll('.toggle-option');
+      const p1title = document.getElementById('p1-title');
+      const p2title = document.getElementById('p2-title');
+      const p3title = document.getElementById('p3-title');
+      const p1price = document.getElementById('p1-price');
+      const p2price = document.getElementById('p2-price');
+      const p3price = document.getElementById('p3-price');
+
+      toggleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          toggleBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const plan = btn.dataset.plan; // 'basic' or 'advanced'
+          if (plan === 'basic') {
+            p1title.innerText = 'Starter bot';
+            p2title.innerText = 'Business bot';
+            p3title.innerText = 'Advanced automation';
+            p1price.innerText = '$1,490';
+            p2price.innerText = '$3,490';
+            p3price.innerText = '$6,990';
+          } else {
+            p1title.innerText = 'Starter+';
+            p2title.innerText = 'Business pro';
+            p3title.innerText = 'Enterprise';
+            p1price.innerText = '$2,990';
+            p2price.innerText = '$5,490';
+            p3price.innerText = '$12,990';
+          }
+        });
+      });
+
+    })();
+  </script>
+  <!-- final line -->
+  All done!
+</body>
+</html>
+```

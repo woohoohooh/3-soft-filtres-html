@@ -1,0 +1,681 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChainForge · Web3 infrastructure</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #ffffff 0%, #f6f9fc 100%);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: #0a1a2f;
+            line-height: 1.6;
+            font-weight: 400;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* faux Inter fallback — no external fonts */
+        h1, h2, h3, button, .header, .stat, .nav-links {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        /* ===== HEADER (sticky, shrinks) ===== */
+        .site-header {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            padding: 24px 48px;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(37, 99, 235, 0.08);
+            z-index: 50;
+            transition: padding 0.2s ease, background 0.2s ease;
+        }
+
+        .site-header.shrink {
+            padding: 16px 48px;
+            background: rgba(255,255,255,0.96);
+            box-shadow: 0 4px 20px rgba(0,20,50,0.02);
+        }
+
+        .header-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 1.8rem;
+            letter-spacing: -0.02em;
+            color: #0a1a2f;
+        }
+
+        .logo span {
+            color: #2563EB;
+            font-weight: 500;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 48px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: inherit;
+            transition: color 0.15s;
+        }
+
+        .nav-links a:hover {
+            color: #2563EB;
+        }
+
+        .contact-pill {
+            background: #2563EB;
+            color: white !important;
+            padding: 10px 24px;
+            border-radius: 60px;
+            font-weight: 500;
+            margin-left: 24px;
+            transition: background 0.15s;
+        }
+
+        .contact-pill:hover {
+            background: #1d4ed8;
+        }
+
+        /* ===== LAYOUT & SPACING ===== */
+        .section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 48px;
+        }
+
+        .spacer-lg {
+            height: 140px;
+        }
+        .spacer-md {
+            height: 100px;
+        }
+
+        /* ===== HERO (exactly 100vh) ===== */
+        .hero {
+            height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 48px;
+            display: flex;
+            align-items: center;
+            gap: 80px;
+        }
+
+        .hero-left {
+            flex: 1.1;
+        }
+
+        .hero-left h1 {
+            font-size: 88px;
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            color: #0a1a2f;
+            margin-bottom: 32px;
+        }
+
+        .hero-sub {
+            font-size: 20px;
+            color: #334155;
+            max-width: 550px;
+            margin-bottom: 48px;
+        }
+
+        .primary-btn {
+            background: #2563EB;
+            border: none;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 600;
+            padding: 18px 48px;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 15px 30px -10px rgba(37,99,235,0.25);
+            transition: transform 0.15s, box-shadow 0.2s;
+            margin-bottom: 60px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 22px 35px -12px #2563EB;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 48px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #0a1a2f;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #475569;
+            letter-spacing: 0.02em;
+        }
+
+        /* ===== RIGHT SIDE — BLOCKCHAIN VISUAL (NO DECORATION) ===== */
+        .hero-right {
+            flex: 1;
+            background: rgba(37,99,235,0.02);
+            border-radius: 48px;
+            padding: 24px;
+            box-shadow: inset 0 2px 12px rgba(0,0,0,0.02);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 500px;
+        }
+
+        .chain-viz {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1/1;
+            position: relative;
+        }
+
+        /* svg network – purely blockchain logic: nodes, blocks, transactions, hashes */
+        .chain-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* animation classes (vanilla js adds them later) */
+        .node-base { transition: filter 0.2s; }
+        .tx-particle { animation: flow 3s infinite ease-in-out; transform-origin: center; }
+        .blink-hash { animation: softBlink 2.2s infinite; }
+
+        @keyframes flow {
+            0% { opacity: 0.3; transform: translateX(0) scale(0.8); }
+            50% { opacity: 1; transform: translateX(8px) scale(1.1); }
+            100% { opacity: 0.3; transform: translateX(16px) scale(0.8); }
+        }
+
+        @keyframes softBlink {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; filter: drop-shadow(0 0 4px #2563EB); }
+            100% { opacity: 0.6; }
+        }
+
+        .check-glow {
+            animation: verify 2s infinite;
+        }
+        @keyframes verify {
+            0% { opacity: 0.5; }
+            60% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        /* ===== sections general ===== */
+        h2 {
+            font-size: 52px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #0a1a2f;
+            margin-bottom: 24px;
+        }
+
+        h3 {
+            font-size: 30px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #0f172a;
+        }
+
+        .grid-2, .grid-3, .grid-4 {
+            display: grid;
+            gap: 48px;
+            margin-top: 60px;
+        }
+        .grid-2 { grid-template-columns: repeat(2,1fr); }
+        .grid-3 { grid-template-columns: repeat(3,1fr); }
+        .grid-4 { grid-template-columns: repeat(4,1fr); }
+
+        .card {
+            background: white;
+            padding: 40px 32px;
+            border-radius: 36px;
+            box-shadow: 0 10px 30px -15px rgba(0,20,40,0.08);
+            border: 1px solid rgba(37,99,235,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 30px 40px -20px rgba(37,99,235,0.2);
+        }
+
+        .icon-svg {
+            width: 40px;
+            height: 40px;
+            stroke: #2563EB;
+            stroke-width: 1.8;
+            fill: none;
+            margin-bottom: 30px;
+        }
+
+        .pill-list {
+            list-style: none;
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+        .pill-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eef2f6;
+        }
+
+        /* ===== pricing ===== */
+        .toggle-switch {
+            display: flex;
+            gap: 12px;
+            background: #f1f5f9;
+            padding: 8px;
+            border-radius: 60px;
+            width: fit-content;
+            margin: 40px 0 20px;
+        }
+
+        .toggle-option {
+            padding: 10px 32px;
+            border-radius: 40px;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #334155;
+        }
+        .toggle-option.active {
+            background: #2563EB;
+            color: white;
+        }
+
+        .price-card {
+            background: white;
+            border-radius: 36px;
+            padding: 40px 30px;
+            box-shadow: 0 12px 35px -12px rgba(0,0,0,0.05);
+            border: 1px solid #e9eef3;
+        }
+        .price-tag {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #0a1a2f;
+            margin: 20px 0;
+        }
+
+        .price-tag small {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: #5e6f88;
+        }
+
+        .features-sm {
+            list-style: none;
+            margin: 24px 0;
+            color: #2d3a4f;
+        }
+        .features-sm li {
+            padding: 6px 0;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid #dce3ec;
+            padding: 22px 0;
+        }
+        .faq-question {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            color: #3f4a5c;
+            padding-top: 0;
+        }
+        .faq-item.open .faq-answer {
+            max-height: 200px;
+            padding-top: 18px;
+        }
+
+        .cta-block {
+            background: #ffffff;
+            border-radius: 80px;
+            padding: 80px 64px;
+            text-align: center;
+            box-shadow: 0 30px 50px -30px rgba(37,99,235,0.2);
+            border: 1px solid rgba(37,99,235,0.15);
+        }
+
+        .telegram-btn {
+            background: #2563EB;
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.8rem;
+            padding: 24px 70px;
+            border-radius: 80px;
+            margin-top: 40px;
+            cursor: pointer;
+            transition: background 0.15s;
+            box-shadow: 0 15px 30px -10px #2563EB;
+        }
+        .telegram-btn:hover {
+            background: #1e4db9;
+        }
+
+        /* ===== scroll reveal (intersection observer) ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #e0e8f0;
+            margin: 80px 0;
+        }
+
+        /* no external, everything inline */
+    </style>
+</head>
+<body>
+    <header class="site-header" id="mainHeader">
+        <div class="header-container">
+            <div class="logo">chain<span>forge</span></div>
+            <div class="nav-links">
+                <a href="#">solutions</a>
+                <a href="#">develop</a>
+                <a href="#">security</a>
+                <a href="#">pricing</a>
+                <a href="#" class="contact-pill">contact</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- HERO 100vh -->
+        <section class="hero">
+            <div class="hero-left">
+                <h1>Web3 & Blockchain Development</h1>
+                <p class="hero-sub">Enterprise-grade infrastructure: smart contracts, L2 rollups, and secure validator networks for institutional adoption.</p>
+                <button class="primary-btn">Build Your Blockchain Project →</button>
+                <div class="stat-row">
+                    <div class="stat-item"><span class="stat-number">2.4B+</span><span class="stat-label">smart contracts</span></div>
+                    <div class="stat-item"><span class="stat-number">187</span><span class="stat-label">blockchain projects</span></div>
+                    <div class="stat-item"><span class="stat-number">42</span><span class="stat-label">networks supported</span></div>
+                </div>
+            </div>
+            <div class="hero-right">
+                <div class="chain-viz">
+                    <svg class="chain-svg" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- background subtle -->
+                        <rect width="300" height="300" fill="none"/>
+                        <!-- chain: blocks (nodes) with hash indicators, tx flow -->
+                        
+                        <!-- block A (genesis) -->
+                        <rect x="30" y="120" width="46" height="46" rx="10" fill="white" stroke="#2563EB" stroke-width="2.2" class="node-base"/>
+                        <text x="38" y="148" fill="#2563EB" font-size="10" font-weight="600">#A8F2</text>
+                        <circle cx="53" cy="175" r="6" fill="#2563EB" opacity="0.7" class="tx-particle"/>
+                        
+                        <!-- chain connection 1 -->
+                        <line x1="76" y1="142" x2="104" y2="142" stroke="#2563EB" stroke-width="1.8" stroke-dasharray="6 4" opacity="0.6"/>
+                        
+                        <!-- block B -->
+                        <rect x="108" y="120" width="46" height="46" rx="10" fill="white" stroke="#2563EB" stroke-width="2.2" class="node-base"/>
+                        <text x="116" y="148" fill="#2563EB" font-size="10" font-weight="600">#B4D1</text>
+                        <path d="M131 147 L138 154 L131 161" stroke="#2563EB" stroke-width="2" fill="none" class="check-glow" />
+                        
+                        <!-- transaction packet moving to block C -->
+                        <circle cx="154" cy="142" r="6" fill="#2563EB" class="tx-particle" style="animation-delay: 0.6s"/>
+                        <line x1="154" y1="142" x2="182" y2="142" stroke="#2563EB" stroke-width="1.8" stroke-dasharray="4 4"/>
+                        
+                        <!-- block C with validation -->
+                        <rect x="186" y="120" width="46" height="46" rx="10" fill="white" stroke="#2563EB" stroke-width="2.2" class="node-base"/>
+                        <text x="194" y="148" fill="#2563EB" font-size="10" font-weight="600" class="blink-hash">#F2C9</text>
+                        <circle cx="209" cy="175" r="6" fill="#2563EB" opacity="0.5" class="tx-particle" style="animation-delay: 1.2s"/>
+                        
+                        <!-- wallet -> contract flow (left side mini) -->
+                        <rect x="10" y="40" width="30" height="20" rx="6" stroke="#2563EB" stroke-width="1.5" fill="white" />
+                        <text x="14" y="55" fill="#2563EB" font-size="8">wallet</text>
+                        <path d="M25 60 L40 80 L70 80" stroke="#2563EB" stroke-width="1.5" stroke-dasharray="3 2" />
+                        <rect x="74" y="70" width="30" height="20" rx="6" stroke="#2563EB" stroke-width="1.5" fill="white" />
+                        <text x="80" y="85" fill="#2563EB" font-size="8">contract</text>
+                        
+                        <!-- validator / check indicators -->
+                        <circle cx="230" cy="200" r="12" stroke="#2563EB" stroke-width="2" fill="none" />
+                        <path d="M226 200 L231 207 L241 194" stroke="#2563EB" stroke-width="2" class="check-glow"/>
+                        <text x="220" y="230" fill="#2563EB" font-size="9">validated</text>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <div class="spacer-lg"></div>
+
+        <!-- sections with reveal animation -->
+        <section class="section reveal">
+            <h2>Blockchain Solutions We Build</h2>
+            <div class="grid-3">
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M5 12H19M12 5L12 19" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" fill="none"/></svg><h3>modular L2</h3><p>Rollup-as-a-service, custom DA and settlement.</p></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 20L20 4M20 20L4 4" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="8" stroke="currentColor" fill="none"/></svg><h3>cross-chain bridges</h3><p>Trustless messaging & asset transfers.</p></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M8 12H16M12 8V16" stroke="currentColor"/><rect x="2" y="2" width="20" height="20" rx="4" stroke="currentColor" fill="none"/></svg><h3>validator infrastructure</h3><p>Staking, node clusters, MEV optimization.</p></div>
+            </div>
+        </section>
+
+        <div class="spacer-md"></div>
+
+        <section class="section reveal">
+            <h2>Smart Contract Development</h2>
+            <div class="grid-2">
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 6L12 2L20 6V18L12 22L4 18V6Z" stroke="currentColor" fill="none"/><path d="M12 6V14" stroke="currentColor"/><circle cx="12" cy="17" r="1.5" stroke="currentColor"/></svg><h3>solidity / rust</h3><p>Audited, gas-optimized contracts for EVM & SVM.</p></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M6 9L12 13L18 9M6 15L12 19L18 15" stroke="currentColor"/></svg><h3>formal verification</h3><p>Mathematical proof of contract safety.</p></div>
+            </div>
+        </section>
+
+        <div class="spacer-md"></div>
+
+        <section class="section reveal">
+            <h2>Supported Blockchains</h2>
+            <div class="grid-4">
+                <div class="card" style="padding: 24px;">Ethereum</div><div class="card" style="padding: 24px;">Polkadot</div>
+                <div class="card" style="padding: 24px;">Solana</div><div class="card" style="padding: 24px;">Avalanche</div>
+                <div class="card" style="padding: 24px;">Near</div><div class="card" style="padding: 24px;">Arbitrum</div>
+                <div class="card" style="padding: 24px;">Optimism</div><div class="card" style="padding: 24px;">zkSync</div>
+            </div>
+        </section>
+
+        <div class="spacer-md"></div>
+
+        <section class="section reveal">
+            <h2>Development Process</h2>
+            <div class="grid-3">
+                <div class="card"><h3>1. specification</h3><p>formal verification requirements</p></div>
+                <div class="card"><h3>2. mock & audit</h3><p>iterative security reviews</p></div>
+                <div class="card"><h3>3. mainnet deploy</h3><p>with monitoring</p></div>
+            </div>
+        </section>
+
+        <div class="spacer-md"></div>
+
+        <section class="section reveal">
+            <h2>Security & Auditing</h2>
+            <div class="grid-2">
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor"/><path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="currentColor"/></svg><h3>penetration testing</h3></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor"/><path d="M12 7V12L15 15" stroke="currentColor"/></svg><h3>24/7 monitoring</h3></div>
+            </div>
+        </section>
+
+        <div class="spacer-md"></div>
+
+        <!-- pricing with toggle (no <select>) -->
+        <section class="section reveal">
+            <h2>Pricing · mainnet / testnet</h2>
+            <div class="toggle-switch" id="deployToggle">
+                <button class="toggle-option active" data-env="testnet">Testnet</button>
+                <button class="toggle-option" data-env="mainnet">Mainnet</button>
+            </div>
+            <div class="grid-3" id="pricingCards">
+                <!-- js populated -->
+            </div>
+        </section>
+
+        <div class="spacer-md"></div>
+
+        <!-- FAQ accordion -->
+        <section class="section reveal">
+            <h2>FAQ</h2>
+            <div class="faq-item">
+                <div class="faq-question">Which chains do you support? <span>+</span></div>
+                <div class="faq-answer">Ethereum, Solana, Polkadot, Avalanche, L2s and all EVM-compatible.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">Do you provide post-deployment audits? <span>+</span></div>
+                <div class="faq-answer">Yes, continuous monitoring and periodic re-audits.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">What's the average contract timeline? <span>+</span></div>
+                <div class="faq-answer">Testnet in 2 weeks, mainnet with audit ~4 weeks.</div>
+            </div>
+        </section>
+
+        <div class="spacer-lg"></div>
+
+        <!-- FINAL CTA -->
+        <section class="section reveal">
+            <div class="cta-block">
+                <h2 style="font-size: 72px; margin-bottom: 20px;">Launch Your Blockchain Project</h2>
+                <button class="telegram-btn" id="telegramBtn">Contact via Telegram →</button>
+            </div>
+        </section>
+
+        <div class="spacer-lg"></div>
+
+    </main>
+
+    <script>
+        (function() {
+            // sticky header shrink
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 20) {
+                    header.classList.add('shrink');
+                } else {
+                    header.classList.remove('shrink');
+                }
+            });
+
+            // IntersectionObserver for fade/slide reveals
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+            reveals.forEach(el => observer.observe(el));
+
+            // PRICING toggle logic + dynamic cards
+            const toggleContainer = document.getElementById('deployToggle');
+            const options = toggleContainer.querySelectorAll('.toggle-option');
+            const pricingGrid = document.getElementById('pricingCards');
+
+            function renderPrices(env) {
+                const multiplier = (env === 'mainnet') ? 2.8 : 1.0;
+                const cards = [
+                    { title: 'Smart Contract', base: 12000, desc: 'single contract + audit' },
+                    { title: 'Web3 dApp', base: 35000, desc: 'full-stack + contracts' },
+                    { title: 'Full blockchain', base: 95000, desc: 'L2/appchain + nodes' }
+                ];
+                pricingGrid.innerHTML = cards.map(c => {
+                    let price = c.base * multiplier;
+                    let priceK = (price/1000).toFixed(0);
+                    return `<div class="price-card">
+                        <h3>${c.title}</h3>
+                        <div class="price-tag">$${priceK}k <small>${env}</small></div>
+                        <ul class="features-sm"><li>${c.desc}</li><li>deployment scripts</li><li>1 year support</li></ul>
+                    </div>`;
+                }).join('');
+            }
+
+            options.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    options.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const env = btn.dataset.env;
+                    renderPrices(env);
+                });
+            });
+            renderPrices('testnet'); // default
+
+            // FAQ accordion
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const q = item.querySelector('.faq-question');
+                q.addEventListener('click', () => {
+                    item.classList.toggle('open');
+                });
+            });
+
+            // Telegram button alert (no actual link, but matches "Contact via Telegram")
+            document.getElementById('telegramBtn').addEventListener('click', ()=>{
+                alert('Telegram: @chainforge_dev (demo interaction)');
+            });
+        })();
+    </script>
+    <!-- tiny extra style for smoothness -->
+    <style>
+        .faq-question span { font-size: 2rem; line-height: 1; }
+        .toggle-option { transition: 0.1s; }
+        .hero-right { transition: box-shadow 0.3s; }
+        .hero-right:hover { box-shadow: 0 0 0 2px rgba(37,99,235,0.2), inset 0 2px 12px rgba(0,0,0,0.02); }
+    </style>
+</body>
+</html>
+All done!
+```

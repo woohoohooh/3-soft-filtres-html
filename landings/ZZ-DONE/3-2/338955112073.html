@@ -1,0 +1,547 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evstigneev · Архитектура света | портфолио</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0b0c0e;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #eaeef2;
+      line-height: 1.4;
+      font-weight: 350;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* интерфейсный шрифт */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600&display=swap');
+
+    /* фиксированная шапка с динамикой */
+    header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      padding: 1.2rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+      background: rgba(5, 7, 10, 0.8);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(100, 210, 255, 0.15);
+    }
+
+    header.compact {
+      padding: 0.6rem 3rem;
+      background: rgba(2, 5, 10, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0, 180, 255, 0.3);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(130deg, #ffffff, #a0d0ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      transition: 0.2s;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.8rem;
+      font-weight: 400;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .nav-links a {
+      color: #ccc;
+      text-decoration: none;
+      transition: 0.25s;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 4px;
+    }
+
+    .nav-links a:hover {
+      color: #7fd4ff;
+      border-bottom-color: #3fa2e0;
+    }
+
+    section {
+      min-height: 100vh;
+      padding: 7rem 3rem 3rem 3rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* акцентная подсветка при скролле */
+    section.highlight {
+      transition: box-shadow 0.3s;
+      box-shadow: inset 0 -2px 0 rgba(0, 230, 255, 0.3), inset 0 2px 0 rgba(0, 230, 255, 0.3);
+    }
+
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      background: linear-gradient(145deg, #ffffff, #a4d0f0);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      display: inline-block;
+    }
+
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 2rem;
+      margin: 2.5rem 0;
+    }
+
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .card {
+      background: rgba(20, 28, 40, 0.6);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(90, 170, 255, 0.15);
+      padding: 2.2rem 1.8rem;
+      border-radius: 32px;
+      transition: 0.3s;
+      box-shadow: 0 20px 30px -20px rgba(0,0,0,0.8);
+    }
+
+    .card i {
+      font-size: 2.4rem;
+      color: #50c5ff;
+      margin-bottom: 1.2rem;
+    }
+
+    .card:hover {
+      border-color: #3aa8e0;
+      transform: scale(1.02) translateY(-5px);
+      background: rgba(28, 38, 55, 0.8);
+    }
+
+    .btn {
+      background: transparent;
+      border: 1.5px solid #30b0ff;
+      color: #e1f2ff;
+      padding: 0.9rem 2.4rem;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: 0.25s;
+      backdrop-filter: blur(8px);
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background: #30b0ff;
+      color: #0b0c0e;
+      box-shadow: 0 0 20px #30b0ffaa;
+    }
+
+    /* анимация в шапке (js-частицы) + canvas слой */
+    #canvas-header-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+    }
+
+    .footer {
+      background: #05080c;
+      border-top: 1px solid #1f3445;
+      padding: 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #8ba0b8;
+    }
+
+    .stat-item {
+      font-size: 2rem;
+      font-weight: 300;
+    }
+
+    /* специально для раздела с портфолио */
+    .marquee-insight {
+      background: #10161e;
+      padding: 1rem 0;
+      white-space: nowrap;
+      overflow: hidden;
+      border-radius: 60px;
+      border: 1px solid #305570;
+    }
+
+    .marquee-insight span {
+      display: inline-block;
+      padding-left: 100%;
+      animation: scroll-t 16s linear infinite;
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+      color: #9fcbff;
+    }
+
+    @keyframes scroll-t {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* десктоп достаточно, адаптив минимальный для красоты */
+    @media (max-width: 1100px) {
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* уникальный раздел с параллакс-цифрами */
+    .stats-flex {
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+      margin: 3rem 0;
+    }
+
+    .stat-item small {
+      font-size: 1rem;
+      color: #8ab0d0;
+    }
+
+    /* якоря отступ */
+    #home { margin-top: 0; }
+  </style>
+</head>
+<body>
+
+<!-- фон с динамическими частицами (анимация js) -->
+<canvas id="canvas-header-bg"></canvas>
+
+<!-- фиксированное адаптивное меню (будет преображаться при скролле) -->
+<header id="main-header">
+  <div class="logo">evstigneev</div>
+  <nav class="nav-links">
+    <a href="#home">портфолио</a>
+    <a href="#resonance">резонанс</a>
+    <a href="#projects">кейсы</a>
+    <a href="#process">процесс</a>
+    <a href="#contact">контакт</a>
+  </nav>
+</header>
+
+<!-- БЛОК 1: HERO / ГЛАВНАЯ -->
+<section id="home" class="visible" style="padding-top: 10rem;">
+  <div style="max-width: 1000px;">
+    <h2 style="font-size: 4.8rem; line-height: 1.1;">архитектура<br> света и формы</h2>
+    <p style="font-size: 1.4rem; margin: 2rem 0 3rem; color: #b0cbe5; max-width: 700px;">предметный и интерьерный фотограф, работающий на стыке графического дизайна и визуального сторителлинга.</p>
+    <a href="#projects" class="btn">смотреть портфолио →</a>
+  </div>
+  <!-- плавающие иконки (стильные) -->
+  <div style="display: flex; gap: 3rem; margin-top: 6rem; flex-wrap: wrap;">
+    <span><i class="fas fa-camera" style="color: #5dc0ff; margin-right: 10px;"></i> 14 лет практики</span>
+    <span><i class="fas fa-lightbulb" style="color: #f5d76e; margin-right: 10px;"></i> студия света</span>
+    <span><i class="fas fa-film" style="color: #b77ef0; margin-right: 10px;"></i> motion серии</span>
+  </div>
+</section>
+
+<!-- БЛОК 2: резонанс / философия -->
+<section id="resonance">
+  <h2>резонанс</h2>
+  <div class="grid-2">
+    <div class="card">
+      <i class="fas fa-bolt"></i>
+      <h3>энергия кадра</h3>
+      <p>не снимаю «как у всех» — ищу напряжение между текстурой и пустотой, светом и тенью.</p>
+    </div>
+    <div class="card">
+      <i class="fas fa-chess-queen"></i>
+      <h3>композиция</h3>
+      <p>каждый объект — главный герой. доверили предмет — получите драматургию.</p>
+    </div>
+  </div>
+  <div class="marquee-insight" style="margin-top: 3rem;">
+    <span>instagram · vogue · archdigest · ysl beauty · cartier · </span>
+  </div>
+</section>
+
+<!-- БЛОК 3: ключевые проекты / портфолио (как кейсы) -->
+<section id="projects">
+  <h2>избранные кейсы</h2>
+  <div class="grid-3">
+    <div class="card">
+      <i class="fas fa-gem"></i>
+      <h3>ювелирная съёмка</h3>
+      <p>Mercury · серия «кристаллы» — отражения и макроструктура.</p>
+    </div>
+    <div class="card">
+      <i class="fas fa-watch"></i>
+      <h3>часовые шедевры</h3>
+      <p>для бренда NORDTM: 15 кадров, которые разобрали на рекламные носители.</p>
+    </div>
+    <div class="card">
+      <i class="fas fa-archway"></i>
+      <h3>интерьеры</h3>
+      <p>частная резиденция в Мерито — свет сквозь бетон и стекло.</p>
+    </div>
+    <div class="card">
+      <i class="fas fa-wine-bottle"></i>
+      <h3>предметка премиум</h3>
+      <p>парфюм, текстура стекла, жидкий металл — для LP & associés.</p>
+    </div>
+    <div class="card">
+      <i class="fas fa-crown"></i>
+      <h3>арт-дирекшн</h3>
+      <p>полный цикл создания still life для lookbook монохром.</p>
+    </div>
+    <div class="card">
+      <i class="fas fa-sun"></i>
+      <h3>натуральный свет</h3>
+      <p>серия «утро у моря» для капсульной коллекции одежды.</p>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 4: процесс + спецэффекты (интерактивная цифровая анимация) -->
+<section id="process">
+  <h2>метаморфозы</h2>
+  <div style="display: flex; gap: 4rem; align-items: center; flex-wrap: wrap;">
+    <div style="flex: 1;">
+      <div class="card" style="margin-bottom: 1rem;">
+        <i class="fas fa-sliders-h"></i> пре-продакшн <span style="color: #78c8ff;">→ moodboard, референсы</span>
+      </div>
+      <div class="card" style="margin-bottom: 1rem;">
+        <i class="fas fa-camera-retro"></i> съёмка <span style="color: #78c8ff;">→ световые схемы, tethering</span>
+      </div>
+      <div class="card">
+        <i class="fas fa-magic"></i> цвет & ретушь <span style="color: #78c8ff;">→ финальный кадр без компромиссов</span>
+      </div>
+    </div>
+    <div style="flex: 1; text-align: center;">
+      <div style="background: #15232e; border-radius: 60px; padding: 1.8rem; border: 1px solid #306080;">
+        <span id="dynamic-number" style="font-size: 5rem; font-weight: 200; color: #b0e6ff;">0</span>
+        <p>проектов в портфолио <i class="fas fa-arrow-up" style="color: #6fcf97;"></i></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 5: отзывы / доверие (в виде цифр и микро-кейсов) -->
+<section>
+  <h2>фактор доверия</h2>
+  <div class="stats-flex">
+    <div class="stat-item">14+ <small>лет</small></div>
+    <div class="stat-item">320 <small>реализовано съёмок</small></div>
+    <div class="stat-item">48 <small>мировых брендов</small></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><i class="fas fa-quote-right"></i> «Денис единственный, кто смог передать фактуру нашего трикотажа без потери объёма» — студия «Основа»</div>
+    <div class="card"><i class="fas fa-quote-right"></i> «Свет, который он ставит, стал частью айдентики бренда» — art-директор NORD</div>
+  </div>
+</section>
+
+<!-- БЛОК 6: услуги / специализация -->
+<section>
+  <h2>спецпроекты</h2>
+  <div class="grid-3">
+    <div class="card"><i class="fas fa-cube"></i> предметная съёмка</div>
+    <div class="card"><i class="fas fa-tshirt"></i> фэшн-натюрморт</div>
+    <div class="card"><i class="fas fa-building"></i> интерьерная / отельная</div>
+    <div class="card"><i class="fas fa-eye-dropper"></i> колористические исследования</div>
+    <div class="card"><i class="fas fa-video"></i> видео 4K </div>
+    <div class="card"><i class="fas fa-bezier-curve"></i> 3D-рендер + фото</div>
+  </div>
+</section>
+
+<!-- БЛОК 7: интерактив / реализованные проекты (таблица-превью) -->
+<section>
+  <h2>последние публикации</h2>
+  <div style="background: #101f2b; border-radius: 40px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #2b5370; padding: 1rem 0;">
+      <span><i class="far fa-newspaper"></i> VOGUE</span><span>декабрь 2024</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #2b5370; padding: 1rem 0;">
+      <span><i class="far fa-newspaper"></i> ARCHDIGEST</span><span>ноябрь 2024</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #2b5370; padding: 1rem 0;">
+      <span><i class="fas fa-crown"></i> L'OFFICIEL BALTICS</span><span>октябрь 2024</span>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 8: контакт + призыв к действию -->
+<section id="contact">
+  <h2>обсудить съёмку</h2>
+  <div style="max-width: 600px;">
+    <p style="margin-bottom: 2rem; font-size: 1.3rem;">напишите в любом мессенджере — я отвечаю в течение часа</p>
+    <div class="card" style="display: inline-block; width: auto;">
+      <i class="fab fa-telegram-plane"></i> @evstigneev_photo <span style="margin: 0 2rem;">|</span> <i class="fas fa-envelope"></i> d.evst@portfolio.studio
+    </div>
+    <div style="margin-top: 3rem;">
+      <a href="#" class="btn">калькулятор проекта →</a>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 9: footer (и соц иконки) -->
+<footer class="footer">
+  <div>© evstigneev visual 2025</div>
+  <div>
+    <i class="fab fa-behance" style="margin: 0 0.8rem;"></i>
+    <i class="fab fa-instagram" style="margin: 0 0.8rem;"></i>
+    <i class="fab fa-linkedin-in" style="margin: 0 0.8rem;"></i>
+  </div>
+  <div>все проекты защищены</div>
+</footer>
+
+<script>
+  (function() {
+    // 1) Анимация частиц на канвасе (шапка)
+    const canvas = document.getElementById('canvas-header-bg');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+
+    function initCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      createParticles(120);
+    }
+
+    function createParticles(count) {
+      particles = [];
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          radius: Math.random() * 2.2 + 0.8,
+          speedX: (Math.random() - 0.5) * 0.4,
+          speedY: (Math.random() - 0.5) * 0.2,
+          color: `rgba(120, 200, 255, ${Math.random() * 0.25 + 0.1})`
+        });
+      }
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        // легкое движение
+        p.x += p.speedX;
+        p.y += p.speedY;
+        // wrap
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+      });
+      requestAnimationFrame(drawParticles);
+    }
+
+    window.addEventListener('resize', () => {
+      initCanvas();
+    });
+
+    initCanvas();
+    drawParticles();
+
+    // 2) Фиксированное меню компактнее при скролле
+    const header = document.getElementById('main-header');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 60) {
+        header.classList.add('compact');
+      } else {
+        header.classList.remove('compact');
+      }
+    });
+
+    // 3) Появление блоков (visible) + подсветка при скролле
+    const sections = document.querySelectorAll('section');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          // добавим мигающую подсветку на 200ms
+          entry.target.classList.add('highlight');
+          setTimeout(() => {
+            entry.target.classList.remove('highlight');
+          }, 400);
+        }
+      });
+    }, { threshold: 0.2, rootMargin: '0px' });
+
+    sections.forEach(sec => observer.observe(sec));
+
+    // 4) динамическое число (счётчик) в блоке process
+    const numberSpan = document.getElementById('dynamic-number');
+    if (numberSpan) {
+      let current = 0;
+      const target = 324; // вымышленное число проектов
+      const stepTime = 20;
+      const increment = target / 60;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          numberSpan.innerText = target + '+';
+          clearInterval(timer);
+        } else {
+          numberSpan.innerText = Math.floor(current);
+        }
+      }, stepTime);
+    }
+
+    // 5) Дополнительный тренд: навигация якорей smooth
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          window.scrollTo({
+            top: targetEl.offsetTop - 60,
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+  })();
+</script>
+<!-- абсолютно вся страница без картинок, только иконки fontawesome и анимации -->
+</body>
+</html>
+All done!
+```

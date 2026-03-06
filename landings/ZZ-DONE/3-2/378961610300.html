@@ -1,0 +1,651 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vizier · стратегия & управление</title>
+  <!-- Font Awesome 6 (бесплатные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ===== СБРОС И ГЛОБАЛЬНЫЕ ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f6f4f0;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      color: #1e1e1e;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* Интер — скачивать не нужно, используем системный */
+    h1, h2, h3, .logo, .menu a {
+      font-weight: 450;
+      letter-spacing: -0.02em;
+    }
+
+    /* ===== ФИКСИРОВАННАЯ ШАПКА С АНИМАЦИЕЙ ===== */
+    .header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.02);
+      padding: 1rem 2.5rem;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+      transition: padding 0.25s ease, background 0.3s;
+    }
+
+    /* компактное меню при скролле — добавим через JS позже */
+    .header.scrolled {
+      padding: 0.5rem 2.5rem;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.05);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 500;
+      background: linear-gradient(135deg, #26221c, #5f4b3a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.03em;
+    }
+
+    .logo i {
+      background: none;
+      -webkit-text-fill-color: #4b3a2b;
+      margin-right: 6px;
+      font-size: 2rem;
+      vertical-align: middle;
+    }
+
+    .menu {
+      display: flex;
+      gap: 3rem;
+    }
+
+    .menu a {
+      text-decoration: none;
+      color: #1e1e1e;
+      font-weight: 500;
+      font-size: 1.1rem;
+      position: relative;
+      padding: 0.25rem 0;
+      transition: color 0.2s;
+    }
+
+    .menu a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #b5936b;
+      transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .menu a:hover::after {
+      width: 100%;
+    }
+
+    /* анимация шапки при загрузке */
+    @keyframes slideDown {
+      0% { opacity: 0; transform: translateY(-30px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .header {
+      animation: slideDown 0.8s ease-out forwards;
+    }
+
+    /* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 3rem;
+    }
+
+    section {
+      padding: 6rem 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+    }
+
+    /* ===== БЛОК 1: HERO ===== */
+    .hero {
+      margin-top: 80px; /* под шапку */
+      min-height: 90vh;
+      display: flex;
+      align-items: center;
+      background: #f6f4f0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      max-width: 70%;
+    }
+
+    .hero h1 {
+      font-size: 4.5rem;
+      font-weight: 500;
+      line-height: 1.1;
+      color: #1e1b18;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero .accent {
+      color: #a57c5a;
+      font-style: italic;
+    }
+
+    .hero p {
+      font-size: 1.4rem;
+      color: #3e3a36;
+      max-width: 600px;
+      margin-bottom: 2.5rem;
+      border-left: 3px solid #d3b48c;
+      padding-left: 1.8rem;
+    }
+
+    .cta-btn {
+      background: #1e1b18;
+      border: none;
+      color: white;
+      padding: 1.2rem 3.2rem;
+      font-size: 1.2rem;
+      font-weight: 500;
+      border-radius: 48px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 15px 25px -8px rgba(0, 0, 0, 0.15);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cta-btn i {
+      transition: transform 0.3s;
+    }
+
+    .cta-btn:hover {
+      background: #372f28;
+      transform: scale(1.02);
+      box-shadow: 0 20px 30px -8px rgba(70, 50, 30, 0.25);
+    }
+
+    .cta-btn:hover i {
+      transform: translateX(6px);
+    }
+
+    /* анимированный фон hero (JS-анимация) */
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 60%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.7;
+    }
+
+    /* ===== БЛОК 2: УСЛУГИ ===== */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5rem;
+      margin-top: 3rem;
+    }
+
+    .service-card {
+      background: white;
+      padding: 2.8rem 2rem;
+      border-radius: 42px;
+      box-shadow: 0 30px 40px -25px rgba(0, 0, 0, 0.08);
+      transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.4s;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(4px);
+      text-align: center;
+    }
+
+    .service-card:hover {
+      transform: translateY(-16px) scale(1.01);
+      box-shadow: 0 45px 60px -30px rgba(80, 60, 40, 0.25);
+      border-color: #e5d7ca;
+    }
+
+    .service-card i {
+      font-size: 3rem;
+      background: linear-gradient(145deg, #5f4b3a, #b08f70);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.8rem;
+    }
+
+    .service-card h3 {
+      font-size: 1.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    /* ===== БЛОК 3: О КОМПАНИИ (доверие) ===== */
+    .trust {
+      background: #ffffffd6;
+      border-radius: 80px 0 80px 0;
+      padding: 3rem 4rem;
+      box-shadow: inset 0 -1px 0 #eae3db;
+    }
+
+    .stats {
+      display: flex;
+      gap: 4rem;
+      margin-top: 2.5rem;
+    }
+
+    .stat-item {
+      font-size: 2.8rem;
+      font-weight: 450;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-item span {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #776b60;
+    }
+
+    /* ===== БЛОК 4: КЕЙСЫ ===== */
+    .cases-grid {
+      display: flex;
+      gap: 2rem;
+      margin: 3rem 0;
+    }
+
+    .case {
+      background: #2b2621;
+      color: white;
+      padding: 2.5rem;
+      border-radius: 50px 50px 50px 0;
+      flex: 1;
+      transition: all 0.3s;
+      box-shadow: 0 25px 30px -15px #1e1b18;
+    }
+
+    .case:nth-child(2) {
+      background: #4d4137;
+    }
+    .case:hover {
+      transform: rotate(0.5deg) scale(1.01);
+      border-radius: 0 50px 0 50px;
+    }
+
+    /* ===== БЛОК 5: ПРОЦЕСС ===== */
+    .process-steps {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      counter-reset: step;
+    }
+
+    .step {
+      counter-increment: step;
+      background: white;
+      padding: 2rem;
+      border-radius: 32px;
+      flex: 1;
+      box-shadow: 0 10px 20px -5px rgba(0,0,0,0.02);
+      border: 1px solid #ece5dd;
+      position: relative;
+    }
+
+    .step::before {
+      content: "0" counter(step);
+      position: absolute;
+      top: -10px;
+      left: 20px;
+      font-size: 4rem;
+      font-weight: 600;
+      color: #f0e1d2;
+      line-height: 1;
+      z-index: 0;
+    }
+
+    .step p {
+      position: relative;
+      z-index: 2;
+      font-weight: 500;
+      font-size: 1.2rem;
+    }
+
+    /* ===== БЛОК 6: КОМАНДА/ЭКСПЕРТЫ ===== */
+    .team {
+      display: flex;
+      gap: 3rem;
+    }
+
+    .member {
+      flex: 1;
+      padding: 2rem;
+      background: white;
+      border-radius: 100px 20px 100px 20px;
+    }
+
+    .member i {
+      font-size: 3rem;
+      color: #aa8b70;
+    }
+
+    /* ===== БЛОК 7: ОТЗЫВЫ ===== */
+    .testimonials {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+    }
+
+    .testi {
+      background: #1e1b18;
+      color: #f0e7df;
+      padding: 2.2rem;
+      border-radius: 60px 10px 60px 10px;
+      font-style: italic;
+    }
+
+    .testi i {
+      color: #c8ac8a;
+      margin-bottom: 1rem;
+      font-size: 2rem;
+    }
+
+    /* ===== БЛОК 8: КОНТАКТЫ ===== */
+    .contact-row {
+      display: flex;
+      gap: 4rem;
+      background: #fffcf8;
+      padding: 3rem;
+      border-radius: 120px 20px 120px 20px;
+    }
+
+    .contact-info {
+      flex: 1;
+    }
+
+    .contact-info i {
+      font-size: 2rem;
+      color: #866b50;
+      width: 50px;
+    }
+
+    /* ===== БЛОК 9: ФУТЕР ===== */
+    .footer {
+      padding: 2rem 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: transparent;
+      border-top: 1px solid #dad3cb;
+      font-size: 1rem;
+      color: #3f3a35;
+    }
+
+    .footer .social i {
+      font-size: 1.6rem;
+      margin-left: 1.2rem;
+      color: #4b3f36;
+      transition: color 0.2s;
+    }
+    .footer .social i:hover { color: #b28c64; cursor: pointer; }
+
+    /* анимация появления при скролле */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.7s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* декоративные элементы */
+    .glow-text {
+      transition: text-shadow 0.3s;
+    }
+    .glow-text:hover {
+      text-shadow: 0 0 10px #cfb69b;
+    }
+
+    /* адаптация (только пк, но мелкие экраны не ломаем) */
+    @media (max-width: 1100px) {
+      .hero h1 { font-size: 3.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FIXED HEADER -->
+  <header class="header" id="mainHeader">
+    <div class="logo"><i class="fas fa-chess-queen"></i> Vizier</div>
+    <nav class="menu">
+      <a href="#hero">начало</a>
+      <a href="#services">услуги</a>
+      <a href="#cases">кейсы</a>
+      <a href="#contact">связь</a>
+    </nav>
+  </header>
+
+  <!-- CANVAS ДЛЯ АНИМАЦИИ В ШАПКЕ / ФОНЕ -->
+  <canvas id="hero-canvas"></canvas>
+
+  <!-- БЛОК 1: hero -->
+  <section id="hero" class="hero">
+    <div class="container hero-content">
+      <h1>Vizier — <span class="accent">стратегия</span><br>исполнения под ключ</h1>
+      <p>Мы превращаем бизнес-амбиции в измеримые результаты. 14 лет на рынке управленческого консалтинга.</p>
+      <button class="cta-btn">Стать клиентом <i class="fas fa-arrow-right"></i></button>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: услуги -->
+  <section id="services" class="container reveal">
+    <h2 class="glow-text"><i class="fas fa-cog" style="color:#8b7159;"></i> Компетенции</h2>
+    <div class="services-grid">
+      <div class="service-card"><i class="fas fa-scale-balanced"></i><h3>Стратсессия</h3><p>Фасилитация первых лиц, карты роста</p></div>
+      <div class="service-card"><i class="fas fa-chart-line"></i><h3>Фин. аудит</h3><p>Аналитика, оптимизация, казначейство</p></div>
+      <div class="service-card"><i class="fas fa-people-group"></i><h3>HR-консалтинг</h3><p>Оргструктура, KPI, грейды</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: доверие / цифры -->
+  <section class="container reveal">
+    <div class="trust">
+      <h2>Цифры, говорящие громче слов</h2>
+      <div class="stats">
+        <div class="stat-item">150+ <span>реализованных проектов</span></div>
+        <div class="stat-item">87% <span>клиентов возвращаются</span></div>
+        <div class="stat-item">₽2.5B <span>совокупный эффект</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: кейсы -->
+  <section id="cases" class="container reveal">
+    <h2>Избранные кейсы</h2>
+    <div class="cases-grid">
+      <div class="case"><i class="fas fa-bolt" style="font-size: 2rem;"></i><h3>Холдинг «Меридиан»</h3><p>Рост EBITDA 34% за 6 мес., внедрение оргструктуры</p></div>
+      <div class="case"><i class="fas fa-sailboat"></i><h3>ГК «Атлант»</h3><p>Оптимизация логистики, экономия 187 млн/год</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: процесс -->
+  <section class="container reveal">
+    <h2>Как мы работаем</h2>
+    <div class="process-steps">
+      <div class="step"><p>Диагностика — изучаем бизнес изнутри</p></div>
+      <div class="step"><p>Стратегия — сценарии и риски</p></div>
+      <div class="step"><p>Внедрение — поддерживаем руками</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: команда -->
+  <section class="container reveal">
+    <h2>Экспертиза</h2>
+    <div class="team">
+      <div class="member"><i class="fas fa-user-tie"></i><h3>Артур Д. — управляющий</h3><p>ex-BCG, МВА Insead</p></div>
+      <div class="member"><i class="fas fa-user-graduate"></i><h3>Елена М. — финансы</h3><p>CPA, 20 лет в аудите</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: отзывы -->
+  <section class="container reveal">
+    <div class="testimonials">
+      <div class="testi"><i class="fas fa-quote-right"></i> Vizier помогли пересобрать холдинг — сейчас мы в топ-3 рынка.</div>
+      <div class="testi"><i class="fas fa-quote-right"></i> Лучшая стратегия, которую мы видели. Без воды.</div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: контакты -->
+  <section id="contact" class="container reveal">
+    <div class="contact-row">
+      <div class="contact-info"><i class="fas fa-map-pin"></i> Москва, Пречистенка 24</div>
+      <div class="contact-info"><i class="fas fa-phone"></i> +7 (495) 220-15-15</div>
+      <div class="contact-info"><i class="fas fa-envelope"></i> hello@vizier.ru</div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: футер -->
+  <footer class="container footer">
+    <span>© Vizier, 2025 — управленческий партнёр</span>
+    <div class="social">
+      <i class="fab fa-linkedin-in"></i>
+      <i class="fab fa-telegram-plane"></i>
+      <i class="fab fa-youtube"></i>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // 1. Анимация canvas в шапке (эффект частиц / сетки)
+      const canvas = document.getElementById('hero-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function initCanvas() {
+          width = window.innerWidth;
+          height = document.querySelector('.hero').offsetHeight;
+          canvas.width = width;
+          canvas.height = height;
+
+          particles = [];
+          const particleCount = 70;
+          for (let i = 0; i < particleCount; i++) {
+            particles.push({
+              x: Math.random() * width * 0.7 + width * 0.3,
+              y: Math.random() * height,
+              size: Math.random() * 2.5 + 1,
+              speedX: (Math.random() - 0.5) * 0.3,
+              speedY: (Math.random() - 0.5) * 0.1 + 0.1,
+              color: `rgba(140, 110, 85, ${Math.random() * 0.25 + 0.1})`
+            });
+          }
+        }
+
+        function drawParticles() {
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = '#b08f70';
+          for (let p of particles) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+
+            p.x += p.speedX;
+            p.y += p.speedY;
+
+            if (p.y > height) p.y = 0;
+            if (p.x > width) p.x = width * 0.3;
+            if (p.x < width * 0.3) p.x = width * 0.8;
+          }
+          requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', () => {
+          initCanvas();
+        });
+
+        initCanvas();
+        drawParticles();
+      }
+
+      // 2. Фиксированная шапка компактнее при скролле
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // 3. Анимация появления блоков (reveal)
+      const reveals = document.querySelectorAll('.reveal');
+      function checkReveal() {
+        const windowHeight = window.innerHeight;
+        reveals.forEach(el => {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < windowHeight * 0.85) {
+            el.classList.add('active');
+          }
+        });
+      }
+      window.addEventListener('scroll', checkReveal);
+      window.addEventListener('resize', checkReveal);
+      checkReveal();
+
+      // 4. Подсветка текста / иконок при наведении (оригинальный эффект + якоря плавно)
+      document.querySelectorAll('.menu a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href').substring(1);
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            window.scrollTo({
+              top: targetEl.offsetTop - 100,
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+
+      // добавим микроэффект — при наведении на кейсы / карточки чуть меняется фон
+      const cards = document.querySelectorAll('.service-card, .case, .member');
+      cards.forEach(c => {
+        c.addEventListener('mouseenter', () => {
+          c.style.transition = 'all 0.25s ease';
+        });
+      });
+    })();
+  </script>
+  <!-- дополнительный якорный пункт меню + целостность -->
+  <div style="height:0;">&nbsp;</div>
+</body>
+</html>
+All done!
+```

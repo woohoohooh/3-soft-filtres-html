@@ -1,0 +1,699 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChainForge · Blockchain infrastructure</title>
+  <style>
+    /* === RESET & GLOBAL === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(145deg, #ffffff 0%, #f6f9fc 100%);
+      color: #111827;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* sticky header */
+    .header {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      z-index: 50;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(37, 99, 235, 0.08);
+      transition: padding 0.2s ease, box-shadow 0.2s;
+      padding: 1.5rem 2rem;
+    }
+    .header.shrink {
+      padding: 0.75rem 2rem;
+      box-shadow: 0 4px 20px -8px rgba(0,0,0,0.05);
+    }
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+      color: #111827;
+    }
+    .logo span {
+      color: #2563EB;
+    }
+    .nav {
+      display: flex;
+      gap: 3rem;
+      font-weight: 500;
+      color: #1f2937;
+    }
+    .nav a {
+      text-decoration: none;
+      color: inherit;
+      font-size: 1.1rem;
+      transition: color 0.2s;
+    }
+    .nav a:hover {
+      color: #2563EB;
+    }
+
+    /* layout containers */
+    .section {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+    .section-large {
+      padding: 8rem 2rem;
+    }
+
+    /* typography */
+    h1 {
+      font-size: 96px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: #0b1c33;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 2rem;
+    }
+    h3 {
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      line-height: 1.3;
+    }
+    p, li {
+      font-size: 20px;
+      color: #2d3a4f;
+    }
+
+    /* buttons */
+    .btn-primary {
+      display: inline-block;
+      background-color: #2563EB;
+      color: white;
+      font-weight: 600;
+      font-size: 1.3rem;
+      padding: 1rem 2.5rem;
+      border-radius: 40px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 12px 30px -8px rgba(37,99,235,0.3);
+      transition: all 0.2s ease;
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+      transform: translateY(-3px);
+      box-shadow: 0 20px 30px -8px #2563EB70;
+    }
+
+    /* hero 100vh */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+
+    /* stats row */
+    .stats {
+      display: flex;
+      gap: 3rem;
+      margin-top: 3rem;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #2563EB;
+    }
+    .stat-label {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #4b5563;
+    }
+
+    /* ===== RIGHT SIDE VISUALIZATION (pure HTML/CSS/JS) ===== */
+    .visualization {
+      background: #f0f6ff;
+      border-radius: 48px;
+      padding: 2rem 1.5rem;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.02), 0 25px 50px -12px rgba(37,99,235,0.2);
+      border: 1px solid rgba(37,99,235,0.1);
+      height: 550px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    .network-canvas {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #blockchainViz {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .chain-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin: 0.8rem 0;
+      position: relative;
+    }
+    .block-node {
+      width: 70px;
+      height: 70px;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 8px 16px -6px rgba(0,0,0,0.1), 0 0 0 2px #2563EB20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+      color: #2563EB;
+      border: 1px solid #ffffff;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .block-node.confirmed {
+      background: #e8f0fe;
+      border: 2px solid #2563EB;
+    }
+    .block-node .hash {
+      font-size: 8px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+    .packet {
+      width: 20px;
+      height: 20px;
+      background: #2563EB;
+      border-radius: 6px;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.9;
+      transition: left 0.5s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 10;
+    }
+    .flow-line {
+      height: 2px;
+      background: linear-gradient(90deg, #2563EB20, #2563EB, #2563EB20);
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+    .check-indicator {
+      color: #10b981;
+      font-size: 16px;
+      margin-left: 5px;
+      font-weight: bold;
+    }
+    .contract-badge {
+      background: #dbeafe;
+      border-radius: 30px;
+      padding: 0.3rem 1rem;
+      font-size: 0.9rem;
+      color: #1e40af;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      border: 1px solid #2563EB40;
+      margin-top: 0.5rem;
+    }
+    .viz-footer {
+      margin-top: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* icons (monochrome inline SVG) */
+    .icon-mono {
+      width: 28px;
+      height: 28px;
+      stroke: #2563EB;
+      stroke-width: 1.8;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .icon-sm {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* fade-slide animation (intersection observer) */
+    .fade-slide {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .fade-slide.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* card grids */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 2.5rem;
+      margin-top: 3rem;
+    }
+    .card {
+      background: white;
+      border-radius: 40px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 20px 35px -15px rgba(0,0,0,0.03);
+      border: 1px solid rgba(0,0,0,0.02);
+      transition: transform 0.2s, box-shadow 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 35px 50px -20px #2563EB30;
+    }
+
+    /* pricing toggle */
+    .toggle-group {
+      display: inline-flex;
+      background: #f1f5f9;
+      border-radius: 60px;
+      padding: 0.4rem;
+      margin: 2rem 0 3rem;
+    }
+    .toggle-option {
+      padding: 0.8rem 2.2rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #334155;
+      transition: all 0.15s;
+      border: none;
+      font-size: 1.1rem;
+    }
+    .toggle-option.active {
+      background: #2563EB;
+      color: white;
+      box-shadow: 0 6px 12px -6px #2563EB;
+    }
+
+    /* pricing card */
+    .price-card {
+      background: white;
+      border-radius: 40px;
+      padding: 2.5rem;
+    }
+    .price-value {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #0b1c33;
+    }
+
+    /* faq */
+    .faq-item {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1.8rem 0;
+    }
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+      color: #475569;
+      font-size: 1.2rem;
+      padding-right: 3rem;
+    }
+    .faq-item.open .faq-answer {
+      max-height: 250px;
+      margin-top: 1.5rem;
+    }
+    .chevron {
+      transition: transform 0.2s;
+    }
+    .faq-item.open .chevron {
+      transform: rotate(180deg);
+    }
+
+    /* footer cta */
+    .cta-block {
+      background: #0b1c33;
+      color: white;
+      border-radius: 80px;
+      padding: 5rem 4rem;
+      text-align: center;
+    }
+    .cta-block h2 {
+      color: white;
+    }
+    .telegram-btn {
+      background: #2563EB;
+      border: none;
+      font-size: 1.8rem;
+      padding: 1.8rem 4rem;
+      border-radius: 70px;
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 25px 40px -12px #2563EB;
+      transition: 0.2s;
+      cursor: pointer;
+    }
+    .telegram-btn:hover {
+      background: #1e4fcf;
+      transform: scale(1.02);
+    }
+
+    hr {
+      margin: 6rem 0;
+      border: 1px solid #eef2f6;
+    }
+    .spacer-120 {
+      height: 120px;
+    }
+  </style>
+</head>
+<body>
+  <header class="header" id="stickyHeader">
+    <div class="header-container">
+      <div class="logo">chain<span>forge</span></div>
+      <div class="nav">
+        <a href="#solutions">Solutions</a>
+        <a href="#process">Process</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-grid">
+      <!-- left side -->
+      <div>
+        <h1>Web3 & Blockchain Development</h1>
+        <p style="font-size: 1.8rem; font-weight: 400; margin-bottom: 2.5rem; max-width: 90%; color: #2c3e50;">Enterprise‑grade infrastructure for decentralized applications, smart contracts, and high‑security networks.</p>
+        <a href="#" class="btn-primary">Build Your Blockchain Project →</a>
+        
+        <div class="stats">
+          <div class="stat-item"><span class="stat-value">240+</span><span class="stat-label">contracts deployed</span></div>
+          <div class="stat-item"><span class="stat-value">38</span><span class="stat-label">projects built</span></div>
+          <div class="stat-item"><span class="stat-value">12</span><span class="stat-label">networks</span></div>
+        </div>
+      </div>
+
+      <!-- right side: blockchain network animation (pure js) -->
+      <div class="visualization">
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; color:#2563EB; font-weight:600;">
+          <span>⛓️ LIVE CHAIN</span> <span style="flex:1; text-align:right;">finality ⚡</span>
+        </div>
+        <div id="blockchainViz" class="network-canvas"></div>
+        <div class="viz-footer">
+          <span class="contract-badge"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB"><path d="M4 4L20 4L20 20L4 20L4 4Z" stroke-width="1.8"/><path d="M8 8h8M8 12h6M8 16h4"/></svg> smart contract (executing)</span>
+          <span class="contract-badge">✓ 3 confirmations</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- sections with fade-slide -->
+  <div class="section" id="solutions">
+    <h2 class="fade-slide">Blockchain solutions we build</h2>
+    <div class="card-grid">
+      <div class="card fade-slide"><h3>Smart contract</h3><p>Audited Solidity/Rust contracts, upgradeable & gas-optimized.</p></div>
+      <div class="card fade-slide"><h3>Private L2 / sidechain</h3><p>Dedicated rollups, app-chains with enterprise privacy.</p></div>
+      <div class="card fade-slide"><h3>Wallet infrastructure</h3><p>AA wallets, multi‑sig, transaction relaying.</p></div>
+    </div>
+  </div>
+
+  <div class="section" id="smart-contract">
+    <h2 class="fade-slide">Smart contract development</h2>
+    <div class="card-grid">
+      <div class="card fade-slide"><h3>DeFi & tokens</h3><p>ERC20, ERC721, custom AMM logic, staking.</p></div>
+      <div class="card fade-slide"><h3>DAO frameworks</h3><p>Governance, treasury, snapshot voting.</p></div>
+      <div class="card fade-slide"><h3>Oracles & bridges</h3><p>Chainlink, LayerZero, cross‑chain messaging.</p></div>
+    </div>
+  </div>
+
+  <div class="section" id="architecture">
+    <h2 class="fade-slide">Web3 application architecture</h2>
+    <div class="card-grid">
+      <div class="card fade-slide"><h3>Indexing & query</h3><p>Subgraph, The Graph, custom indexers.</p></div>
+      <div class="card fade-slide"><h3>Backend/SDK</h3><p>Node.js / Rust services, wallet connect.</p></div>
+      <div class="card fade-slide"><h3>Frontend (dApp)</h3><p>React, ethers, viem, wallet integration.</p></div>
+    </div>
+  </div>
+
+  <div class="section" id="networks">
+    <h2 class="fade-slide">Supported blockchains</h2>
+    <div style="display:flex; gap:3rem; flex-wrap:wrap; justify-content:space-between;">
+      <span style="font-size:1.8rem; background:#f1f5f9; padding:1rem 2rem; border-radius:50px;">Ethereum</span>
+      <span style="font-size:1.8rem; background:#f1f5f9; padding:1rem 2rem; border-radius:50px;">Polygon</span>
+      <span style="font-size:1.8rem; background:#f1f5f9; padding:1rem 2rem; border-radius:50px;">Arbitrum</span>
+      <span style="font-size:1.8rem; background:#f1f5f9; padding:1rem 2rem; border-radius:50px;">Optimism</span>
+      <span style="font-size:1.8rem; background:#f1f5f9; padding:1rem 2rem; border-radius:50px;">Solana</span>
+      <span style="font-size:1.8rem; background:#f1f5f9; padding:1rem 2rem; border-radius:50px;">Avalanche</span>
+    </div>
+  </div>
+
+  <div class="section" id="process">
+    <h2 class="fade-slide">Development process</h2>
+    <div class="card-grid">
+      <div class="card fade-slide"><h3>1. Specification</h3><p>Formal verification, requirement analysis.</p></div>
+      <div class="card fade-slide"><h3>2. Implementation</h3><p>Modular, tested code + testnet deployment.</p></div>
+      <div class="card fade-slide"><h3>3. Audit & hardening</h3><p>Internal + external audit, bug bounty prep.</p></div>
+    </div>
+  </div>
+
+  <div class="section" id="security">
+    <h2 class="fade-slide">Security & auditing</h2>
+    <div class="card-grid">
+      <div class="card fade-slide"><h3>Static analysis</h3><p>Slither, Mythril, automated checks.</p></div>
+      <div class="card fade-slide"><h3>Penetration testing</h3><p>Expert review, economic attack simulations.</p></div>
+      <div class="card fade-slide"><h3>Formal verification</h3><p>Mathematical proof of invariants.</p></div>
+    </div>
+  </div>
+
+  <!-- PRICING + TOGGLE (custom segmented) -->
+  <div class="section" id="pricing">
+    <h2 class="fade-slide">Pricing & deployment</h2>
+    <div class="toggle-group fade-slide" id="deployToggle">
+      <span class="toggle-option active" data-env="testnet">Testnet</span>
+      <span class="toggle-option" data-env="mainnet">Mainnet</span>
+    </div>
+
+    <div class="card-grid" id="pricingCards">
+      <div class="price-card fade-slide">
+        <h3>Smart contract</h3>
+        <div class="price-value" data-testnet="$22k" data-mainnet="$58k">$22k</div>
+        <p>3 audits, 1 testnet, deployment scripts.</p>
+      </div>
+      <div class="price-card fade-slide">
+        <h3>Web3 dApp</h3>
+        <div class="price-value" data-testnet="$48k" data-mainnet="$120k">$48k</div>
+        <p>Frontend + subgraph + contracts.</p>
+      </div>
+      <div class="price-card fade-slide">
+        <h3>Full blockchain platform</h3>
+        <div class="price-value" data-testnet="$120k" data-mainnet="$295k">$120k</div>
+        <p>Custom L2, bridge, explorer, security.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ accordion -->
+  <div class="section" id="faq">
+    <h2 class="fade-slide">Frequently asked</h2>
+    <div class="faq-item fade-slide">
+      <div class="faq-question">Which chains do you target? <span class="chevron">▼</span></div>
+      <div class="faq-answer">Ethereum, Polygon, Arbitrum, Optimism, Solana, Avalanche, and any EVM L2. We also support Cosmos SDK if required.</div>
+    </div>
+    <div class="faq-item fade-slide">
+      <div class="faq-question">How do you handle private keys? <span class="chevron">▼</span></div>
+      <div class="faq-answer">HSM, multi‑party computation, and hardware wallets. Keys never stored in plain text.</div>
+    </div>
+    <div class="faq-item fade-slide">
+      <div class="faq-question">What about upgradeability? <span class="chevron">▼</span></div>
+      <div class="faq-answer">Proxy patterns (UUPS, transparent) with timelocks and DAO control if needed.</div>
+    </div>
+  </div>
+
+  <!-- FINAL CTA -->
+  <div class="section-large">
+    <div class="cta-block fade-slide">
+      <h2 style="font-size: 5rem;">Launch Your Blockchain Project</h2>
+      <button class="telegram-btn" onclick="window.location='https://t.me/chainforge';">📱 Contact via Telegram</button>
+    </div>
+  </div>
+  <div style="text-align:center; color:#aaa; padding:2rem;">© chainforge · infrastructure · 2026</div>
+
+  <script>
+    (function() {
+      // sticky header shrink
+      const header = document.getElementById('stickyHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) header.classList.add('shrink');
+        else header.classList.remove('shrink');
+      });
+
+      // IntersectionObserver fade-slide
+      const faders = document.querySelectorAll('.fade-slide');
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+      faders.forEach(el => observer.observe(el));
+
+      // toggle pricing (testnet/mainnet)
+      const toggleOptions = document.querySelectorAll('.toggle-option');
+      const priceValues = document.querySelectorAll('.price-value');
+      function setPrices(env) {
+        priceValues.forEach(el => {
+          el.innerText = el.dataset[env];
+        });
+      }
+      toggleOptions.forEach(opt => {
+        opt.addEventListener('click', function(e) {
+          toggleOptions.forEach(o => o.classList.remove('active'));
+          this.classList.add('active');
+          const env = this.dataset.env; // testnet or mainnet
+          setPrices(env);
+        });
+      });
+
+      // FAQ accordion
+      const faqItems = document.querySelectorAll('.faq-item');
+      faqItems.forEach(item => {
+        const q = item.querySelector('.faq-question');
+        q.addEventListener('click', () => {
+          item.classList.toggle('open');
+        });
+      });
+
+      // ---------- blockchain viz animation (pure js) ----------
+      const viz = document.getElementById('blockchainViz');
+      function renderViz() {
+        let html = '';
+        // three rows of chain blocks + packet movement
+        const blocksRow1 = ['A', 'B', 'C', 'D'];
+        const blocksRow2 = ['E', 'F', 'G', 'H'];
+        const blocksRow3 = ['I', 'J', 'K', 'L'];
+        
+        // row 1 (genesis ...)
+        html += '<div class="chain-row" style="justify-content:center; gap:10px;">';
+        blocksRow1.forEach((l, idx) => {
+          let cls = 'block-node';
+          if (idx < 2) cls += ' confirmed'; // first two confirmed
+          html += `<div class="${cls}"><span>#${l}</span><span class="hash">0x${l}1f4...</span></div>`;
+        });
+        html += '</div><div class="flow-line"></div>';
+
+        // row 2 with a moving packet (packet placed absolutely via js)
+        html += '<div class="chain-row" style="position:relative; justify-content:center; gap:10px;" id="packetRow">';
+        blocksRow2.forEach((l, idx) => {
+          let cls = 'block-node';
+          if (idx === 1 || idx === 2) cls += ' confirmed';
+          html += `<div class="${cls}"><span>#${l}</span><span class="hash">0x${l}a7...</span></div>`;
+        });
+        html += '<div class="packet" id="movingPacket" style="left:15%;">📦</div>'; // initial
+        html += '</div><div class="flow-line"></div>';
+
+        // row 3 with contract execution
+        html += '<div class="chain-row" style="justify-content:center; gap:10px;">';
+        blocksRow3.forEach((l, idx) => {
+          let cls = 'block-node';
+          if (idx > 1) cls += ' confirmed';
+          html += `<div class="${cls}"><span>#${l}</span><span class="hash">0x${l}d8...</span></div>`;
+        });
+        html += '</div>';
+
+        // wallet → contract line
+        html += '<div style="display:flex; align-items:center; gap:16px; margin-top:12px;"><span style="background:#f1f5f9; padding:6px 16px; border-radius:30px;">🧾 wallet</span> <span style="color:#2563EB;">⟶</span> <span style="background:#dbeafe; padding:6px 16px; border-radius:30px;">📄 contract</span> <span style="color:#2563EB;">⇄</span> <span style="background:#dbeafe; padding:6px 16px; border-radius:30px;">✓ tx</span></div>';
+
+        viz.innerHTML = html;
+
+        // animate packet moving along row2
+        let direction = 1;
+        let pos = 15; // %
+        const packet = document.getElementById('movingPacket');
+        if (!packet) return;
+        setInterval(() => {
+          if (!packet) return;
+          pos += direction * 4;
+          if (pos > 80) direction = -1;
+          if (pos < 10) direction = 1;
+          packet.style.left = pos + '%';
+        }, 500);
+      }
+
+      renderViz();
+
+      // re-trigger on resize (no break)
+      window.addEventListener('resize', () => {
+        // simple replace to keep animation
+        if (document.getElementById('blockchainViz')) renderViz();
+      });
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

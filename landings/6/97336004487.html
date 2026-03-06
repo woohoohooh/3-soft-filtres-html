@@ -1,0 +1,678 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chainforge · Web3 infrastructure</title>
+  <style>
+    /* ----- RESET & BASE ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(145deg, #ffffff 0%, #f4f7fc 100%);
+      color: #13202e;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* sticky header simulation (shrinks on scroll via js) */
+    header {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+      z-index: 100;
+      transition: padding 0.2s ease, background 0.2s;
+      padding: 24px 40px;
+      border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+    }
+
+    header.shrink {
+      padding: 14px 40px;
+      background: rgba(255,255,255,0.95);
+    }
+
+    .header-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
+      color: #1e293b;
+    }
+    .logo span {
+      color: #2563eb;
+      font-weight: 700;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 48px;
+      font-weight: 500;
+      color: #334155;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: inherit;
+      font-size: 1.05rem;
+    }
+
+    /* ----- global container ----- */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+
+    section {
+      margin-bottom: 140px;
+    }
+
+    /* ----- typography ----- */
+    h1 {
+      font-size: 92px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: #0b1a2e;
+      margin-bottom: 32px;
+    }
+
+    h2 {
+      font-size: 52px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 56px;
+      color: #0b1a2e;
+    }
+
+    h3 {
+      font-size: 30px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #1e293b;
+    }
+
+    p {
+      font-size: 19px;
+      color: #334155;
+      margin-bottom: 24px;
+    }
+
+    .subhead {
+      font-size: 22px;
+      font-weight: 400;
+      color: #475569;
+      max-width: 560px;
+      margin-bottom: 40px;
+    }
+
+    /* ----- buttons & UI ----- */
+    .btn-primary {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      font-size: 1.2rem;
+      padding: 20px 40px;
+      border-radius: 60px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 20px 30px -10px rgba(37,99,235,0.25);
+      transition: all 0.15s;
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+      transform: translateY(-2px);
+      box-shadow: 0 28px 34px -12px #2563eb70;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid #2563eb20;
+      color: #1e293b;
+      font-weight: 500;
+      padding: 12px 28px;
+      border-radius: 40px;
+      transition: 0.1s;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .btn-outline:hover {
+      border-color: #2563eb;
+      background: #2563eb08;
+    }
+
+    /* ----- hero specific ----- */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      margin-bottom: 0;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .stat-group {
+      display: flex;
+      gap: 40px;
+      margin-top: 48px;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-number {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #2563eb;
+      line-height: 1.2;
+    }
+    .stat-label {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #64748b;
+    }
+
+    /* ----- BLOCKCHAIN VISUAL (RIGHT SIDE) ----- */
+    .network-viz {
+      width: 100%;
+      aspect-ratio: 1/0.9;
+      background: #ffffffd6;
+      border-radius: 48px;
+      box-shadow: 0 30px 50px -20px #2563eb30;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(4px);
+      border: 1px solid #ffffff;
+    }
+
+    .viz-canvas {
+      width: 100%;
+      height: 100%;
+      background: #f8fcff;
+      border-radius: 28px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.02);
+    }
+
+    /* absolute positioned nodes, lines — pure CSS animation */
+    .chain-svg {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .node {
+      fill: #ffffff;
+      stroke: #2563eb;
+      stroke-width: 2.5;
+      filter: drop-shadow(0 4px 8px #2563eb20);
+      transition: 0.2s;
+    }
+    .node.confirmed {
+      stroke: #10b981;
+      fill: #e6f7f0;
+    }
+    .hash-line {
+      stroke: #94a3b8;
+      stroke-width: 1.5;
+      stroke-dasharray: 5 3;
+    }
+    .packet {
+      fill: #2563eb;
+      r: 5;
+    }
+    .flow-line {
+      stroke: #2563eb40;
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+    .check {
+      stroke: #10b981;
+      stroke-width: 3;
+    }
+
+    /* moving transaction packets */
+    .moving-dot {
+      animation: flow 4s infinite linear;
+    }
+    @keyframes flow {
+      0% { opacity: 0; transform: translateX(0) translateY(0); }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { opacity: 0; transform: translateX(80px) translateY(-20px); }
+    }
+
+    /* ----- fade+slide reveal (IntersectionObserver) ----- */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ----- cards & sections ----- */
+    .solutions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+    }
+    .card {
+      background: white;
+      border-radius: 32px;
+      padding: 40px 32px;
+      box-shadow: 0 12px 28px -12px rgba(0,0,0,0.04);
+      border: 1px solid #eef2f6;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.01);
+      box-shadow: 0 24px 42px -18px #2563eb40;
+    }
+
+    .icon-svg {
+      width: 40px;
+      height: 40px;
+      stroke: #2563eb;
+      stroke-width: 1.8;
+      fill: none;
+      margin-bottom: 28px;
+    }
+
+    .network-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px 24px;
+      margin-top: 20px;
+    }
+    .network-chip {
+      background: #f1f5f9;
+      padding: 12px 24px;
+      border-radius: 60px;
+      font-weight: 500;
+      color: #1e293b;
+      font-size: 1.1rem;
+      transition: 0.1s;
+    }
+    .network-chip:hover {
+      background: #e2e8f0;
+    }
+
+    /* pricing */
+    .pricing-toggle {
+      display: flex;
+      gap: 20px;
+      background: #f1f5f9;
+      padding: 8px;
+      border-radius: 80px;
+      width: fit-content;
+      margin-bottom: 48px;
+    }
+    .toggle-option {
+      padding: 12px 32px;
+      border-radius: 60px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.1s;
+      color: #475569;
+    }
+    .toggle-option.active {
+      background: #2563eb;
+      color: white;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+    .price-card {
+      background: white;
+      border-radius: 36px;
+      padding: 40px 30px;
+      border: 1px solid #e9eef3;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid #dce3ec;
+      padding: 24px 0;
+    }
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 1.3rem;
+      cursor: pointer;
+      padding: 8px 0;
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.2s;
+      color: #475569;
+    }
+    .faq-item.open .faq-answer {
+      max-height: 200px;
+      padding-top: 16px;
+    }
+
+    .final-cta {
+      background: #0b1a2e;
+      border-radius: 70px;
+      padding: 96px 60px;
+      text-align: center;
+      color: white;
+    }
+    .final-cta h2 {
+      color: white;
+    }
+    .telegram-btn {
+      background: #2563eb;
+      border: none;
+      font-size: 1.6rem;
+      padding: 24px 60px;
+      border-radius: 80px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 20px 28px -10px #00000050;
+      transition: 0.15s;
+    }
+    .telegram-btn:hover {
+      background: #3b82f6;
+    }
+
+    hr {
+      margin: 100px 0;
+      border: 1px solid #dbe5f0;
+    }
+    footer {
+      text-align: center;
+      color: #5b6e89;
+      padding-bottom: 60px;
+    }
+
+    /* inline svg icons monochrome */
+    .icon-mono {
+      stroke: #2563eb;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+</head>
+<body>
+  <header id="stickyHeader">
+    <div class="header-inner">
+      <div class="logo"><span>⛓️</span> chainforge<span>.</span></div>
+      <div class="nav-links">
+        <a href="#">solutions</a>
+        <a href="#">process</a>
+        <a href="#">security</a>
+        <a href="#">pricing</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO 100vh -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <h1>Web3 & Blockchain Development</h1>
+          <p class="subhead">Enterprise infrastructure for decentralised networks.我们从零构建主网级区块链，智能合约和零知识证明层。</p>
+          <a href="#" class="btn-primary">Build Your Blockchain Project →</a>
+          <div class="stat-group">
+            <div class="stat-item"><span class="stat-number">280+</span><span class="stat-label">smart contracts</span></div>
+            <div class="stat-item"><span class="stat-number">47</span><span class="stat-label">blockchain projects</span></div>
+            <div class="stat-item"><span class="stat-number">18</span><span class="stat-label">networks</span></div>
+          </div>
+        </div>
+
+        <!-- RIGHT SIDE: animated blockchain visualisation (pure html/css) -->
+        <div class="network-viz">
+          <div class="viz-canvas">
+            <svg viewBox="0 0 400 340" style="width:100%; height:100%">
+              <!-- chain lines (static backbone) -->
+              <line x1="60" y1="80" x2="160" y2="150" stroke="#2563eb40" stroke-width="3" stroke-dasharray="8 4" />
+              <line x1="160" y1="150" x2="280" y2="120" stroke="#2563eb40" stroke-width="3" />
+              <line x1="280" y1="120" x2="330" y2="200" stroke="#2563eb40" stroke-width="3" stroke-dasharray="8 4" />
+              <line x1="80" y1="240" x2="180" y2="190" stroke="#2563eb40" stroke-width="3" />
+              <line x1="180" y1="190" x2="300" y2="270" stroke="#2563eb40" stroke-width="3" stroke-dasharray="6 3" />
+
+              <!-- block nodes (blocks in chain) -->
+              <rect x="30" y="50" width="48" height="48" rx="8" class="node" />
+              <text x="45" y="80" fill="#2563eb" font-size="8" font-weight="bold">#B1</text>
+              <rect x="140" y="120" width="48" height="48" rx="8" class="node confirmed" />
+              <text x="155" y="150" fill="#10b981" font-size="8" font-weight="bold">#B2</text>
+              <rect x="260" y="90" width="48" height="48" rx="8" class="node" />
+              <text x="275" y="120" fill="#2563eb" font-size="8">#B3</text>
+              <rect x="310" y="175" width="48" height="48" rx="8" class="node" />
+              <text x="325" y="205" fill="#2563eb" font-size="8">#B4</text>
+              <!-- second chain -->
+              <rect x="60" y="220" width="48" height="48" rx="8" class="node" />
+              <text x="75" y="250" fill="#2563eb" font-size="8">#B5</text>
+              <rect x="165" y="165" width="48" height="48" rx="8" class="node confirmed" />
+              <text x="180" y="195" fill="#10b981" font-size="8">#B6</text>
+              <rect x="280" y="250" width="48" height="48" rx="8" class="node" />
+              <text x="295" y="280" fill="#2563eb" font-size="8">#B7</text>
+
+              <!-- transaction packets moving (animated) -->
+              <circle cx="60" cy="80" r="5" class="packet moving-dot" style="animation-delay: 0s;" />
+              <circle cx="180" cy="140" r="5" class="packet moving-dot" style="animation-delay: 1.2s;" />
+              <circle cx="290" cy="115" r="5" class="packet moving-dot" style="animation-delay: 2s;" />
+
+              <!-- hash indicators (short lines) -->
+              <line x1="90" y1="40" x2="120" y2="20" class="hash-line" />
+              <line x1="200" y1="100" x2="230" y2="80" class="hash-line" />
+              <line x1="350" y1="150" x2="380" y2="130" class="hash-line" />
+
+              <!-- verification checkmarks -->
+              <polyline points="170,100 176,108 190,86" class="check" fill="none" />
+              <polyline points="350,220 356,228 370,206" class="check" fill="none" />
+
+              <!-- wallet + contract simplified representation -->
+              <circle cx="20" cy="190" r="14" stroke="#2563eb" stroke-width="2" fill="white" />
+              <text x="12" y="195" fill="#2563eb" font-size="10">W</text>
+              <path d="M30 190 L55 210" stroke="#2563eb40" stroke-width="2" stroke-dasharray="3 3" />
+              <rect x="60" y="200" width="30" height="20" rx="4" fill="white" stroke="#2563eb" />
+              <text x="65" y="215" fill="#2563eb" font-size="8">C</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- rest of sections with reveal -->
+    <div class="container">
+      <!-- 1. solutions -->
+      <section class="reveal">
+        <h2>Blockchain Solutions We Build</h2>
+        <div class="solutions-grid">
+          <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><h3>L1/L2 protocols</h3><p>modular stacks, validator clients, custom runtimes.</p></div>
+          <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M12 22V12"/></svg><h3>interoperability hubs</h3><p>ibc, hyperlane, arbitrary messaging.</p></div>
+          <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M8 2v20M16 2v20M2 8h20M2 16h20"/></svg><h3>zk-rollups & validiums</h3><p>scalable circuits and provers.</p></div>
+        </div>
+      </section>
+
+      <!-- 2. smart contract -->
+      <section class="reveal">
+        <h2>Smart Contract Development</h2>
+        <div style="display:flex; gap:60px; align-items:center;">
+          <div style="flex:1"><p style="font-size:1.3rem;">audited, gas-optimised contracts in solidity, rust(wasm), vyper. templates: ERC, defi, DAO, custom.</p></div>
+          <div style="flex:1; background:#f4f9ff; padding:30px; border-radius:48px;">
+            <svg width="80" height="40" viewBox="0 0 80 20"><rect x="2" y="2" width="16" height="16" rx="2" fill="none" stroke="#2563eb"/><rect x="22" y="2" width="16" height="16" rx="2" fill="none" stroke="#2563eb"/><rect x="42" y="2" width="16" height="16" rx="2" fill="#2563eb10" stroke="#2563eb"/><path d="M10 18 L26 18 M38 18 L54 18" stroke="#2563eb" stroke-width="2"/></svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. architecture -->
+      <section class="reveal">
+        <h2>Web3 Application Architecture</h2>
+        <div class="solutions-grid">
+          <div class="card"><h3>indexing & RPC</h3><p>subgraphs, graphql, light clients.</p></div>
+          <div class="card"><h3>account abstraction</h3><p>ERC‑4337, session keys, passkeys.</p></div>
+          <div class="card"><h3>private mempools</h3><p>flashbots, mev mitigation.</p></div>
+        </div>
+      </section>
+
+      <!-- 4. supported blockchains -->
+      <section class="reveal">
+        <h2>Supported Blockchains</h2>
+        <div class="network-list">
+          <span class="network-chip">Ethereum</span><span class="network-chip">Solana</span><span class="network-chip">Polygon</span><span class="network-chip">Arbitrum</span>
+          <span class="network-chip">Optimism</span><span class="network-chip">Avalanche</span><span class="network-chip">Near</span><span class="network-chip">zkSync</span>
+          <span class="network-chip">Starknet</span><span class="network-chip">BNB Chain</span><span class="network-chip">Celestia</span>
+        </div>
+      </section>
+
+      <!-- 5. development process -->
+      <section class="reveal">
+        <h2>Development Process</h2>
+        <div style="display:flex; gap:20px; justify-content:space-between;">
+          <div class="card" style="flex:1">⚙️ spec & modelling</div>
+          <div class="card" style="flex:1">🔐 security review</div>
+          <div class="card" style="flex:1">🚀 testnet & mainnet</div>
+        </div>
+      </section>
+
+      <!-- 6. security & auditing -->
+      <section class="reveal">
+        <h2>Security & Auditing</h2>
+        <div style="background:#fff; border-radius:48px; padding:48px; border:1px solid #e2e8f0;">
+          <p>formal verification · invariant tests · 3rd party audits · bug bounties · monitoring</p>
+        </div>
+      </section>
+
+      <!-- 7. pricing with toggle -->
+      <section class="reveal">
+        <h2>Pricing & deployment</h2>
+        <div class="pricing-toggle" id="pricingToggle">
+          <span class="toggle-option active" data-env="testnet">Testnet</span>
+          <span class="toggle-option" data-env="mainnet">Mainnet</span>
+        </div>
+        <div class="pricing-grid" id="pricingCards">
+          <div class="price-card"><h3>Smart Contract</h3><p class="price-value" data-testnet="12k" data-mainnet="45k">$12k</p><p>per module + audits</p></div>
+          <div class="price-card"><h3>Web3 dApp</h3><p class="price-value" data-testnet="28k" data-mainnet="89k">$28k</p><p>full-stack with infra</p></div>
+          <div class="price-card"><h3>Blockchain Platform</h3><p class="price-value" data-testnet="75k" data-mainnet="250k">$75k</p><p>custom L1/L2</p></div>
+        </div>
+      </section>
+
+      <!-- 8. FAQ accordion -->
+      <section class="reveal">
+        <h2>Frequently Asked</h2>
+        <div class="faq-item open"><div class="faq-question">Which networks do you target?<span style="color:#2563eb;">−</span></div><div class="faq-answer">evm, solana, cosmos, starknet, and all rollups.</div></div>
+        <div class="faq-item"><div class="faq-question">Do you provide post-deployment?<span style="color:#2563eb;">+</span></div><div class="faq-answer">Yes, 12 months maintenance & monitoring.</div></div>
+        <div class="faq-item"><div class="faq-question">What about zk-audits?<span style="color:#2563eb;">+</span></div><div class="faq-answer">Dedicated ZK-circuit verification team.</div></div>
+      </section>
+
+      <!-- final CTA -->
+      <section class="final-cta reveal">
+        <h2 style="color:white;">Launch Your Blockchain Project</h2>
+        <button class="telegram-btn" id="telegramBtn">✈️ Contact via Telegram</button>
+      </section>
+      <footer>© chainforge — web3 infrastructure · all rights reserved</footer>
+    </div>
+  </main>
+
+  <script>
+    (function() {
+      // sticky header shrink
+      const header = document.getElementById('stickyHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) header.classList.add('shrink');
+        else header.classList.remove('shrink');
+      });
+
+      // IntersectionObserver reveal
+      const reveals = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+      reveals.forEach(el => observer.observe(el));
+
+      // pricing toggle (testnet/mainnet)
+      const toggleOptions = document.querySelectorAll('.toggle-option');
+      const priceValues = document.querySelectorAll('.price-value');
+      function setPrices(env) {
+        priceValues.forEach(el => {
+          const val = el.dataset[env]; // dataset.testnet or dataset.mainnet
+          if (val) el.innerText = '$' + val;
+        });
+      }
+      toggleOptions.forEach(opt => {
+        opt.addEventListener('click', e => {
+          toggleOptions.forEach(o => o.classList.remove('active'));
+          opt.classList.add('active');
+          const env = opt.dataset.env; // 'testnet' or 'mainnet'
+          setPrices(env);
+        });
+      });
+
+      // FAQ accordion
+      const faqItems = document.querySelectorAll('.faq-item');
+      faqItems.forEach(item => {
+        const q = item.querySelector('.faq-question');
+        q.addEventListener('click', () => {
+          item.classList.toggle('open');
+          const span = q.querySelector('span');
+          if (span) span.innerText = item.classList.contains('open') ? '−' : '+';
+        });
+      });
+
+      // telegram button alert (no actual link)
+      document.getElementById('telegramBtn').addEventListener('click', () => {
+        alert('✈️ Telegram: @chainforge_dev (demo)');
+      });
+
+      // smooth scroll for internal anchor (optional)
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

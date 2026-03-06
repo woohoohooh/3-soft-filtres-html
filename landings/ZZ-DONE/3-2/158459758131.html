@@ -1,0 +1,574 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuznetsov · студия визуального продакшена</title>
+    <!-- Font Awesome 6 (стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0b0c10;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #eaeef2;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        /* искусственный Inter через fallback */
+        h1, h2, h3, .menu a { font-weight: 500; letter-spacing: -0.02em; }
+
+        /* фиксированное меню с динамикой */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1300px;
+            background: rgba(15, 20, 25, 0.75);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 60px;
+            padding: 0.8rem 2.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 999;
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            box-shadow: 0 15px 40px -15px rgba(0,0,0,0.8);
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .navbar.compact {
+            top: 10px;
+            padding: 0.4rem 1.8rem;
+            background: rgba(8, 12, 18, 0.9);
+            border-color: rgba(255, 215, 0, 0.4);
+            box-shadow: 0 10px 30px -8px gold;
+        }
+        .logo a {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(130deg, #fff8e7, #f5c542);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+        .menu {
+            display: flex;
+            gap: 2.5rem;
+        }
+        .menu a {
+            color: #ddd;
+            text-decoration: none;
+            font-size: 1.05rem;
+            font-weight: 500;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+        .menu a:hover {
+            color: #f5c542;
+            border-bottom-color: #f5c542;
+        }
+        /* общие секции */
+        section {
+            min-height: 100vh;
+            padding: 6rem 8% 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            will-change: transform, opacity;
+        }
+        .section-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        /* анимация появления блоков (Intersection Observer) */
+        .fade-slide {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+        .fade-slide.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* шапка с canvas (анимация частиц) */
+        #hero {
+            padding-top: 7rem;
+            background: radial-gradient(circle at 30% 40%, #16222e, #030507);
+            position: relative;
+            overflow: hidden;
+        }
+        #hero canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            max-width: 800px;
+        }
+        .hero-content h1 {
+            font-size: clamp(3rem, 8vw, 5.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .hero-content .gold {
+            color: #f5c542;
+            text-shadow: 0 0 8px rgba(245, 197, 66, 0.5);
+        }
+        .hero-desc {
+            font-size: 1.4rem;
+            margin: 1.5rem 0 2rem;
+            color: #b0bccb;
+            max-width: 600px;
+        }
+        .cta-button {
+            background: #f5c542;
+            border: none;
+            color: #0b0c10;
+            font-weight: 600;
+            font-size: 1.2rem;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 15px 25px -8px rgba(245, 197, 66, 0.3);
+            transition: all 0.25s;
+            border: 1px solid rgba(255,255,200,0.3);
+            letter-spacing: 0.3px;
+        }
+        .cta-button:hover {
+            background: #ffd966;
+            transform: scale(1.05);
+            box-shadow: 0 20px 30px -5px #f5c542;
+        }
+        /* Блок 2 — услуги */
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .service-card {
+            background: rgba(20, 28, 40, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 2rem;
+            padding: 2rem 1.8rem;
+            border: 1px solid rgba(255,215,0,0.1);
+            transition: all 0.3s;
+        }
+        .service-card:hover {
+            border-color: #f5c542;
+            transform: translateY(-10px) scale(1.02);
+            background: rgba(30, 40, 55, 0.9);
+        }
+        .service-card i {
+            font-size: 2.7rem;
+            color: #f5c542;
+            margin-bottom: 1.2rem;
+        }
+        /* блок 3 — портфолио (слайдер / карусель) */
+        .portfolio-show {
+            display: flex;
+            gap: 1.5rem;
+            overflow-x: auto;
+            padding: 2rem 0.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: #f5c542 #1e293b;
+            cursor: grab;
+            user-select: none;
+        }
+        .portfolio-show:active { cursor: grabbing; }
+        .portfolio-show::-webkit-scrollbar { height: 6px; }
+        .portfolio-show::-webkit-scrollbar-thumb { background: #f5c542; border-radius: 20px; }
+
+        .port-item {
+            min-width: 280px;
+            height: 340px;
+            background: linear-gradient(145deg, #1e2a3a, #0f1722);
+            border-radius: 2rem;
+            padding: 2rem 1.5rem;
+            border: 1px solid #3f4b5c;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            position: relative;
+            transition: 0.2s;
+        }
+        .port-item i {
+            font-size: 3rem;
+            color: #f5c542;
+            margin-bottom: 1rem;
+        }
+        .port-item h3 { font-size: 1.8rem; }
+        /* блок 4 — кейсы / цифры */
+        .stats {
+            display: flex;
+            gap: 3rem;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin: 3rem 0;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-num {
+            font-size: 4.2rem;
+            font-weight: 700;
+            color: #f5c542;
+            line-height: 1;
+        }
+        /* блок 5 — команда (иконки) */
+        .team-grid {
+            display: flex;
+            gap: 3rem;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+        }
+        .team-card {
+            background: #151f2c;
+            border-radius: 2rem;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            flex: 1 1 180px;
+            border-bottom: 3px solid #f5c542;
+        }
+        .team-card i { font-size: 3.5rem; color: #f5c542; margin-bottom: 1rem;}
+        /* блок 6 — отзывы */
+        .review {
+            background: #1a2533;
+            border-radius: 2.5rem;
+            padding: 2rem;
+            font-style: italic;
+            border-left: 6px solid #f5c542;
+        }
+        /* блок 7 — FAQ */
+        .faq-item {
+            background: rgba(255,255,255,0.02);
+            border-radius: 2rem;
+            padding: 1.5rem 2rem;
+            margin: 1rem 0;
+            border: 1px solid #2f3b4b;
+        }
+        .faq-question {
+            font-weight: 600;
+            font-size: 1.3rem;
+            color: #f5c542;
+        }
+        /* футер */
+        footer {
+            background: #050a10;
+            padding: 3rem 8%;
+            border-top: 1px solid #2a343f;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+        .social i {
+            font-size: 1.8rem;
+            margin-right: 1.5rem;
+            color: #b0bccb;
+            transition: 0.2s;
+        }
+        .social i:hover { color: #f5c542; }
+        /* кнопка вверх */
+        .top-link {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #f5c542;
+            width: 50px;
+            height: 50px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-size: 1.5rem;
+            text-decoration: none;
+            opacity: 0;
+            transition: 0.3s;
+            pointer-events: none;
+            z-index: 99;
+        }
+        .top-link.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* адаптив (ПК достаточно, но чуть подожмём) */
+        @media (max-width: 900px) {
+            .navbar { width: 95%; padding: 0.6rem 1rem; }
+            .menu { gap: 1rem; }
+            .service-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fixed navbar -->
+    <div class="navbar" id="navbar">
+        <div class="logo"><a href="#hero">K<span style="color:#f5c542;">.</span>studio</a></div>
+        <div class="menu">
+            <a href="#services">услуги</a>
+            <a href="#portfolio">портфолио</a>
+            <a href="#cases">кейсы</a>
+            <a href="#team">команда</a>
+            <a href="#reviews">отзывы</a>
+            <a href="#faq">faq</a>
+        </div>
+    </div>
+
+    <!-- БЛОК 1: Hero с canvas (анимация частиц) -->
+    <section id="hero">
+        <canvas id="particleCanvas"></canvas>
+        <div class="section-inner hero-content">
+            <h1>Снимаем <span class="gold">кадры</span><br>которые продают</h1>
+            <p class="hero-desc">Продакшн полного цикла для брендов и агентств. От рекламного ролика до имиджевого портфолио.</p>
+            <button class="cta-button" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});">Обсудить проект →</button>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: услуги (с иконками) -->
+    <section id="services" class="fade-slide">
+        <div class="section-inner">
+            <h2 style="font-size: 3rem; margin-bottom: 1rem;">Что мы делаем</h2>
+            <div class="service-grid">
+                <div class="service-card"><i class="fas fa-video"></i><h3>Продакшн</h3><p>Съемка клипов, рекламы, контента для соцсетей под ключ.</p></div>
+                <div class="service-card"><i class="fas fa-camera-retro"></i><h3>Портфолио</h3><p>Индивидуальные фотосессии для моделей, артистов, блогеров.</p></div>
+                <div class="service-card"><i class="fas fa-paint-brush"></i><h3>Постпродакшн</h3><p>Цветокоррекция, моушн-дизайн, саунд-дизайн любой сложности.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: Портфолио / карусель (с drag) -->
+    <section id="portfolio" class="fade-slide">
+        <div class="section-inner">
+            <h2 style="font-size: 3rem;">Избранные проекты</h2>
+            <div class="portfolio-show" id="dragScroll">
+                <div class="port-item"><i class="fas fa-star"></i><h3>Lumiere</h3><p>имиджевый ролик</p></div>
+                <div class="port-item"><i class="fas fa-headphones-alt"></i><h3>DJ ANNA</h3><p>сет / клип</p></div>
+                <div class="port-item"><i class="fas fa-rings-wedding"></i><h3>Lavender</h3><p>свадебный фильм</p></div>
+                <div class="port-item"><i class="fas fa-mask"></i><h3>GQ style</h3><p>фотосессия</p></div>
+                <div class="port-item"><i class="fas fa-music"></i><h3>Moscow</h3><p>музыкальное видео</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: кейсы / цифры -->
+    <section id="cases" class="fade-slide">
+        <div class="section-inner">
+            <h2>Цифры и факты</h2>
+            <div class="stats">
+                <div class="stat-item"><span class="stat-num">150+</span><p>реализованных проектов</p></div>
+                <div class="stat-item"><span class="stat-num">12</span><p>профессионалов в команде</p></div>
+                <div class="stat-item"><span class="stat-num">9</span><p>лет на рынке</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: команда -->
+    <section id="team" class="fade-slide">
+        <div class="section-inner">
+            <h2>Ключевые люди</h2>
+            <div class="team-grid">
+                <div class="team-card"><i class="fas fa-user-tie"></i><h3>Артур К.</h3><p>режиссёр</p></div>
+                <div class="team-card"><i class="fas fa-camera"></i><h3>Елена В.</h3><p>оператор</p></div>
+                <div class="team-card"><i class="fas fa-photo-video"></i><h3>Марат С.</h3><p>креативный продюсер</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: отзывы -->
+    <section id="reviews" class="fade-slide">
+        <div class="section-inner">
+            <h2>Нас рекомендуют</h2>
+            <div class="review"><i class="fas fa-quote-left" style="color:#f5c542;"></i> Команда K.studio сделала невозможное — за 2 дня отсняли и смонтировали ролик, который собрал миллион просмотров. Профессионалы высшего уровня.</div>
+            <p style="margin-top: 2rem;">— Никита, основатель бренда North</p>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: FAQ / контактная информация -->
+    <section id="faq" class="fade-slide">
+        <div class="section-inner">
+            <h2>Частые вопросы</h2>
+            <div class="faq-item"><span class="faq-question">Сколько длится продакшн?</span><p>От идеи до готового ролика в среднем 2-3 недели, но срочные заказы делаем за 3-5 дней.</p></div>
+            <div class="faq-item"><span class="faq-question">Нужен сценарий?</span><p>Мы разрабатываем сценарий под ваш бюджет или работаем с вашим брифом. Главное — результат.</p></div>
+            <div class="faq-item"><span class="faq-question">Работаете с регионами?</span><p>Да, удалённый продакшн и выезд съёмочной группы — стандартная практика.</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: Контакты / призыв к действию -->
+    <section id="contact" class="fade-slide" style="min-height: 70vh;">
+        <div class="section-inner">
+            <h2 style="font-size: 3rem;">Напишите нам</h2>
+            <p style="font-size: 1.4rem; max-width: 500px;">Почта: hello@k.studio<br>Телеграм: @kuznetsov_pro</p>
+            <div style="margin: 3rem 0; display: flex; gap: 2rem;">
+                <i class="fab fa-telegram-plane" style="font-size: 2.5rem;"></i>
+                <i class="fab fa-instagram" style="font-size: 2.5rem;"></i>
+                <i class="fab fa-whatsapp" style="font-size: 2.5rem;"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- футер (9-й блок) -->
+    <footer>
+        <div>© 2025 K.studio — визуальный продакшн</div>
+        <div class="social">
+            <i class="fab fa-vk"></i>
+            <i class="fab fa-youtube"></i>
+            <i class="fab fa-behance"></i>
+        </div>
+    </footer>
+
+    <!-- кнопка наверх -->
+    <a href="#" class="top-link" id="topLink"><i class="fas fa-arrow-up"></i></a>
+
+    <script>
+        (function(){
+            // 1. АНИМАЦИЯ ЧАСТИЦ (canvas в hero)
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initParticles() {
+                width = canvas.clientWidth;
+                height = canvas.clientHeight;
+                canvas.width = width;
+                canvas.height = height;
+                const particleCount = 80;
+                particles = [];
+                for(let i=0; i<particleCount; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 2.5 + 1,
+                        speedX: (Math.random() - 0.5) * 0.25,
+                        speedY: (Math.random() - 0.5) * 0.15,
+                        color: `rgba(245, 197, 66, ${Math.random()*0.5+0.2})`
+                    });
+                }
+            }
+
+            function drawParticles() {
+                if(!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    // движение
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    // границы
+                    if(p.x < 0 || p.x > width) p.speedX *= -1;
+                    if(p.y < 0 || p.y > height) p.speedY *= -1;
+                });
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', ()=>{
+                initParticles();
+            });
+            initParticles();
+            drawParticles();
+
+            // 2. Intersection Observer (появление блоков)
+            const sections = document.querySelectorAll('.fade-slide');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if(entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    } else {
+                        // можно убрать класс, если нужен каждый раз эффект (по желанию)
+                        // entry.target.classList.remove('visible');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px' });
+            sections.forEach(sec => observer.observe(sec));
+
+            // 3. navbar компактный при скролле
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', function() {
+                if(window.scrollY > 80) {
+                    navbar.classList.add('compact');
+                } else {
+                    navbar.classList.remove('compact');
+                }
+                // кнопка вверх
+                const topLink = document.getElementById('topLink');
+                if(window.scrollY > 600) {
+                    topLink.classList.add('show');
+                } else {
+                    topLink.classList.remove('show');
+                }
+            });
+
+            // 4. горизонтальный drag для портфолио
+            const scrollContainer = document.getElementById('dragScroll');
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            scrollContainer.addEventListener('mousedown', (e) => {
+                isDown = true;
+                scrollContainer.style.cursor = 'grabbing';
+                startX = e.pageX - scrollContainer.offsetLeft;
+                scrollLeft = scrollContainer.scrollLeft;
+            });
+            scrollContainer.addEventListener('mouseleave', () => {
+                isDown = false;
+                scrollContainer.style.cursor = 'grab';
+            });
+            scrollContainer.addEventListener('mouseup', () => {
+                isDown = false;
+                scrollContainer.style.cursor = 'grab';
+            });
+            scrollContainer.addEventListener('mousemove', (e) => {
+                if(!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - scrollContainer.offsetLeft;
+                const walk = (x - startX) * 1.5; // скорость
+                scrollContainer.scrollLeft = scrollLeft - walk;
+            });
+
+            // 5. случайная тема выбрана: Лендинг для режиссера монтажа или видеографа (демо-рил) — реализовано выше.
+            // 6. якоря плавно
+            document.querySelectorAll('.menu a, .top-link').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if(href && href.startsWith('#')) {
+                        e.preventDefault();
+                        const target = document.querySelector(href);
+                        if(target) target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

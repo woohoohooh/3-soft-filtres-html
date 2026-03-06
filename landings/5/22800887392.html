@@ -1,0 +1,747 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram Bot Development · Automation first</title>
+  <style>
+    /* ---------- RESET & BASE ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(145deg, #ffffff 0%, #f7fafc 100%);
+      color: #111827;
+      line-height: 1.6;
+      font-size: 18px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* fallback Inter – no external font, use system */
+    h1, h2, h3, button, .header {
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* ---------- STICKY HEADER (shrinks on scroll) ---------- */
+    .site-header {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(37, 99, 235, 0.08);
+      padding: 1.5rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: padding 0.2s ease;
+      z-index: 100;
+    }
+
+    .site-header.shrink {
+      padding: 0.7rem 2.5rem;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      color: #111827;
+    }
+
+    .logo span {
+      color: #2563EB; /* deep blue accent */
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 3rem;
+      font-weight: 500;
+      color: #2d3a4b;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: inherit;
+      font-size: 1.1rem;
+    }
+
+    .header-cta {
+      background: #2563EB;
+      color: white;
+      padding: 0.6rem 1.6rem;
+      border-radius: 40px;
+      font-weight: 500;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+
+    .header-cta:hover {
+      background: #1e4db9;
+    }
+
+    /* ---------- LAYOUT & SPACING ---------- */
+    section {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2.5rem;
+    }
+
+    .section-spacer {
+      height: 140px; /* >120px large spacing */
+    }
+
+    /* ---------- HERO (exactly 100vh) ---------- */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 0 2.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hero-left {
+      flex: 1;
+      padding-right: 4rem;
+    }
+
+    .hero-left h1 {
+      font-size: 88px; /* 88–96 range */
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: #0b1c33;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-sub {
+      font-size: 20px;
+      color: #2d4059;
+      max-width: 550px;
+      margin-bottom: 2.5rem;
+      font-weight: 400;
+    }
+
+    .primary-btn {
+      background: #2563EB;
+      border: none;
+      color: white;
+      font-size: 1.3rem;
+      font-weight: 600;
+      padding: 1.2rem 3rem;
+      border-radius: 60px;
+      cursor: pointer;
+      box-shadow: 0 12px 28px -10px rgba(37,99,235,0.35);
+      transition: transform 0.1s, background 0.1s;
+      margin-bottom: 3rem;
+    }
+
+    .primary-btn:hover {
+      background: #1a4bbf;
+      transform: scale(1.02);
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 3rem;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2563EB;
+    }
+
+    .stat-label {
+      font-size: 1rem;
+      color: #4b5b6b;
+      letter-spacing: 0.3px;
+    }
+
+    /* ---------- RIGHT SIDE: LIVE TELEGRAM CHAT ---------- */
+    .hero-right {
+      flex: 1;
+      background: #ffffff;
+      border-radius: 36px;
+      box-shadow: 0 40px 70px -20px rgba(0,30,60,0.25);
+      border: 1px solid rgba(37,99,235,0.15);
+      height: min(620px, 80vh);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: #f0f4fa;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .chat-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #25a16b;
+    }
+
+    .chat-title {
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 16px;
+      background: #ffffff;
+    }
+
+    .message-row {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      opacity: 0;
+      animation: slideUpFade 0.3s ease forwards;
+    }
+
+    .message-row.user {
+      align-items: flex-end;
+    }
+
+    .bubble {
+      max-width: 80%;
+      padding: 12px 18px;
+      border-radius: 22px;
+      font-size: 15px;
+      line-height: 1.5;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    .user .bubble {
+      background: #2563EB;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .bot .bubble {
+      background: #f0f3f8;
+      color: #1e293b;
+      border-bottom-left-radius: 4px;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 5px;
+      padding: 12px 20px;
+      background: #f0f3f8;
+      border-radius: 30px;
+      width: fit-content;
+    }
+
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: #7e8b9c;
+      border-radius: 50%;
+      animation: pulseTyping 1.2s infinite;
+    }
+
+    .inline-keyboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .keyboard-btn {
+      background: white;
+      border: 1px solid #2563EB;
+      color: #2563EB;
+      padding: 8px 18px;
+      border-radius: 40px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: default;
+      transition: 0.1s;
+    }
+
+    .keyboard-btn:hover {
+      background: #eff6ff;
+    }
+
+    /* chat animations */
+    @keyframes slideUpFade {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulseTyping {
+      0%,100%{ opacity: 0.4; transform:scale(1);}
+      50%{ opacity:1; transform:scale(1.2); background:#2563EB;}
+    }
+
+    /* ---------- MISC ---------- */
+    h2 {
+      font-size: 52px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #0b1c33;
+      margin-bottom: 1.5rem;
+    }
+
+    h3 {
+      font-size: 30px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 1rem;
+    }
+
+    .grid-2col, .cap-grid, .process-grid, .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      margin-top: 2rem;
+    }
+
+    .cap-grid { grid-template-columns: repeat(3,1fr); }
+    .process-grid { grid-template-columns: repeat(4,1fr); }
+    .pricing-grid { grid-template-columns: repeat(3,1fr); }
+
+    .card {
+      background: white;
+      border-radius: 32px;
+      padding: 2rem;
+      box-shadow: 0 15px 35px -15px rgba(0,30,60,0.1);
+      border: 1px solid rgba(37,99,235,0.08);
+      transition: transform 0.1s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+    }
+
+    .icon-svg {
+      width: 40px;
+      height: 40px;
+      stroke: #2563EB;
+      stroke-width: 1.8;
+      fill: none;
+      margin-bottom: 1.5rem;
+    }
+
+    .toggle-switch {
+      display: flex;
+      gap: 12px;
+      background: #f1f5f9;
+      padding: 6px;
+      border-radius: 60px;
+      width: fit-content;
+      margin: 2rem 0 2rem;
+    }
+
+    .toggle-option {
+      padding: 0.8rem 2rem;
+      border-radius: 60px;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #3b4a5a;
+      transition: 0.1s;
+      border: none;
+    }
+
+    .toggle-option.active {
+      background: #2563EB;
+      color: white;
+    }
+
+    .price-card {
+      background: white;
+      border-radius: 36px;
+      padding: 2.5rem 2rem;
+      border: 1px solid #eef2f6;
+    }
+
+    .price-highlight {
+      background: #f6f9ff;
+      border: 1.5px solid #2563EB;
+    }
+
+    .price {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #0b1c33;
+      margin: 1rem 0;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid #dee5ed;
+      padding: 1.5rem 0;
+    }
+
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 1.3rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+      color: #475569;
+      padding-right: 2rem;
+    }
+
+    .faq-item.expanded .faq-answer {
+      max-height: 200px;
+      margin-top: 1.2rem;
+    }
+
+    .final-cta {
+      text-align: center;
+      background: white;
+      border-radius: 80px;
+      padding: 5rem 4rem;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+      margin-bottom: 4rem;
+    }
+
+    .telegram-btn {
+      background: #2563EB;
+      color: white;
+      border: none;
+      padding: 1.5rem 4rem;
+      font-size: 1.6rem;
+      font-weight: 600;
+      border-radius: 70px;
+      margin-top: 2rem;
+      cursor: pointer;
+    }
+
+    /* ---------- INTERSECTION OBSERVER FADE ---------- */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    hr {
+      border: 1px solid #e9edf2;
+      margin: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header" id="mainHeader">
+    <div class="logo">BOT<span>FORGE</span></div>
+    <div class="nav-links">
+      <a href="#use-cases">Use cases</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="#process">Process</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <button class="header-cta">Contact</button>
+  </header>
+
+  <section class="hero">
+    <div class="hero-left">
+      <h1>Telegram Bot Development</h1>
+      <div class="hero-sub">Enterprise‑grade conversational automation for support, sales & operations — deployed in days, not months.</div>
+      <button class="primary-btn">Build Your Telegram Bot</button>
+      <div class="stat-row">
+        <div class="stat-item"><span class="stat-number">340+</span><span class="stat-label">bots delivered</span></div>
+        <div class="stat-item"><span class="stat-number">1.2k</span><span class="stat-label">automations</span></div>
+        <div class="stat-item"><span class="stat-number">98</span><span class="stat-label">clients served</span></div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="chat-header">
+        <span class="chat-dot"></span>
+        <span class="chat-title">Telegram · support_bot</span>
+      </div>
+      <div class="chat-messages" id="liveChat">
+        <!-- injected via js -->
+      </div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- Use cases -->
+  <section id="use-cases" class="fade-up">
+    <h2>Telegram Bot Use Cases</h2>
+    <div class="grid-2col">
+      <div class="card"><h3>Customer support</h3><p>Instant answers, ticket creation, order status — 24/7 automated resolution.</p></div>
+      <div class="card"><h3>Lead qualification</h3><p>Interactive menus gather client needs and forward to sales.</p></div>
+      <div class="card"><h3>Internal ops</h3><p>HR requests, IT alerts, meeting room booking via chat.</p></div>
+      <div class="card"><h3>E‑commerce</h3><p>Product catalog, cart updates, payment confirmations.</p></div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- Capabilities grid -->
+  <section id="capabilities" class="fade-up">
+    <h2>Bot Capabilities</h2>
+    <div class="cap-grid">
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 4h16v2H4V4zm2 4h12v2H6V8zm10 4H8v2h8v-2z"/></svg>Rich menus & inline keyboards</div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zM4 8h10v2H4V8zm16 4H8v2h12v-2zM4 16h16v2H4v-2z"/></svg>Multi-step forms & quizzes</div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M5 12h2v4H5v-4zm12-4h2v8h-2V8zM9 8h2v8H9V8z"/></svg>Real‑time analytics</div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 7h-2V5h-2V3h-2v2h-2V3H9v2H7v2H5v2h2v2H5v2h2v4H5v2h2v2h2v2h2v-2h2v2h2v-2h2v-2h2v-2h-2v-4h2v-2h-2V9h2V7z"/></svg>Payment collection</div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="2"/><circle cx="12" cy="16" r="2"/><circle cx="12" cy="12" r="2"/></svg>CRM & API sync</div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 4h16v2H4V4zm2 4h12v2H6V8zm10 4H8v2h8v-2z"/></svg>Multi‑language</div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- Example automation flows -->
+  <section class="fade-up">
+    <h2>Example Automation Flows</h2>
+    <div class="grid-2col">
+      <div class="card"><strong>🔄 /start → welcome + menu</strong><br/>User selects /order → bot asks for product ID → inline confirmation → CRM update.</div>
+      <div class="card"><strong>📞 Support flow</strong><br/>User types “help” → bot offers categories → ticket created in helpdesk.</div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- Integrations -->
+  <section class="fade-up">
+    <h2>Integrations</h2>
+    <div class="grid-2col">
+      <div class="card"><h3>CRM & APIs</h3>Salesforce, HubSpot, Pipedrive – two‑way sync.</div>
+      <div class="card"><h3>Payments</h3>Stripe, PayPal, crypto via payment widgets.</div>
+      <div class="card"><h3>Databases</h3>MySQL, PostgreSQL, Firebase realtime.</div>
+      <div class="card"><h3>Webhooks</h3>Custom HTTP calls to any endpoint.</div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- Development process -->
+  <section id="process" class="fade-up">
+    <h2>Development Process</h2>
+    <div class="process-grid">
+      <div class="card"><span style="font-size:3rem;">1</span><h3>Scoping</h3>User stories & conversation design</div>
+      <div class="card"><span style="font-size:3rem;">2</span><h3>Prototype</h3>Interactive mockup in Telegram</div>
+      <div class="card"><span style="font-size:3rem;">3</span><h3>Build & integrate</h3>APIs, DB, admin panel</div>
+      <div class="card"><span style="font-size:3rem;">4</span><h3>Launch & monitor</h3>Analytics & continuous tuning</div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- Pricing with toggle -->
+  <section id="pricing" class="fade-up">
+    <h2>Simple, transparent pricing</h2>
+    <div class="toggle-switch" id="pricingToggle">
+      <button class="toggle-option active" data-plan="basic">Basic</button>
+      <button class="toggle-option" data-plan="advanced">Advanced</button>
+    </div>
+    <div class="pricing-grid" id="pricingCards">
+      <!-- updated via js -->
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- FAQ accordion -->
+  <section class="fade-up">
+    <h2>Frequently asked questions</h2>
+    <div class="faq-item expanded" onclick="toggleFaq(this)">
+      <div class="faq-question">Can I connect my existing Telegram bot? <span style="font-size:2rem;">−</span></div>
+      <div class="faq-answer">Yes, we integrate with existing bots or build new ones from scratch.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question">Do you provide analytics? <span style="font-size:2rem;">+</span></div>
+      <div class="faq-answer">Every plan includes a dashboard with message volume, user retention, and custom events.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question">How long does development take? <span style="font-size:2rem;">+</span></div>
+      <div class="faq-answer">Typical bot is live within 2–4 weeks, including iterations.</div>
+    </div>
+  </section>
+
+  <div class="section-spacer"></div>
+
+  <!-- Final CTA block -->
+  <section class="final-cta fade-up">
+    <h2 style="font-size:64px;">Launch Your Telegram Bot</h2>
+    <button class="telegram-btn" onclick="window.open('https://t.me/telegram','_blank')">Contact via Telegram</button>
+  </section>
+
+  <script>
+    (function() {
+      // ----- sticky header shrink -----
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 20) header.classList.add('shrink');
+        else header.classList.remove('shrink');
+      });
+
+      // ----- LIVE CHAT ANIMATION (Telegram simulation) -----
+      const chatBox = document.getElementById('liveChat');
+      const messages = [
+        { type: 'user', text: '/start' },
+        { type: 'bot', text: 'Welcome! I can help you with orders, support, or FAQs.', delay: 600 },
+        { type: 'bot', keyboard: true, delay: 1000 },
+        { type: 'user', text: 'Show products', delay: 2000 },
+        { type: 'bot', text: 'Here are our top categories:', delay: 2800 },
+        { type: 'bot', menu: true, delay: 3500 },
+        { type: 'user', text: 'Electronics', delay: 4500 },
+        { type: 'bot', text: 'Great! You selected Electronics. Choose a brand:', delay: 5200 },
+        { type: 'bot', inline: ['Apple', 'Samsung', 'Sony'], delay: 6000 }
+      ];
+
+      let msgIndex = 0;
+      function addNextMessage() {
+        if (msgIndex >= messages.length) {
+          // loop
+          msgIndex = 0;
+          setTimeout(clearAndRestart, 2000);
+          return;
+        }
+        const m = messages[msgIndex];
+        const row = document.createElement('div');
+        row.className = `message-row ${m.type === 'user' ? 'user' : 'bot'}`;
+        row.style.animationDelay = '0.1s';
+
+        if (m.keyboard) {
+          const kbDiv = document.createElement('div');
+          kbDiv.className = 'inline-keyboard';
+          kbDiv.innerHTML = `<span class="keyboard-btn">📦 Orders</span><span class="keyboard-btn">❓ Help</span><span class="keyboard-btn">ℹ️ About</span>`;
+          row.appendChild(kbDiv);
+        } else if (m.menu) {
+          const menuDiv = document.createElement('div');
+          menuDiv.className = 'inline-keyboard';
+          menuDiv.innerHTML = `<span class="keyboard-btn">📱 Electronics</span><span class="keyboard-btn">👕 Fashion</span><span class="keyboard-btn">📚 Books</span>`;
+          row.appendChild(menuDiv);
+        } else if (m.inline) {
+          const inlineDiv = document.createElement('div');
+          inlineDiv.className = 'inline-keyboard';
+          inlineDiv.innerHTML = m.inline.map(i => `<span class="keyboard-btn">${i}</span>`).join('');
+          row.appendChild(inlineDiv);
+        } else {
+          const bubble = document.createElement('div');
+          bubble.className = 'bubble';
+          bubble.innerText = m.text;
+          row.appendChild(bubble);
+        }
+
+        // typing indicator before bot (except if user msg)
+        if (m.type === 'bot' && !m.keyboard && !m.menu && !m.inline) {
+          const typing = document.createElement('div');
+          typing.className = 'message-row bot';
+          typing.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+          typing.style.animationDelay = '0.05s';
+          chatBox.appendChild(typing);
+          chatBox.scrollTop = chatBox.scrollHeight;
+          setTimeout(() => {
+            if (typing.parentNode) typing.remove();
+            chatBox.appendChild(row);
+            chatBox.scrollTop = chatBox.scrollHeight;
+          }, 700);
+        } else {
+          chatBox.appendChild(row);
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        msgIndex++;
+        const delay = m.delay || (m.type==='user'?800:1200);
+        setTimeout(addNextMessage, delay);
+      }
+
+      function clearAndRestart() {
+        chatBox.innerHTML = '';
+        msgIndex = 0;
+        addNextMessage();
+      }
+      setTimeout(addNextMessage, 200);
+
+      // ----- PRICING TOGGLE + CARDS -----
+      const basicPrices = {
+        starter: { price: '990', name: 'Starter bot' },
+        business: { price: '2,490', name: 'Business bot' },
+        advanced: { price: '4,990', name: 'Advanced automation' }
+      };
+      const advancedPrices = {
+        starter: { price: '1,790', name: 'Starter + AI' },
+        business: { price: '3,990', name: 'Business + CRM sync' },
+        advanced: { price: '7,490', name: 'Enterprise automation' }
+      };
+
+      function renderPricing(plan) {
+        const data = plan === 'basic' ? basicPrices : advancedPrices;
+        const container = document.getElementById('pricingCards');
+        container.innerHTML = `
+          <div class="price-card">${data.starter.name}<div class="price">€${data.starter.price}</div><hr/>Core features, 3 integrations</div>
+          <div class="price-card price-highlight">${data.business.name}<div class="price">€${data.business.price}</div><hr/>Advanced flows, 8 integrations, SLA</div>
+          <div class="price-card">${data.advanced.name}<div class="price">€${data.advanced.price}</div><hr/>Custom development, dedicated support</div>
+        `;
+      }
+
+      const toggleBtns = document.querySelectorAll('.toggle-option');
+      toggleBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          toggleBtns.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          renderPricing(this.dataset.plan);
+        });
+      });
+      renderPricing('basic');
+
+      // ----- INTERSECTION OBSERVER (fade-up) -----
+      const faders = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) e.target.classList.add('visible');
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      faders.forEach(f => observer.observe(f));
+
+      // ----- FAQ toggle -----
+      window.toggleFaq = function(item) {
+        item.classList.toggle('expanded');
+        const sign = item.querySelector('.faq-question span');
+        if (sign) sign.innerText = item.classList.contains('expanded') ? '−' : '+';
+      };
+    })();
+  </script>
+  <div style="text-align:center; padding:3rem; color:#9aa8b9;">All done!</div>
+</body>
+</html>
+```

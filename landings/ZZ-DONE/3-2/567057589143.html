@@ -1,0 +1,581 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lenscape · режиссёр монтажа</title>
+    <!-- Font Awesome 6 (free) для стильных иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #0b0b0b;
+            color: #ededed;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* кастомный скролл */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 20px; }
+
+        /* якорная плавность */
+        html { scroll-behavior: smooth; }
+
+        /* фиксированная шапка с анимацией коллапса */
+        .header {
+            position: fixed;
+            top: 20px; left: 20px; right: 20px;
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 60px;
+            padding: 0.9rem 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            box-shadow: 0 20px 35px -8px rgba(0,0,0,0.8);
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+            z-index: 999;
+        }
+
+        /* компактный режим при скролле — активируется через JS */
+        .header.compact {
+            top: 8px; left: 8px; right: 8px;
+            padding: 0.5rem 1.8rem;
+            background: rgba(10, 10, 10, 0.95);
+            border-color: #d4af37;
+            box-shadow: 0 15px 30px -8px #000000cc;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #f5e7c8, #d4af37);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo i { color: #d4af37; margin-right: 6px; font-size: 1.5rem; background: none; -webkit-background-clip: unset; background-clip: unset; color: #d4af37; }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+        }
+        .nav-menu a {
+            color: #ccc;
+            text-decoration: none;
+            font-weight: 400;
+            font-size: 1rem;
+            transition: 0.25s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 3px;
+        }
+        .nav-menu a:hover {
+            color: #d4af37;
+            border-bottom-color: #d4af37;
+        }
+
+        /* основной контейнер */
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
+
+        /* блоки = 9 штук (включая header/footer) */
+        section { position: relative; }
+
+        /* герой */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding-top: 120px;
+            background: radial-gradient(ellipse at 70% 30%, #1e2a2a, #030303 80%);
+        }
+
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 8vw, 5.4rem);
+            font-weight: 800;
+            line-height: 1.1;
+            background: linear-gradient(145deg, #fff 10%, #d4af37 80%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 30px;
+        }
+
+        .hero .highlight {
+            color: #d4af37;
+            border-left: 4px solid #d4af37;
+            padding-left: 20px;
+            font-size: 1.4rem;
+            font-weight: 300;
+            margin: 30px 0;
+        }
+
+        .hero i.fa-circle-play { font-size: 5rem; color: #d4af37; opacity: 0.8; transition: 0.2s; }
+
+        /* абстрактная анимация (сфера) */
+        .hero-visual {
+            position: relative;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .orb {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #d4af37, #3a2c0f);
+            box-shadow: 0 0 80px #d4af3766;
+            animation: float 7s infinite alternate ease-in-out;
+            position: relative;
+        }
+
+        .orb::after {
+            content: "";
+            position: absolute;
+            inset: -15px;
+            border-radius: 50%;
+            border: 1px dashed #d4af37;
+            opacity: 0.5;
+            animation: spin 30s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-30px) scale(1.02); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* блок 2 — цифры */
+        .stats {
+            background: #111;
+            padding: 80px 0;
+            border-bottom: 1px solid #2b2b2b;
+            border-top: 1px solid #2b2b2b;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .stat-item {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(25px);
+            transition: 0.9s cubic-bezier(0.17, 0.85, 0.45, 1);
+        }
+        .stat-item.visible { opacity: 1; transform: translateY(0); }
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #d4af37;
+        }
+        .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 0.9rem;
+        }
+
+        /* блок 3 — услуги (иконки) */
+        .services {
+            padding: 100px 0;
+            background: #0a0a0a;
+        }
+        .section-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 70px;
+            position: relative;
+            display: inline-block;
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -15px;
+            width: 60px;
+            height: 3px;
+            background: #d4af37;
+        }
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+        }
+        .service-card {
+            background: #151515;
+            border-radius: 30px;
+            padding: 40px 25px;
+            border: 1px solid #2c2c2c;
+            transition: 0.35s;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.7s, transform 0.7s;
+        }
+        .service-card.visible { opacity: 1; transform: scale(1); }
+        .service-card:hover {
+            border-color: #d4af37;
+            box-shadow: 0 25px 35px -10px #d4af371a;
+        }
+        .service-card i {
+            font-size: 3rem;
+            color: #d4af37;
+            margin-bottom: 25px;
+        }
+
+        /* блок 4 — демо-рил / видео секция */
+        .showreel {
+            padding: 100px 0;
+            background: #111;
+            text-align: center;
+        }
+        .reel-frame {
+            max-width: 1000px;
+            margin: 50px auto 0;
+            background: #1f1f1f;
+            border-radius: 50px;
+            padding: 40px;
+            border: 1px solid #3e3e3e;
+            box-shadow: 0 35px 60px -20px black;
+        }
+        .reel-icon {
+            font-size: 5rem;
+            color: #d4af37;
+            animation: pulseGlow 3s infinite;
+        }
+        @keyframes pulseGlow {
+            0% { text-shadow: 0 0 10px #d4af37; }
+            50% { text-shadow: 0 0 40px #d4af37; }
+            100% { text-shadow: 0 0 10px #d4af37; }
+        }
+
+        /* блок 5 — портфолио / кейсы (иконки как заглушки) */
+        .cases {
+            padding: 100px 0;
+            background: #0a0a0a;
+        }
+        .case-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+        }
+        .case-item {
+            background: #1d1d1d;
+            height: 280px;
+            border-radius: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            border: 1px solid #333;
+            transition: 0.3s;
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: opacity 0.8s, transform 0.8s;
+        }
+        .case-item.visible { opacity: 1; transform: translateX(0); }
+        .case-item:nth-child(even) { transition-delay: 0.1s; }
+        .case-item i { font-size: 4rem; color: #d4af37; }
+
+        /* блок 6 — отзывы / логотипы клиентов */
+        .clients {
+            padding: 80px 0;
+            background: #0f0f0f;
+            text-align: center;
+        }
+        .marquee {
+            display: flex;
+            gap: 50px;
+            overflow-x: hidden;
+            white-space: nowrap;
+            mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+        }
+        .marquee i {
+            font-size: 3.5rem;
+            color: #6b6b6b;
+            margin: 0 15px;
+            transition: 0.2s;
+        }
+        .marquee i:hover { color: #d4af37; }
+
+        /* блок 7 — блог / инсайты */
+        .insights {
+            padding: 100px 0;
+            background: #111;
+        }
+        .insight-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        .insight-card {
+            background: #1b1b1b;
+            padding: 30px;
+            border-radius: 30px;
+            border-bottom: 2px solid #d4af37;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: 0.7s;
+        }
+        .insight-card.visible { opacity: 1; transform: translateY(0); }
+
+        /* блок 8 — призыв к действию */
+        .cta {
+            padding: 120px 0;
+            background: #030303;
+            text-align: center;
+        }
+        .cta-button {
+            display: inline-block;
+            background: transparent;
+            border: 2px solid #d4af37;
+            color: #d4af37;
+            font-size: 1.5rem;
+            font-weight: 600;
+            padding: 18px 70px;
+            border-radius: 60px;
+            text-decoration: none;
+            letter-spacing: 2px;
+            transition: 0.35s;
+            margin-top: 40px;
+            box-shadow: 0 0 20px transparent;
+        }
+        .cta-button:hover {
+            background: #d4af37;
+            color: black;
+            box-shadow: 0 0 40px #d4af37;
+        }
+
+        /* футер */
+        .footer {
+            background: #0a0a0a;
+            padding: 50px 40px 30px;
+            border-top: 1px solid #d4af371a;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .socials i {
+            font-size: 2rem;
+            margin: 0 12px;
+            color: #777;
+            transition: 0.2s;
+        }
+        .socials i:hover { color: #d4af37; }
+
+        /* вспомогательные классы для анимаций по скроллу */
+        .fade-slide-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: 0.9s;
+        }
+        .fade-slide-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- шапка фиксированная -->
+    <header class="header" id="mainHeader">
+        <div class="logo">
+            <i class="fas fa-cut"></i> Lenscape
+        </div>
+        <nav class="nav-menu">
+            <a href="#hero">Reel</a>
+            <a href="#services">Craft</a>
+            <a href="#cases">Works</a>
+            <a href="#cta">Contact</a>
+        </nav>
+    </header>
+
+    <!-- 1: Hero -->
+    <section class="hero" id="hero">
+        <div class="container hero-content">
+            <div>
+                <h1>motion<br>storytelling</h1>
+                <div class="highlight">режиссёр монтажа / color grading</div>
+                <p style="font-size: 1.2rem; max-width: 500px; color: #aaa;">От драмы до клипа — ритм, свет, эмоция. Свежий взгляд на ваш проект.</p>
+                <div style="margin-top: 40px;"><i class="fa-regular fa-circle-play"></i> <span style="margin-left: 10px;">watch showreel ↓</span></div>
+            </div>
+            <div class="hero-visual">
+                <div class="orb"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2: Stats -->
+    <section class="stats" id="stats">
+        <div class="container stats-grid">
+            <div class="stat-item" id="stat1"><div class="stat-number">150+</div><div class="stat-label">проектов</div></div>
+            <div class="stat-item" id="stat2"><div class="stat-number">12</div><div class="stat-label">наград</div></div>
+            <div class="stat-item" id="stat3"><div class="stat-number">7</div><div class="stat-label">лет опыта</div></div>
+        </div>
+    </section>
+
+    <!-- 3: Services (с иконками) -->
+    <section class="services" id="services">
+        <div class="container">
+            <h2 class="section-title">монтаж / градация</h2>
+            <div class="service-grid">
+                <div class="service-card card1"><i class="fas fa-scissors"></i><h3>offline / online</h3><p>Сборка, синхрон, мультикамерность — любой формат.</p></div>
+                <div class="service-card card2"><i class="fas fa-palette"></i><h3>color grading</h3><p>DaVinci Resolve, кинопленка, Look & mood.</p></div>
+                <div class="service-card card3"><i class="fas fa-music"></i><h3>саунд-дизайн</h3><p>чистка, шумы, атмосфера — звук под кожей.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4: Showreel (анимация пульса) -->
+    <section class="showreel" id="showreel">
+        <div class="container">
+            <h2 class="section-title">reel 2025</h2>
+            <div class="reel-frame">
+                <i class="fa-solid fa-play reel-icon"></i>
+                <p style="font-size: 1.6rem; margin: 20px 0; letter-spacing: 2px;">DEMO — нажми на воображение</p>
+                <p style="color: #777;">(клип / тизер / док)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5: Cases / кейсы -->
+    <section class="cases" id="cases">
+        <div class="container">
+            <h2 class="section-title">избранное</h2>
+            <div class="case-grid">
+                <div class="case-item case1"><i class="fas fa-film"></i><h3>х/ф «Молчание»</h3><p>монтаж + color</p></div>
+                <div class="case-item case2"><i class="fas fa-music"></i><h3>клип dla</h3><p>саунд-дизайн</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6: Clients / доверия ради -->
+    <section class="clients">
+        <div class="container">
+            <h2 class="section-title">доверяют</h2>
+            <div class="marquee">
+                <i class="fab fa-reddit-alien"></i><i class="fab fa-spotify"></i><i class="fab fa-bandcamp"></i><i class="fab fa-vimeo-v"></i><i class="fab fa-youtube"></i><i class="fab fa-unity"></i>
+                <i class="fab fa-reddit-alien"></i><i class="fab fa-spotify"></i><i class="fab fa-bandcamp"></i><i class="fab fa-vimeo-v"></i><i class="fab fa-youtube"></i><i class="fab fa-unity"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7: Insights / мини-блог -->
+    <section class="insights">
+        <div class="container">
+            <h2 class="section-title">инсайты</h2>
+            <div class="insight-cards">
+                <div class="insight-card blog1"><i class="fas fa-camera"></i> <h3>Почему LUT — не панацея?</h3><p>Разбираем цветокоррекцию на реальных кейсах.</p></div>
+                <div class="insight-card blog2"><i class="fas fa-wave-square"></i> <h3>Звук в монтаже</h3><p>Как дорожка меняет монтажный ритм.</p></div>
+                <div class="insight-card blog3"><i class="fas fa-clock"></i> <h3>24/25/50 кадров</h3><p>Выбор частоты под задачу.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8: CTA -->
+    <section class="cta" id="cta">
+        <div class="container">
+            <h2 style="font-size: 3.5rem;">начать проект</h2>
+            <p style="font-size: 1.2rem; color: #aaa;">обсудим идею, ритм, картинку</p>
+            <a href="#" class="cta-button">lenscape@work</a>
+        </div>
+    </section>
+
+    <!-- 9: Footer -->
+    <footer class="footer">
+        <div class="logo"><i class="fas fa-cut"></i> Lenscape</div>
+        <div class="socials">
+            <i class="fab fa-instagram"></i><i class="fab fa-vimeo"></i><i class="fab fa-linkedin"></i>
+        </div>
+        <div style="color: #555;">© mонтаж 2025</div>
+    </footer>
+
+    <script>
+        (function() {
+            // компактная шапка при скролле
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 70) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // Intersection Observer — эффект появления элементов
+            const animatedElements = document.querySelectorAll(
+                '.stat-item, .service-card, .case-item, .insight-card, .hero-visual, .reel-frame, .cta-button'
+            );
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // для статистики добавим особый класс
+                        if (entry.target.classList.contains('stat-item')) {
+                            entry.target.classList.add('visible');
+                        }
+                        if (entry.target.classList.contains('service-card')) {
+                            entry.target.classList.add('visible');
+                        }
+                        if (entry.target.classList.contains('case-item')) {
+                            entry.target.classList.add('visible');
+                        }
+                        if (entry.target.classList.contains('insight-card')) {
+                            entry.target.classList.add('visible');
+                        }
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -60px 0px' });
+
+            animatedElements.forEach(el => observer.observe(el));
+
+            // также наблюдаем отдельно блоки для уверенности
+            document.querySelectorAll('.stat-item').forEach(el => observer.observe(el));
+            document.querySelectorAll('.service-card').forEach(el => observer.observe(el));
+            document.querySelectorAll('.case-item').forEach(el => observer.observe(el));
+            document.querySelectorAll('.insight-card').forEach(el => observer.observe(el));
+
+            // маленький дополнительный эффект наведения на orb
+            const orb = document.querySelector('.orb');
+            if(orb) {
+                document.addEventListener('mousemove', (e) => {
+                    const x = (window.innerWidth / 2 - e.clientX) / 40;
+                    const y = (window.innerHeight / 2 - e.clientY) / 40;
+                    orb.style.transform = `translate(${x}px, ${y}px) scale(1.02)`;
+                });
+            }
+        })();
+    </script>
+    <!-- note: полная адаптация под ПК, меню якорное работает, анимации появления, компактная шапка, иконки fa6, все в одном HTML -->
+</body>
+</html>
+All done!
+```

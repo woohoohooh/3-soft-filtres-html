@@ -1,0 +1,663 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom CRM · Enterprise development</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f8fafc;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #111827;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* sticky header */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid #e9edf2;
+      padding: 1rem 2rem;
+      transition: padding 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header.scrolled {
+      padding: 0.5rem 2rem;
+    }
+    .logo {
+      font-weight: 700;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      color: #1e293b;
+    }
+    .logo span {
+      color: #2563eb;
+    }
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      font-weight: 500;
+      color: #334155;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: inherit;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover {
+      color: #2563eb;
+    }
+
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 3rem;
+    }
+
+    section {
+      margin-bottom: 8rem; /* 128px ≈ 120+ */
+    }
+
+    /* animations */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* hero 100vh */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      margin-bottom: 8rem;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    /* left */
+    .hero h1 {
+      font-size: 5.5rem; /* 88px */
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #0a1e3c;
+      margin-bottom: 1.5rem;
+    }
+    .hero-sub {
+      font-size: 1.25rem; /* 20px */
+      color: #334155;
+      max-width: 90%;
+      margin-bottom: 2.5rem;
+    }
+    .btn-primary {
+      background: #2563eb;
+      border: none;
+      color: white;
+      font-weight: 600;
+      font-size: 1.25rem;
+      padding: 1rem 2.8rem;
+      border-radius: 60px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(37,99,235,0.2);
+      transition: background 0.15s, transform 0.1s;
+      margin-bottom: 3rem;
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+      transform: scale(1.02);
+    }
+    .stat-group {
+      display: flex;
+      gap: 3rem;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .stat-label {
+      font-size: 0.95rem;
+      color: #475569;
+      letter-spacing: 0.3px;
+    }
+
+    /* right side — CRM animated dashboard */
+    .crm-dashboard {
+      background: #ffffff;
+      border-radius: 32px;
+      box-shadow: 0 30px 60px -15px rgba(0,20,40,0.25);
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      width: 100%;
+      font-size: 0.85rem;
+    }
+    .dashboard-header {
+      background: #f1f5f9;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #dce2ec;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .dashboard-header span { color: #2563eb; }
+    .dashboard-body {
+      padding: 1.5rem;
+      background: white;
+    }
+    .kanban-row {
+      display: flex;
+      gap: 0.8rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .stage {
+      flex: 1;
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 0.8rem;
+      border: 1px solid #e9edf2;
+    }
+    .stage-title {
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+      color: #1e293b;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e0e7ef;
+      border-radius: 14px;
+      padding: 0.75rem;
+      margin-bottom: 0.6rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      transition: all 0.2s;
+      border-left: 4px solid #2563eb;
+      font-weight: 500;
+      animation: subtleMove 2.2s infinite alternate ease-in-out;
+    }
+    .card:nth-child(2) { animation-delay: 0.4s; border-left-color: #64748b; }
+    .card:nth-child(3) { animation-delay: 0.8s; border-left-color: #059669; }
+    @keyframes subtleMove {
+      0% { transform: translateY(0); opacity: 0.9; }
+      100% { transform: translateY(-4px); opacity: 1; }
+    }
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #475569;
+      margin-top: 4px;
+    }
+    .badge {
+      background: #e6edfc;
+      color: #2563eb;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 40px;
+    }
+    .revenue-row {
+      display: flex;
+      justify-content: space-between;
+      background: #f1f5f9;
+      padding: 1rem;
+      border-radius: 18px;
+      margin: 1.5rem 0 1rem;
+    }
+    .revenue-item {
+      text-align: center;
+    }
+    .revenue-number {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: #0f172a;
+    }
+    .chart-line {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 40px;
+      margin: 1rem 0;
+    }
+    .bar {
+      width: 16px;
+      background: #2563eb;
+      height: calc(100% * var(--h));
+      border-radius: 6px 6px 0 0;
+      opacity: 0.8;
+    }
+    .client-preview {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border-top: 1px solid #edf2f7;
+      padding-top: 1rem;
+    }
+    .client-avatar {
+      width: 32px; height: 32px;
+      background: #d9e2ef;
+      border-radius: 10px;
+    }
+    .client-status {
+      margin-left: auto;
+      color: #2563eb;
+      font-weight: 600;
+      font-size: 0.7rem;
+    }
+
+    /* sections */
+    h2 {
+      font-size: 3.2rem; /* ~51px */
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #0a1e3c;
+      margin-bottom: 2rem;
+    }
+    h3 {
+      font-size: 1.9rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    /* problems grid */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+    }
+    .problem-card {
+      background: white;
+      border-radius: 32px;
+      padding: 2rem;
+      border: 1px solid #eef2f6;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    .icon-svg {
+      width: 40px;
+      height: 40px;
+      stroke: #2563eb;
+      stroke-width: 1.8;
+      fill: none;
+      margin-bottom: 1.5rem;
+    }
+
+    /* features grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 2.5rem;
+    }
+    .feature-item {
+      background: white;
+      border-radius: 28px;
+      padding: 2rem;
+      border: 1px solid #eef2f6;
+    }
+
+    /* funnel */
+    .funnel-vis {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+      background: #ffffff;
+      border-radius: 48px;
+      padding: 3rem;
+      border: 1px solid #e2e8f0;
+    }
+    .funnel-stage {
+      flex: 1;
+      text-align: center;
+    }
+    .funnel-bar {
+      height: 160px;
+      background: #2563eb10;
+      border-radius: 200px 200px 0 0;
+      border: 2px solid #2563eb30;
+      border-bottom: none;
+      width: 100%;
+    }
+
+    /* pricing */
+    .pricing-toggle {
+      display: flex;
+      gap: 0.5rem;
+      background: #eef2f6;
+      padding: 0.4rem;
+      border-radius: 60px;
+      width: fit-content;
+      margin-bottom: 3rem;
+    }
+    .toggle-option {
+      padding: 0.8rem 2.4rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      transition: 0.1s;
+    }
+    .toggle-option.active {
+      background: white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+      color: #2563eb;
+    }
+    .pricing-cards {
+      display: flex;
+      gap: 2rem;
+    }
+    .card-tier {
+      background: white;
+      flex: 1;
+      border-radius: 40px;
+      padding: 2.5rem 2rem;
+      border: 1px solid #e9edf2;
+      transition: 0.2s;
+      position: relative;
+    }
+    .card-tier.popular {
+      border: 2px solid #2563eb;
+      box-shadow: 0 20px 35px -8px #2563eb20;
+    }
+    .popular-badge {
+      position: absolute;
+      top: -12px; left: 30px;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      font-size: 0.7rem;
+      padding: 0.3rem 1rem;
+      border-radius: 60px;
+    }
+    .price {
+      font-size: 2.8rem;
+      font-weight: 700;
+    }
+
+    /* FAQ accordion */
+    .faq-item {
+      background: white;
+      border-radius: 30px;
+      margin-bottom: 1rem;
+      padding: 1.5rem 2rem;
+      cursor: pointer;
+      border: 1px solid #e9edf2;
+    }
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 1.3rem;
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: 0.3s;
+      color: #475569;
+    }
+    .faq-item.expanded .faq-answer {
+      max-height: 200px;
+      margin-top: 1rem;
+    }
+    .arrow {
+      transition: transform 0.2s;
+    }
+    .expanded .arrow {
+      transform: rotate(180deg);
+    }
+
+    /* final CTA */
+    .cta-block {
+      background: #0a1e3c;
+      border-radius: 64px;
+      padding: 5rem 5rem;
+      text-align: center;
+      color: white;
+    }
+    .cta-block h2 {
+      color: white;
+    }
+    .btn-outline-light {
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+      padding: 1rem 3rem;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-top: 2rem;
+    }
+    .btn-outline-light:hover {
+      background: white;
+      color: #0a1e3c;
+    }
+
+    hr {
+      margin: 5rem 0;
+      border: 1px solid #e2e8f0;
+    }
+    footer {
+      text-align: center;
+      color: #64748b;
+      margin: 3rem 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="header" id="mainHeader">
+    <div class="logo">CORE<span>CRM</span></div>
+    <div class="nav-links">
+      <a href="#">Solutions</a>
+      <a href="#">Platform</a>
+      <a href="#">Pricing</a>
+      <a href="#">Docs</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero 100vh -->
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="fade-up visible">
+          <h1>Custom CRM Systems</h1>
+          <div class="hero-sub">Unify sales, track pipeline, and automate revenue operations with a purpose‑built enterprise CRM.</div>
+          <button class="btn-primary">Build Your CRM</button>
+          <div class="stat-group">
+            <div class="stat-item"><span class="stat-value">+41%</span><span class="stat-label">sales growth</span></div>
+            <div class="stat-item"><span class="stat-value">87%</span><span class="stat-label">automation</span></div>
+            <div class="stat-item"><span class="stat-value">2.4k</span><span class="stat-label">clients served</span></div>
+          </div>
+        </div>
+        <!-- right side CRM visual -->
+        <div class="crm-dashboard fade-up visible">
+          <div class="dashboard-header"><span>● live pipeline</span> <span>ARC-3492</span></div>
+          <div class="dashboard-body">
+            <div class="kanban-row">
+              <div class="stage"><div class="stage-title">lead</div>
+                <div class="card"><div>Acme Corp</div><div class="card-meta"><span>$12k</span> <span class="badge">new</span></div></div>
+                <div class="card"><div>Nexus.io</div><div class="card-meta"><span>$8k</span> <span class="badge">new</span></div></div>
+              </div>
+              <div class="stage"><div class="stage-title">in progress</div>
+                <div class="card"><div>BridgeSys</div><div class="card-meta"><span>$27k</span> <span class="badge">nego.</span></div></div>
+                <div class="card"><div>Solara</div><div class="card-meta"><span>$15k</span> <span class="badge">meeting</span></div></div>
+              </div>
+              <div class="stage"><div class="stage-title">closed</div>
+                <div class="card"><div>FinCore</div><div class="card-meta"><span>$45k</span> <span class="badge">won</span></div></div>
+                <div class="card"><div>MediFlow</div><div class="card-meta"><span>$22k</span> <span class="badge">won</span></div></div>
+              </div>
+            </div>
+            <div class="revenue-row">
+              <div class="revenue-item"><span class="revenue-number">$187k</span> <div>MTD revenue</div></div>
+              <div class="revenue-item"><span class="revenue-number">32</span> <div>deals</div></div>
+            </div>
+            <div class="chart-line">
+              <div style="--h:0.6" class="bar"></div><div style="--h:0.8" class="bar"></div><div style="--h:1.0" class="bar"></div><div style="--h:0.7" class="bar"></div><div style="--h:0.9" class="bar"></div>
+            </div>
+            <div class="client-preview">
+              <div class="client-avatar"></div><span>+7 new clients</span><span class="client-status">● In progress</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Problems we solve -->
+    <section class="fade-up">
+      <h2>CRM pain points · solved</h2>
+      <div class="grid-2col">
+        <div class="problem-card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 3h18v18H3z M8 8h8v8H8z" stroke="currentColor" stroke-linejoin="round"/></svg><h3>Disconnected data</h3><p>Unify sales, support, and marketing in one operational core.</p></div>
+        <div class="problem-card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20" stroke="currentColor"/><circle cx="12" cy="12" r="4" stroke="currentColor"/></svg><h3>Manual updates</h3><p>Automate logging, follow-ups, and forecasting – no more spreadsheets.</p></div>
+      </div>
+    </section>
+
+    <!-- Features grid -->
+    <section class="fade-up">
+      <h2>Enterprise‑grade features</h2>
+      <div class="features-grid">
+        <div class="feature-item"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 4h16v16H4z M8 8h8v8H8z" stroke="currentColor"/></svg><h3>Pipeline stages</h3><p>Fully customizable Kanban & forecasting.</p></div>
+        <div class="feature-item"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 12H4M12 4v16" stroke="currentColor"/></svg><h3>Revenue intelligence</h3><p>Real‑time deal scoring & alerts.</p></div>
+        <div class="feature-item"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="12" stroke="currentColor"/><path d="M7 8V5h10v3" stroke="currentColor"/></svg><h3>Client 360</h3><p>Unified profile with full history.</p></div>
+      </div>
+    </section>
+
+    <!-- sales funnel -->
+    <section class="fade-up">
+      <h2>Funnel progression</h2>
+      <div class="funnel-vis">
+        <div class="funnel-stage"><div class="funnel-bar" style="height:120px; background:#2563eb20;"></div> <strong>lead</strong> 146</div>
+        <div class="funnel-stage"><div class="funnel-bar" style="height:200px; background:#2563eb40;"></div> <strong>opp.</strong> 92</div>
+        <div class="funnel-stage"><div class="funnel-bar" style="height:270px; background:#2563eb70;"></div> <strong>proposal</strong> 54</div>
+        <div class="funnel-stage"><div class="funnel-bar" style="height:160px; background:#2563eb;"></div> <strong>closed</strong> 32</div>
+      </div>
+    </section>
+
+    <!-- automation & integration -->
+    <section class="grid-2col fade-up">
+      <div class="problem-card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 12h16M12 4v16" stroke="currentColor"/><circle cx="12" cy="12" r="3" stroke="currentColor"/></svg><h2>Automation</h2><p>Rules, workflows, and triggers — reduce manual entry by 87%.</p></div>
+      <div class="problem-card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M5 5h14v14H5z M9 9h6v6H9z" stroke="currentColor"/></svg><h2>Integrations</h2><p>Native connectors: ERP, marketing, support, and data lakes.</p></div>
+    </section>
+
+    <!-- dev process timeline (abstract) -->
+    <section class="fade-up">
+      <h2>Development timeline</h2>
+      <div style="display: flex; gap: 1.5rem; justify-content: space-between;">
+        <div style="flex:1; background:white; padding:2rem; border-radius:28px;">🔹 discovery & audit</div>
+        <div style="flex:1; background:white; padding:2rem; border-radius:28px;">🔸 architecture & security</div>
+        <div style="flex:1; background:white; padding:2rem; border-radius:28px;">🔹 custom build & QE</div>
+      </div>
+    </section>
+
+    <!-- pricing + toggle -->
+    <section class="fade-up">
+      <h2>Pricing · standard / enterprise</h2>
+      <div class="pricing-toggle" id="pricingToggle">
+        <div class="toggle-option active" data-plan="standard">Standard</div>
+        <div class="toggle-option" data-plan="enterprise">Enterprise</div>
+      </div>
+      <div class="pricing-cards" id="pricingCards">
+        <div class="card-tier popular"><span class="popular-badge">most popular</span><h3>Growth</h3><div class="price" id="price1">$6.5k</div><p>/month · 50 users</p></div>
+        <div class="card-tier"><h3>Enterprise+</h3><div class="price" id="price2">$15k</div><p>unlimited · dedicated</p></div>
+      </div>
+    </section>
+
+    <!-- FAQ accordion -->
+    <section class="fade-up">
+      <h2>FAQ</h2>
+      <div class="faq-item expanded" onclick="toggleFaq(this)">
+        <div class="faq-question">Do you build on our cloud? <span class="arrow">▼</span></div>
+        <div class="faq-answer">Yes – AWS, Azure, or on‑prem. Fully managed.</div>
+      </div>
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-question">What is the typical timeline? <span class="arrow">▼</span></div>
+        <div class="faq-answer">8–12 weeks for core CRM, including data migration.</div>
+      </div>
+    </section>
+
+    <!-- final cta -->
+    <section class="cta-block fade-up">
+      <h2>Launch Your Custom CRM</h2>
+      <button class="btn-outline-light">Request Consultation</button>
+    </section>
+    <footer>© CoreCRM · enterprise development</footer>
+  </main>
+
+  <script>
+    (function() {
+      // sticky header shrink
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 20) header.classList.add('scrolled');
+        else header.classList.remove('scrolled');
+      });
+
+      // IntersectionObserver fade
+      const faders = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+      faders.forEach(el => observer.observe(el));
+
+      // pricing toggle (no dropdown)
+      const toggleStandard = document.querySelector('[data-plan="standard"]');
+      const toggleEnterprise = document.querySelector('[data-plan="enterprise"]');
+      const price1 = document.getElementById('price1');
+      const price2 = document.getElementById('price2');
+      function setActive(plan) {
+        document.querySelectorAll('.toggle-option').forEach(opt => opt.classList.remove('active'));
+        if (plan === 'standard') {
+          toggleStandard.classList.add('active');
+          price1.innerText = '$6.5k';
+          price2.innerText = '$15k';
+        } else {
+          toggleEnterprise.classList.add('active');
+          price1.innerText = '$8.9k';
+          price2.innerText = '$22k';
+        }
+      }
+      toggleStandard.addEventListener('click', () => setActive('standard'));
+      toggleEnterprise.addEventListener('click', () => setActive('enterprise'));
+
+      // faq toggle (simple)
+      window.toggleFaq = function(el) {
+        el.classList.toggle('expanded');
+      };
+    })();
+  </script>
+  <!-- no extra, just done -->
+</body>
+</html>
+All done!
+```

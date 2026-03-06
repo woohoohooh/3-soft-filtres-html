@@ -1,0 +1,427 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram bot development · automation studio</title>
+  <style>
+    /* modern reset & base */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(145deg, #ffffff 0%, #f6f9fc 100%);
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #101214;
+      line-height: 1.6;
+      font-size: 18px;
+      font-weight: 400;
+      scroll-behavior: smooth;
+    }
+    /* sticky header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+      transition: padding 0.2s ease;
+      padding: 24px 5%;
+    }
+    header.shrink { padding: 16px 5%; }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-weight: 600;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      color: #1e293b;
+    }
+    .logo span { color: #2563eb; }
+    .nav-links { display: flex; gap: 48px; font-weight: 500; color: #334155; }
+    .nav-links a { text-decoration: none; color: inherit; font-size: 1rem; transition: color 0.2s; }
+    .nav-links a:hover { color: #2563eb; }
+
+    /* containers & spacing */
+    section { max-width: 1400px; margin: 0 auto; padding: 120px 5%; }
+    .hero { padding: 0 5%; display: flex; align-items: center; min-height: 100vh; max-width: 1400px; margin: 0 auto; }
+
+    /* typography */
+    h1 { font-size: 88px; font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; color: #0f172a; margin-bottom: 32px; }
+    h2 { font-size: 56px; font-weight: 700; letter-spacing: -0.02em; color: #0f172a; margin-bottom: 24px; }
+    h3 { font-size: 32px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 20px; }
+    p { font-size: 20px; color: #334155; max-width: 600px; }
+
+    /* buttons & stats */
+    .btn-primary {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      font-size: 1.2rem;
+      padding: 18px 42px;
+      border-radius: 60px;
+      border: none;
+      cursor: pointer;
+      transition: 0.15s ease;
+      box-shadow: 0 12px 28px -8px rgba(37,99,235,0.3);
+      text-decoration: none;
+      margin: 40px 0 32px 0;
+    }
+    .btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
+
+    .stats-row {
+      display: flex;
+      gap: 60px;
+    }
+    .stat-item { display: flex; align-items: center; gap: 8px; }
+    .stat-icon { width: 28px; height: 28px; color: #2563eb; }
+    .stat-number { font-weight: 700; font-size: 1.8rem; color: #0f172a; }
+    .stat-label { font-size: 1rem; color: #475569; }
+
+    /* 2‑column hero layout */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+      width: 100%;
+    }
+    /* right side – animated telegram chat (pure css) */
+    .chat-window {
+      background: #ffffff;
+      border-radius: 32px;
+      box-shadow: 0 40px 70px -15px rgba(0,20,40,0.15), 0 0 0 1px rgba(0,0,0,0.02) inset;
+      padding: 28px 18px 20px 18px;
+      width: 100%;
+      max-width: 500px;
+      margin-left: auto;
+      font-size: 15px;
+      border: 1px solid #eef2f6;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e9edf2;
+      margin-bottom: 18px;
+    }
+    .chat-dots { display: flex; gap: 6px; }
+    .dot { width: 13px; height: 13px; border-radius: 50%; background: #d4dce6; }
+    .chat-title { font-weight: 600; color: #1e293b; }
+    .chat-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 340px;
+      animation: scrollMessages 14s infinite ease-in-out;
+    }
+    @keyframes scrollMessages {
+      0%, 18% { transform: translateY(0); }
+      22%, 40% { transform: translateY(-48px); }
+      44%, 62% { transform: translateY(-96px); }
+      66%, 84% { transform: translateY(-144px); }
+      88%, 100% { transform: translateY(-192px); }
+    }
+    .message {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 22px;
+      background: #f1f5f9;
+      color: #0f172a;
+      line-height: 1.4;
+      position: relative;
+      word-break: break-word;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+    .message.user {
+      background: #2563eb;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 6px;
+    }
+    .message.bot {
+      align-self: flex-start;
+      border-bottom-left-radius: 6px;
+    }
+    .typing-indicator {
+      display: flex;
+      gap: 5px;
+      padding: 12px 18px;
+      background: #f1f5f9;
+      border-radius: 28px;
+      align-self: flex-start;
+      width: fit-content;
+    }
+    .typing-indicator span {
+      width: 8px; height: 8px; background: #6b7a8f; border-radius: 50%;
+      animation: pulse 1.4s infinite;
+    }
+    .typing-indicator span:nth-child(2){ animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3){ animation-delay: 0.4s; }
+    @keyframes pulse { 0%,60%,100%{ opacity: 0.4; } 30%{ opacity: 1; } }
+
+    .inline-keyboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 0 0;
+      align-self: flex-start;
+    }
+    .keyboard-btn {
+      background: white;
+      border: 1px solid #d0d9e8;
+      border-radius: 40px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #2563eb;
+      transition: 0.1s;
+      cursor: default;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .keyboard-btn:hover { background: #eef4ff; }
+
+    .menu-button {
+      background: #ffffff;
+      border: 1px solid #d0d9e8;
+      border-radius: 40px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #1e293b;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      width: fit-content;
+    }
+    .status-indicator { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #2b6e4f; margin: 12px 0 6px; }
+    .status-dot { width: 9px; height: 9px; background: #10b981; border-radius: 50%; }
+
+    /* icon system — inline monochrome svg */
+    .icon-svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* cards grid */
+    .grid-3, .grid-4 { display: grid; gap: 40px; margin-top: 40px; }
+    .grid-3 { grid-template-columns: repeat(3,1fr); }
+    .grid-4 { grid-template-columns: repeat(4,1fr); }
+    .card {
+      background: white;
+      padding: 32px;
+      border-radius: 32px;
+      box-shadow: 0 15px 35px -15px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.02);
+      transition: all 0.2s;
+    }
+    .card:hover { box-shadow: 0 25px 45px -15px rgba(37,99,235,0.15); transform: translateY(-6px); }
+
+    .flow-step { display: flex; gap: 24px; align-items: center; margin: 32px 0; }
+    .step-icon { flex-shrink: 0; color: #2563eb; }
+
+    /* pricing toggle */
+    .toggle-switch {
+      display: flex;
+      background: #f1f5f9;
+      padding: 6px;
+      border-radius: 60px;
+      width: fit-content;
+      margin: 30px 0 40px;
+    }
+    .toggle-option {
+      padding: 14px 40px;
+      border-radius: 60px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.1s;
+      color: #334155;
+    }
+    .toggle-option.active {
+      background: #2563eb;
+      color: white;
+    }
+    .pricing-cards { display: flex; gap: 30px; flex-wrap: wrap; }
+    .pricing-card {
+      background: white;
+      padding: 40px;
+      border-radius: 40px;
+      flex: 1;
+      min-width: 260px;
+      border: 1px solid #eef2f6;
+    }
+    .price { font-size: 44px; font-weight: 700; color: #0f172a; margin: 20px 0; }
+    .faq-item { border-bottom: 1px solid #e2e8f0; padding: 22px 0; }
+    .faq-question { font-weight: 600; display: flex; justify-content: space-between; cursor: pointer; }
+    .faq-answer { max-height: 0; overflow: hidden; transition: 0.25s; color: #475569; }
+    .faq-item.open .faq-answer { max-height: 200px; margin-top: 18px; }
+
+    /* intersection observer fade */
+    .fade-in { opacity: 0; transform: translateY(30px); transition: 0.7s cubic-bezier(0.2,0.9,0.3,1); }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    hr { border: none; border-top: 1px solid #e2e8f0; margin: 80px 0; }
+
+    footer { text-align: center; padding: 40px; color: #64748b; }
+
+    /* utilities */
+    .mono-stroke { stroke: currentColor; fill: none; }
+    .text-accent { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <header id="stickyHeader">
+    <div class="header-inner">
+      <div class="logo">BOT<span> STUDIO</span></div>
+      <div class="nav-links">
+        <a href="#use-cases">Use cases</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#process">Process</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-grid">
+      <!-- left side -->
+      <div>
+        <h1>Telegram Bot Development</h1>
+        <p style="font-size: 22px; color:#1e293b;">Build intelligent automation — from order handling to CRM sync. No‑code tools or custom code, fully interactive.</p>
+        <a href="#" class="btn-primary">Build Your Telegram Bot →</a>
+        <div class="stats-row">
+          <div class="stat-item"><svg class="icon-svg stat-icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span class="stat-number">840+</span><span class="stat-label">bots delivered</span></div>
+          <div class="stat-item"><svg class="icon-svg stat-icon" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg><span class="stat-number">2.4k</span><span class="stat-label">automations</span></div>
+          <div class="stat-item"><svg class="icon-svg stat-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="stat-number">320+</span><span class="stat-label">clients served</span></div>
+        </div>
+      </div>
+
+      <!-- right side: telegram animated chat (pure css) -->
+      <div class="chat-window">
+        <div class="chat-header"><div class="chat-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="chat-title">Telegram · automation demo</span></div>
+        <div class="chat-messages" style="overflow: hidden; height: 280px;">
+          <div style="display: flex; flex-direction: column; gap: 16px; transform: translateY(0); transition: transform 0.2s;">
+            <div class="message user">/start</div>
+            <div class="message bot">👋 Welcome! Use buttons below.</div>
+            <div class="inline-keyboard"><span class="keyboard-btn">📦 Track order</span><span class="keyboard-btn">💬 Support</span></div>
+            <div class="message user">Track order</div>
+            <div class="typing-indicator"><span></span><span></span><span></span></div>
+            <div class="message bot">Your order #BOT-42: shipped 🚀</div>
+            <div class="inline-keyboard"><span class="keyboard-btn">↩️ Main menu</span><span class="keyboard-btn">📋 Details</span></div>
+            <div class="message user">Details</div>
+            <div class="message bot">📦 ETA tomorrow, 2pm. <br/>Tracking: 1Zbot987</div>
+            <div class="status-indicator"><span class="status-dot"></span> bot · online, 2 active flows</div>
+            <div style="display:flex; gap:6px;"><span class="menu-button">☰ Menu</span><span class="menu-button">⚙️ Settings</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="use-cases" class="fade-in"><h2>Telegram Bot Use Cases</h2>
+    <div class="grid-3">
+      <div class="card"><svg class="icon-svg" style="width:36px; height:36px; margin-bottom:20px;" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><h3>Store & delivery</h3><p>Order status, real‑time tracking, and support without agents.</p></div>
+      <div class="card"><svg class="icon-svg" style="width:36px; height:36px; margin-bottom:20px;" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><h3>Lead qualification</h3><p>Ask questions, capture data, forward to CRM automatically.</p></div>
+      <div class="card"><svg class="icon-svg" style="width:36px; height:36px; margin-bottom:20px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><h3>Appointment booking</h3><p>Calendar sync, reminders, rescheduling via inline buttons.</p></div>
+    </div>
+  </section>
+
+  <section id="capabilities" class="fade-in"><h2>Bot Capabilities Grid</h2>
+    <div class="grid-4">
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><h3>Custom commands</h3></div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="8" y1="2" x2="8" y2="22"/><line x1="16" y1="2" x2="16" y2="22"/></svg><h3>Inline keyboards</h3></div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M12 22V12"/></svg><h3>File handling</h3></div>
+      <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><line x1="2" y1="20" x2="2.01" y2="20"/></svg><h3>Webhooks & APIs</h3></div>
+    </div>
+  </section>
+
+  <section class="fade-in"><h2>Example Automation Flows</h2>
+    <div class="flow-step"><span class="step-icon"><svg class="icon-svg" width="36" height="36"><circle cx="18" cy="18" r="10"/><polyline points="12 18 16 22 24 14"/></svg></span><div><h3>New order → CRM + payment</h3><p>User sends product ID, bot requests address, confirms via inline, pushes to Stripe & Salesforce.</p></div></div>
+    <div class="flow-step"><span class="step-icon"><svg class="icon-svg" width="36" height="36"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><div><h3>Support tier routing</h3><p>User selects issue, bot fetches KB, if unsolved → opens ticket with full chat history.</p></div></div>
+  </section>
+
+  <section class="fade-in"><h2>Integrations (CRM, payments, APIs)</h2><div class="grid-3">
+    <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> HubSpot / Pipedrive</div>
+    <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Stripe / PayPal</div>
+    <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12h9"/><path d="M12 7.5v9"/></svg> REST APIs / GraphQL</div>
+  </div></section>
+
+  <section id="process" class="fade-in"><h2>Development Process</h2><div class="grid-3">
+    <div class="card"><span style="font-size: 48px; font-weight: 200; color:#2563eb;">1</span><h3>Discovery</h3><p>Map user flows & required triggers.</p></div>
+    <div class="card"><span style="font-size: 48px; font-weight: 200; color:#2563eb;">2</span><h3>Bot building</h3><p>Python/Node.js + Telegram API + webhooks.</p></div>
+    <div class="card"><span style="font-size: 48px; font-weight: 200; color:#2563eb;">3</span><h3>Testing & deploy</h3><p>Private group test, then launch.</p></div>
+  </div></section>
+
+  <section id="pricing" class="fade-in">
+    <h2>Pricing tiers</h2>
+    <div class="toggle-switch" id="pricingToggle">
+      <span class="toggle-option active" data-plan="basic">Basic</span>
+      <span class="toggle-option" data-plan="advanced">Advanced</span>
+    </div>
+    <div class="pricing-cards" id="pricingCards">
+      <div class="pricing-card"><h3>Starter bot</h3><div class="price" data-basic="$2.5k" data-advanced="$3.8k">$2.5k</div><p>5 commands, manual trigger, basic replies</p></div>
+      <div class="pricing-card"><h3>Business bot</h3><div class="price" data-basic="$6.9k" data-advanced="$9.2k">$6.9k</div><p>CRM + payments + admin dash</p></div>
+      <div class="pricing-card"><h3>Advanced automation</h3><div class="price" data-basic="$12k" data-advanced="$19k">$12k</div><p>Multi‑bot, AI responses, SLA</p></div>
+    </div>
+  </section>
+
+  <section class="fade-in"><h2>FAQ</h2>
+    <div class="faq-item"><div class="faq-question">Can I integrate my existing Telegram bot? <span>▼</span></div><div class="faq-answer">Yes, we connect to any existing bot token and extend functionality.</div></div>
+    <div class="faq-item"><div class="faq-question">Do you build no‑code or custom?<span>▼</span></div><div class="faq-answer">Both — we use backend code (Python/Node) or high‑level platforms, whatever fits.</div></div>
+    <div class="faq-item"><div class="faq-question">How long does a typical bot take?<span>▼</span></div><div class="faq-answer">Starter: 5–7 days. Advanced: 2–4 weeks depending on integrations.</div></div>
+  </section>
+
+  <section style="text-align: center;" class="fade-in"><h2>Launch Your Telegram Bot</h2><a href="#" class="btn-primary" style="background:#0f172a;">Contact via Telegram →</a></section>
+  <footer>All done!</footer>
+
+  <script>
+    (function() {
+      // sticky header
+      const header = document.getElementById('stickyHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) header.classList.add('shrink');
+        else header.classList.remove('shrink');
+      });
+
+      // intersection observer fade
+      const faders = document.querySelectorAll('.fade-in');
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+      }, { threshold: 0.15 });
+      faders.forEach(el => observer.observe(el));
+
+      // FAQ accordion
+      document.querySelectorAll('.faq-question').forEach(q => {
+        q.addEventListener('click', () => {
+          const item = q.parentElement;
+          item.classList.toggle('open');
+        });
+      });
+
+      // pricing toggle
+      const basicToggle = document.querySelector('[data-plan="basic"]');
+      const advToggle = document.querySelector('[data-plan="advanced"]');
+      const prices = document.querySelectorAll('.pricing-card .price');
+
+      function setPricing(plan) {
+        prices.forEach(price => {
+          price.innerText = price.dataset[plan] || price.innerText;
+        });
+        document.querySelectorAll('.toggle-option').forEach(opt => opt.classList.remove('active'));
+        if (plan === 'basic') basicToggle.classList.add('active');
+        else advToggle.classList.add('active');
+      }
+
+      basicToggle.addEventListener('click', () => setPricing('basic'));
+      advToggle.addEventListener('click', () => setPricing('advanced'));
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

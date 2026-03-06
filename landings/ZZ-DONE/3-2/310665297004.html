@@ -1,0 +1,486 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lens·phere · режиссёр монтажа</title>
+    <!-- Font Awesome 6 (стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #0b0b0b;
+            color: #efefef;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* Гладкий скролл */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* ========== ФИКСИРОВАННАЯ ШАПКА (С АНИМАЦИЕЙ) ========== */
+        .header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1300px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 12px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            transition: all 0.3s ease;
+        }
+
+        /* компактный вариант при скролле (добавится через js) */
+        .header.scrolled {
+            padding: 8px 30px;
+            background: rgba(8, 8, 8, 0.95);
+            border-color: rgba(255, 215, 0, 0.5);
+            box-shadow: 0 15px 30px -8px #000;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #fff, #f0c45a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .logo i {
+            color: #f5c542;
+            font-size: 2rem;
+            margin-right: 6px;
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            color: #f5b81b;
+        }
+
+        .nav {
+            display: flex;
+            gap: 36px;
+        }
+        .nav a {
+            color: #ddd;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.05rem;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav a:hover {
+            color: #f5c542;
+            border-bottom-color: #f5c542;
+        }
+
+        /* ========== ОСНОВНЫЕ БЛОКИ ========== */
+        section {
+            scroll-margin-top: 100px; /* чтобы якорь не прятался под шапку */
+        }
+
+        .block {
+            min-height: 100vh;
+            padding: 6rem 2rem 4rem;
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* анимация появления блоков при скролле (Intersection Observer) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+        .fade-up.appeared {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* подсветка текста (эффект тренда) */
+        .highlight {
+            background: linear-gradient(120deg, #f5c542 0%, #f5c542 40%, #f5e6b0 80%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 5.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+        }
+
+        h2 {
+            font-size: 3.2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            letter-spacing: -0.02em;
+        }
+
+        .grid-2, .grid-3 {
+            display: grid;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            border-radius: 36px;
+            padding: 2.4rem 1.8rem;
+            transition: transform 0.25s ease, border-color 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: #f5c542;
+            background: rgba(30, 30, 30, 0.5);
+        }
+        .card i {
+            font-size: 2.8rem;
+            color: #f5c542;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #f5c542;
+            color: #0b0b0b;
+            font-weight: 600;
+            padding: 16px 42px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            border: 1px solid rgba(255,215,0,0.3);
+            transition: all 0.2s;
+            margin-top: 2rem;
+            box-shadow: 0 6px 14px rgba(245, 197, 66, 0.2);
+        }
+        .btn i { margin-right: 8px; color: #0b0b0b; }
+        .btn:hover {
+            background: #ffd966;
+            box-shadow: 0 12px 24px rgba(245, 197, 66, 0.4);
+            transform: scale(1.02);
+        }
+
+        /* демо-рил / видео-заглушка */
+        .demo-reel {
+            background: #1a1a1a;
+            border-radius: 48px;
+            padding: 3rem;
+            text-align: center;
+            border: 2px dashed #f5c54240;
+        }
+        .demo-reel i {
+            font-size: 5rem;
+            color: #f5c542;
+            opacity: 0.8;
+        }
+
+        /* футер */
+        .footer {
+            background: #050505;
+            border-top: 1px solid #f5c54220;
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #aaa;
+        }
+        .footer .socials i {
+            font-size: 1.8rem;
+            margin: 0 12px;
+            color: #aaa;
+            transition: color 0.2s;
+        }
+        .footer .socials i:hover { color: #f5c542; }
+
+        /* кастомные штрихи */
+        .badge {
+            background: #f5c54210;
+            border-left: 6px solid #f5c542;
+            padding: 1rem 2rem;
+            border-radius: 100px;
+            font-weight: 400;
+        }
+
+        /* адаптация под ПК (1920+) */
+        @media (min-width: 1600px) {
+            .block { max-width: 1500px; }
+            h1 { font-size: 6rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- FIXED HEADER (с анимацией через JS) -->
+    <header class="header" id="mainHeader">
+        <div class="logo">
+            <i class="fas fa-cut"></i> Lens·<span class="highlight">sphere</span>
+        </div>
+        <nav class="nav">
+            <a href="#home">главная</a>
+            <a href="#reel">демо-рил</a>
+            <a href="#works">работы</a>
+            <a href="#process">процесс</a>
+            <a href="#about">обо мне</a>
+            <a href="#contact">контакт</a>
+        </nav>
+    </header>
+
+    <!-- БЛОК 1: HOME -->
+    <section id="home" class="block fade-up">
+        <div>
+            <span class="badge"><i class="fas fa-video"></i> режиссёр монтажа / colorist</span>
+            <h1>Монтаж, который<br>держит в <span class="highlight">кадре</span></h1>
+            <p style="font-size: 1.4rem; max-width: 600px; opacity: 0.9;">Драматургия, ритм, colour grading. Для клипов, рекламы и шоу.</p>
+            <a href="#contact" class="btn"><i class="fas fa-calendar-check"></i> забронировать дату</a>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: ДЕМО-РИЛ (анимация + иконки) -->
+    <section id="reel" class="block fade-up">
+        <h2>DEMO <span class="highlight">REEL</span> 2025</h2>
+        <div class="demo-reel">
+            <i class="fas fa-play-circle"></i>
+            <p style="font-size: 2rem; font-weight: 300; margin: 1rem 0;">нажми для просмотра</p>
+            <p style="max-width: 500px; margin: 0 auto;">(интерактивная заглушка — в реальном проекте плеер)</p>
+            <div style="display: flex; gap: 2rem; justify-content: center; margin-top: 2rem;">
+                <span><i class="fas fa-camera"></i> 200+ проектов</span>
+                <span><i class="fas fa-music"></i> звуковой дизайн</span>
+                <span><i class="fas fa-magic"></i> VFX</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: УСЛУГИ / КЛЮЧЕВЫЕ НАВЫКИ -->
+    <section id="works" class="block fade-up">
+        <h2>что я <span class="highlight">монтирую</span></h2>
+        <div class="grid-3">
+            <div class="card">
+                <i class="fas fa-film"></i>
+                <h3>музыкальные клипы</h3>
+                <p>ритм, цвет, спецэффекты — работа с артистами и лейблами.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-tv"></i>
+                <h3>реклама / бренд</h3>
+                <p>от 15 сек до имиджевых роликов. продакшн full HD/4K.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-video"></i>
+                <h3>демо-рилы / шоурил</h3>
+                <p>визитка для артистов, моделей, блогеров. монтаж под ключ.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-paint-bucket"></i>
+                <h3>color grading</h3>
+                <p>daVinci Resolve, кинематографичный look, цветокоррекция.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-headphones"></i>
+                <h3>звуковой дизайн</h3>
+                <p>чистка, сведение, atmos — полное погружение.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-cog"></i>
+                <h3>VFX / motion</h3>
+                <p>2d-графика, хромакей, интеграция сложных элементов.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: ПОРТФОЛИО / КЕЙСЫ (акцент на доверии) -->
+    <section class="block fade-up">
+        <h2>последние <span class="highlight">работы</span></h2>
+        <div class="grid-2">
+            <div class="card" style="padding: 1.5rem;">
+                <i class="fas fa-star"></i>
+                <h3>Motive — «Тени»</h3>
+                <p>клип для инди-артиста. монтаж, colour, VFX. 2 млн просмотров за месяц.</p>
+            </div>
+            <div class="card" style="padding: 1.5rem;">
+                <i class="fas fa-bolt"></i>
+                <h3>бренд ZEON</h3>
+                <p>имиджевый ролик для техно-мероприятия. стиль киберпанк.</p>
+            </div>
+        </div>
+        <div style="margin-top: 3rem; text-align: center;">
+            <a href="#" class="btn"><i class="fab fa-vimeo-v"></i> смотреть шоурил</a>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: ПРОЦЕСС / КАК РАБОТАЮ (с иконами steps) -->
+    <section id="process" class="block fade-up">
+        <h2>процесс <span class="highlight">сборки</span></h2>
+        <div class="grid-3">
+            <div class="card"><i class="fas fa-comment-dots"></i><h3>1. брифинг</h3><p>обсуждение идеи, референсы, музыка.</p></div>
+            <div class="card"><i class="fas fa-cut"></i><h3>2. черновик</h3><p>монтажная структура, первый блок.</p></div>
+            <div class="card"><i class="fas fa-palette"></i><h3>3. цвет / звук</h3><p>градинг, аудио, финальные штрихи.</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: ОБО МНЕ (доверие, иконки соц) -->
+    <section id="about" class="block fade-up">
+        <div style="display: flex; gap: 4rem; align-items: center;">
+            <div style="flex: 1;">
+                <h2>привет, я <span class="highlight">Марк</span></h2>
+                <p style="font-size: 1.3rem;">режиссёр монтажа с 8-летним стажем. Работаю с артистами, брендами и продюсерскими центрами. Фирменный стиль — контрастный цвет и плотный ритм.</p>
+                <div style="display: flex; gap: 24px; margin: 2rem 0;">
+                    <i class="fab fa-instagram" style="font-size: 2.4rem; color: #f5c542;"></i>
+                    <i class="fab fa-vimeo" style="font-size: 2.4rem; color: #f5c542;"></i>
+                    <i class="fab fa-linkedin" style="font-size: 2.4rem; color: #f5c542;"></i>
+                </div>
+            </div>
+            <div style="flex: 1; background: #1f1f1f; border-radius: 48px; padding: 2rem; text-align: center;">
+                <i class="fas fa-quote-right" style="font-size: 4rem; color: #f5c54240;"></i>
+                <p style="font-style: italic;">«Монтаж — это последний сценарий. Я помогаю рассказать историю чисто и мощно».</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: КОНТАКТЫ / ФОРМА (без функционала, просто стиль) -->
+    <section id="contact" class="block fade-up">
+        <h2>начать <span class="highlight">проект</span></h2>
+        <div class="grid-2">
+            <div class="card">
+                <i class="fas fa-paper-plane"></i>
+                <h3>мессенджеры</h3>
+                <p>Telegram / WhatsApp <br> +7 999 123-45-67</p>
+                <p style="margin-top: 1rem;">email: montage@lensphere.ru</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-clock"></i>
+                <h3>ближайшие слоты</h3>
+                <p>свободные даты: 15–30 апреля,<br> 2 недели мая.</p>
+                <a href="#" class="btn" style="margin-top: 1rem;"><i class="fas fa-calendar-plus"></i> запрос</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: ОТЗЫВЫ (соцдок) -->
+    <section class="block fade-up">
+        <h2>клиенты <span class="highlight">говорят</span></h2>
+        <div class="grid-3">
+            <div class="card">“Марк сделал невозможное — вытащил материал, который казалось нельзя спасти. Цвет — огонь.” <br>— Анна, продюсер</div>
+            <div class="card">“Смонтировал клип за 4 дня. Все артисты в восторге, до сих пор просят его контакты.” <br>— Никита, лейбл</div>
+            <div class="card">“Очень внимателен к деталям, звук проработал шикарно. Буду работать ещё.” <br>— Катя, режиссёр</div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: ПОСЛЕДНИЙ ПРИЗЫВ / footer дублируется? нет — это предпоследний блок перед футером -->
+    <section class="block fade-up" style="min-height: auto; padding-bottom: 2rem;">
+        <div style="text-align: center;">
+            <i class="fas fa-crown" style="font-size: 4rem; color: #f5c542;"></i>
+            <h2 style="font-size: 3rem;">эксклюзивный <span class="highlight">монтаж</span></h2>
+            <p style="max-width: 600px; margin: 1rem auto;">Для артистов, брендов и продакшенов, которым нужен WOW-результат.</p>
+            <a href="#contact" class="btn"><i class="fas fa-bolt"></i> обсудить идею</a>
+        </div>
+    </section>
+
+    <!-- ФУТЕР (отдельный блок) -->
+    <footer class="footer">
+        <div class="socials">
+            <i class="fab fa-telegram"></i>
+            <i class="fab fa-vk"></i>
+            <i class="fab fa-youtube"></i>
+            <i class="fab fa-instagram"></i>
+        </div>
+        <p style="margin-top: 2rem;">© Lens·phere 2025 — монтаж, цвет, ритм.</p>
+        <p style="font-size: 0.9rem;">все права защищены. сделано для портфолио.</p>
+    </footer>
+
+    <!-- JS: анимации, фикс шапки, появление блоков -->
+    <script>
+        (function() {
+            // 1) хедер становится компактнее при скролле
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 60) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // 2) Intersection Observer — плавное появление блоков (fade-up)
+            const sections = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appeared');
+                        // можно один раз показать и дальше не следить
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' }); // чуть раньше
+
+            sections.forEach(section => observer.observe(section));
+
+            // 3) дополнительная анимация: плавный hover для картоек, но это css, а тут можно добавить рандомную динамику
+            // например, бегущий свет по логотипу (шутка) — но сделаем эффект печати в консоли не нужен.
+            // добавим изменение иконки в шапке по двойному щелчку? без навязчивости
+            // просто оставим как есть.
+
+            // эффект появления текста с задержкой — уже есть opacity.
+            // также добавим микро-анимацию на якоря (плавный скролл и так есть)
+        })();
+    </script>
+    <!-- небольшая дополнительная анимация для подсветки меню при скролле (чисто для эффекта) -->
+    <script>
+        (function subtleNavHighlight() {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.nav a');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 150;
+                    if (pageYOffset >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.style.borderBottomColor = 'transparent';
+                    link.style.color = '#ddd';
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.style.borderBottomColor = '#f5c542';
+                        link.style.color = '#f5c542';
+                    }
+                });
+            });
+        })();
+    </script>
+    <!-- Окончательный код, все без лишних комментариев -->
+</body>
+</html>
+```
+All done!

@@ -1,0 +1,523 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Luma Scope · режиссёр монтажа</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0c0b0e;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #edeae3;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* интерфейсные шрифты */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+    /* фиксированная шапка с анимацией коллапса */
+    .header {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      background: rgba(18, 16, 22, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 3.5rem;
+      padding: 0.8rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(255, 215, 150, 0.15);
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    /* компактный режим при скролле */
+    .header.scrolled {
+      top: 12px;
+      padding: 0.4rem 1.8rem;
+      background: rgba(8, 6, 12, 0.9);
+      border-color: rgba(255, 180, 90, 0.3);
+      box-shadow: 0 20px 40px -8px #b67b2e20;
+    }
+
+    .logo {
+      font-weight: 560;
+      font-size: 1.5rem;
+      letter-spacing: -0.5px;
+      background: linear-gradient(130deg, #f5d7b3, #dba978);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      transition: 0.2s;
+    }
+
+    .nav {
+      display: flex;
+      gap: 2.2rem;
+      font-weight: 400;
+      font-size: 1rem;
+    }
+
+    .nav a {
+      color: #dad2c5;
+      text-decoration: none;
+      transition: 0.2s;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 2px;
+    }
+
+    .nav a:hover {
+      color: #fdd99f;
+      border-bottom-color: #f0b45e;
+    }
+
+    /* анимация курсора / шапка JS-эффект */
+    #magic-line {
+      position: absolute;
+      bottom: 8px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #e3a35e;
+      transition: 0.25s ease-out;
+      border-radius: 4px;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .nav-item {
+      position: relative;
+    }
+
+    /* обёртка блоков */
+    .block {
+      min-height: 100vh;
+      padding: 6rem 4rem 4rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-bottom: 1px solid rgba(255, 190, 110, 0.08);
+      position: relative;
+    }
+
+    /* эффект появления при скролле */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px) scale(0.98);
+      transition: all 0.7s cubic-bezier(0.15, 0.9, 0.25, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* контейнер */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 5rem;
+      font-weight: 600;
+      letter-spacing: -2px;
+      line-height: 1.1;
+      background: linear-gradient(145deg, #fff1df, #e6bc8b);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 520;
+      letter-spacing: -1px;
+      color: #f0dcc9;
+      margin-bottom: 2rem;
+    }
+
+    .accent-glow {
+      color: #f3cd9c;
+      text-shadow: 0 0 18px #db9f5850;
+    }
+
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2,1fr); }
+    .grid-3 { grid-template-columns: repeat(3,1fr); }
+
+    /* карточки с тонкой границей */
+    .card {
+      background: rgba(28, 24, 30, 0.6);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(230, 180, 120, 0.2);
+      border-radius: 2.5rem;
+      padding: 2.2rem 2rem;
+      transition: 0.2s;
+    }
+
+    .card i {
+      font-size: 2.4rem;
+      color: #eab47a;
+      margin-bottom: 1.5rem;
+    }
+
+    /* footer */
+    .footer {
+      background: #060507;
+      padding: 3rem 4rem;
+      border-top: 1px solid #3a2e1f40;
+      color: #9f978b;
+    }
+
+    /* якорное меню */
+    .menu-fixed {
+      transition: all 0.2s;
+    }
+
+    /* демо-рил кнопка */
+    .btn-prime {
+      background: #2f251e;
+      border: 1px solid #f0b76860;
+      padding: 1rem 3rem;
+      border-radius: 3rem;
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: #fadbb9;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      transition: 0.2s;
+      cursor: default;
+      width: fit-content;
+    }
+
+    .btn-prime i {
+      font-size: 1.4rem;
+      color: #dba04d;
+    }
+
+    /* спецэффект подсветки текста (по скроллу) */
+    .highlight-scroll {
+      background: linear-gradient(120deg, #b57c3c 0%, #b57c3c 0%);
+      background-repeat: no-repeat;
+      background-size: 0% 30%;
+      background-position: 0 90%;
+      transition: background-size 0.5s ease-out;
+    }
+
+    .highlight-scroll.highlight-active {
+      background-size: 100% 30%;
+      color: #0c0b0e;
+      background-color: #edd6b5;
+      background-image: none; 
+      /* для читаемости: фон оранжевый, текст тёмный */
+      background-color: #e3bc89;
+      color: #0f0d10;
+      padding: 0 0.2rem;
+    }
+
+    /* имитация превью без картинок — стильные иконки */
+    .showreel-symbol {
+      display: flex;
+      gap: 3rem;
+      font-size: 5rem;
+      color: #6b5540;
+      justify-content: center;
+      margin: 3rem 0;
+      flex-wrap: wrap;
+    }
+
+    .showreel-symbol i {
+      background: #201d1b;
+      padding: 1.2rem;
+      border-radius: 100px;
+      border: 1px solid #7a623f;
+      transform: rotate(5deg);
+      transition: 0.2s;
+    }
+
+    .badge {
+      background: #2b241e;
+      border-radius: 100px;
+      padding: 0.2rem 1rem;
+      font-size: 0.8rem;
+      color: #b7a68b;
+      letter-spacing: 0.3px;
+      border: 1px solid #68563f;
+    }
+
+    hr {
+      border: 0.5px solid #3f352b;
+      margin: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ФИКСИРОВАННАЯ ШАПКА (БЛОК 1) С JS-АНИМАЦИЕЙ МАГИЧЕСКОЙ ЛИНИИ -->
+  <header class="header" id="mainHeader">
+    <div class="logo" id="logo">LUMA SCOPE</div>
+    <div class="nav" id="navContainer">
+      <span class="nav-item"><a href="#block2" data-target="showreel">Showreel</a></span>
+      <span class="nav-item"><a href="#block3" data-target="work">Work</a></span>
+      <span class="nav-item"><a href="#block5" data-target="process">Process</a></span>
+      <span class="nav-item"><a href="#block7" data-target="contact">Contact</a></span>
+      <span id="magic-line"></span>
+    </div>
+  </header>
+
+  <!-- БЛОК 2 - HERO / SHOWREEL (первый полноценный) -->
+  <section id="block2" class="block" style="justify-content: flex-end;">
+    <div class="container reveal">
+      <span class="badge">✧ director's cut 2025</span>
+      <h1 style="font-size: 5.5rem; margin-top: 0.5rem;">emotional <br> storytelling <br> <span class="accent-glow">frame by frame</span></h1>
+      <div class="showreel-symbol">
+        <i class="fas fa-film"></i>
+        <i class="fas fa-clapperboard"></i>
+        <i class="fas fa-scissors"></i>
+        <i class="fas fa-video"></i>
+      </div>
+      <div class="btn-prime" style="margin-top: 2rem;"><i class="fas fa-play"></i> watch demo reel</div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3 - ИЗБРАННЫЕ РАБОТЫ (псевдо-каталог) -->
+  <section id="block3" class="block">
+    <div class="container reveal">
+      <h2>selected cuts</h2>
+      <div class="grid-3">
+        <div class="card"><i class="fas fa-music"></i> <h3>“Neon Dust”</h3> <p style="color:#bba68e;">music video · 2.3M views</p> </div>
+        <div class="card"><i class="fas fa-microphone-alt"></i> <h3>“Echoes Live”</h3> <p style="color:#bba68e;">concert film · Stereophonic</p> </div>
+        <div class="card"><i class="fas fa-crown"></i> <h3>“Aurelia”</h3> <p style="color:#bba68e;">fashion documentary · Berlinale</p> </div>
+        <div class="card"><i class="fas fa-skull"></i> <h3>“Midnight Shift”</h3> <p style="color:#bba68e;">series trailer · Netflix</p> </div>
+        <div class="card"><i class="fas fa-camera-retro"></i> <h3>“Silent Bloom”</h3> <p style="color:#bba68e;">experimental short · Cannes Shorts</p> </div>
+        <div class="card"><i class="fas fa-dragon"></i> <h3>“Fable”</h3> <p style="color:#bba68e;">opening titles · game cinematics</p> </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4 - КОУЧ / РЕЖИССЁР МОНТАЖА (текст с подсветкой) -->
+  <section id="block4" class="block">
+    <div class="container reveal">
+      <h2>rhythm & emotion</h2>
+      <div class="grid-2">
+        <div class="card" style="font-size: 1.3rem;">
+          <i class="fas fa-cut"></i>
+          <p class="highlight-scroll" id="highlightText1">20+ feature projects. I edit the way directors dream — invisible, yet unforgettable.</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-sliders-h"></i>
+          <p class="highlight-scroll" id="highlightText2">color grading · sound design · vfx supervision — all in one workflow.</p>
+        </div>
+      </div>
+      <hr>
+      <p style="font-size: 2rem; font-weight: 300;">“montage is not just cutting, it's the soul of the story”</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 5 - ПРОЦЕСС (B2B / ДЛЯ КЛИЕНТОВ) -->
+  <section id="block5" class="block">
+    <div class="container reveal">
+      <h2>edit suite process</h2>
+      <div class="grid-2">
+        <div class="card"><i class="fas fa-pen-fancy"></i> offline · story assembly</div>
+        <div class="card"><i class="fas fa-magic"></i> online · vfx & polish</div>
+        <div class="card"><i class="fas fa-headphones"></i> sound mixing / colour</div>
+        <div class="card"><i class="fas fa-truck"></i> final delivery · DCP / broadcast</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6 - КЛИЕНТЫ / ДОВЕРИЕ (B2B акцент) -->
+  <section id="block6" class="block">
+    <div class="container reveal">
+      <h2>trusted by</h2>
+      <div style="display: flex; gap: 4rem; flex-wrap: wrap; font-size: 2.5rem; color: #a58867;">
+        <i class="fas fa-record-vinyl"></i> <i class="fas fa-tower-broadcast"></i> <i class="fas fa-tv"></i> <i class="fas fa-building"></i> 
+        <span style="font-size: 1.8rem; color: #ddd2c2;">(NDA partners)</span>
+      </div>
+      <hr>
+      <p class="badge" style="font-size:1rem;">Netflix · BBC · Channel 4 · indie agencies</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 7 - КОНТАКТ / КОУЧИНГ МОНТАЖЁРОВ -->
+  <section id="block7" class="block">
+    <div class="container reveal">
+      <h2>let’s cut smth great</h2>
+      <div class="grid-2">
+        <div class="card"><i class="fas fa-calendar-alt"></i> book a session</div>
+        <div class="card"><i class="fas fa-comment-dots"></i> consulting for editors</div>
+        <div class="card"><i class="fas fa-envelope"></i> luma.scope@edit.film</div>
+        <div class="card"><i class="fas fa-phone-alt"></i> +44 20 7911 0224</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8 - ПОСЛЕДНИЙ ПРОЕКТ (ПРОМО) -->
+  <section id="block8" class="block" style="min-height: 80vh;">
+    <div class="container reveal">
+      <span class="badge"><i class="far fa-star"></i> just wrapped</span>
+      <h2 style="font-size:4rem;">“HUMAN FRAME”</h2>
+      <div style="display:flex; gap:2rem; flex-wrap:wrap; margin-top:2rem;">
+        <i class="fas fa-award" style="font-size:3rem;"></i>
+        <i class="fas fa-clapperboard" style="font-size:3rem;"></i>
+        <i class="fas fa-ticket-alt" style="font-size:3rem;"></i>
+      </div>
+      <p style="max-width:600px; margin-top:2rem;">documentary feature — official selection Venice 2025. directed by Maria Voss.</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 9 - ФУТЕР (с якорями и иконками) -->
+  <footer class="footer">
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <span style="font-size: 1.8rem;">Luma Scope</span>
+        <div style="display: flex; gap: 2rem;">
+          <a href="#block2" style="color:#bc9d78;"><i class="fas fa-arrow-up"></i> reel</a>
+          <a href="#block3" style="color:#bc9d78;">work</a>
+          <a href="#block7" style="color:#bc9d78;">contact</a>
+        </div>
+        <div style="font-size: 1.8rem; gap:1rem; display:flex;">
+          <i class="fab fa-vimeo-v"></i> <i class="fab fa-instagram"></i> <i class="fab fa-linkedin-in"></i>
+        </div>
+      </div>
+      <hr style="background:#3a2f25;">
+      <p style="margin-top: 1.5rem;">© 2025 · editing & direction · all frames reserved</p>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // --- компактный хедер при скролле ---
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 40) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // --- магическая линия под навигацией (JS-анимация шапки) ---
+      const navItems = document.querySelectorAll('.nav .nav-item');
+      const magicLine = document.getElementById('magic-line');
+      const navContainer = document.getElementById('navContainer');
+
+      function moveMagicLine(targetLink) {
+        if (!targetLink) return;
+        const linkRect = targetLink.getBoundingClientRect();
+        const navRect = navContainer.getBoundingClientRect();
+        magicLine.style.width = linkRect.width + 'px';
+        magicLine.style.left = (linkRect.left - navRect.left) + 'px';
+        magicLine.style.opacity = '1';
+      }
+
+      navItems.forEach(item => {
+        const link = item.querySelector('a');
+        if (!link) return;
+        item.addEventListener('mouseenter', (e) => moveMagicLine(link));
+        item.addEventListener('mouseleave', () => {
+          magicLine.style.opacity = '0';
+        });
+      });
+
+      // при загрузке навести на первый пункт (просто красота)
+      window.addEventListener('load', () => {
+        const firstLink = document.querySelector('.nav-item a');
+        if (firstLink) {
+          setTimeout(() => {
+            moveMagicLine(firstLink);
+            magicLine.style.opacity = '0.7';
+          }, 200);
+          setTimeout(() => { magicLine.style.opacity = '0'; }, 1500);
+        }
+      });
+
+      // --- появление блоков (reveal) + подсветка текста highlight-scroll при скролле ---
+      const reveals = document.querySelectorAll('.reveal');
+      const highlights = document.querySelectorAll('.highlight-scroll');
+
+      function checkVisibility() {
+        const windowHeight = window.innerHeight;
+        const threshold = 0.8;
+
+        // reveal блоков
+        reveals.forEach(el => {
+          const rect = el.getBoundingClientRect();
+          const visiblePart = Math.min(1, (windowHeight - rect.top) / rect.height);
+          if (rect.top < windowHeight * threshold && rect.bottom > 100) {
+            el.classList.add('active');
+          } else {
+            // можно убрать, если хотим чтобы однажды появившись оставались — но тут оставим чтобы гаснуть при уходе вверх (эффект современный)
+            if (rect.bottom < 0 || rect.top > windowHeight) {
+              el.classList.remove('active');
+            }
+          }
+        });
+
+        // дополнительная подсветка для двух абзацев (highlight-scroll)
+        highlights.forEach(el => {
+          const rect = el.getBoundingClientRect();
+          // если блок виден наполовину
+          if (rect.top < windowHeight-100 && rect.bottom > 150) {
+            el.classList.add('highlight-active');
+          } else {
+            el.classList.remove('highlight-active');
+          }
+        });
+      }
+
+      window.addEventListener('scroll', checkVisibility);
+      window.addEventListener('resize', checkVisibility);
+      checkVisibility(); // сразу
+
+      // дополнительно — анимация при наведении на карточки можно добавить (но необязательно)
+    })();
+  </script>
+
+  <!-- дополнительный штрих: навигация якоря плавно (без внешних библиотек) -->
+  <script>
+    (function() {
+      document.querySelectorAll('.nav a, .footer a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          const hash = this.getAttribute('href');
+          if (hash && hash.startsWith('#')) {
+            e.preventDefault();
+            const target = document.querySelector(hash);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        });
+      });
+    })();
+  </script>
+
+  <!-- завершающая строчка по заданию -->
+  All done!
+</body>
+</html>
+```

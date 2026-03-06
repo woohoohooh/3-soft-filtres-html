@@ -1,0 +1,756 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom CRM · Enterprise development</title>
+  <style>
+    /* RESET & BASE — pure structure, no decoration */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: #f9fafc;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #1a1e2b;
+      line-height: 1.6;
+      font-weight: 400;
+      font-size: 18px;
+    }
+
+    /* hidden scroll-trigger observers */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.5s cubic-bezier(0.2, 0.9, 0.1, 1);
+      will-change: opacity, transform;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* sticky header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid #e6eaf0;
+      padding: 20px 40px;
+      transition: padding 0.2s ease;
+    }
+
+    header.shrink {
+      padding: 10px 40px;
+    }
+
+    .header-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 22px;
+      letter-spacing: -0.3px;
+      color: #1e293b;
+    }
+
+    .logo span {
+      color: #2563eb;
+      margin-right: 4px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 40px;
+      font-weight: 500;
+      color: #2d3a4f;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: inherit;
+      font-size: 17px;
+    }
+
+    .nav-links a:hover {
+      color: #2563eb;
+    }
+
+    /* main containers */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 80px 40px;
+    }
+
+    .section-large {
+      padding: 120px 40px;
+    }
+
+    /* hero specific */
+    .hero {
+      height: 100vh;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      gap: 60px;
+    }
+
+    .hero-left {
+      flex: 1;
+    }
+
+    .hero-left h1 {
+      font-size: 96px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      color: #0f172a;
+      margin-bottom: 24px;
+    }
+
+    .hero-sub {
+      font-size: 20px;
+      color: #334155;
+      max-width: 500px;
+      margin-bottom: 40px;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      border: none;
+      color: white;
+      font-weight: 600;
+      font-size: 20px;
+      padding: 18px 42px;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 10px 18px -8px rgba(37,99,235,0.3);
+      margin-bottom: 60px;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+      transform: scale(1.02);
+    }
+
+    /* stat row */
+    .stat-row {
+      display: flex;
+      gap: 48px;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .stat-label {
+      font-size: 16px;
+      color: #475569;
+      letter-spacing: 0.2px;
+    }
+
+    /* RIGHT SIDE — functional animated CRM dashboard (no abstract nonsense) */
+    .hero-right {
+      flex: 1.1;
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 30px 50px -20px rgba(0,20,40,0.25);
+      border: 1px solid #e9edf4;
+      padding: 24px;
+      height: 550px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .crm-dashboard {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* top bar */
+    .db-top {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #475569;
+    }
+
+    .db-badge {
+      background: #eef2ff;
+      padding: 4px 12px;
+      border-radius: 30px;
+      color: #2563eb;
+    }
+
+    /* main dashboard grid */
+    .db-main {
+      display: flex;
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* pipeline kanban */
+    .pipeline {
+      flex: 2;
+      background: #f8fafd;
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pipeline h4 {
+      font-size: 15px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #475569;
+      margin-bottom: 16px;
+    }
+
+    .kanban-stages {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .stage {
+      background: #ffffff;
+      border-radius: 16px;
+      flex: 1;
+      padding: 12px 8px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 8px -6px rgba(0,0,0,0.04);
+    }
+
+    .stage-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e9edf4;
+      border-radius: 12px;
+      padding: 12px 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      transition: all 0.2s;
+      border-left: 3px solid #2563eb;
+    }
+
+    .card small {
+      color: #64748b;
+      font-size: 11px;
+      display: block;
+      margin-top: 4px;
+    }
+
+    /* right panels */
+    .analytics-panel {
+      flex: 1.2;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .rev-counter {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 18px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .rev-label {
+      font-size: 14px;
+      color: #475569;
+    }
+
+    .rev-number {
+      font-size: 32px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    .chart-mini {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+      margin-top: 12px;
+    }
+
+    .chart-bar {
+      width: 20px;
+      background: #2563eb;
+      height: 40px;
+      border-radius: 10px 10px 4px 4px;
+      opacity: 0.7;
+    }
+
+    .chart-bar:nth-child(2) { height: 62px; background: #2563eb; }
+    .chart-bar:nth-child(3) { height: 28px; }
+    .chart-bar:nth-child(4) { height: 48px; }
+    .chart-bar:nth-child(5) { height: 70px; }
+
+    .client-preview {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .client-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+    }
+
+    .status {
+      background: #e6f0ff;
+      color: #2563eb;
+      padding: 2px 12px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* ICONS — monochrome inline SVGs */
+    .icon {
+      width: 22px;
+      height: 22px;
+      stroke: #2563eb;
+      stroke-width: 1.8;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .icon-m {
+      width: 28px;
+      height: 28px;
+      stroke: #2d3a4f;
+    }
+
+    /* spacing */
+    h2 {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -1.5px;
+      color: #0f172a;
+      margin-bottom: 24px;
+    }
+
+    h3 {
+      font-size: 30px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .grid-2col, .grid-3col {
+      display: grid;
+      gap: 40px;
+      margin-top: 60px;
+    }
+
+    .grid-2col { grid-template-columns: 1fr 1fr; }
+    .grid-3col { grid-template-columns: repeat(3, 1fr); }
+
+    .card-feature, .pricing-card, .timeline-item {
+      background: white;
+      border-radius: 28px;
+      padding: 32px;
+      border: 1px solid #eef2f6;
+      transition: box-shadow 0.2s;
+    }
+
+    .card-feature:hover {
+      box-shadow: 0 25px 35px -20px rgba(0,0,0,0.1);
+    }
+
+    /* toggle (fake select) */
+    .pricing-toggle {
+      display: flex;
+      background: #f1f4f9;
+      width: fit-content;
+      border-radius: 60px;
+      padding: 6px;
+      margin: 40px auto;
+    }
+
+    .toggle-option {
+      padding: 14px 38px;
+      font-weight: 600;
+      border-radius: 60px;
+      cursor: pointer;
+      color: #1e293b;
+      transition: 0.1s;
+      font-size: 18px;
+    }
+
+    .toggle-option.active {
+      background: #2563eb;
+      color: white;
+    }
+
+    .pricing-card {
+      text-align: center;
+      position: relative;
+    }
+
+    .popular {
+      border: 2px solid #2563eb;
+      box-shadow: 0 15px 30px -15px #2563eb40;
+    }
+
+    .popular-tag {
+      background: #2563eb;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 40px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    .price {
+      font-size: 44px;
+      font-weight: 700;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid #dce2ec;
+      padding: 24px 0;
+    }
+
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: 0.3s;
+      color: #334155;
+    }
+
+    .faq-item.open .faq-answer {
+      max-height: 150px;
+      margin-top: 20px;
+    }
+
+    .plus {
+      font-size: 32px;
+      line-height: 1;
+      color: #2563eb;
+    }
+
+    .final-cta {
+      background: #0f172a;
+      border-radius: 60px;
+      padding: 90px 60px;
+      color: white;
+      text-align: center;
+    }
+
+    .final-cta h2 {
+      color: white;
+    }
+
+    .btn-outline-light {
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+      font-size: 22px;
+      font-weight: 600;
+      padding: 18px 48px;
+      border-radius: 60px;
+      margin-top: 30px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-outline-light:hover {
+      background: white;
+      color: #0f172a;
+    }
+
+    hr {
+      border: 1px solid #e2e8f0;
+      margin: 0 40px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <header id="sticky-header">
+    <div class="header-inner">
+      <div class="logo"><span>◆</span> CRMworks</div>
+      <div class="nav-links">
+        <a href="#">Solutions</a>
+        <a href="#">Platform</a>
+        <a href="#">Pricing</a>
+        <a href="#">Docs</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO 100vh -->
+  <div class="hero">
+    <div class="hero-left">
+      <h1>Custom CRM Systems</h1>
+      <div class="hero-sub">Sales pipeline control, automated client tracking, and revenue intelligence — built for enterprise scale.</div>
+      <button class="btn-primary">Build Your CRM</button>
+      <div class="stat-row">
+        <div class="stat-item"><span class="stat-value">+41%</span><span class="stat-label">sales growth</span></div>
+        <div class="stat-item"><span class="stat-value">82%</span><span class="stat-label">automation rate</span></div>
+        <div class="stat-item"><span class="stat-value">2.4k</span><span class="stat-label">clients served</span></div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="crm-dashboard">
+        <div class="db-top">
+          <span class="db-badge">● LIVE DEAL FLOW</span>
+          <span>💰 $12.4M pipeline</span>
+        </div>
+        <div class="db-main">
+          <!-- kanban pipeline -->
+          <div class="pipeline">
+            <h4>Sales pipeline · KANBAN</h4>
+            <div class="kanban-stages" id="kanbanDynamic">
+              <div class="stage"><div class="stage-title">lead</div><div class="card">Acme Corp <small>new</small></div><div class="card">NexGen <small>new</small></div></div>
+              <div class="stage"><div class="stage-title">qualified</div><div class="card">OmniTech <small>in prog.</small></div></div>
+              <div class="stage"><div class="stage-title">closed</div><div class="card">BetaStack <small>won</small></div></div>
+            </div>
+          </div>
+          <!-- revenue + charts + client preview -->
+          <div class="analytics-panel">
+            <div class="rev-counter">
+              <span class="rev-label">monthly recurring</span>
+              <div class="rev-number" id="revCounter">$187.4k</div>
+              <div class="chart-mini">
+                <div class="chart-bar"></div><div class="chart-bar"></div><div class="chart-bar"></div><div class="chart-bar"></div><div class="chart-bar"></div>
+              </div>
+            </div>
+            <div class="client-preview">
+              <div class="client-row"><span>📋 Avantus</span><span class="status">In Progress</span></div>
+              <div class="client-row"><span>🏦 Meridian</span><span class="status">Closed</span></div>
+              <div class="client-row"><span>💼 Stellara</span><span class="status">New</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- sections (class fade-in observed) -->
+  <section class="fade-in section-large">
+    <h2>CRM problems we solve</h2>
+    <div class="grid-2col">
+      <div><h3>📉 Fragmented data</h3><p>Unify sales, support, and marketing in one operational core. No more silos.</p></div>
+      <div><h3>⏱️ Manual follow-ups</h3><p>Automate outreach sequences and task assignment based on deal stage.</p></div>
+    </div>
+  </section>
+
+  <section class="fade-in section-large">
+    <h2>Enterprise features</h2>
+    <div class="grid-3col">
+      <div class="card-feature"><span class="icon-m">⏺️</span> <strong>Deal scoring</strong> · AI-based prioritization</div>
+      <div class="card-feature"><span class="icon-m">⏺️</span> <strong>Custom pipelines</strong> · per team</div>
+      <div class="card-feature"><span class="icon-m">⏺️</span> <strong>Role SSO</strong> · SAML, SCIM</div>
+    </div>
+  </section>
+
+  <section class="fade-in section-large">
+    <h2>Funnel velocity</h2>
+    <div style="background:#eef2ff; border-radius:50px; padding:40px; text-align:center;">live funnel: lead → MQL → opportunity → close → 18d avg</div>
+  </section>
+
+  <section class="fade-in section-large">
+    <h2>Automation capabilities</h2>
+    <div class="grid-2col">
+      <div>⚙️ Workflow builder · 120+ triggers</div><div>⚙️ SLA timers & escalations</div>
+    </div>
+  </section>
+
+  <section class="fade-in section-large">
+    <h2>Integrations</h2>
+    <div class="grid-3col">
+      <div>Salesforce sync</div><div>HubSpot bidirectional</div><div>Slack / Teams</div>
+    </div>
+  </section>
+
+  <section class="fade-in section-large">
+    <h2>Development timeline</h2>
+    <div class="grid-3col">
+      <div class="timeline-item">🔷 2 wk · discovery</div>
+      <div class="timeline-item">🔷 6 wk · core CRM</div>
+      <div class="timeline-item">🔷 2 wk · deployment</div>
+    </div>
+  </section>
+
+  <!-- pricing with toggle -->
+  <section class="fade-in section-large" id="pricing">
+    <h2>Pricing</h2>
+    <div class="pricing-toggle" id="pricingToggle">
+      <span class="toggle-option active" data-plan="standard">Standard</span>
+      <span class="toggle-option" data-plan="enterprise">Enterprise</span>
+    </div>
+    <div class="grid-3col" id="pricingCards">
+      <div class="pricing-card"><h3>Starter</h3><div class="price price-std">$2.9k</div><div class="price-price-ent" style="display:none">$7.9k</div><p>per month</p></div>
+      <div class="pricing-card popular"><span class="popular-tag">most popular</span><h3>Growth</h3><div class="price price-std">$5.9k</div><div class="price-price-ent" style="display:none">$15k</div><p>unlimited users</p></div>
+      <div class="pricing-card"><h3>Custom</h3><div class="price price-std">$9.5k</div><div class="price-price-ent" style="display:none">$25k</div><p>+SLA</p></div>
+    </div>
+  </section>
+
+  <!-- FAQ accordion -->
+  <section class="fade-in section-large">
+    <h2>FAQ</h2>
+    <div class="faq-item">
+      <div class="faq-question">Can we self-host? <span class="plus">+</span></div>
+      <div class="faq-answer">Yes, on-prem or VPC deployment is included in enterprise.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">Data migration support? <span class="plus">+</span></div>
+      <div class="faq-answer">We handle historical data mapping and import.</div>
+    </div>
+  </section>
+
+  <!-- final cta -->
+  <section class="fade-in final-cta" style="margin:120px 40px;">
+    <h2>Launch Your Custom CRM</h2>
+    <button class="btn-outline-light">Request Consultation</button>
+  </section>
+
+  <hr>
+  <footer>© CRMworks · enterprise ready</footer>
+
+  <script>
+    (function() {
+      // sticky header
+      const header = document.getElementById('sticky-header');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 20) header.classList.add('shrink');
+        else header.classList.remove('shrink');
+      });
+
+      // IntersectionObserver fade/slide
+      const faders = document.querySelectorAll('.fade-in');
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' });
+      faders.forEach(f => observer.observe(f));
+
+      // mini card animation (move deals automatically)
+      const stages = document.querySelectorAll('.stage');
+      function animateKanban() {
+        if (stages.length < 3) return;
+        const stage0 = stages[0];
+        const stage1 = stages[1];
+        if (stage0.children.length > 1) {
+          const cardToMove = stage0.querySelector('.card:last-child');
+          if (cardToMove && stage1) {
+            stage1.appendChild(cardToMove);
+          }
+        } else {
+          // replenish lead
+          if (stage0.children.length <= 1) {
+            const newCard = document.createElement('div');
+            newCard.className = 'card';
+            newCard.innerHTML = 'New co. <small>new</small>';
+            stage0.appendChild(newCard);
+          }
+        }
+        // revenue counter update
+        const rev = document.getElementById('revCounter');
+        if (rev) {
+          let val = parseInt(rev.innerText.replace(/[^0-9.]/g,'')) || 187;
+          val = Math.floor(val + (Math.random()*0.6 + 0.2));
+          rev.innerText = '$' + val + 'k';
+        }
+      }
+      setInterval(animateKanban, 2800);
+
+      // pricing toggle (no dropdown)
+      const toggleOpts = document.querySelectorAll('.toggle-option');
+      const stdPrices = document.querySelectorAll('.price-std');
+      const entPrices = document.querySelectorAll('.price-price-ent');
+      toggleOpts.forEach(opt => {
+        opt.addEventListener('click', function() {
+          toggleOpts.forEach(o => o.classList.remove('active'));
+          this.classList.add('active');
+          const isEnterprise = this.dataset.plan === 'enterprise';
+          stdPrices.forEach(p => p.style.display = isEnterprise ? 'none' : 'block');
+          entPrices.forEach(p => p.style.display = isEnterprise ? 'block' : 'none');
+        });
+      });
+
+      // FAQ accordion
+      document.querySelectorAll('.faq-question').forEach(q => {
+        q.addEventListener('click', function() {
+          const item = this.closest('.faq-item');
+          item.classList.toggle('open');
+          const plus = this.querySelector('.plus');
+          if (plus) plus.innerText = item.classList.contains('open') ? '–' : '+';
+        });
+      });
+
+      // smooth scroll for internal anchor (if any)
+    })();
+  </script>
+  <!-- small extra animation: live card movement -->
+  <div style="display: none;">dynamic CRM animation active</div>
+  All done!
+</body>
+</html>
+```

@@ -1,0 +1,546 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vert · студия аудита | импульс доверия</title>
+  <!-- Font Awesome 6 (бесплатные иконы, трендовый набор) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f2f5f9;
+      font-family: system-ui, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.4;
+      color: #131b2e;
+      scroll-behavior: smooth;
+    }
+
+    /* custom cursor & selection */
+    ::selection { background: #c89f5c; color: #0b0f17; }
+    ::-moz-selection { background: #c89f5c; color: #0b0f17; }
+
+    /* фиксированная нав. панель — элегантный хайтек */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: auto;
+      background: rgba(10, 18, 34, 0.75);
+      backdrop-filter: blur(15px) saturate(180%);
+      -webkit-backdrop-filter: blur(15px) saturate(180%);
+      border-radius: 60px;
+      padding: 0.6rem 1.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -12px rgba(0, 5, 20, 0.4);
+      z-index: 999;
+      transition: all 0.3s ease;
+    }
+
+    .navbar.scrolled {
+      top: 12px;
+      background: rgba(8, 12, 26, 0.9);
+      backdrop-filter: blur(18px);
+      padding: 0.45rem 2.2rem;
+      border-color: rgba(200, 159, 92, 0.3);
+      box-shadow: 0 20px 35px -8px #0000004d;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #ffffffd9;
+      font-weight: 450;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid transparent;
+      transition: 0.25s ease;
+      position: relative;
+    }
+
+    .nav-links a i { margin-right: 6px; font-size: 0.9rem; color: #c5a267; }
+
+    .nav-links a:hover {
+      color: #fff;
+      border-bottom-color: #c5a267;
+    }
+
+    /* анимация появления блоков при скролле (современный fade + slide) */
+    .section {
+      opacity: 0;
+      transform: translateY(35px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+      will-change: opacity, transform;
+    }
+
+    .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* общие контейнеры */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+
+    /* header — шапка с живой анимацией частиц (js канва) */
+    .header-block {
+      height: 100vh;
+      min-height: 700px;
+      background: #0b101f;
+      position: relative;
+      display: flex;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+    }
+
+    #canvas-header {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: block;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 10;
+      max-width: 780px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    .header-content .pre-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      color: #b99b64;
+      margin-bottom: 1rem;
+      font-weight: 400;
+    }
+
+    .header-content h1 {
+      font-size: clamp(3rem, 10vw, 5.2rem);
+      font-weight: 600;
+      line-height: 1.1;
+      background: linear-gradient(145deg, #fff, #d6cdb2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.6rem;
+    }
+
+    .header-content .subhead {
+      font-size: 1.3rem;
+      color: #d1d5e3;
+      max-width: 550px;
+      margin: 0 auto 2.2rem;
+      font-weight: 350;
+      border-left: 3px solid #c89f5c;
+      padding-left: 1.5rem;
+      text-align: left;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 1rem 2.8rem;
+      border-radius: 50px;
+      font-weight: 550;
+      letter-spacing: 0.3px;
+      text-decoration: none;
+      transition: all 0.25s;
+      border: 1px solid transparent;
+      backdrop-filter: blur(8px);
+    }
+
+    .btn-primary {
+      background: #c89f5c;
+      color: #0c0f1a;
+      border-color: #e1b87a;
+    }
+
+    .btn-primary:hover {
+      background: #dbb074;
+      transform: scale(1.03);
+      box-shadow: 0 15px 25px -10px #a47e48;
+    }
+
+    .btn-outline {
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+    }
+
+    .btn-outline:hover {
+      background: rgba(200, 159, 92, 0.15);
+      border-color: #c89f5c;
+    }
+
+    /* FOOTER — блок 9 */
+    .footer-block {
+      background: #0d1324;
+      color: #bfc6da;
+      padding: 3.5rem 0 2rem;
+      border-top: 1px solid #2e3a4f;
+    }
+
+    .footer-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-copy {
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+
+    .footer-social i {
+      color: #c89f5c;
+      margin: 0 12px;
+      font-size: 1.5rem;
+      transition: 0.2s;
+    }
+    .footer-social i:hover { color: #e6c082; transform: translateY(-4px); }
+
+    /* дополнительные блоки (2..8) */
+    .block-dark, .block-light {
+      padding: 100px 0;
+      background: #f2f5f9;
+    }
+    .block-dark {
+      background: #131e2f;
+      color: #eaeef5;
+    }
+    .block-dark .section-title { color: #e2c189; }
+
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 500;
+      margin-bottom: 2.5rem;
+      letter-spacing: -0.02em;
+    }
+    .section-title i { margin-right: 15px; color: #c89f5c; }
+
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 3rem;
+    }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .stat-item, .service-item, .case-item {
+      background: rgba(255,255,255,0.03);
+      padding: 2rem;
+      border-radius: 32px;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(200,159,92,0.1);
+      transition: all 0.3s;
+    }
+    .block-light .stat-item, 
+    .block-light .service-item, 
+    .block-light .case-item {
+      background: white;
+      box-shadow: 0 10px 35px -10px rgba(0,0,0,0.05);
+    }
+    .stat-item:hover, .service-item:hover, .case-item:hover {
+      transform: translateY(-12px);
+      border-color: #c89f5c;
+    }
+
+    .big-number {
+      font-size: 3.5rem;
+      font-weight: 600;
+      color: #c89f5c;
+    }
+
+    .case-tag {
+      background: #c89f5c20;
+      color: #c89f5c;
+      border-radius: 40px;
+      padding: 0.2rem 1rem;
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.8rem;
+    }
+
+    hr.sep {
+      margin: 0;
+      border: none;
+      border-top: 1px solid rgba(200,159,92,0.2);
+    }
+
+    /* специальная подсветка текста при скролле (современный градиент) */
+    .highlight-scroll {
+      background: linear-gradient(120deg, #f1d48a 0%, #f1d48a 40%, #c6a15e 80%);
+      background-size: 0% 2px;
+      background-repeat: no-repeat;
+      background-position: left 90%;
+      transition: background-size 0.5s ease-out;
+    }
+    .highlight-scroll.active {
+      background-size: 100% 2px;
+    }
+
+    /* иконки увеличены */
+    .service-item i { font-size: 2.8rem; color: #c89f5c; margin-bottom: 1.5rem; }
+
+    /* простые адаптивные каст */
+    @media (max-width: 900px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .navbar { display: none; } /* на десктопе ок, для моб не нужно по тз */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Фиксированное якорное меню (блок 0 - не в счет) -->
+  <nav class="navbar" id="mainNav">
+    <div class="nav-links">
+      <a href="#home"><i class="fas fa-bolt"></i>Старт</a>
+      <a href="#about"><i class="fas fa-scale-balanced"></i>О нас</a>
+      <a href="#services"><i class="fas fa-file-signature"></i>Услуги</a>
+      <a href="#cases"><i class="fas fa-briefcase"></i>Кейсы</a>
+      <a href="#contact"><i class="fas fa-star"></i>Контакты</a>
+    </div>
+  </nav>
+
+  <!-- БЛОК 1: HEADER с живой канва анимацией -->
+  <header id="home" class="header-block section">
+    <canvas id="canvas-header"></canvas>
+    <div class="header-content">
+      <div class="pre-title"><i class="fas fa-gem"></i> аудит · налоги · право</div>
+      <h1>VERT&#8239;PARTNERS</h1>
+      <div class="subhead">доверие, измеряемое в цифрах. команда для вашего бизнеса</div>
+      <div class="btn-group">
+        <a href="#contact" class="btn btn-primary"><i class="fas fa-calendar-check"></i> стратегия</a>
+        <a href="#cases" class="btn btn-outline"><i class="fas fa-arrow-right"></i> реализованные кейсы</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- БЛОК 2: цифры и доверие -->
+  <section id="about" class="block-light section">
+    <div class="container">
+      <h2 class="section-title"><i class="fas fa-chart-line"></i> Цифры, говорящие громче слов</h2>
+      <div class="grid-3">
+        <div class="stat-item"><span class="big-number">47+</span> <h3>судебных споров</h3><span class="case-tag">выиграно</span></div>
+        <div class="stat-item"><span class="big-number">€ 12.8M</span> <h3>налоговая экономия</h3><span class="case-tag">для клиентов</span></div>
+        <div class="stat-item"><span class="big-number">100%</span> <h3>конфиденциальность</h3><span class="case-tag">АДВОКАТСКАЯ ТАЙНА</span></div>
+      </div>
+      <div style="margin-top: 3rem; font-size: 1.3rem; border-left: 4px solid #c89f5c; padding-left: 2rem;" class="highlight-scroll" id="scrollHighlight">
+        <i class="fas fa-quote-right" style="color: #c89f5c;"></i> Каждый кейс — это стратегия, отточенная до миллиметра.
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: услуги (акцент на бухгалтерия/аудит) -->
+  <section id="services" class="block-dark section">
+    <div class="container">
+      <h2 class="section-title"><i class="fas fa-badge-check"></i> Экспертиза, которой верят</h2>
+      <div class="grid-3">
+        <div class="service-item"><i class="fas fa-calculator"></i><h3>Аудит &amp; МСФО</h3><p>Полная проверка отчетности, due diligence для сделок.</p></div>
+        <div class="service-item"><i class="fas fa-gavel"></i><h3>Налоговые споры</h3><p>Снижение рисков, досудебное и судебное представительство.</p></div>
+        <div class="service-item"><i class="fas fa-chart-pie"></i><h3>Управленческий учёт</h3><p>Прозрачная структура и финансовая модель под ключ.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: Кейсы (b2b-акцент) -->
+  <section id="cases" class="block-light section">
+    <div class="container">
+      <h2 class="section-title"><i class="fas fa-scroll"></i> Последние кейсы</h2>
+      <div class="grid-2">
+        <div class="case-item">
+          <span class="case-tag">холдинг</span>
+          <h3>Защита в ФНС: доначисления 0₽</h3>
+          <p>Спор с налоговой на 217 млн — полностью сняли претензии.</p>
+        </div>
+        <div class="case-item">
+          <span class="case-tag">ритейл</span>
+          <h3>Оптимизация НДС</h3>
+          <p>Законная структура сэкономила 34 млн рублей за квартал.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: команда / принципы -->
+  <section class="block-dark section">
+    <div class="container">
+      <h2 class="section-title"><i class="fas fa-user-tie"></i> Лица, а не штампы</h2>
+      <div class="grid-3">
+        <div><i class="fas fa-star" style="color:#c89f5c"></i> <h4>15 лет судебной практики</h4><p>Арбитраж, кассация — без фальши.</p></div>
+        <div><i class="fas fa-shield-alt" style="color:#c89f5c"></i> <h4>LLC & partnership</h4><p>Международные стандарты аудита.</p></div>
+        <div><i class="fas fa-brain" style="color:#c89f5c"></i> <h4>Big 4 опыт</h4><p>Экс-партнёры ведущих сетей.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: доверие / партнеры (иконичный ряд) -->
+  <section class="block-light section">
+    <div class="container" style="text-align: center;">
+      <p style="font-size: 2rem; font-weight: 300; color: #131b2e;"><i class="fas fa-building-columns" style="color:#c89f5c"></i> 80+ компаний доверяют отчётность</p>
+      <div style="display: flex; gap: 3rem; justify-content: center; font-size: 2.5rem; color: #3e4d63; flex-wrap: wrap; margin: 3rem 0;">
+        <i class="fas fa-bolt"></i> <i class="fas fa-chart-simple"></i> <i class="fas fa-industry"></i> <i class="fas fa-truck"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: отзыв / доверительный текст с анимацией подсветки при скролле -->
+  <section class="block-dark section">
+    <div class="container">
+      <div class="grid-2" style="align-items: center;">
+        <div>
+          <span class="case-tag">отзыв клиента</span>
+          <h2 style="font-size: 2rem;">«Без преувеличения — спасли бизнес»</h2>
+          <p style="color:#b6c3d9;">— совладелец сети клиник, оборот 2.7 млрд</p>
+        </div>
+        <div style="background: #1b263b; border-radius: 48px; padding: 2.5rem;" class="highlight-scroll" id="reviewHighlight">
+          <i class="fas fa-chevron-right" style="color:#c89f5c"></i> Мы работаем на результат, а не на отчёт. Каждый проект — личная ответственность партнёра.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: призыв к действию (форма/контакт) -->
+  <section id="contact" class="block-light section" style="padding-bottom: 5rem;">
+    <div class="container" style="text-align: center; max-width: 700px;">
+      <h2 class="section-title"><i class="fas fa-pen-fancy"></i> Напишите нам</h2>
+      <p style="margin-bottom: 2.2rem; font-size: 1.2rem;">Краткий аудит текущей ситуации — бесплатно.</p>
+      <a href="#" class="btn btn-primary" style="padding: 1.2rem 4rem;"><i class="fas fa-paper-plane"></i> vert@partner.audit</a>
+      <p style="margin-top: 2rem;"><i class="fas fa-phone-alt" style="color: #c89f5c;"></i> +7 495 123-45-67</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: FOOTER -->
+  <footer class="footer-block section">
+    <div class="container footer-grid">
+      <div class="footer-copy">© VERT PARTNERS, 2025 — аудиторский консалтинг</div>
+      <div class="footer-social">
+        <i class="fab fa-linkedin-in"></i>
+        <i class="fab fa-telegram-plane"></i>
+        <i class="fas fa-envelope"></i>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // 1. АНИМАЦИЯ ШАПКИ (canvas - частицы)
+      const canvas = document.getElementById('canvas-header');
+      const ctx = canvas.getContext('2d');
+      let w, h;
+      let particles = [];
+
+      function resizeCanvas() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = document.querySelector('.header-block').offsetHeight;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      const particleCount = 80;
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          radius: Math.random() * 3.5 + 1,
+          speedX: (Math.random() - 0.5) * 0.7,
+          speedY: (Math.random() - 0.5) * 0.4,
+          color: `rgba(200, 159, 92, ${Math.random() * 0.3 + 0.1})`
+        });
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, w, h);
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+          // движение
+          p.x += p.speedX;
+          p.y += p.speedY;
+          // границы
+          if (p.x < 0 || p.x > w) p.speedX *= -1;
+          if (p.y < 0 || p.y > h) p.speedY *= -1;
+        });
+        requestAnimationFrame(drawParticles);
+      }
+      drawParticles();
+
+      // 2. Intersection Observer — появление блоков (современный эффект)
+      const sections = document.querySelectorAll('.section');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px' });
+      sections.forEach(sec => observer.observe(sec));
+
+      // 3. Navbar скролл-эффект (компактный)
+      const nav = document.getElementById('mainNav');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 40) {
+          nav.classList.add('scrolled');
+        } else {
+          nav.classList.remove('scrolled');
+        }
+
+        // 4. подсветка текста highlight-scroll при появлении в зоне видимости
+        const highlights = document.querySelectorAll('.highlight-scroll');
+        highlights.forEach(el => {
+          const rect = el.getBoundingClientRect();
+          const isVisible = rect.top < window.innerHeight - 100 && rect.bottom > 100;
+          if (isVisible) {
+            el.classList.add('active');
+          } else {
+            el.classList.remove('active');
+          }
+        });
+      });
+
+      // якоря (гладкий скролл)
+      document.querySelectorAll('.nav-links a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href').substring(1);
+          const target = document.getElementById(targetId);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

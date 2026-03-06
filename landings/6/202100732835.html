@@ -1,0 +1,718 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chainforge · Web3 infrastructure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #ffffff 0%, #f6f9fe 100%);
+            color: #1a1e2b;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* sticky header */
+        .site-header {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            padding: 1.5rem 4rem;
+            background: rgba(255,255,255,0.80);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(37,99,235,0.08);
+            z-index: 100;
+            transition: padding 0.25s ease, background 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .site-header.shrink {
+            padding: 0.75rem 4rem;
+            background: rgba(255,255,255,0.96);
+            box-shadow: 0 8px 20px -10px rgba(0,20,40,0.1);
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 1.5rem;
+            letter-spacing: -0.02em;
+            color: #0f172a;
+        }
+
+        .logo span {
+            color: #2563eb;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            font-weight: 450;
+            color: #1e293b;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: inherit;
+            font-size: 1.1rem;
+        }
+
+        /* layout spacing */
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 4rem;
+        }
+
+        section {
+            margin: 8rem 0 10rem 0;
+        }
+
+        .section-title {
+            font-size: 3.5rem; /* 56px */
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-bottom: 2rem;
+            color: #0b1e33;
+        }
+
+        .section-sub {
+            font-size: 1.25rem;
+            color: #334155;
+            max-width: 680px;
+            margin-bottom: 4rem;
+        }
+
+        /* hero */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0 4rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .hero-left {
+            flex: 1 1 50%;
+            padding-right: 3rem;
+        }
+
+        .hero-left h1 {
+            font-size: 5.5rem; /* 88px */
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+            color: #0a1929;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-left .subhead {
+            font-size: 1.3rem;
+            font-weight: 400;
+            color: #254358;
+            max-width: 550px;
+            margin-bottom: 2.5rem;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            border: none;
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 500;
+            padding: 1rem 2.5rem;
+            border-radius: 48px;
+            cursor: pointer;
+            box-shadow: 0 15px 30px -12px rgba(37,99,235,0.35);
+            transition: transform 0.15s, background 0.15s;
+            margin-bottom: 3rem;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: scale(1.02);
+        }
+
+        .stats {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #4b5563;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        /* right side — blockchain network animation (canvas) */
+        .hero-right {
+            flex: 1 1 50%;
+            background: rgba(37,99,235,0.02);
+            border-radius: 2.5rem;
+            min-height: 480px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(37,99,235,0.15);
+            box-shadow: 0 25px 40px -20px rgba(0,40,100,0.2);
+        }
+
+        .network-canvas {
+            width: 100%;
+            height: 100%;
+            min-height: 480px;
+            display: block;
+            border-radius: 2rem;
+        }
+
+        /* cards / grids */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5rem;
+            margin-top: 3rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 32px;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.02), 0 0 0 1px rgba(37,99,235,0.04);
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 30px 45px -15px rgba(37,99,235,0.15), 0 0 0 1px rgba(37,99,235,0.2);
+            transform: translateY(-6px);
+        }
+
+        .icon-svg {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 1.5rem;
+            color: #2563eb;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        h3 {
+            font-size: 1.75rem; /* 28px */
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #0f172a;
+        }
+
+        .card p {
+            font-size: 1.1rem;
+            color: #334155;
+        }
+
+        /* pricing toggle */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin: 3rem 0 2rem;
+        }
+
+        .toggle-option {
+            background: #f1f5f9;
+            border-radius: 60px;
+            padding: 0.3rem;
+            display: inline-flex;
+            border: 1px solid #e2e8f0;
+        }
+
+        .toggle-btn {
+            padding: 0.7rem 2.2rem;
+            border-radius: 60px;
+            border: none;
+            background: transparent;
+            font-weight: 500;
+            font-size: 1rem;
+            color: #1e293b;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .toggle-btn.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .pricing-cards {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .pricing-card {
+            background: white;
+            border-radius: 36px;
+            padding: 2.5rem 2rem;
+            flex: 1 1 240px;
+            border: 1px solid #eef2f6;
+            transition: 0.2s;
+        }
+
+        .pricing-card.featured {
+            border: 2px solid #2563eb;
+            box-shadow: 0 20px 35px -12px #2563eb30;
+        }
+
+        .price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 1rem 0;
+        }
+
+        .price small {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #64748b;
+        }
+
+        /* FAQ accordion */
+        .faq-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1.5rem 0;
+        }
+
+        .faq-question {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.35rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: #0b1e33;
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+            color: #3a4b5e;
+            font-size: 1.1rem;
+            padding-right: 2rem;
+        }
+
+        .faq-item.open .faq-answer {
+            max-height: 200px;
+            margin-top: 1.2rem;
+        }
+
+        .arrow {
+            transition: transform 0.3s;
+        }
+
+        .faq-item.open .arrow {
+            transform: rotate(180deg);
+        }
+
+        /* final cta */
+        .cta-block {
+            background: white;
+            border-radius: 48px;
+            padding: 4rem 5rem;
+            text-align: center;
+            border: 1px solid rgba(37,99,235,0.15);
+            box-shadow: 0 35px 50px -40px #2563eb;
+        }
+
+        .cta-block h2 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 2rem;
+        }
+
+        .btn-telegram {
+            background: #2563eb;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 500;
+            padding: 1.2rem 3.5rem;
+            border-radius: 60px;
+            box-shadow: 0 15px 25px -10px #2563eb;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .btn-telegram:hover {
+            background: #1d4ed8;
+            transform: scale(1.02);
+        }
+
+        hr {
+            margin: 6rem 0;
+            border: none;
+            border-top: 2px solid #e9edf2;
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(18px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        a, button { cursor: pointer; }
+
+        /* no emoji / icons only inline svg */
+    </style>
+</head>
+<body>
+    <header class="site-header" id="stickyHeader">
+        <div class="logo">chain<span>forge</span></div>
+        <div class="nav-links">
+            <a href="#">Solutions</a>
+            <a href="#">Developers</a>
+            <a href="#">Security</a>
+            <a href="#">Pricing</a>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-left">
+            <h1>Web3 & Blockchain Development</h1>
+            <p class="subhead">Enterprise‑grade infrastructure for decentralized applications. Modular, secure, and future‑proof.</p>
+            <button class="btn-primary">Build Your Blockchain Project</button>
+            <div class="stats">
+                <div class="stat-item"><span class="stat-number">950+</span><span class="stat-label">smart contracts</span></div>
+                <div class="stat-item"><span class="stat-number">210</span><span class="stat-label">projects built</span></div>
+                <div class="stat-item"><span class="stat-number">38</span><span class="stat-label">networks</span></div>
+            </div>
+        </div>
+        <div class="hero-right">
+            <canvas id="blockchainCanvas" class="network-canvas" width="560" height="480"></canvas>
+        </div>
+    </section>
+
+    <div class="container">
+        <!-- section 1: solutions -->
+        <section class="fade-in">
+            <h2 class="section-title">Blockchain Solutions We Build</h2>
+            <div class="grid-3">
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><h3>Layer 1 / L2</h3><p>Custom sovereign chains, rollups, and app-chains with validator sets.</p></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8M12 8v8"/></svg><h3>DeFi infrastructure</h3><p>Lending, DEX, and stablecoin protocols with institutional grade.</p></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><h3>Digital identity</h3><p>Self‑sovereign identity, verifiable credentials, and zero‑knowledge.</p></div>
+            </div>
+        </section>
+
+        <!-- 2: smart contract development -->
+        <section class="fade-in">
+            <h2 class="section-title">Smart Contract Development</h2>
+            <div class="grid-2">
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M7 8h10M7 12h6M7 16h4"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg><h3>Solidity / Rust</h3><p>Formal verification, fuzz testing, and mainnet‑proven templates.</p></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7 12 2"/><line x1="12" y1="22" x2="12" y2="12"/><polyline points="22 7 12 12 2 7"/></svg><h3>Multi‑chain</h3><p>EVM, Solana, Cosmos, Starknet — unified audit & deployment.</p></div>
+            </div>
+        </section>
+
+        <!-- 3: web3 architecture -->
+        <section class="fade-in">
+            <h2 class="section-title">Web3 Application Architecture</h2>
+            <div class="grid-4">
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 8 8 0 0 0-14.46 0A1.65 1.65 0 0 0 4.6 15"/></svg><h3>Node infra</h3></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><h3>Indexing</h3></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M12 22V12"/></svg><h3>ZK rollups</h3></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><h3>Automation</h3></div>
+            </div>
+        </section>
+
+        <!-- 4: supported blockchains -->
+        <section class="fade-in">
+            <h2 class="section-title">Supported Blockchains</h2>
+            <div class="grid-4">
+                <div class="card">Ethereum · Polygon · Arbitrum · Optimism · Base</div>
+                <div class="card">Solana · NEAR · Aurora</div>
+                <div class="card">Cosmos · Osmosis · Celestia</div>
+                <div class="card">Avalanche · BNB Chain · Starknet</div>
+            </div>
+        </section>
+
+        <!-- 5: development process -->
+        <section class="fade-in">
+            <h2 class="section-title">Development Process</h2>
+            <div class="grid-3">
+                <div class="card"><span style="font-size:2rem; color:#2563eb;">❶</span><h3>spec & audit prep</h3></div>
+                <div class="card"><span style="font-size:2rem; color:#2563eb;">❷</span><h3>iterative dev + testnet</h3></div>
+                <div class="card"><span style="font-size:2rem; color:#2563eb;">❸</span><h3>security review & mainnet</h3></div>
+            </div>
+        </section>
+
+        <!-- 6: security & auditing -->
+        <section class="fade-in">
+            <h2 class="section-title">Security & Auditing</h2>
+            <div class="grid-2">
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><h3>formal verification</h3></div>
+                <div class="card"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><h3>bug bounty / monitors</h3></div>
+            </div>
+        </section>
+
+        <!-- pricing -->
+        <section class="fade-in">
+            <h2 class="section-title">Premium pricing</h2>
+            <div class="toggle-wrapper">
+                <span style="font-weight:500;">Deployment:</span>
+                <div class="toggle-option" id="pricingToggle">
+                    <button class="toggle-btn active" data-env="testnet">Testnet</button>
+                    <button class="toggle-btn" data-env="mainnet">Mainnet</button>
+                </div>
+            </div>
+            <div class="pricing-cards" id="pricingCards">
+                <div class="pricing-card"><h3>Smart Contract</h3><div class="price" data-base="28">$28k<small> testnet</small></div><p>audit + deployment</p></div>
+                <div class="pricing-card featured"><h3>Web3 App</h3><div class="price" data-base="89">$89k<small> testnet</small></div><p>full-stack + contracts</p></div>
+                <div class="pricing-card"><h3>Blockchain Platform</h3><div class="price" data-base="240">$240k<small> testnet</small></div><p>custom chain + explorer</p></div>
+            </div>
+        </section>
+
+        <!-- FAQ accordion -->
+        <section class="fade-in">
+            <h2 class="section-title">Frequently Asked</h2>
+            <div class="faq-item">
+                <div class="faq-question">Which networks do you support? <span class="arrow">▼</span></div>
+                <div class="faq-answer">EVM (Ethereum, Polygon, Arbitrum, etc.), Solana, Cosmos, Starknet, and Near.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">How do you ensure smart contract security? <span class="arrow">▼</span></div>
+                <div class="faq-answer">Multiple internal + external audits, formal verification, and 24/7 monitoring.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">What is the typical timeline? <span class="arrow">▼</span></div>
+                <div class="faq-answer">8–14 weeks from spec to mainnet, depending on complexity.</div>
+            </div>
+        </section>
+
+        <!-- final CTA -->
+        <section class="fade-in" style="margin-bottom: 5rem;">
+            <div class="cta-block">
+                <h2>Launch Your Blockchain Project</h2>
+                <button class="btn-telegram">Contact via Telegram</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        (function() {
+            // sticky header
+            const header = document.getElementById('stickyHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) header.classList.add('shrink');
+                else header.classList.remove('shrink');
+            });
+
+            // IntersectionObserver for fade
+            const faders = document.querySelectorAll('.fade-in');
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) entry.target.classList.add('visible');
+                });
+            }, { threshold: 0.1 });
+            faders.forEach(el => observer.observe(el));
+
+            // blockchain canvas animation
+            const canvas = document.getElementById('blockchainCanvas');
+            const ctx = canvas.getContext('2d');
+            let width = canvas.clientWidth, height = canvas.clientHeight;
+            canvas.width = width; canvas.height = height;
+
+            const blocks = [];
+            const nBlocks = 10;
+            for (let i = 0; i < nBlocks; i++) {
+                blocks.push({
+                    x: 70 + i * 48,
+                    y: 200 + (i%3)*18 - 15,
+                    hash: i,
+                    confirmed: false,
+                    packets: []
+                });
+            }
+
+            function drawNetwork() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.strokeStyle = '#2563eb';
+                ctx.lineWidth = 2;
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#2563eb30';
+                ctx.shadowBlur = 8;
+
+                // draw chain links (blocks)
+                for (let i = 0; i < blocks.length; i++) {
+                    const b = blocks[i];
+                    ctx.fillStyle = i < 6 ? '#ffffff' : '#f1f5f9';
+                    ctx.strokeStyle = i < 6 ? '#2563eb' : '#94a3b8';
+                    ctx.lineWidth = i < 6 ? 3 : 1.5;
+
+                    // block rectangle
+                    ctx.beginPath();
+                    ctx.roundRect(b.x-20, b.y-15, 50, 40, 8);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // block hash indicator
+                    ctx.font = 'bold 10px monospace';
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fillText('#', b.x-8, b.y-2);
+                    ctx.fillText(b.hash.toString(16), b.x, b.y+12);
+
+                    // connecting line to next
+                    if (i < blocks.length-1) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = '#2563eb';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 3]);
+                        ctx.moveTo(b.x+30, b.y+5);
+                        ctx.lineTo(blocks[i+1].x-20, blocks[i+1].y-5);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+
+                    // transaction packets moving between nodes
+                    if (i % 2 === 0 && i < blocks.length-1) {
+                        ctx.fillStyle = '#2563eb';
+                        ctx.beginPath();
+                        ctx.arc(b.x+20 + (Date.now()*0.005 % 30), b.y-5, 5, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = '8px monospace';
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillText('tx', b.x+17, b.y-2);
+                    }
+                }
+
+                // smart contract execution: wallet → contract → transaction
+                ctx.fillStyle = '#2563eb';
+                ctx.beginPath();
+                ctx.arc(120, 380, 12, 0, 2*Math.PI); // wallet
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '8px monospace';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText('wallet', 100, 395);
+
+                ctx.beginPath();
+                ctx.arc(260, 360, 12, 0, 2*Math.PI); // contract
+                ctx.fillStyle = '#2563eb';
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.fillText('contract', 240, 375);
+
+                ctx.beginPath();
+                ctx.arc(400, 380, 12, 0, 2*Math.PI); // tx
+                ctx.fillStyle = '#2563eb';
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.fillText('tx', 395, 385);
+
+                // verification checkmarks near last blocks
+                ctx.fillStyle = '#10b981';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.fillText('✓', 550, 200);
+                ctx.fillText('✓', 580, 230);
+                ctx.fillText('✓', 530, 260);
+
+                requestAnimationFrame(drawNetwork);
+            }
+
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.moveTo(x + r, y);
+                this.lineTo(x + w - r, y);
+                this.quadraticCurveTo(x + w, y, x + w, y + r);
+                this.lineTo(x + w, y + h - r);
+                this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                this.lineTo(x + r, y + h);
+                this.quadraticCurveTo(x, y + h, x, y + h - r);
+                this.lineTo(x, y + r);
+                this.quadraticCurveTo(x, y, x + r, y);
+                return this;
+            };
+
+            drawNetwork();
+
+            // pricing toggle logic
+            const toggleBtns = document.querySelectorAll('.toggle-btn');
+            const prices = document.querySelectorAll('.price');
+            toggleBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    toggleBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const env = btn.dataset.env; // 'testnet' or 'mainnet'
+                    const basePrices = [28, 89, 240];
+                    const mainnetMultiplier = 1.6;
+                    prices.forEach((el, idx) => {
+                        let base = basePrices[idx];
+                        let val = env === 'testnet' ? base : Math.round(base * mainnetMultiplier);
+                        el.innerHTML = `$${val}k<small> ${env}</small>`;
+                    });
+                });
+            });
+
+            // accordion
+            document.querySelectorAll('.faq-question').forEach(q => {
+                q.addEventListener('click', e => {
+                    const item = q.closest('.faq-item');
+                    item.classList.toggle('open');
+                });
+            });
+
+            // resize canvas
+            window.addEventListener('resize', () => {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

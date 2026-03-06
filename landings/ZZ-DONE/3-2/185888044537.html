@@ -1,0 +1,686 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vivid Studio · фото / видео портфолио</title>
+    <!-- Font Awesome 6 (стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f7f5f2;
+            color: #1a1e24;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* интерфейсные сетки — только ПК (адаптация не нужна, но для красоты оставим минимум) */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* эффектные появления при скролле */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px) scale(0.98);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .stagger-item {
+            transition-delay: 0.05s;
+        }
+
+        /* фиксированная шапка с динамическим сжатием */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 28px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.4s ease;
+            background: transparent;
+            color: #fff;
+            mix-blend-mode: exclusion; /* интересный эффект на светлом фоне */
+            pointer-events: none;
+        }
+        .header * {
+            pointer-events: auto;
+        }
+        .header.scrolled {
+            padding: 16px 40px;
+            background: rgba(10, 12, 18, 0.85);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2);
+            color: #fff;
+            mix-blend-mode: normal;
+            border-bottom: 1px solid rgba(255,215,140,0.2);
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: -0.02em;
+        }
+        .logo span {
+            color: #f9c45a;
+            font-weight: 300;
+            margin-left: 4px;
+        }
+        .nav a {
+            color: inherit;
+            text-decoration: none;
+            margin-left: 40px;
+            font-weight: 500;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: 0.25s;
+            padding-bottom: 4px;
+        }
+        .nav a:hover {
+            border-bottom-color: #f9c45a;
+        }
+
+        /* Hero с динамической анимацией js (canvas) */
+        .hero {
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            background: #0b0d14;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        #heroCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 1;
+            opacity: 0.6;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 1000px;
+            padding: 0 20px;
+            transform: translateY(-2%);
+        }
+        .hero-content h1 {
+            font-size: 5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .hero-content h1 i {
+            color: #f9c45a;
+            font-style: normal;
+            border-bottom: 4px solid #f9c45a;
+        }
+        .hero-content p {
+            font-size: 1.4rem;
+            margin-top: 25px;
+            font-weight: 300;
+            opacity: 0.85;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* общие блоки */
+        .section {
+            padding: 110px 0;
+            background: #ffffff;
+            border-bottom: 1px solid #eae7e2;
+        }
+        .section:nth-child(even) {
+            background: #faf8f5;
+        }
+        .section-title {
+            font-size: 3.2rem;
+            font-weight: 600;
+            margin-bottom: 60px;
+            letter-spacing: -0.02em;
+            border-left: 12px solid #f9c45a;
+            padding-left: 30px;
+        }
+
+        /* сетка услуг / портфолио */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+        }
+        .service-card {
+            background: white;
+            padding: 40px 30px;
+            box-shadow: 0 25px 40px -20px rgba(0,0,0,0.1);
+            transition: all 0.4s;
+            border: 1px solid #eeebe6;
+        }
+        .service-card i {
+            font-size: 3rem;
+            color: #f9c45a;
+            margin-bottom: 25px;
+        }
+        .service-card h3 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .service-card p {
+            color: #4a4f55;
+        }
+        .service-card:hover {
+            transform: translateY(-15px);
+            border-color: #f9c45a;
+            box-shadow: 0 40px 50px -20px #c9b081;
+        }
+
+        /* акцент на доверии — юрблок, но тема сейчас фотограф, но адаптивно */
+        .testimonials {
+            display: flex;
+            gap: 40px;
+        }
+        .review {
+            background: #fffaf2;
+            padding: 40px;
+            border-radius: 0px 50px 0px 50px;
+            flex: 1;
+            border: 1px solid #e1d9ce;
+        }
+        .review i {
+            color: #f9c45a;
+            font-size: 2.5rem;
+            opacity: 0.5;
+            margin-bottom: 15px;
+        }
+        .review p {
+            font-size: 1.3rem;
+            font-style: italic;
+            margin: 20px 0;
+        }
+        .review h4 {
+            font-weight: 600;
+            font-size: 1.3rem;
+        }
+        .review .role {
+            color: #9b7e5c;
+        }
+
+        /* галерея-сетка (без картинок, только иконки-заглушки) */
+        .gallery-stub {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .gallery-item {
+            aspect-ratio: 1/1.2;
+            background: #d9d2c8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #332e26;
+            font-size: 2.5rem;
+            transition: 0.3s;
+            border: 1px solid transparent;
+        }
+        .gallery-item i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            color: #2b241c;
+        }
+        .gallery-item span {
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .gallery-item:hover {
+            background: #f9c45a;
+            border-color: #1a1e24;
+            transform: scale(0.98);
+        }
+
+        /* ценовой блок / прайс */
+        .price-blocks {
+            display: flex;
+            gap: 30px;
+        }
+        .price-card {
+            flex: 1;
+            background: #fff;
+            border: 2px solid #f0e7dc;
+            padding: 50px 30px;
+            text-align: center;
+            transition: 0.35s;
+        }
+        .price-card .price {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #1a1e24;
+            margin: 25px 0;
+        }
+        .price-card .price small {
+            font-size: 1.3rem;
+            font-weight: 300;
+        }
+        .price-card.featured {
+            border-color: #f9c45a;
+            background: #fefcf9;
+            transform: scale(1.02);
+            box-shadow: 0 15px 30px rgba(249, 196, 90, 0.15);
+        }
+        .btn {
+            display: inline-block;
+            padding: 18px 40px;
+            background: transparent;
+            border: 2px solid #1a1e24;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            color: #1a1e24;
+            letter-spacing: 2px;
+            transition: 0.2s;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            background: #1a1e24;
+            color: white;
+            border-color: #1a1e24;
+        }
+
+        /* контакты + карта-заглушка */
+        .contact-grid {
+            display: flex;
+            gap: 60px;
+        }
+        .contact-info {
+            flex: 1;
+        }
+        .contact-info i {
+            color: #f9c45a;
+            font-size: 2rem;
+            margin-right: 20px;
+            width: 40px;
+        }
+        .info-line {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            font-size: 1.3rem;
+        }
+        .map-mock {
+            flex: 1;
+            background: #cfc9c0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            min-height: 300px;
+            border: 8px solid #f9c45a;
+            color: #1a1e24;
+        }
+
+        /* футер */
+        .footer {
+            background: #181c24;
+            color: #ccc;
+            padding: 70px 0;
+            border-top: 6px solid #f9c45a;
+        }
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+        }
+        .footer .logo {
+            color: white;
+        }
+        .socials i {
+            font-size: 2rem;
+            margin-left: 30px;
+            color: #eee;
+            transition: 0.2s;
+        }
+        .socials i:hover {
+            color: #f9c45a;
+        }
+
+        /* подсветка меню при скролле */
+        .nav a.active {
+            border-bottom-color: #f9c45a;
+            color: #f9c45a;
+        }
+
+        /* небольшие кастомы */
+        hr {
+            opacity: 0.2;
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Шапка (блок 1) фиксированная с динамикой сжатия -->
+    <header class="header" id="mainHeader">
+        <div class="logo">VIVID<span>studio</span></div>
+        <nav class="nav">
+            <a href="#hero" class="active">HOME</a>
+            <a href="#services">WORK</a>
+            <a href="#gallery">GALLERY</a>
+            <a href="#price">PRICE</a>
+            <a href="#contact">CONTACT</a>
+        </nav>
+    </header>
+
+    <!-- HERO (блок 2) с canvas анимацией -->
+    <section id="hero" class="hero">
+        <canvas id="heroCanvas"></canvas>
+        <div class="hero-content fade-up appear"> <!-- appear чтоб сразу видно было -->
+            <h1>LENS <i>&</i> MOMENT</h1>
+            <p>репортажная и предметная съемка · для брендов и людей</p>
+        </div>
+    </section>
+
+    <!-- Блок 3: Услуги / что я делаю (акцент на доверии) -->
+    <section id="services" class="section">
+        <div class="container">
+            <h2 class="section-title fade-up">портфолио услуг</h2>
+            <div class="grid-3">
+                <div class="service-card fade-up stagger-item">
+                    <i class="fas fa-camera-retro"></i>
+                    <h3>Репортаж</h3>
+                    <p>свадьбы, мероприятия, life-style. ловим эмоции без постановки. более 50 проектов.</p>
+                </div>
+                <div class="service-card fade-up stagger-item">
+                    <i class="fas fa-film"></i>
+                    <h3>Предметная</h3>
+                    <p>для каталогов, lookbook, e-commerce. текстура, свет, композиция.</p>
+                </div>
+                <div class="service-card fade-up stagger-item">
+                    <i class="fas fa-portrait"></i>
+                    <h3>Портрет</h3>
+                    <p>индивидуальные и бизнес-портреты. естественно, уверенно, стильно.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 4: отзывы / кейсы (доверие) -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title fade-up">клиенты о нас</h2>
+            <div class="testimonials">
+                <div class="review fade-up">
+                    <i class="fas fa-quote-right"></i>
+                    <p>«Работали над имиджевым каталогом — результат превзошёл ожидания. Подача, свет, цвет. Обязательно вернёмся».</p>
+                    <h4>Анна Каренина</h4>
+                    <div class="role">бренд-менеджер, VLV</div>
+                </div>
+                <div class="review fade-up" style="transition-delay: 0.15s">
+                    <i class="fas fa-quote-right"></i>
+                    <p>«Свадебный репортаж без пафоса, но очень живые и тёплые кадры. Гости до сих пор спрашивают фотографа».</p>
+                    <h4>Михаил и Елена</h4>
+                    <div class="role">молодожены</div>
+                </div>
+                <div class="review fade-up" style="transition-delay: 0.3s">
+                    <i class="fas fa-quote-right"></i>
+                    <p>«Предметка для нашего интернет-магазина выросла в конверсии. Эстетика и чёткие сроки. Рекомендую!»</p>
+                    <h4>Илья Селезнев</h4>
+                    <div class="role">основатель LOFT</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 5: галерея / намёк на портфолио (без картинок) -->
+    <section id="gallery" class="section">
+        <div class="container">
+            <h2 class="section-title fade-up">последние кадры</h2>
+            <div class="gallery-stub">
+                <div class="gallery-item fade-up"><i class="fas fa-image"></i><span>LOVE STORY</span></div>
+                <div class="gallery-item fade-up" style="transition-delay:0.05s"><i class="fas fa-crown"></i><span>FASHION</span></div>
+                <div class="gallery-item fade-up" style="transition-delay:0.1s"><i class="fas fa-mug-hot"></i><span>FOOD</span></div>
+                <div class="gallery-item fade-up" style="transition-delay:0.15s"><i class="fas fa-shoe-prints"></i><span>PRODUCT</span></div>
+                <div class="gallery-item fade-up" style="transition-delay:0.2s"><i class="fas fa-ring"></i><span>WEDDING</span></div>
+                <div class="gallery-item fade-up" style="transition-delay:0.25s"><i class="fas fa-building"></i><span>ARCH</span></div>
+                <div class="gallery-item fade-up" style="transition-delay:0.3s"><i class="fas fa-dog"></i><span>ANIMALS</span></div>
+                <div class="gallery-item fade-up" style="transition-delay:0.35s"><i class="fas fa-mask"></i><span>EVENTS</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 6: Услуги подробно / особенности -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title fade-up">почему мы?</h2>
+            <div class="grid-3">
+                <div class="service-card fade-up"><i class="fas fa-bolt"></i><h3>скорость</h3><p>предпросмотр на следующий день, готовность до 5 дней</p></div>
+                <div class="service-card fade-up"><i class="fas fa-sliders-h"></i><h3>стиль</h3><p>авторская цветокоррекция / без пересветов и грязи</p></div>
+                <div class="service-card fade-up"><i class="fas fa-hand-holding-heart"></i><h3>доверие</h3><p>полная прозрачность прав, договор, работаем с 2016</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 7: прайс (акцент, выделенный) -->
+    <section id="price" class="section">
+        <div class="container">
+            <h2 class="section-title fade-up">пакеты</h2>
+            <div class="price-blocks">
+                <div class="price-card fade-up">
+                    <h3>Базовый</h3>
+                    <div class="price">350<small>₽</small></div>
+                    <p>1 час съёмки · 30 обработанных · онлайн-галерея</p>
+                    <a href="#" class="btn">ВЫБРАТЬ</a>
+                </div>
+                <div class="price-card featured fade-up">
+                    <h3>Расширенный</h3>
+                    <div class="price">750<small>₽</small></div>
+                    <p>3 часа · 100+ фото · ретушь 10 кадров</p>
+                    <a href="#" class="btn">ЗАКАЗАТЬ</a>
+                </div>
+                <div class="price-card fade-up">
+                    <h3>Премьер</h3>
+                    <div class="price">1400<small>₽</small></div>
+                    <p>полный день · все исходники · печать альбома</p>
+                    <a href="#" class="btn">УЗНАТЬ</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 8: контакты -->
+    <section id="contact" class="section">
+        <div class="container">
+            <h2 class="section-title fade-up">связаться</h2>
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <div class="info-line fade-up"><i class="fas fa-map-pin"></i> Москва, Пречистенка 12</div>
+                    <div class="info-line fade-up"><i class="fas fa-phone-alt"></i> +7 999 123-45-67</div>
+                    <div class="info-line fade-up"><i class="fas fa-paper-plane"></i> hello@vividstudio.ru</div>
+                    <div class="info-line fade-up"><i class="fas fa-clock"></i> пн–пт 10:00–19:00</div>
+                </div>
+                <div class="map-mock fade-up">
+                    <i class="fas fa-map-marked-alt"></i>   интерактивная карта
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 9: футер -->
+    <footer class="footer">
+        <div class="container footer-inner">
+            <div class="logo">VIVID<span>studio</span></div>
+            <div class="socials">
+                <i class="fab fa-instagram"></i>
+                <i class="fab fa-behance"></i>
+                <i class="fab fa-vimeo-v"></i>
+                <i class="fab fa-telegram"></i>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // 1. Динамическая шапка (сжатие)
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // 2. Подсветка пунктов меню (active по якорям)
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.nav a');
+            function setActiveLink() {
+                let scrollPos = window.scrollY + 150;
+                sections.forEach(sec => {
+                    const top = sec.offsetTop;
+                    const bottom = top + sec.offsetHeight;
+                    const id = sec.getAttribute('id');
+                    if (scrollPos >= top && scrollPos < bottom) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === '#' + id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }
+            window.addEventListener('scroll', setActiveLink);
+            setActiveLink();
+
+            // 3. Анимация появления при скролле (fade-up)
+            const fadeElements = document.querySelectorAll('.fade-up:not(.appear)');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appear');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px' });
+            fadeElements.forEach(el => observer.observe(el));
+
+            // 4. Canvas анимация в hero (оригинальная, динамическая)
+            const canvas = document.getElementById('heroCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initParticles() {
+                const count = 80;
+                particles = [];
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 3 + 1.5,
+                        speedX: (Math.random() - 0.5) * 0.6,
+                        speedY: (Math.random() - 0.5) * 0.4,
+                        color: `rgba(249, 196, 90, ${Math.random() * 0.4 + 0.3})`
+                    });
+                }
+            }
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                initParticles();
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    // редкие линии между частицами
+                    particles.forEach(other => {
+                        const dx = p.x - other.x;
+                        const dy = p.y - other.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 120 && dist > 10) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = `rgba(249, 196, 90, 0.08)`;
+                            ctx.lineWidth = 1;
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(other.x, other.y);
+                            ctx.stroke();
+                        }
+                    });
+
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    if (p.x < 0 || p.x > width) p.speedX *= -1;
+                    if (p.y < 0 || p.y > height) p.speedY *= -1;
+                });
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            drawParticles();
+
+            // дополнительный нюанс — курсор влияет на частицы (лёгкое движение)
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                particles.forEach(p => {
+                    const dx = mouseX - p.x;
+                    const dy = mouseY - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 100) {
+                        p.x -= dx * 0.02;
+                        p.y -= dy * 0.02;
+                    }
+                });
+            });
+        })();
+    </script>
+    <!-- якоря без перезагрузки -->
+    <script>
+        document.querySelectorAll('.nav a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const target = document.getElementById(targetId);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+All done!
+```
