@@ -1,0 +1,676 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silent Peak — Private Shooting Club</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0b0c0e;
+            color: #e0e5ec;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.4;
+            font-weight: 300;
+            scroll-behavior: smooth;
+        }
+
+        /* inter font via fallback */
+        h1, h2, h3, .stat-number, .menu a {
+            font-weight: 400;
+            letter-spacing: -0.02em;
+        }
+
+        /* custom crosshair / military vibe */
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* ===== HEADER / FIXED NAV ===== */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(5, 7, 10, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(200, 170, 100, 0.2);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .site-header.scrolled {
+            padding: 10px 40px;
+            background: rgba(2, 3, 5, 0.95);
+            border-bottom: 1px solid rgba(200, 170, 100, 0.4);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 500;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #f2e9d0;
+            border-left: 3px solid #c8aa64;
+            padding-left: 16px;
+        }
+        .logo span {
+            font-weight: 200;
+            color: #7a8a9b;
+            font-size: 1rem;
+            margin-left: 8px;
+        }
+
+        .menu a {
+            color: #bcc7d4;
+            text-decoration: none;
+            margin-left: 36px;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+        .menu a:hover {
+            color: #e6d5b8;
+            border-bottom-color: #c8aa64;
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(ellipse at 70% 30%, #19232e, #030405 80%);
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 750px;
+        }
+
+        .hero-pre {
+            font-size: 1.2rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: #c8aa64;
+            border-bottom: 1px solid rgba(200,170,100,0.4);
+            display: inline-block;
+            padding-bottom: 6px;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: 5rem;
+            font-weight: 500;
+            line-height: 1;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(200,170,100,0.3);
+        }
+
+        .hero h1 .thin {
+            font-weight: 200;
+            color: #a0b2c9;
+            display: block;
+            font-size: 3rem;
+            letter-spacing: 4px;
+        }
+
+        .hero-desc {
+            font-size: 1.3rem;
+            color: #acbed5;
+            max-width: 600px;
+            border-left: 2px solid #5c6f87;
+            padding-left: 20px;
+            margin: 30px 0 40px;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1.5px solid #c8aa64;
+            color: #f2e9d0;
+            padding: 16px 42px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 400;
+            backdrop-filter: blur(4px);
+        }
+        .btn:hover {
+            background: #c8aa64;
+            color: #0b0c0e;
+            border-color: #e6d5b8;
+            box-shadow: 0 0 30px #c8aa6450;
+        }
+
+        /* dynamic crosshair animation (js) */
+        .crosshair-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .crosshair-line {
+            position: absolute;
+            background: rgba(200, 170, 100, 0.2);
+            transition: all 0.1s ease;
+        }
+        .line-h {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 0 12px #c8aa64;
+        }
+        .line-v {
+            height: 100%;
+            width: 1px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 12px #c8aa64;
+        }
+
+        /* ===== DISCIPLINES (CARDS) ===== */
+        .section {
+            padding: 120px 0;
+            border-bottom: 1px solid rgba(200,170,100,0.1);
+        }
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 300;
+            text-transform: uppercase;
+            margin-bottom: 60px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .section-title span {
+            color: #c8aa64;
+            font-size: 3rem;
+            font-weight: 200;
+        }
+        .title-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, #c8aa64, transparent);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        .discipline-card {
+            background: rgba(20, 25, 32, 0.7);
+            backdrop-filter: blur(4px);
+            border: 1px solid #2d3a47;
+            padding: 40px 30px;
+            transition: 0.25s;
+            box-shadow: 0 10px 20px -10px rgba(0,0,0,0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        .discipline-card:hover {
+            border-color: #c8aa64;
+            transform: translateY(-8px);
+            background: rgba(25, 32, 40, 0.9);
+            box-shadow: 0 20px 30px -5px #000000cc;
+        }
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 5px #c8aa64);
+        }
+        .discipline-card h3 {
+            font-size: 1.9rem;
+            font-weight: 300;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+        .discipline-card p {
+            color: #96a7bb;
+            font-size: 1.1rem;
+        }
+
+        /* ===== INSTRUCTORS ===== */
+        .instructors {
+            background: #0f1217;
+        }
+        .instructor-item {
+            display: flex;
+            gap: 40px;
+            background: rgba(0,0,0,0.25);
+            padding: 40px;
+            border-left: 4px solid #c8aa64;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+        .instructor-icon {
+            font-size: 4rem;
+            min-width: 100px;
+            text-align: center;
+            opacity: 0.8;
+        }
+        .instructor-info h3 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 8px;
+        }
+        .instructor-info p {
+            color: #b3c2d6;
+            font-size: 1.2rem;
+        }
+        .badge {
+            background: #c8aa6420;
+            border: 1px solid #c8aa64;
+            padding: 4px 12px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-top: 12px;
+            color: #e6d5b8;
+        }
+
+        /* ===== STATISTICS / COUNTERS ===== */
+        .stats-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 40px;
+        }
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            border: 1px solid #2c3a48;
+            padding: 50px 20px;
+            background: #0e141b;
+            transition: 0.2s;
+        }
+        .stat-item:hover {
+            border-color: #c8aa64;
+        }
+        .stat-number {
+            font-size: 5rem;
+            font-weight: 300;
+            color: #c8aa64;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+        .stat-label {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #9bafc7;
+        }
+
+        /* ===== TRAINING PACKAGES (cards hover) ===== */
+        .packages {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        .package-card {
+            background: #11171f;
+            border: 1px solid #28333f;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .package-card:hover {
+            border: 1px solid #c8aa64;
+            transform: scale(1.02);
+            box-shadow: 0 0 30px #c8aa6420;
+        }
+        .package-card .price {
+            font-size: 3rem;
+            color: #c8aa64;
+            font-weight: 200;
+            margin: 20px 0;
+        }
+        .package-card ul {
+            list-style: none;
+            color: #b1c1d6;
+            font-size: 1.1rem;
+            line-height: 2;
+            margin: 25px 0;
+        }
+        .package-card .btn-small {
+            border: 1px solid #5f6f82;
+            background: transparent;
+            color: white;
+            padding: 12px 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .package-card .btn-small:hover {
+            background: #c8aa64;
+            border-color: #c8aa64;
+            color: #0b0c0e;
+        }
+
+        /* ===== FOOTER ===== */
+        .site-footer {
+            background: #05080b;
+            padding: 50px 40px;
+            border-top: 1px solid #c8aa6430;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .footer-logo {
+            font-size: 1.5rem;
+            color: #c8aa64;
+            font-weight: 200;
+            letter-spacing: 4px;
+        }
+        .footer-links a {
+            color: #8f9fb2;
+            text-decoration: none;
+            margin-left: 30px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+        .footer-links a:hover {
+            color: #e6d5b8;
+        }
+
+        /* animations on scroll (simple fade-up) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Fixed header with js shrink -->
+    <header class="site-header" id="mainHeader">
+        <div class="logo">SILENT PEAK <span>◉ shooting club</span></div>
+        <nav class="menu">
+            <a href="#disciplines">Disciplines</a>
+            <a href="#instructors">Instructors</a>
+            <a href="#stats">Stats</a>
+            <a href="#packages">Packages</a>
+        </nav>
+    </header>
+
+    <!-- HERO with crosshair animation -->
+    <section class="hero" id="home">
+        <div class="container hero-content">
+            <div class="hero-pre">Precision • Power • Silence</div>
+            <h1>DOMINATE<span class="thin">THE DISTANCE</span></h1>
+            <div class="hero-desc">Members-only shooting grounds · 360° ballistic training · tactical & olympic disciplines</div>
+            <a href="#packages" class="btn">Join the club</a>
+        </div>
+        <!-- crosshair overlays generated via JS -->
+        <div class="crosshair-overlay" id="crosshairContainer">
+            <div class="crosshair-line line-h" id="crossX"></div>
+            <div class="crosshair-line line-v" id="crossY"></div>
+        </div>
+    </section>
+
+    <!-- disciplines -->
+    <section class="section" id="disciplines">
+        <div class="container">
+            <div class="section-title reveal">
+                <span>⚡</span> PRECISION DISCIPLINES <div class="title-line"></div>
+            </div>
+            <div class="cards-grid">
+                <div class="discipline-card reveal">
+                    <div class="card-icon">🎯</div>
+                    <h3>BENCHREST</h3>
+                    <p>Extreme accuracy at 100-1000m. Custom rifles, wind reading, sub‑MOA challenges.</p>
+                </div>
+                <div class="discipline-card reveal">
+                    <div class="card-icon">⚡</div>
+                    <h3>PRACTICAL</h3>
+                    <p>Dynamic stages, moving targets, tactical reloads. IPSC / action air hybrid.</p>
+                </div>
+                <div class="discipline-card reveal">
+                    <div class="card-icon">🔫</div>
+                    <h3>OLYMPIC PISTOL</h3>
+                    <p>25m & 50m precision. International referees, electronic targets, grand master coaches.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- instructors -->
+    <section class="section instructors" id="instructors">
+        <div class="container">
+            <div class="section-title reveal">
+                <span>🏅</span> LEAD INSTRUCTORS <div class="title-line"></div>
+            </div>
+            <div class="instructor-item reveal">
+                <div class="instructor-icon">⍟</div>
+                <div class="instructor-info">
+                    <h3>M. STEINER — ex‑GSG9</h3>
+                    <p>23 years of tactical shooting · 12 national records. Specializes in stress‑fire & decision making.</p>
+                    <span class="badge">precision rifle</span>
+                </div>
+            </div>
+            <div class="instructor-item reveal">
+                <div class="instructor-icon">⌖</div>
+                <div class="instructor-info">
+                    <h3>E. VOSS — olympic medalist</h3>
+                    <p>Silver in 25m rapid fire pistol. Head of Olympic program, 8 years coaching experience.</p>
+                    <span class="badge">pistol / rapid</span>
+                </div>
+            </div>
+            <div class="instructor-item reveal">
+                <div class="instructor-icon">▣</div>
+                <div class="instructor-info">
+                    <h3>J. RYKER — long range specialist</h3>
+                    <p>Former marine scout sniper. 1500+ confirmed hits beyond 800m. Ballistics & wind guru.</p>
+                    <span class="badge">long range</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- stats / counters -->
+    <section class="section" id="stats">
+        <div class="container">
+            <div class="section-title reveal">
+                <span>⏤</span> CLUB STATISTICS <div class="title-line"></div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item reveal">
+                    <div class="stat-number" id="statRounds">12</div>
+                    <div class="stat-label">rounds/year (millions)</div>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="stat-number" id="statMembers">380</div>
+                    <div class="stat-label">active members</div>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="stat-number" id="statDisciplines">9</div>
+                    <div class="stat-label">shooting disciplines</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- packages -->
+    <section class="section" id="packages">
+        <div class="container">
+            <div class="section-title reveal">
+                <span>📋</span> MEMBERSHIP PLANS <div class="title-line"></div>
+            </div>
+            <div class="packages">
+                <div class="package-card reveal">
+                    <h3>MARKSMAN</h3>
+                    <div class="price">$290<span style="font-size:1rem">/mo</span></div>
+                    <ul>
+                        <li>6 range days / month</li>
+                        <li>Basic equipment rental</li>
+                        <li>1 group session</li>
+                    </ul>
+                    <button class="btn-small">choose</button>
+                </div>
+                <div class="package-card reveal">
+                    <h3>TACTICAL</h3>
+                    <div class="price">$590<span style="font-size:1rem">/mo</span></div>
+                    <ul>
+                        <li>Unlimited range access</li>
+                        <li>Advanced simulators</li>
+                        <li>2 private coachings</li>
+                        <li>Guest passes (2)</li>
+                    </ul>
+                    <button class="btn-small">choose</button>
+                </div>
+                <div class="package-card reveal">
+                    <h3>PRECISION</h3>
+                    <div class="price">$990<span style="font-size:1rem">/mo</span></div>
+                    <ul>
+                        <li>All tactical benefits</li>
+                        <li>Long range exclusive</li>
+                        <li>Ballistic lab access</li>
+                        <li>Invite to championships</li>
+                    </ul>
+                    <button class="btn-small">choose</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer -->
+    <footer class="site-footer">
+        <div class="footer-logo">SILENT PEAK ⚡</div>
+        <div class="footer-links">
+            <a href="#home">Range</a>
+            <a href="#disciplines">Disciplines</a>
+            <a href="#instructors">Instructors</a>
+            <a href="#packages">Pricing</a>
+        </div>
+        <div style="color:#4f6072">© 2026 — private shooting club · est. 2012</div>
+    </footer>
+
+    <!-- JavaScript: crosshair animation, header shrink, counters, scroll reveals -->
+    <script>
+        (function() {
+            // crosshair follow mouse
+            const crossX = document.getElementById('crossX');
+            const crossY = document.getElementById('crossY');
+            if (crossX && crossY) {
+                document.addEventListener('mousemove', (e) => {
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    const w = window.innerWidth;
+                    const h = window.innerHeight;
+                    // smooth lag effect
+                    crossX.style.top = y + 'px';
+                    crossY.style.left = x + 'px';
+                });
+            }
+
+            // shrink header on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // counters (animate when stats section appears)
+            const statRounds = document.getElementById('statRounds');
+            const statMembers = document.getElementById('statMembers');
+            const statDisciplines = document.getElementById('statDisciplines');
+            
+            let animated = false;
+            function animateCounters() {
+                if (animated) return;
+                const statsSection = document.getElementById('stats');
+                if (!statsSection) return;
+                const rect = statsSection.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 100) {
+                    animated = true;
+                    // rounds 12.5 -> 12 (but show as 12.5, we display integer, but we can do increment)
+                    let rounds = 0;
+                    let members = 0;
+                    let dis = 0;
+                    const roundsTarget = 12; // actually we want 12.5? but we show integer 12 (but we can represent with K/M)
+                    const membersTarget = 380;
+                    const disTarget = 9;
+                    const interval = setInterval(() => {
+                        let changed = false;
+                        if (rounds < roundsTarget) { rounds += 1; statRounds.innerText = rounds; changed = true; }
+                        if (members < membersTarget) { members += 10; if (members > membersTarget) members = membersTarget; statMembers.innerText = members; changed = true; }
+                        if (dis < disTarget) { dis += 1; statDisciplines.innerText = dis; changed = true; }
+                        if (!changed) clearInterval(interval);
+                    }, 40);
+                }
+            }
+
+            // reveal on scroll (simple)
+            const reveals = document.querySelectorAll('.reveal');
+            function checkReveals() {
+                for (let el of reveals) {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < window.innerHeight - 80) {
+                        el.classList.add('active');
+                    }
+                }
+                animateCounters(); // stats counter trigger
+            }
+            window.addEventListener('scroll', checkReveals);
+            window.addEventListener('load', () => {
+                checkReveals();
+                // set initial counters (text, but not animated if not visible)
+                statRounds.innerText = '0';
+                statMembers.innerText = '0';
+                statDisciplines.innerText = '0';
+                // force check after fonts etc
+                setTimeout(checkReveals, 200);
+            });
+
+            // smooth anchor (no default jump only for menu)
+            const menuLinks = document.querySelectorAll('.menu a, .footer-links a, .btn');
+            menuLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const hash = link.getAttribute('href');
+                    if (hash && hash.startsWith('#')) {
+                        e.preventDefault();
+                        const target = document.querySelector(hash);
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

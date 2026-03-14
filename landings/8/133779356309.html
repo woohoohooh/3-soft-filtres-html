@@ -1,0 +1,729 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBSIDIAN · precision shooting club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0b0c10;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e6e6e9;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            font-weight: 400;
+        }
+
+        /* inter font via fallback */
+        h1, h2, h3, .stat-number, .nav-links a {
+            font-weight: 500;
+            letter-spacing: -0.02em;
+        }
+
+        /* custom crosshair cursor */
+        * {
+            cursor: crosshair;
+        }
+
+        /* fixed header — becomes compact on scroll */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+            background: linear-gradient(180deg, #0a0b0e 0%, rgba(10,11,14,0.9) 80%, transparent 100%);
+            backdrop-filter: blur(0);
+        }
+
+        .header.scrolled {
+            padding: 1rem 3rem;
+            background: rgba(8, 12, 18, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 215, 100, 0.15);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.7);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            color: #fff;
+            transition: 0.2s;
+        }
+
+        .logo span {
+            color: #d4a259;
+            font-weight: 300;
+            margin-right: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        .nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            font-weight: 400;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav-links a:hover {
+            color: #f5cb7e;
+            border-bottom: 1px solid #d4a259;
+        }
+
+        /* main container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* each block (7 total: header+footer counted separately) */
+        section {
+            padding: 6rem 0;
+            border-bottom: 1px solid rgba(212, 162, 89, 0.08);
+        }
+
+        /* HERO = block #1 (header is separate overlay) */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding-top: 80px;
+            background: radial-gradient(ellipse at 70% 30%, #1f2833 0%, #0a0c10 70%);
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+
+        .pre-title {
+            font-size: 1.2rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #b99b6b;
+            margin-bottom: 1rem;
+            border-left: 4px solid #d4a259;
+            padding-left: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: 5.5rem;
+            font-weight: 600;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(212,162,89,0.2);
+        }
+
+        .hero h1 i {
+            color: #d4a259;
+            font-style: normal;
+            border-bottom: 3px solid #d4a259;
+        }
+
+        .hero-desc {
+            font-size: 1.3rem;
+            max-width: 600px;
+            color: #b0b5bd;
+            margin-bottom: 2.5rem;
+            border-right: 2px solid #d4a259;
+            padding-right: 2rem;
+        }
+
+        .btn {
+            background: transparent;
+            border: 2px solid #d4a259;
+            color: #f5cb7e;
+            padding: 1rem 2.8rem;
+            font-size: 1.2rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            transition: 0.25s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: #d4a259;
+            color: #0b0c10;
+            box-shadow: 0 0 35px #d4a259;
+            border-color: #d4a259;
+        }
+
+        /* crosshair animation (JS) */
+        .crosshair-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .crosshair {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            transform: translate(-50%, -50%);
+            transition: 0.02s linear;
+        }
+
+        .crosshair::before, .crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(212, 162, 89, 0.5);
+            box-shadow: 0 0 12px #f5cb7e;
+        }
+
+        .crosshair::before {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            left: 0;
+        }
+
+        .crosshair::after {
+            width: 1px;
+            height: 100%;
+            left: 50%;
+            top: 0;
+        }
+
+        /* DISCIPLINES block (#2) */
+        .disciplines {
+            background: #0f1217;
+        }
+
+        .section-title {
+            font-size: 3.2rem;
+            font-weight: 500;
+            margin-bottom: 4rem;
+            border-bottom: 3px solid #d4a259;
+            display: inline-block;
+            padding-bottom: 0.3rem;
+            letter-spacing: -0.5px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .discipline-card {
+            background: rgba(20, 25, 32, 0.8);
+            border: 1px solid #2f353f;
+            padding: 2.5rem 2rem;
+            transition: all 0.25s;
+            backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .discipline-card:hover {
+            border-color: #d4a259;
+            transform: translateY(-10px);
+            box-shadow: 0 30px 40px -20px #d4a25920;
+        }
+
+        .discipline-card i {
+            font-size: 3rem;
+            color: #d4a259;
+            margin-bottom: 1.5rem;
+        }
+
+        .discipline-card h3 {
+            font-size: 1.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .discipline-card p {
+            color: #959ea8;
+        }
+
+        /* INSTRUCTORS (#3) */
+        .instructors {
+            background: #0b0e12;
+        }
+
+        .instructor-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+        }
+
+        .instructor-item {
+            text-align: center;
+            border: 1px dashed #3c3f48;
+            padding: 2rem 1rem;
+            transition: 0.2s;
+        }
+
+        .instructor-item:hover {
+            border: 1px solid #d4a259;
+        }
+
+        .instructor-item .icon {
+            font-size: 3.5rem;
+            color: #d4a259;
+        }
+
+        .instructor-item h4 {
+            font-size: 1.8rem;
+            margin: 1rem 0 0.3rem;
+        }
+
+        .badge {
+            background: #1e232b;
+            padding: 0.3rem 1rem;
+            display: inline-block;
+            color: #c9b27e;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        }
+
+        /* STATS / попадания (#4) */
+        .stats-block {
+            background: #0f151d;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .stat-item {
+            flex: 1 1 200px;
+        }
+
+        .stat-number {
+            font-size: 5rem;
+            font-weight: 600;
+            color: #d4a259;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            font-feature-settings: "tnum";
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #a7afbb;
+        }
+
+        /* PACKAGES (#5) */
+        .packages {
+            background: #0a0d11;
+        }
+
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .package-card {
+            background: #151b24;
+            padding: 3rem 2rem;
+            border-top: 5px solid #2c313a;
+            transition: 0.2s;
+        }
+
+        .package-card.premium {
+            border-top: 5px solid #d4a259;
+            transform: scale(1.02);
+            background: #1d242e;
+        }
+
+        .package-card h3 {
+            font-size: 2rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .price {
+            font-size: 3rem;
+            font-weight: 500;
+            color: #d4a259;
+            margin-bottom: 1.5rem;
+        }
+
+        .price small {
+            font-size: 1rem;
+            color: #787f8b;
+        }
+
+        .package-feature {
+            list-style: none;
+            margin: 2rem 0;
+            color: #b7bfc9;
+        }
+
+        .package-feature li {
+            margin: 0.7rem 0;
+        }
+
+        /* AMMO TIMER (block #6) — динамика */
+        .timer-block {
+            background: #0e121b;
+            text-align: center;
+            border-bottom: 2px solid #d4a259;
+        }
+
+        .timer-box {
+            background: #020304;
+            padding: 4rem 2rem;
+            display: inline-block;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            border: 1px solid #3c3f48;
+        }
+
+        .timer-digits {
+            font-size: 7rem;
+            font-weight: 600;
+            font-family: 'Inter', monospace;
+            color: #f5cb7e;
+            letter-spacing: 12px;
+            text-shadow: 0 0 30px #b47d44;
+        }
+
+        .timer-label {
+            font-size: 1.5rem;
+            letter-spacing: 6px;
+            color: #707884;
+        }
+
+        /* FOOTER (block #7) */
+        .footer {
+            background: #07090e;
+            padding: 3rem 2rem;
+            border-top: 1px solid #20252e;
+        }
+
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #6e7683;
+        }
+
+        .footer a {
+            color: #b0b7c2;
+            text-decoration: none;
+            margin-left: 2rem;
+        }
+        .footer a:hover {
+            color: #d4a259;
+        }
+
+        /* анимация появления при скролле (fade-up) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* misc */
+        i {
+            color: #d4a259;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fixed header (JS compact) -->
+    <header class="header" id="mainHeader">
+        <div class="logo"><span>⟡</span> OBSIDIAN</div>
+        <div class="nav-links">
+            <a href="#hero">Mission</a>
+            <a href="#disciplines">Disciplines</a>
+            <a href="#instructors">Instructors</a>
+            <a href="#packages">Packages</a>
+            <a href="#timer">Countdown</a>
+        </div>
+    </header>
+
+    <!-- CROSSHAIR ANIMATION (JS) -->
+    <div class="crosshair-container" id="crosshairContainer"></div>
+
+    <!-- HERO (block #1) -->
+    <section class="hero" id="hero">
+        <div class="container hero-content">
+            <div class="pre-title fade-up">precision shooting club</div>
+            <h1 class="fade-up">ZERO <i>·</i> COMPROMISE</h1>
+            <p class="hero-desc fade-up">Elite marksmanship · tactical immersion · member since 2012</p>
+            <a href="#" class="btn fade-up">SECURE RANGE</a>
+        </div>
+    </section>
+
+    <!-- DISCIPLINES (block #2) -->
+    <section class="disciplines" id="disciplines">
+        <div class="container">
+            <h2 class="section-title fade-up">⟡ live fire disciplines</h2>
+            <div class="card-grid">
+                <div class="discipline-card fade-up">
+                    <i class="fas fa-bullseye"></i>
+                    <h3>precision rifle</h3>
+                    <p>100–800m steel challenge · ballistic data · wind reading</p>
+                </div>
+                <div class="discipline-card fade-up">
+                    <i class="fas fa-crosshairs"></i>
+                    <h3>tactical pistol</h3>
+                    <p>dynamic entries, target transition, competition stress</p>
+                </div>
+                <div class="discipline-card fade-up">
+                    <i class="fas fa-skull"></i>
+                    <h3>night ops</h3>
+                    <p>NVG shooting · thermal scans · low‑light engagement</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INSTRUCTORS (block #3) -->
+    <section class="instructors" id="instructors">
+        <div class="container">
+            <h2 class="section-title fade-up">⟡ master instructors</h2>
+            <div class="instructor-grid">
+                <div class="instructor-item fade-up">
+                    <div class="icon"><i class="fas fa-user-secret"></i></div>
+                    <h4>D. MERCER</h4>
+                    <div class="badge">ex‑USMC Scout Sniper</div>
+                </div>
+                <div class="instructor-item fade-up">
+                    <div class="icon"><i class="fas fa-user-ninja"></i></div>
+                    <h4>E. KOSTA</h4>
+                    <div class="badge">IPSC world champion</div>
+                </div>
+                <div class="instructor-item fade-up">
+                    <div class="icon"><i class="fas fa-mask"></i></div>
+                    <h4>V. BLACK</h4>
+                    <div class="badge">special tactics unit</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATISTICS (block #4) accuracy numbers -->
+    <section class="stats-block" id="stats">
+        <div class="container">
+            <h2 class="section-title fade-up">⟡ precision metrics</h2>
+            <div class="stats-grid">
+                <div class="stat-item fade-up">
+                    <div class="stat-number" data-target="982">0</div>
+                    <div class="stat-label">first hit / 1000</div>
+                </div>
+                <div class="stat-item fade-up">
+                    <div class="stat-number" data-target="47">0</div>
+                    <div class="stat-label">instructors</div>
+                </div>
+                <div class="stat-item fade-up">
+                    <div class="stat-number" data-target="12800">0</div>
+                    <div class="stat-label">rounds / day</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PACKAGES (block #5) -->
+    <section class="packages" id="packages">
+        <div class="container">
+            <h2 class="section-title fade-up">⟡ membership packages</h2>
+            <div class="package-grid">
+                <div class="package-card fade-up">
+                    <h3>PATROL</h3>
+                    <div class="price">$350 <small>/mo</small></div>
+                    <ul class="package-feature">
+                        <li>8 range days</li>
+                        <li>basic instructor</li>
+                        <li>pistol calibers only</li>
+                    </ul>
+                    <a href="#" class="btn">enroll</a>
+                </div>
+                <div class="package-card premium fade-up">
+                    <h3>OBSIDIAN</h3>
+                    <div class="price">$790 <small>/mo</small></div>
+                    <ul class="package-feature">
+                        <li>unlimited access</li>
+                        <li>private coaching</li>
+                        <li>night shoot & NV</li>
+                    </ul>
+                    <a href="#" class="btn">enroll</a>
+                </div>
+                <div class="package-card fade-up">
+                    <h3>SNIPER</h3>
+                    <div class="price">$590 <small>/mo</small></div>
+                    <ul class="package-feature">
+                        <li>20 precision sessions</li>
+                        <li>ballistic analysis</li>
+                        <li>long range only</li>
+                    </ul>
+                    <a href="#" class="btn">enroll</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TIMER countdown (block #6) escape / fire mission -->
+    <section class="timer-block" id="timer">
+        <div class="container">
+            <div class="timer-box fade-up">
+                <div class="timer-digits" id="countdown">07:23:19</div>
+                <div class="timer-label">until next precision event</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER (block #7) -->
+    <footer class="footer">
+        <div class="container footer-inner">
+            <div>© 2025 — OBSIDIAN PRECISION CLUB</div>
+            <div>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-x-twitter"></i></a>
+                <a href="#">range access</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // HEADER COMPACT ON SCROLL
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 60) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // CROSSHAIR ANIMATION (follows mouse, restricted to container)
+            const container = document.getElementById('crosshairContainer');
+            const crosshair = document.createElement('div');
+            crosshair.className = 'crosshair';
+            container.appendChild(crosshair);
+
+            document.addEventListener('mousemove', function(e) {
+                const x = e.clientX;
+                const y = e.clientY;
+                crosshair.style.left = x + 'px';
+                crosshair.style.top = y + 'px';
+            });
+
+            // COUNTDOWN TIMER (fake but dynamic, to 24h format)
+            function updateCountdown() {
+                const countEl = document.getElementById('countdown');
+                if (!countEl) return;
+                const now = new Date();
+                // target next midnight + some hours (just to make numbers change)
+                const target = new Date();
+                target.setHours(24, 7, 23); // 24:07:23 target
+                let diff = target - now;
+                if (diff < 0) diff += 24 * 3600000; // next day
+
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+                countEl.innerText = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+            }
+            updateCountdown();
+            setInterval(updateCountdown, 500);
+
+            // FADE-UP SCROLL REVEAL (Intersection Observer)
+            const fadeElements = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appear');
+                    } else {
+                        // optional remove to re-animate? we keep them visible after first appear
+                        // but if you want multiple triggers, we can keep class
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+            fadeElements.forEach(el => observer.observe(el));
+
+            // STATISTICS COUNTER (animate numbers when they appear)
+            const statNumbers = document.querySelectorAll('.stat-number');
+            const statsObserver = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const el = entry.target;
+                        const target = parseInt(el.getAttribute('data-target'), 10);
+                        let current = 0;
+                        const increment = target / 50; // smooth increment
+                        const updateCounter = () => {
+                            current += increment;
+                            if (current < target) {
+                                el.innerText = Math.round(current);
+                                requestAnimationFrame(updateCounter);
+                            } else {
+                                el.innerText = target;
+                            }
+                        };
+                        updateCounter();
+                        obs.unobserve(el); // once
+                    }
+                });
+            }, { threshold: 0.3 });
+            statNumbers.forEach(num => statsObserver.observe(num));
+
+            // Якорное меню smooth
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const id = this.getAttribute('href').substring(1);
+                    const targetEl = document.getElementById(id);
+                    if (targetEl) {
+                        window.scrollTo({
+                            top: targetEl.offsetTop - 100,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        })();
+    </script>
+    <!-- All blocks = header + footer + 5 sections => total 7 blocks -->
+</body>
+</html>
+All done!
+```

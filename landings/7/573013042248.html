@@ -1,0 +1,779 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectre | precision shooting club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0b0f12;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e5e9f0;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap');
+
+        /* custom crosshair cursor */
+        body * {
+            cursor: none;
+        }
+
+        .custom-cursor {
+            position: fixed;
+            width: 32px;
+            height: 32px;
+            border: 2px solid rgba(255, 215, 0, 0.7);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, background 0.15s;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            box-shadow: 0 0 15px gold;
+            backdrop-filter: invert(0.2);
+        }
+
+        .custom-cursor::after {
+            content: "✧";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+            font-size: 22px;
+            color: gold;
+            opacity: 0.9;
+            text-shadow: 0 0 8px gold;
+        }
+
+        /* sticky header animation */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 28px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+            background: transparent;
+            mix-blend-mode: exclusion;
+        }
+
+        .header.scrolled {
+            padding: 16px 48px;
+            background: rgba(5, 8, 10, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            mix-blend-mode: normal;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #f0e68c, #ffd700);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .nav {
+            display: flex;
+            gap: 40px;
+        }
+
+        .nav a {
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #dadfe9;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav a:hover {
+            color: #ffd966;
+            border-bottom-color: #ffd966;
+        }
+
+        /* section base */
+        section {
+            padding: 100px 48px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* reveal animation on scroll */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* typography */
+        h1, h2, h3 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        h1 {
+            font-size: clamp(3.5rem, 8vw, 6.2rem);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 3.2rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            border-left: 8px solid #ffd700;
+            padding-left: 24px;
+        }
+
+        .gold-accent {
+            color: #ffd966;
+            text-shadow: 0 0 8px gold;
+        }
+
+        /* HERO — secret mission style */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at 30% 40%, #1f2a2f, #030506);
+        }
+
+        .hero-content {
+            max-width: 900px;
+        }
+
+        .hero .subtitle {
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 1.2rem;
+            color: #b0b7c4;
+            border-left: 3px solid #ffd966;
+            padding-left: 18px;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            max-width: 650px;
+            color: #cbd5e1;
+            margin-bottom: 2.5rem;
+        }
+
+        .crosshair-glow {
+            position: absolute;
+            top: 50%;
+            right: 8%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 4s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.2; transform: scale(0.9); }
+            50% { opacity: 0.6; transform: scale(1.3); }
+            100% { opacity: 0.2; transform: scale(0.9); }
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #ffd966;
+            color: #ffd966;
+            padding: 16px 42px;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            transition: 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 0 20px rgba(255,215,0,0.2);
+        }
+
+        .btn-outline:hover {
+            background: #ffd966;
+            color: #0b0f12;
+            box-shadow: 0 0 35px gold;
+        }
+
+        /* DISCIPLINES (cards as case files) */
+        .discipline-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .case-card {
+            background: rgba(20, 25, 30, 0.8);
+            backdrop-filter: blur(4px);
+            border: 1px solid #3f4a54;
+            padding: 36px 28px;
+            box-shadow: 8px 8px 0 #0a0c0f;
+            transition: 0.25s;
+            border-left: 5px solid #ffd966;
+            position: relative;
+        }
+
+        .case-card:hover {
+            transform: translate(-5px, -5px);
+            box-shadow: 16px 16px 0 #000;
+            border-color: #ffd966;
+        }
+
+        .case-card i {
+            font-size: 3rem;
+            color: #ffd966;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 0 8px gold);
+        }
+
+        .case-card h3 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .case-card .stats {
+            font-size: 1.1rem;
+            color: #b2bbcc;
+            border-top: 1px dashed #4a5560;
+            margin-top: 20px;
+            padding-top: 15px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stats span {
+            background: #1f2a2f;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* TRAINERS (military style) */
+        .trainer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+        }
+
+        .trainer-card {
+            background: linear-gradient(145deg, #12171c, #1b2329);
+            padding: 40px 35px;
+            border: 1px solid #3e4a53;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px -10px #000;
+        }
+
+        .trainer-card:hover {
+            border-color: #ffd966;
+            box-shadow: 0 0 25px #ffd96633;
+        }
+
+        .trainer-icon {
+            font-size: 4rem;
+            color: #ffd966;
+            filter: drop-shadow(0 0 10px #ffb347);
+        }
+
+        .trainer-info h4 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .trainer-info .role {
+            color: #ffd966;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .trainer-info p {
+            color: #acb8c8;
+            font-size: 1rem;
+        }
+
+        /* STATS BLOCK (hit statistics) */
+        .stats-panel {
+            background: #0c1014;
+            border: 1px solid #ffd96633;
+            padding: 70px 40px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            box-shadow: inset 0 0 50px #000;
+        }
+
+        .stat-item {
+            flex: 1 1 180px;
+        }
+
+        .stat-number {
+            font-size: 5rem;
+            font-weight: 800;
+            color: #ffd966;
+            text-shadow: 0 0 25px gold;
+            line-height: 1;
+        }
+
+        .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 500;
+            border-bottom: 1px solid #ffd966;
+            display: inline-block;
+            padding-bottom: 8px;
+            margin-top: 12px;
+        }
+
+        /* PACKAGES (pricing military style) */
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .package-card {
+            background: #11181e;
+            border: 1px solid #2f3b45;
+            padding: 45px 30px;
+            transition: 0.2s;
+            text-align: center;
+            box-shadow: 0 8px 0 #07090b;
+        }
+
+        .package-card.featured {
+            border: 2px solid #ffd966;
+            transform: scale(1.02);
+            background: #151f26;
+        }
+
+        .package-card .price {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #ffd966;
+            margin: 20px 0;
+        }
+
+        .package-card ul {
+            list-style: none;
+            text-align: left;
+            margin: 25px 0;
+        }
+
+        .package-card li {
+            padding: 10px 0;
+            border-bottom: 1px dashed #2f3b45;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .package-card li i {
+            color: #ffd966;
+            width: 20px;
+        }
+
+        .btn-small {
+            border: 1px solid #ffd966;
+            background: transparent;
+            color: #ffd966;
+            padding: 14px 30px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.2s;
+        }
+
+        .btn-small:hover {
+            background: #ffd966;
+            color: #0b0f12;
+        }
+
+        /* FOOTER */
+        .footer {
+            background: #04080b;
+            padding: 60px 48px 30px;
+            border-top: 1px solid #ffd96622;
+        }
+
+        .footer-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .footer .logo {
+            font-size: 2rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 40px;
+        }
+
+        .footer-links a {
+            color: #9aa6b5;
+            text-decoration: none;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .footer-links a:hover {
+            color: #ffd966;
+        }
+
+        .copyright {
+            text-align: center;
+            color: #6f7a88;
+            letter-spacing: 1.5px;
+        }
+
+        /* scroll-triggered highlights */
+        .highlight-target {
+            transition: text-shadow 0.3s, color 0.3s;
+        }
+
+        .highlight-target.highlight {
+            color: #ffd966;
+            text-shadow: 0 0 15px #ffb347;
+        }
+
+        hr {
+            border: 0.5px solid #ffd96622;
+        }
+    </style>
+</head>
+<body>
+    <!-- custom cursor -->
+    <div class="custom-cursor" id="cursor"></div>
+
+    <!-- fixed header (animated) -->
+    <header class="header" id="header">
+        <div class="logo">SPECTRE</div>
+        <nav class="nav">
+            <a href="#disciplines">Disciplines</a>
+            <a href="#trainers">Trainers</a>
+            <a href="#stats">Stats</a>
+            <a href="#packages">Packages</a>
+        </nav>
+    </header>
+
+    <!-- HERO block 1 -->
+    <section class="hero" id="home">
+        <div class="container hero-content">
+            <span class="subtitle reveal">▸ precision shooting club</span>
+            <h1 class="reveal">ONE SHOT.<br><span class="gold-accent">ONE KILL.</span></h1>
+            <p class="reveal">Enter a clandestine world of elite marksmanship. No spectators. Only operators.</p>
+            <a href="#disciplines" class="btn-outline reveal">view dossier</a>
+        </div>
+        <div class="crosshair-glow"></div>
+    </section>
+
+    <!-- block 2: disciplines (case cards) -->
+    <section id="disciplines">
+        <div class="container">
+            <h2 class="reveal">◈ operational disciplines</h2>
+            <div class="discipline-grid">
+                <div class="case-card reveal">
+                    <i class="fas fa-bullseye"></i>
+                    <h3>PRECISION RIFLE</h3>
+                    <p>Long-range engagement up to 1200m. Wind calls, elevation, external ballistics.</p>
+                    <div class="stats"><span>🔒 12-wk course</span><span>🎯 98% accuracy</span></div>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-gun"></i>
+                    <h3>TACTICAL PISTOL</h3>
+                    <p>Close-quarters battle drills, transition shooting, malfunction clears.</p>
+                    <div class="stats"><span>⚡ 8-wk course</span><span>🔄 0.8s draw</span></div>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-skull"></i>
+                    <h3>PRECISION RIFLE</h3>
+                    <p>Long-range engagement up to 1200m. Wind calls, elevation, external ballistics.</p>
+                    <div class="stats"><span>🔒 12-wk course</span><span>🎯 98% accuracy</span></div>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-ghost"></i>
+                    <h3>SNEAK & AMP; SNIPE</h3>
+                    <p>Stalking, hide construction, counter-surveillance. Urban & woodland.</p>
+                    <div class="stats"><span>🌲 fieldcraft</span><span>📡 4 weeks</span></div>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-crosshairs"></i>
+                    <h3>MOVING TARGET</h3>
+                    <p>Leading targets, positional shooting, vehicle engagement drills.</p>
+                    <div class="stats"><span>🏎️ 35+ drills</span><span>📊 advanced</span></div>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-user-ninja"></i>
+                    <h3>CLOSE PROTECTION</h3>
+                    <p>Bodyguard ballistics, armored pistols, threat interception.</p>
+                    <div class="stats"><span>🛡️ VIP detail</span><span>⚡ 2 weeks</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 3: trainers -->
+    <section id="trainers">
+        <div class="container">
+            <h2 class="reveal">◈ shadow instructors</h2>
+            <div class="trainer-grid">
+                <div class="trainer-card reveal">
+                    <div class="trainer-icon"><i class="fas fa-eye"></i></div>
+                    <div class="trainer-info">
+                        <h4>E. “GHOST” VANCE</h4>
+                        <div class="role">▸ 22 YRS USMC SCOUT SNIPER</div>
+                        <p>1,200+ confirmed competition wins. Head of long-range curriculum.</p>
+                    </div>
+                </div>
+                <div class="trainer-card reveal">
+                    <div class="trainer-icon"><i class="fas fa-mask"></i></div>
+                    <div class="trainer-info">
+                        <h4>M. “VIPER” CHEN</h4>
+                        <div class="role">▸ EX-FBI HRT / COMBAT PISTOL</div>
+                        <p>Master of close-quarters. 0.5s draw-to-hit at 10y.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 4: statistics with counters (animated via js) -->
+    <section id="stats">
+        <div class="container">
+            <h2 class="reveal">◈ hit probability</h2>
+            <div class="stats-panel reveal">
+                <div class="stat-item">
+                    <div class="stat-number" id="stat1" data-target="987">0</div>
+                    <div class="stat-label">precision shots/day</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="stat2" data-target="64">0</div>
+                    <div class="stat-label">instructors</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="stat3" data-target="100">0</div>
+                    <div class="stat-label">success rate %</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="stat4" data-target="12">0</div>
+                    <div class="stat-label">world records</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 5: packages / membership -->
+    <section id="packages">
+        <div class="container">
+            <h2 class="reveal">◈ operational packages</h2>
+            <div class="package-grid">
+                <div class="package-card reveal">
+                    <h3>BRASS</h3>
+                    <div class="price">$1.2k</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> 4 range days</li>
+                        <li><i class="fas fa-check"></i> Basic ballistics</li>
+                        <li><i class="fas fa-check"></i> Loaner gear</li>
+                        <li><i class="fas fa-times" style="color:#555;"></i> 1-on-1 coaching</li>
+                    </ul>
+                    <a href="#" class="btn-small">secure</a>
+                </div>
+                <div class="package-card featured reveal">
+                    <h3>TITAN</h3>
+                    <div class="price">$3.4k</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> 12 range days</li>
+                        <li><i class="fas fa-check"></i> Advanced marksman</li>
+                        <li><i class="fas fa-check"></i> Night vision shoots</li>
+                        <li><i class="fas fa-check"></i> Ghost instructor</li>
+                    </ul>
+                    <a href="#" class="btn-small">secure</a>
+                </div>
+                <div class="package-card reveal">
+                    <h3>BLACK OPS</h3>
+                    <div class="price">$6.8k</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Unlimited access</li>
+                        <li><i class="fas fa-check"></i> International precision</li>
+                        <li><i class="fas fa-check"></i> Ammo included</li>
+                        <li><i class="fas fa-check"></i> Custom rifle build</li>
+                    </ul>
+                    <a href="#" class="btn-small">secure</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="logo">SPECTRE</div>
+                <div class="footer-links">
+                    <a href="#disciplines">Disciplines</a>
+                    <a href="#trainers">Trainers</a>
+                    <a href="#stats">Stats</a>
+                    <a href="#packages">Packages</a>
+                </div>
+            </div>
+            <hr>
+            <div class="copyright">
+                <p>© 2025 SPECTRE – PRECISION SHOOTING CLUB. ALL RIGHTS RESERVED.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // custom cursor
+            const cursor = document.getElementById('cursor');
+            document.addEventListener('mousemove', (e) => {
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+            });
+            document.addEventListener('mouseleave', () => {
+                cursor.style.opacity = '0';
+            });
+            document.addEventListener('mouseenter', () => {
+                cursor.style.opacity = '1';
+            });
+
+            // sticky header animation
+            const header = document.getElementById('header');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // reveal on scroll (Intersection Observer)
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // for stats, trigger counter when stats block becomes active
+                        if (entry.target.classList.contains('stats-panel') || entry.target.parentElement?.classList?.contains('stats-panel')) {
+                            startCounters();
+                        }
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            reveals.forEach(el => observer.observe(el));
+
+            // number counters (only once)
+            let countersStarted = false;
+            function startCounters() {
+                if (countersStarted) return;
+                countersStarted = true;
+                const statNumbers = [
+                    { element: document.getElementById('stat1'), current: 0, target: 987, inc: 33 },
+                    { element: document.getElementById('stat2'), current: 0, target: 64, inc: 1 },
+                    { element: document.getElementById('stat3'), current: 0, target: 100, inc: 2 },
+                    { element: document.getElementById('stat4'), current: 0, target: 12, inc: 1 }
+                ];
+
+                function updateCounter(item) {
+                    if (item.current < item.target) {
+                        item.current = Math.min(item.current + item.inc, item.target);
+                        item.element.innerText = item.current;
+                        requestAnimationFrame(() => updateCounter(item));
+                    } else {
+                        item.element.innerText = item.target;
+                    }
+                }
+
+                statNumbers.forEach(item => {
+                    if (item.element) updateCounter(item);
+                });
+            }
+
+            // text highlight while scrolling (extra effect)
+            const highlightElements = document.querySelectorAll('h2, .case-card h3, .trainer-info h4');
+            const highlightObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('highlight');
+                    } else {
+                        entry.target.classList.remove('highlight');
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            highlightElements.forEach(el => highlightObserver.observe(el));
+
+            // anchor scrolling offset (fixed header)
+            document.querySelectorAll('.nav a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const target = document.querySelector(targetId);
+                    if (target) {
+                        const offsetTop = target.offsetTop - 100;
+                        window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

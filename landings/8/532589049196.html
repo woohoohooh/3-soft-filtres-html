@@ -1,0 +1,619 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obsidian Club · precision shooting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400..800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #0a0c0e;
+      font-family: "Inter", sans-serif;
+      color: #e0e4e7;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* custom crosshair cursor */
+    * {
+      cursor: crosshair;
+    }
+
+    a, button, .card, .stat-item, .nav-link {
+      cursor: crosshair;
+    }
+
+    /* fixed compact header */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(10, 12, 14, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+      z-index: 100;
+      padding: 0.75rem 2rem;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-weight: 800;
+      font-size: 1.5rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #f5e7c8;
+      text-shadow: 0 0 8px rgba(245, 231, 200, 0.4);
+      font-family: "JetBrains Mono", monospace;
+    }
+    .logo span {
+      color: #b8860b;
+    }
+
+    .nav {
+      display: flex;
+      gap: 2.5rem;
+    }
+    .nav a {
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #c0c9d0;
+      transition: 0.2s;
+      font-family: "JetBrains Mono", monospace;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 2px;
+    }
+    .nav a:hover {
+      color: #f5e7c8;
+      border-bottom: 1px solid #b8860b;
+    }
+
+    /* main container */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* section defaults */
+    section {
+      padding: 6rem 0 5rem;
+      position: relative;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+    section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* hero */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding-top: 80px;
+      background: radial-gradient(circle at 30% 30%, rgba(184, 134, 11, 0.08), transparent 60%);
+    }
+    .hero-content h1 {
+      font-size: clamp(3rem, 10vw, 6rem);
+      font-weight: 800;
+      text-transform: uppercase;
+      line-height: 1;
+      letter-spacing: 12px;
+      color: #f5e7c8;
+      text-shadow: 0 0 20px #b8860b, 0 0 40px rgba(184, 134, 11, 0.3);
+      font-family: "JetBrains Mono", monospace;
+    }
+    .hero-sub {
+      font-size: 1.2rem;
+      letter-spacing: 8px;
+      margin: 1.5rem 0 2.5rem;
+      color: #9aa7b2;
+      font-weight: 400;
+      text-transform: uppercase;
+      border-top: 1px solid #b8860b;
+      border-bottom: 1px solid #b8860b;
+      padding: 0.8rem 0;
+      display: inline-block;
+    }
+    .crosshair-animation {
+      width: 100px;
+      height: 100px;
+      margin: 2rem auto 0;
+      position: relative;
+      animation: rotateSlow 20s infinite linear;
+    }
+    .crosshair-animation svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 8px #b8860b);
+    }
+    @keyframes rotateSlow {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* section titles */
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      margin-bottom: 3rem;
+      border-left: 6px solid #b8860b;
+      padding-left: 1.5rem;
+      color: #f5e7c8;
+      font-family: "JetBrains Mono", monospace;
+    }
+    .section-title span {
+      font-weight: 300;
+      color: #5d6d7c;
+      font-size: 1rem;
+      display: block;
+      letter-spacing: 4px;
+    }
+
+    /* card grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+    .card {
+      background: rgba(20, 24, 28, 0.8);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(184, 134, 11, 0.3);
+      padding: 2rem 1.8rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 20px -10px rgba(0,0,0,0.8);
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      border-color: #b8860b;
+      transform: translateY(-10px);
+      box-shadow: 0 20px 30px -5px #b8860b20;
+    }
+    .card::after {
+      content: "⧫";
+      position: absolute;
+      bottom: 10px;
+      right: 15px;
+      font-size: 2rem;
+      color: #b8860b20;
+      font-family: monospace;
+    }
+    .card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1.2rem;
+    }
+    .card h3 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 1rem;
+      color: #f0e4cc;
+    }
+    .card p {
+      color: #a0aab3;
+      font-size: 1rem;
+      line-height: 1.5;
+      font-weight: 400;
+    }
+
+    /* stats / counters */
+    .stats-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .stat-item {
+      flex: 1;
+      background: #12161b;
+      border: 1px solid #b8860b40;
+      padding: 2.5rem 1rem;
+      text-align: center;
+      transition: 0.2s;
+    }
+    .stat-item:hover {
+      background: #1a1f26;
+      border-color: #b8860b;
+    }
+    .stat-number {
+      font-size: 4rem;
+      font-weight: 800;
+      font-family: "JetBrains Mono", monospace;
+      color: #f5e7c8;
+      line-height: 1;
+    }
+    .stat-label {
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #b8860b;
+      font-weight: 500;
+      margin-top: 0.5rem;
+    }
+
+    /* instructors (people) */
+    .instructor-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .instructor-icon {
+      font-size: 4rem;
+      filter: drop-shadow(0 0 6px goldenrod);
+    }
+    .instructor-name {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 1rem 0 0.3rem;
+      color: #eadbb8;
+    }
+    .instructor-exp {
+      color: #b8860b;
+      letter-spacing: 2px;
+    }
+
+    /* packages / pricing */
+    .package-card {
+      background: #0e1217;
+      border: 1px solid #b8860b30;
+      padding: 2rem;
+      position: relative;
+    }
+    .package-card.highlight {
+      border: 2px solid #b8860b;
+      background: #131a22;
+      transform: scale(1.02);
+    }
+    .package-price {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #f5e7c8;
+      font-family: "JetBrains Mono", monospace;
+      margin: 1rem 0;
+    }
+    .package-price small {
+      font-size: 1rem;
+      color: #7a8b9b;
+    }
+    .btn {
+      display: inline-block;
+      border: 1px solid #b8860b;
+      background: transparent;
+      color: #f5e7c8;
+      padding: 0.8rem 2.2rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      margin-top: 1.5rem;
+      transition: 0.2s;
+      font-family: "JetBrains Mono", monospace;
+    }
+    .btn:hover {
+      background: #b8860b;
+      color: #0a0c0e;
+      border-color: #b8860b;
+    }
+
+    /* footer */
+    .footer {
+      background: #080b0d;
+      border-top: 1px solid #b8860b20;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      color: #6f7a84;
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .footer span {
+      color: #b8860b;
+    }
+
+    /* highlight text */
+    .highlight {
+      color: #f5e7c8;
+      background: linear-gradient(120deg, #b8860b30 0%, #b8860b30 40%);
+      padding: 0 0.3rem;
+      font-weight: 600;
+    }
+
+    /* custom scroll */
+    ::-webkit-scrollbar {
+      width: 8px;
+      background: #0f1215;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #b8860b;
+      border-radius: 0;
+    }
+
+    /* responsive just enough for desktop-large */
+    @media (max-width: 1000px) {
+      .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">OBSIDIAN<span>⚡</span></div>
+    <div class="nav">
+      <a href="#home" class="nav-link">HOME</a>
+      <a href="#disciplines" class="nav-link">DISCIPLINES</a>
+      <a href="#stats" class="nav-link">STATS</a>
+      <a href="#trainers" class="nav-link">TRAINERS</a>
+      <a href="#packages" class="nav-link">PACKAGES</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section id="home" class="hero" style="opacity:1; transform:none;">
+      <div class="container hero-content">
+        <h1>PRECISION<br>SHOOTING</h1>
+        <div class="hero-sub">OBSIDIAN CLUB</div>
+        <div class="crosshair-animation">
+          <svg viewBox="0 0 100 100" width="100" height="100">
+            <circle cx="50" cy="50" r="12" stroke="#b8860b" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+            <line x1="50" y1="0" x2="50" y2="30" stroke="#b8860b" stroke-width="2"/>
+            <line x1="50" y1="70" x2="50" y2="100" stroke="#b8860b" stroke-width="2"/>
+            <line x1="0" y1="50" x2="30" y2="50" stroke="#b8860b" stroke-width="2"/>
+            <line x1="70" y1="50" x2="100" y2="50" stroke="#b8860b" stroke-width="2"/>
+            <circle cx="50" cy="50" r="4" fill="#b8860b" />
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOCK 1: Disciplines -->
+    <section id="disciplines">
+      <div class="container">
+        <h2 class="section-title">DISCIPLINES<span>// precision & power</span></h2>
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon">🎯</div>
+            <h3>BENCHREST</h3>
+            <p>Extreme accuracy from 100 to 1000 yards. <span class="highlight">0.1 MOA</span> guaranteed with our custom actions.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">⚡</div>
+            <h3>PRACTICAL</h3>
+            <p>Dynamic stages, movement, multiple targets. Time & precision — the ultimate <span class="highlight">combat mindset</span>.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🔫</div>
+            <h3>LONG RANGE</h3>
+            <p>Mile-high shooting. Environmental reading, wind calls. <span class="highlight">1 mile steel</span> challenges every week.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOCK 2: STATISTICS (counters with JS) -->
+    <section id="stats">
+      <div class="container">
+        <h2 class="section-title">PRECISION STATS<span>// hit ratio / members</span></h2>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-number" id="statRounds" data-target="24500">0</div>
+            <div class="stat-label">rounds / month</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number" id="statMembers" data-target="480">0</div>
+            <div class="stat-label">active members</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number" id="statAccuracy" data-target="97">0</div>
+            <div class="stat-label">hit rate %</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOCK 3: TRAINERS -->
+    <section id="trainers">
+      <div class="container">
+        <h2 class="section-title">INSTRUCTORS<span>// master class</span></h2>
+        <div class="grid-3">
+          <div class="card instructor-card">
+            <div class="instructor-icon">👁️</div>
+            <h3 class="instructor-name">S. REZNOV</h3>
+            <div class="instructor-exp">ex‑USMC Scout Sniper</div>
+            <p>17 years operational, 230+ confirmed precision shots. <span class="highlight">1-mile club</span></p>
+          </div>
+          <div class="card instructor-card">
+            <div class="instructor-icon">🎖️</div>
+            <h3 class="instructor-name">E. VOSS</h3>
+            <div class="instructor-exp">IPSC World Champion</div>
+            <p>Multi-gun, speed & accuracy. Coach of 12 national teams.</p>
+          </div>
+          <div class="card instructor-card">
+            <div class="instructor-icon">🏹</div>
+            <h3 class="instructor-name">K. MERCER</h3>
+            <div class="instructor-exp">Ballistics expert</div>
+            <p>Custom reloading & advanced wind reading. <span class="highlight">PhD in ballistics</span>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOCK 4: PACKAGES (training) -->
+    <section id="packages">
+      <div class="container">
+        <h2 class="section-title">MEMBERSHIP<span>// training packages</span></h2>
+        <div class="grid-3">
+          <div class="package-card">
+            <h3>MARKSMAN</h3>
+            <div class="package-price">$350<small>/mo</small></div>
+            <p>4 range days, basic instruction, equipment rental, 200 rounds included.</p>
+            <a href="#" class="btn">secure slot</a>
+          </div>
+          <div class="package-card highlight">
+            <h3>PRECISION ELITE</h3>
+            <div class="package-price">$780<small>/mo</small></div>
+            <p>Unlimited range, 1-on-1 coaching with master class, ballistic lab access.</p>
+            <a href="#" class="btn">elite command</a>
+          </div>
+          <div class="package-card">
+            <h3>LONGRANGE</h3>
+            <div class="package-price">$520<small>/mo</small></div>
+            <p>Dedicated long-range bay, data books, advanced meteo station & spotter.</p>
+            <a href="#" class="btn">zero target</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOCK 5: extra (events / next competition) -->
+    <section id="events" style="padding: 3rem 0 6rem;">
+      <div class="container">
+        <h2 class="section-title">NEXT CHALLENGE<span>// steel madness</span></h2>
+        <div style="background: #11171f; padding: 2.5rem; border-left: 8px solid #b8860b; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 2rem; font-weight: 800; letter-spacing: 6px;">JUNE 24-25</span>
+            <p style="color:#b8860b; margin-top:0.5rem;">⌛ 800m · 1200m · moving targets</p>
+          </div>
+          <div style="font-family: 'JetBrains Mono', monospace; background: #b8860b10; padding: 1.5rem; border-radius: 0;">
+            <span style="font-size: 2.5rem; font-weight:800;" id="countdownTimer">--d --h --m</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div>OBSIDIAN CLUB — PRECISION SINCE 2012 <span>⨯</span> 18 RANGE LANES <span>⨯</span> 80KM OUTSIDE ASPEN</div>
+    <div style="margin-top:1rem;">© 2025 // NO COMPROMISE</div>
+  </footer>
+
+  <script>
+    (function() {
+      // Intersection Observer for fade-up sections
+      const sections = document.querySelectorAll('section:not(.hero)');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+      sections.forEach(s => observer.observe(s));
+
+      // Stat counters (animated when #stats becomes visible)
+      const statsSection = document.getElementById('stats');
+      const statRounds = document.getElementById('statRounds');
+      const statMembers = document.getElementById('statMembers');
+      const statAccuracy = document.getElementById('statAccuracy');
+      let animated = false;
+
+      function animateNumber(el, target) {
+        if (!el) return;
+        let current = 0;
+        const step = Math.ceil(target / 80); 
+        const timer = setInterval(() => {
+          current += step;
+          if (current >= target) {
+            el.innerText = target.toLocaleString();
+            clearInterval(timer);
+          } else {
+            el.innerText = current.toLocaleString();
+          }
+        }, 20);
+      }
+
+      const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !animated) {
+            animated = true;
+            animateNumber(statRounds, parseInt(statRounds.dataset.target || '24500'));
+            animateNumber(statMembers, parseInt(statMembers.dataset.target || '480'));
+            animateNumber(statAccuracy, parseInt(statAccuracy.dataset.target || '97'));
+          }
+        });
+      }, { threshold: 0.3 });
+      if (statsSection) statsObserver.observe(statsSection);
+
+      // countdown timer for event block (June 24 next year dynamic)
+      function updateCountdown() {
+        const now = new Date();
+        let eventDate = new Date(now.getFullYear(), 5, 24, 10, 0, 0); // June 24
+        if (now > eventDate) {
+          eventDate.setFullYear(now.getFullYear() + 1);
+        }
+        const diff = eventDate - now;
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (86400000)) / (3600000));
+        const minutes = Math.floor((diff % 3600000) / 60000);
+        document.getElementById('countdownTimer').innerText = `${days}d ${hours}h ${minutes}m`;
+      }
+      setInterval(updateCountdown, 60000);
+      updateCountdown();
+
+      // Compact header shrink effect (already compact, but add tiny)
+      const header = document.querySelector('.header');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) {
+          header.style.padding = '0.4rem 2rem';
+          header.style.background = 'rgba(5, 7, 9, 0.95)';
+        } else {
+          header.style.padding = '0.75rem 2rem';
+          header.style.background = 'rgba(10, 12, 14, 0.85)';
+        }
+      });
+
+      // Smooth scroll for anchor links
+      document.querySelectorAll('.nav a').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const id = link.getAttribute('href').substring(1);
+          const target = document.getElementById(id);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+    })();
+  </script>
+  <!-- extra micro highlight animation -->
+  <style>
+    .hero h1 { animation: flicker 4s infinite alternate; }
+    @keyframes flicker {
+      0% { text-shadow: 0 0 20px #b8860b, 0 0 40px rgba(184,134,11,0.3); }
+      100% { text-shadow: 0 0 30px #f5e7c8, 0 0 60px #b8860b; }
+    }
+    .card { transition: all 0.25s ease; }
+    .stat-number { transition: all 0.2s; }
+    .section-title { position: relative; }
+    .section-title::after { content: '⨯⨯'; letter-spacing: -4px; color: #b8860b; margin-left: 15px; font-weight: 400; opacity: 0.5; }
+  </style>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,660 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private shooting club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0b0c10;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            color: #e2e8f0;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* custom crosshair cursor */
+        body * {
+            cursor: none;
+        }
+        .custom-cursor {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(220, 38, 38, 0.8);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.08s ease, border-color 0.2s;
+            mix-blend-mode: difference;
+        }
+        .custom-cursor::after {
+            content: '';
+            width: 4px;
+            height: 4px;
+            background: #b91c1c;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .custom-cursor.hover-active {
+            transform: translate(-50%, -50%) scale(1.8);
+            border-color: #facc15;
+            background: rgba(250, 204, 21, 0.05);
+        }
+
+        /* fixed compact header (sticky) */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(2, 6, 23, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(185, 28, 28, 0.25);
+            z-index: 100;
+            transition: padding 0.3s, background 0.3s;
+        }
+        .site-header.compact {
+            padding: 0.7rem 3rem;
+            background: rgba(2, 6, 23, 0.95);
+            border-bottom: 1px solid #b91c1c;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #f5f5f5;
+            text-transform: uppercase;
+        }
+        .logo span {
+            color: #b91c1c;
+            margin-right: 4px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: #e2e8f0;
+            font-weight: 500;
+            font-size: 1.1rem;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav-links a:hover {
+            color: #facc15;
+            border-bottom: 1px solid #b91c1c;
+        }
+
+        /* hero section with moving "crosshair scan" */
+        .hero {
+            height: 100vh;
+            background: #03050c;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+        }
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 40%, rgba(185, 28, 28, 0.15), transparent 60%);
+            z-index: 0;
+        }
+        .hero-content {
+            z-index: 2;
+            max-width: 1000px;
+            padding: 0 20px;
+        }
+        .hero-sub {
+            font-size: 1.2rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #b91c1c;
+            margin-bottom: 1rem;
+            animation: flicker 3s infinite;
+        }
+        .hero-title {
+            font-size: 5.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            color: #f0f4fa;
+        }
+        .hero-title i {
+            color: #b91c1c;
+            font-style: normal;
+            border: 2px solid #b91c1c;
+            padding: 0 12px;
+            display: inline-block;
+            transform: skew(-5deg);
+        }
+        .hero-desc {
+            font-size: 1.4rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            color: #b0b8c5;
+        }
+        .btn {
+            background: transparent;
+            border: 2px solid #b91c1c;
+            color: white;
+            padding: 16px 48px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            transition: 0.25s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:hover {
+            background: #b91c1c;
+            color: #03050c;
+            box-shadow: 0 0 25px #b91c1c;
+        }
+        /* crosshair moving lines */
+        .crosshair-line {
+            position: absolute;
+            background: rgba(185, 28, 28, 0.3);
+            z-index: 1;
+            pointer-events: none;
+        }
+        .line-x {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            box-shadow: 0 0 12px #b91c1c;
+            animation: scanX 6s infinite linear;
+        }
+        .line-y {
+            height: 100%;
+            width: 1px;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            box-shadow: 0 0 12px #b91c1c;
+            animation: scanY 8s infinite linear;
+        }
+        @keyframes scanX {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+        @keyframes scanY {
+            0% { top: -100%; }
+            100% { top: 200%; }
+        }
+        @keyframes flicker {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        /* generic section styling */
+        section {
+            padding: 100px 5%;
+            position: relative;
+            border-bottom: 1px solid rgba(185, 28, 28, 0.15);
+        }
+        .section-title {
+            font-size: 3.2rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .section-title span {
+            color: #b91c1c;
+            border-left: 6px solid #b91c1c;
+            padding-left: 20px;
+        }
+
+        /* disciplines (cards) */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .discipline-card {
+            background: #11131f;
+            border: 1px solid #2e2e3a;
+            padding: 2.5rem 2rem;
+            transition: all 0.25s;
+            position: relative;
+            backdrop-filter: blur(4px);
+        }
+        .discipline-card:hover {
+            transform: translateY(-10px);
+            border-color: #b91c1c;
+            box-shadow: 0 20px 30px -10px #b91c1c30;
+        }
+        .card-icon {
+            font-size: 3rem;
+            color: #b91c1c;
+            margin-bottom: 1.5rem;
+        }
+        .discipline-card h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .discipline-card p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        /* trainers — horizontal flick cards */
+        .trainers {
+            background: #0a0c15;
+        }
+        .trainer-wrap {
+            display: flex;
+            gap: 30px;
+            margin-top: 50px;
+        }
+        .trainer-item {
+            flex: 1;
+            background: #151a24;
+            padding: 30px;
+            border-left: 4px solid #b91c1c;
+            transition: 0.3s;
+        }
+        .trainer-item:hover {
+            background: #1e2533;
+            border-left-width: 10px;
+            padding-left: 24px;
+        }
+        .trainer-item h3 {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+        .trainer-item .role {
+            color: #facc15;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            margin: 8px 0 16px;
+        }
+
+        /* stat counters */
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            background: #0f111c;
+            padding: 60px 20px;
+            border-radius: 4px;
+            border: 1px solid #b91c1c30;
+        }
+        .stat-item {
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 4.5rem;
+            font-weight: 800;
+            color: #b91c1c;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 15px #b91c1c;
+        }
+        .stat-label {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #cbd5e1;
+        }
+
+        /* packages / pricing */
+        .packages {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+        .package {
+            background: #10131f;
+            padding: 40px 25px;
+            border: 1px solid #334155;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .package:hover {
+            border-color: #b91c1c;
+            box-shadow: 0 0 40px #b91c1c20;
+            transform: scale(1.02);
+        }
+        .package .price {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #facc15;
+            margin: 20px 0;
+        }
+        .package ul {
+            list-style: none;
+            color: #a0afc0;
+            font-size: 1.1rem;
+            line-height: 2.2;
+        }
+        .package li i {
+            color: #b91c1c;
+            margin-right: 10px;
+        }
+
+        /* crosshair hover animation on blocks (via js) */
+        .glow-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .glow-on-scroll.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* footer */
+        .site-footer {
+            background: #020617;
+            padding: 50px 5% 30px;
+            border-top: 2px solid #b91c1c;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .footer-copy {
+            font-size: 1rem;
+            color: #64748b;
+        }
+        .footer-icons i {
+            font-size: 1.8rem;
+            margin-left: 25px;
+            color: #4b5563;
+            transition: color 0.2s;
+        }
+        .footer-icons i:hover {
+            color: #b91c1c;
+        }
+
+        /* other micro */
+        .small-note {
+            font-size: 0.9rem;
+            color: #b91c1c;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- custom cursor -->
+    <div class="custom-cursor" id="cursor"></div>
+
+    <!-- fixed header (compact on scroll) -->
+    <header class="site-header" id="mainHeader">
+        <div class="logo"><span>✦</span>OBSIDIAN</div>
+        <div class="nav-links">
+            <a href="#home">home</a>
+            <a href="#disciplines">discipline</a>
+            <a href="#trainers">trainers</a>
+            <a href="#stats">stats</a>
+            <a href="#packages">packages</a>
+        </div>
+    </header>
+
+    <!-- HERO (block 1) -->
+    <section class="hero" id="home">
+        <div class="hero-overlay"></div>
+        <div class="crosshair-line line-x"></div>
+        <div class="crosshair-line line-y"></div>
+        <div class="hero-content">
+            <div class="hero-sub">precision shooting club</div>
+            <h1 class="hero-title">FIRE <i>DISCIPLINE</i> MASTERY</h1>
+            <p class="hero-desc">Where accuracy meets instinct. Elite training, tactical immersion.</p>
+            <button class="btn">join the mission</button>
+        </div>
+    </section>
+
+    <!-- block 2: disciplines (cards) -->
+    <section id="disciplines" class="glow-on-scroll">
+        <h2 class="section-title"><span>weapons disciplines</span></h2>
+        <div class="cards-grid">
+            <div class="discipline-card">
+                <div class="card-icon"><i class="fas fa-bullseye"></i></div>
+                <h3>precision rifle</h3>
+                <p>500m+ steel challenges, ballistic data, wind calls. Master the long shot.</p>
+            </div>
+            <div class="discipline-card">
+                <div class="card-icon"><i class="fas fa-crosshairs"></i></div>
+                <h3>tactical pistol</h3>
+                <p>dynamic drills, draw & shoot, low-light, movement based stages.</p>
+            </div>
+            <div class="discipline-card">
+                <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
+                <h3>action shotgun</h3>
+                <p>multi-target, slug accuracy, speed reloading — combat style.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 3: trainers (horizontal) -->
+    <section id="trainers" class="trainers glow-on-scroll">
+        <h2 class="section-title"><span>lead instructors</span></h2>
+        <div class="trainer-wrap">
+            <div class="trainer-item">
+                <h3>M. STEEL</h3>
+                <div class="role">ex‑force recon / 18yrs</div>
+                <p>precision rifle & fieldcraft. 3x national longrange champion.</p>
+                <i class="fas fa-certificate" style="color:#b91c1c; margin-top: 20px; display: inline-block;"></i>
+            </div>
+            <div class="trainer-item">
+                <h3>V. CROSS</h3>
+                <div class="role">uspsa grandmaster</div>
+                <p>pistol dynamics & competition mindset. multiple world shoot-offs.</p>
+                <i class="fas fa-skull-crossbones" style="color:#b91c1c; margin-top: 20px;"></i>
+            </div>
+            <div class="trainer-item">
+                <h3>J. HAVOC</h3>
+                <div class="role">tactical shotgun / breacher</div>
+                <p>specialized in CQB & shotgun manipulation. 10y combat experience.</p>
+                <i class="fas fa-bolt" style="color:#b91c1c; margin-top: 20px;"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 4: stats counters (big numbers) -->
+    <section id="stats" class="glow-on-scroll">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number" id="stat1">0</div>
+                <div class="stat-label">precision rounds/yr</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="stat2">0</div>
+                <div class="stat-label">active members</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="stat3">0</div>
+                <div class="stat-label">ex-military coaches</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 5: packages / membership -->
+    <section id="packages" class="glow-on-scroll">
+        <h2 class="section-title"><span>membership packages</span></h2>
+        <div class="packages">
+            <div class="package">
+                <h3>✧ marksman ✧</h3>
+                <div class="price">$350/m</div>
+                <ul>
+                    <li><i class="fas fa-check"></i> 8 range days</li>
+                    <li><i class="fas fa-check"></i> basic coaching</li>
+                    <li><i class="fas fa-check"></i> gear locker</li>
+                    <li><i class="fas fa-times" style="color:#555;"></i> ammo package</li>
+                </ul>
+            </div>
+            <div class="package">
+                <h3>✦ TACTICAL ✦</h3>
+                <div class="price">$620/m</div>
+                <ul>
+                    <li><i class="fas fa-check"></i> unlimited range access</li>
+                    <li><i class="fas fa-check"></i> 4 priv. lessons</li>
+                    <li><i class="fas fa-check"></i> ammo discount 20%</li>
+                    <li><i class="fas fa-check"></i> comp. entry fees</li>
+                </ul>
+            </div>
+            <div class="package">
+                <h3>⛨ OPERATOR ⛨</h3>
+                <div class="price">$1150/m</div>
+                <ul>
+                    <li><i class="fas fa-check"></i> all tactical benefits</li>
+                    <li><i class="fas fa-check"></i> 1on1 advanced drills</li>
+                    <li><i class="fas fa-check"></i> night shoot / nvg</li>
+                    <li><i class="fas fa-check"></i> exclusive events</li>
+                </ul>
+            </div>
+        </div>
+        <p class="small-note" style="text-align: center; margin-top: 35px;">*annual contracts include complimentary crosshair alignment</p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="footer-copy">
+            © 2026 OBSIDIAN — private shoot club. all targets eliminated.
+        </div>
+        <div class="footer-icons">
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-x-twitter"></i>
+            <i class="fas fa-bullseye"></i>
+        </div>
+    </footer>
+
+    <!-- javascript: compact header, cursor, counters, scroll reveal, crosshair effect -->
+    <script>
+        (function() {
+            // custom cursor + hover effect for buttons/cards
+            const cursor = document.getElementById('cursor');
+            if (cursor) {
+                document.addEventListener('mousemove', (e) => {
+                    cursor.style.left = e.clientX + 'px';
+                    cursor.style.top = e.clientY + 'px';
+                });
+
+                const hoverables = document.querySelectorAll('a, button, .discipline-card, .trainer-item, .package, .btn');
+                hoverables.forEach(el => {
+                    el.addEventListener('mouseenter', () => cursor.classList.add('hover-active'));
+                    el.addEventListener('mouseleave', () => cursor.classList.remove('hover-active'));
+                });
+            }
+
+            // compact header on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 60) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // Stat counters animation (when #stats revealed)
+            function animateStats() {
+                const statsSection = document.getElementById('stats');
+                if (!statsSection) return;
+                const rect = statsSection.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                if (rect.top < windowHeight - 150 && rect.bottom > 0) {
+                    // if not yet animated
+                    if (!statsSection.dataset.animated) {
+                        statsSection.dataset.animated = 'true';
+                        let val1 = 0, val2 = 0, val3 = 0;
+                        const target1 = 48700, target2 = 624, target3 = 19;
+                        const stepTime = 20;
+                        const inc1 = Math.ceil(target1 / 70);
+                        const inc2 = Math.ceil(target2 / 60);
+                        const inc3 = Math.ceil(target3 / 40);
+                        const timer = setInterval(() => {
+                            let finished = true;
+                            if (val1 < target1) {
+                                val1 = Math.min(val1 + inc1, target1);
+                                document.getElementById('stat1').innerText = val1.toLocaleString();
+                                finished = false;
+                            }
+                            if (val2 < target2) {
+                                val2 = Math.min(val2 + inc2, target2);
+                                document.getElementById('stat2').innerText = val2;
+                                finished = false;
+                            }
+                            if (val3 < target3) {
+                                val3 = Math.min(val3 + inc3, target3);
+                                document.getElementById('stat3').innerText = val3;
+                                finished = false;
+                            }
+                            if (finished) clearInterval(timer);
+                        }, stepTime);
+                    }
+                }
+            }
+
+            // scroll reveal (glow-on-scroll)
+            const revealElements = document.querySelectorAll('.glow-on-scroll');
+            function checkReveal() {
+                revealElements.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    const windowHeight = window.innerHeight;
+                    if (rect.top < windowHeight - 100 && rect.bottom > 20) {
+                        el.classList.add('revealed');
+                    } else {
+                        // optional: remove if you want them to hide again, but we keep them after first reveal
+                        // we can keep them visible once revealed
+                    }
+                });
+                animateStats(); // check stats inside
+            }
+
+            // additionally, ensure revealed stays
+            window.addEventListener('scroll', checkReveal);
+            checkReveal(); // on load
+
+            // subtle addition: crosshair hover effect on section titles? already ok.
+            // extra: dynamic header background on scroll, done.
+
+            // force stats if already visible at load
+            setTimeout(checkReveal, 300);
+        })();
+    </script>
+
+    <!-- small extra: animated crosshair decoration line moved via css, no extra needed -->
+    <div style="display: none;">interactivity & crosshair completed</div>
+</body>
+</html>
+All done!
+```

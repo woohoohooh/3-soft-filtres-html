@@ -1,0 +1,698 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eclipse Precision · shooting club</title>
+    <!-- Font & icons (clean, sharp) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0b0d10;
+            color: #e5e9f0;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* custom crosshair cursor */
+        body * {
+            cursor: crosshair;
+        }
+
+        /* fixed smart header — shrinks on scroll */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            mix-blend-mode: difference;
+            color: #fff;
+            transition: padding 0.3s ease, background 0.3s ease;
+            pointer-events: none;
+        }
+
+        .header a {
+            pointer-events: auto;
+            color: inherit;
+            text-decoration: none;
+            font-weight: 500;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .header a:hover {
+            border-bottom: 1px solid #ffb347;
+        }
+
+        .header.scrolled {
+            padding: 1rem 3rem;
+            background: rgba(5, 7, 10, 0.9);
+            backdrop-filter: blur(12px);
+            mix-blend-mode: normal;
+            border-bottom: 1px solid rgba(255, 180, 70, 0.2);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.8rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #f0e68c, #ffb347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav {
+            display: flex;
+            gap: 3rem;
+        }
+
+        /* main container – full bleed */
+        section {
+            position: relative;
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0 5rem;
+            background: radial-gradient(circle at 30% 30%, #1e2128, #030405);
+            border-bottom: 2px solid rgba(255, 180, 70, 0.3);
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            z-index: 5;
+        }
+
+        .hero-label {
+            font-size: 1rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #ffb347;
+            margin-bottom: 1rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 1s forwards 0.2s;
+        }
+
+        .hero h1 {
+            font-size: 5.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 1s forwards 0.4s;
+        }
+
+        .hero h1 span {
+            -webkit-text-stroke: 2px #ffb347;
+            color: transparent;
+            font-weight: 800;
+        }
+
+        .hero-desc {
+            font-size: 1.3rem;
+            max-width: 600px;
+            color: #b0b8cf;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 1s forwards 0.6s;
+        }
+
+        .crosshair-btn {
+            display: inline-block;
+            padding: 1.2rem 3rem;
+            border: 2px solid #ffb347;
+            background: transparent;
+            color: #ffb347;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: all 0.2s;
+            position: relative;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 1s forwards 0.8s;
+        }
+
+        .crosshair-btn:hover {
+            background: #ffb347;
+            color: #0b0d10;
+            box-shadow: 0 0 25px #ffb34777;
+        }
+
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* animated background crosshair (js will also move it) */
+        #crosshair-bg {
+            position: absolute;
+            top: 10%;
+            right: 5%;
+            width: 40vmax;
+            height: 40vmax;
+            background: radial-gradient(circle, rgba(255,180,70,0.05) 0px, transparent 2px);
+            background-size: 40px 40px;
+            opacity: 0.5;
+            pointer-events: none;
+            transition: transform 0.1s ease-out;
+            will-change: transform;
+        }
+
+        /* generic block style */
+        .block {
+            padding: 6rem 5rem;
+            border-bottom: 1px solid rgba(255, 180, 70, 0.1);
+        }
+
+        .block-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+            display: inline-block;
+            border-left: 8px solid #ffb347;
+            padding-left: 2rem;
+        }
+
+        /* disciplines cards */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+        }
+
+        .discipline-card {
+            background: rgba(20, 25, 35, 0.7);
+            backdrop-filter: blur(4px);
+            padding: 2.5rem 2rem;
+            border: 1px solid rgba(255, 180, 70, 0.3);
+            transition: transform 0.25s ease, border-color 0.2s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .discipline-card:hover {
+            transform: translateY(-10px);
+            border-color: #ffb347;
+            box-shadow: 0 20px 40px -10px #000000cc, 0 0 0 1px #ffb34733;
+        }
+
+        .discipline-card i {
+            font-size: 3rem;
+            color: #ffb347;
+            margin-bottom: 1.5rem;
+        }
+
+        .discipline-card h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .discipline-card p {
+            color: #9aa4bf;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* trainers / coaches */
+        .trainer-grid {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .trainer-item {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.45);
+            padding: 2rem;
+            border: 1px solid rgba(255, 180, 70, 0.4);
+            transition: all 0.3s;
+        }
+
+        .trainer-item:hover {
+            border-color: #ffb347;
+            background: rgba(20, 25, 35, 0.9);
+        }
+
+        .trainer-item .name {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .trainer-item .role {
+            color: #ffb347;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .trainer-item .exp {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #ffd966;
+        }
+
+        /* stats block */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 4rem;
+        }
+
+        .stat {
+            flex: 1;
+            text-align: center;
+            padding: 2rem;
+            border: 1px dashed rgba(255, 180, 70, 0.5);
+            transition: background 0.3s;
+        }
+
+        .stat:hover {
+            background: rgba(255, 180, 70, 0.05);
+        }
+
+        .stat-number {
+            font-size: 5rem;
+            font-weight: 800;
+            color: #ffb347;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 15px #ffb34755;
+        }
+
+        .stat-label {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* packages / pricing */
+        .packages {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .package {
+            flex: 1;
+            background: #12161f;
+            border: 1px solid #2f3747;
+            padding: 3rem 2rem;
+            transition: border 0.3s, transform 0.3s;
+            text-align: center;
+        }
+
+        .package.premium {
+            border-color: #ffb347;
+            transform: scale(1.02);
+            background: #1a1f2b;
+        }
+
+        .package:hover {
+            border-color: #ffb347;
+        }
+
+        .package h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .package .price {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #ffb347;
+            margin-bottom: 2rem;
+        }
+
+        .package ul {
+            list-style: none;
+            text-align: left;
+            margin-top: 2rem;
+        }
+
+        .package li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #29303d;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .package li i {
+            color: #ffb347;
+            width: 20px;
+        }
+
+        /* crosshair stat (footer style) */
+        .footer {
+            background: #05070a;
+            padding: 4rem 5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 4px solid #ffb347;
+            color: #aaa;
+        }
+
+        .footer .cred {
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+        }
+
+        .footer .fa-bullseye {
+            color: #ffb347;
+            font-size: 2rem;
+        }
+
+        /* scroll reveal base */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* additional hover & micro animations */
+        .hover-glow {
+            transition: text-shadow 0.2s;
+        }
+
+        .hover-glow:hover {
+            text-shadow: 0 0 10px #ffb34788;
+        }
+
+        /* precision underline */
+        .focus-line {
+            position: relative;
+            display: inline-block;
+        }
+
+        .focus-line::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: #ffb347;
+            transition: width 0.3s;
+        }
+
+        .focus-line:hover::after {
+            width: 100%;
+        }
+
+        /* fake ammo counter in header? subtle */
+        .ammo-badge {
+            border: 1px solid #ffb347;
+            padding: 0.2rem 1rem;
+            border-radius: 0;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fixed hybrid header -->
+    <div class="header" id="smartHeader">
+        <div class="logo">ECLIPSE<span style="color:#ffb347; -webkit-text-fill-color:#ffb347;">●</span></div>
+        <div class="nav">
+            <a href="#disciplines">Disciplines</a>
+            <a href="#trainers">Trainers</a>
+            <a href="#stats">Stats</a>
+            <a href="#packages">Packages</a>
+            <a href="#footer">Contact</a>
+        </div>
+        <div class="ammo-badge">+9 ROUNDS</div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero" id="home">
+        <div id="crosshair-bg"></div>
+        <div class="hero-content">
+            <div class="hero-label">PRECISION · SHOOTING · CLUB</div>
+            <h1>ZERO <span>COMPROMISE</span><br>ONE SHOT.</h1>
+            <div class="hero-desc">Underground precision facility · 300m indoor range · tactical performance</div>
+            <a href="#disciplines" class="crosshair-btn">ENTER THE ZONE</a>
+        </div>
+    </section>
+
+    <!-- Block 1: Disciplines -->
+    <section class="block" id="disciplines">
+        <h2 class="block-title reveal">DISCIPLINES</h2>
+        <div class="grid-3">
+            <div class="discipline-card reveal">
+                <i class="fas fa-bullseye"></i>
+                <h3>PRECISION RIFLE</h3>
+                <p>1,000 yard competitions · fullbore & F-class · wind reading lab</p>
+            </div>
+            <div class="discipline-card reveal">
+                <i class="fas fa-crosshairs"></i>
+                <h3>DYNAMIC PISTOL</h3>
+                <p>IPSC / USPSA stages · draw & movement · reflexive fire</p>
+            </div>
+            <div class="discipline-card reveal">
+                <i class="fas fa-shield-alt"></i>
+                <h3>TACTICAL SHOTGUN</h3>
+                <p>Slug & buckshot · stress reloads · breaching scenarios</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Block 2: Trainers / coaches -->
+    <section class="block" id="trainers">
+        <h2 class="block-title reveal">MASTER INSTRUCTORS</h2>
+        <div class="trainer-grid">
+            <div class="trainer-item reveal">
+                <div class="name">V. KOSTOV</div>
+                <div class="role">EX-GRU · SNIPER DIV.</div>
+                <div class="exp">22<span style="font-size:1.2rem;">yrs</span></div>
+                <p>12 confirmed competition wins. Ballistics specialist.</p>
+            </div>
+            <div class="trainer-item reveal">
+                <div class="name">S. RYDER</div>
+                <div class="role">USPSA GRAND MASTER</div>
+                <div class="exp">4.8<span style="font-size:1.2rem;">sec draw</span></div>
+                <p>17 national podiums · action shooting mentor.</p>
+            </div>
+            <div class="trainer-item reveal">
+                <div class="name">J. CRANE</div>
+                <div class="role">FORMER UKSF</div>
+                <div class="exp">300<span style="font-size:1.2rem;">+ kills</span></div>
+                <p>Close quarters & combat mindset coach.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Block 3: stats (glowing counters) -->
+    <section class="block" id="stats">
+        <h2 class="block-title reveal">PRECISION METRICS</h2>
+        <div class="stats-row">
+            <div class="stat reveal">
+                <div class="stat-number" data-target="984">0</div>
+                <div class="stat-label">MATCHES WON</div>
+            </div>
+            <div class="stat reveal">
+                <div class="stat-number" data-target="47">0</div>
+                <div class="stat-label">DISTINCT CALIBERS</div>
+            </div>
+            <div class="stat reveal">
+                <div class="stat-number" data-target="12600">0</div>
+                <div class="stat-label">ROUNDS / DAY</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Block 4: Packages / membership -->
+    <section class="block" id="packages">
+        <h2 class="block-title reveal">MEMBERSHIP</h2>
+        <div class="packages">
+            <div class="package reveal">
+                <h3>MARKSMAN</h3>
+                <div class="price">$390 <span style="font-size:1rem;">/mo</span></div>
+                <ul>
+                    <li><i class="fas fa-check"></i> Range access (peak hours)</li>
+                    <li><i class="fas fa-check"></i> 4 coaching sessions</li>
+                    <li><i class="fas fa-check"></i> Weapon locker</li>
+                </ul>
+            </div>
+            <div class="package premium reveal">
+                <h3>OPERATOR <i class="fas fa-star" style="color:#ffb347; font-size:1.5rem;"></i></h3>
+                <div class="price">$890 <span style="font-size:1rem;">/mo</span></div>
+                <ul>
+                    <li><i class="fas fa-check"></i> 24/7 access · private range</li>
+                    <li><i class="fas fa-check"></i> Unlimited 1on1 training</li>
+                    <li><i class="fas fa-check"></i> Ballistic lab & ammo discount</li>
+                    <li><i class="fas fa-check"></i> Invite to invitational shoots</li>
+                </ul>
+            </div>
+            <div class="package reveal">
+                <h3>PRECISION</h3>
+                <div class="price">$590 <span style="font-size:1rem;">/mo</span></div>
+                <ul>
+                    <li><i class="fas fa-check"></i> all MARKSMAN perks</li>
+                    <li><i class="fas fa-check"></i> 600yd lane priority</li>
+                    <li><i class="fas fa-check"></i> 2 guest passes</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Block 5: extra stats / hits counter (inspired) -->
+    <section class="block" style="padding: 4rem 5rem; background: #0f1219;">
+        <div style="display: flex; gap: 5rem; align-items: center;">
+            <div style="flex: 1;">
+                <span class="focus-line" style="font-size: 4rem; font-weight:800; color:#ffb347;">97%</span>
+                <p style="font-size: 1.5rem; margin-top: 1rem;">first-round hits rate</p>
+            </div>
+            <div style="flex: 2;">
+                <p style="font-size: 1.2rem; color:#b0b8cf;">“The only universal code is accuracy. Join the club where every trigger pull is analyzed.”</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div class="footer" id="footer">
+        <div><i class="fas fa-bullseye"></i> ECLIPSE PRECISION · EST. 2018</div>
+        <div class="cred">314 RANGE RD · +1 (800) 447-6328</div>
+        <div><i class="fas fa-crosshairs"></i> NO ROUND LEFT BEHIND</div>
+    </div>
+
+    <script>
+        (function() {
+            // Fixed header shrink on scroll
+            const header = document.getElementById('smartHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // Moving crosshair bg in hero (mouse parallax)
+            const crosshair = document.getElementById('crosshair-bg');
+            document.addEventListener('mousemove', (e) => {
+                if (!crosshair) return;
+                const x = (e.clientX / window.innerWidth - 0.5) * 40;
+                const y = (e.clientY / window.innerHeight - 0.5) * 40;
+                crosshair.style.transform = `translate(${x}px, ${y}px)`;
+            });
+
+            // Reveal on scroll (simple intersection)
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // optional: tiny extra effect – flash border?
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -20px 0px' });
+
+            reveals.forEach(r => observer.observe(r));
+
+            // Stat counters (increment when stats block becomes active)
+            const statsNumbers = document.querySelectorAll('.stat-number');
+            const statsBlock = document.getElementById('stats');
+            let counted = false;
+
+            function startCounters() {
+                if (counted) return;
+                const rect = statsBlock.getBoundingClientRect();
+                if (rect.top < window.innerHeight-100 && rect.bottom > 0) {
+                    counted = true;
+                    statsNumbers.forEach(stat => {
+                        const target = parseInt(stat.getAttribute('data-target'), 10);
+                        let current = 0;
+                        const inc = Math.ceil(target / 55); // smooth increment
+                        const timer = setInterval(() => {
+                            current += inc;
+                            if (current >= target) {
+                                stat.innerText = target;
+                                clearInterval(timer);
+                            } else {
+                                stat.innerText = current;
+                            }
+                        }, 25);
+                    });
+                }
+            }
+
+            window.addEventListener('scroll', function() {
+                if (!counted) startCounters();
+            });
+            // also try on load
+            startCounters();
+
+            // Hover ammo badge effect
+            const badge = document.querySelector('.ammo-badge');
+            if (badge) {
+                badge.addEventListener('mouseenter', () => {
+                    badge.style.backgroundColor = '#ffb347';
+                    badge.style.color = '#0b0d10';
+                });
+                badge.addEventListener('mouseleave', () => {
+                    badge.style.backgroundColor = 'transparent';
+                    badge.style.color = '#e5e9f0';
+                });
+            }
+
+            // smart focus on menu items – little underline stays
+            const navLinks = document.querySelectorAll('.nav a');
+            navLinks.forEach(link => {
+                link.classList.add('focus-line');
+            });
+
+            // small extra: pressing "ENTER THE ZONE" sets first active
+            document.querySelector('.crosshair-btn').addEventListener('click', (e) => {
+                // smooth scroll is default, but we can pre-activate counters if needed
+                setTimeout(() => startCounters(), 500);
+            });
+
+        })();
+    </script>
+    <!-- ensure all blocks reveal if not triggered -->
+    <script>
+        window.dispatchEvent(new Event('scroll'));
+    </script>
+</body>
+</html>
+All done!
+```

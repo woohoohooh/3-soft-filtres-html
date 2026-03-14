@@ -1,0 +1,652 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>observe universe · astronomy club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0f1e;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e9f1fc;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* custom glow & selection */
+        ::selection {
+            background: #b78c4c;
+            color: #0a0f1e;
+        }
+
+        /* fixed header (compact on scroll) */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 2rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.3s ease;
+            background: rgba(10, 15, 30, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(183, 140, 76, 0.2);
+        }
+
+        header.compact {
+            padding: 0.8rem 4rem;
+            background: rgba(5, 8, 18, 0.95);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(183, 140, 76, 0.4);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #fff6e5, #d4b48c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo i {
+            color: #b78c4c;
+            margin-right: 8px;
+            font-size: 2rem;
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            color: #d4a373;
+        }
+
+        nav a {
+            color: #f0e9dd;
+            text-decoration: none;
+            margin-left: 2.2rem;
+            font-weight: 500;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid transparent;
+            transition: 0.2s;
+            padding-bottom: 4px;
+        }
+
+        nav a:hover {
+            border-bottom-color: #b78c4c;
+            color: #fff4e2;
+        }
+
+        /* main spacer for fixed header */
+        .spacer {
+            height: 120px;
+        }
+
+        /* universal block padding */
+        .block {
+            padding: 5rem 4rem;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* hero — secret mission style (observatory twist) */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 80vh;
+            position: relative;
+            border-bottom: 1px solid rgba(183, 140, 76, 0.3);
+            background: radial-gradient(circle at 70% 30%, #1e2740, #0a0f1e 70%);
+        }
+
+        .hero h1 {
+            font-size: 5.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            max-width: 1000px;
+            letter-spacing: -2px;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(145deg, #e7cfa1, #ffe3b3);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+            filter: drop-shadow(0 0 18px #b78c4c80);
+        }
+
+        .hero .mission-tag {
+            font-size: 1.4rem;
+            color: #b7ae9f;
+            margin-top: 2rem;
+            max-width: 700px;
+            border-left: 4px solid #b78c4c;
+            padding-left: 2rem;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+        }
+
+        /* animated "star field" via JS (small overlay) */
+        #star-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+        }
+
+        /* block titles */
+        .block-title {
+            font-size: 3.2rem;
+            font-weight: 600;
+            margin-bottom: 3rem;
+            display: inline-block;
+            letter-spacing: -1px;
+            border-bottom: 3px solid #b78c4c;
+            padding-bottom: 0.5rem;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #f0e9dd, #c9b387);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* card grids */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+        }
+
+        /* dossier cards / secret file look */
+        .dossier-card {
+            background: rgba(18, 26, 42, 0.8);
+            backdrop-filter: blur(6px);
+            border: 1px solid #3a3f5e;
+            padding: 2rem 1.8rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 40px -20px black;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dossier-card:hover {
+            transform: translateY(-10px);
+            border-color: #b78c4c;
+            box-shadow: 0 0 30px #b78c4c40;
+        }
+
+        .dossier-card i {
+            font-size: 2.8rem;
+            color: #b78c4c;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 6px #e6b87e);
+        }
+
+        .dossier-card h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .dossier-card p {
+            color: #b7c0d0;
+            font-size: 1.2rem;
+        }
+
+        .stamp {
+            font-family: 'Courier New', monospace;
+            color: #b78c4c;
+            border: 2px solid #b78c4c;
+            border-radius: 30px;
+            padding: 0.4rem 1.4rem;
+            display: inline-block;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-top: 1.5rem;
+            font-size: 1rem;
+        }
+
+        /* COUNTDOWN / timer block (escape room vibe) */
+        .countdown-block {
+            background: #030614;
+            border-radius: 40px;
+            padding: 3rem;
+            border: 1px solid #b78c4c40;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .countdown-text {
+            font-size: 2.4rem;
+            font-weight: 300;
+        }
+
+        .countdown-timer {
+            font-size: 4.5rem;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            background: #1a1f33;
+            padding: 1rem 2.5rem;
+            border-radius: 80px;
+            letter-spacing: 8px;
+            color: #fadfad;
+            box-shadow: 0 0 30px #b78c4c;
+        }
+
+        /* stats block (crosshair / military style) */
+        .stats-grid {
+            display: flex;
+            gap: 4rem;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .stat-item {
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 5rem;
+            font-weight: 800;
+            color: #d4b48c;
+            line-height: 1;
+            filter: drop-shadow(0 0 15px currentColor);
+        }
+
+        .stat-label {
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #9da9c0;
+            border-top: 2px solid #b78c4c;
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+
+        /* hover crosshair effect (simple) */
+        .stat-item:hover .stat-number {
+            transform: scale(1.08);
+            transition: 0.2s;
+            text-shadow: 0 0 20px #b78c4c;
+        }
+
+        /* levels of difficulty / telescopic power */
+        .level-bar {
+            background: #11172b;
+            height: 24px;
+            border-radius: 30px;
+            margin: 1.5rem 0;
+            border: 1px solid #3c4260;
+            overflow: hidden;
+        }
+
+        .level-fill {
+            height: 100%;
+            width: 75%;
+            background: linear-gradient(90deg, #b78c4c, #eedbae);
+            border-radius: 30px;
+            box-shadow: 0 0 20px #ffd89a;
+        }
+
+        /* key reveal on scroll (fade + slide) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* footer */
+        footer {
+            background: #030614;
+            border-top: 1px solid #b78c4c30;
+            padding: 3rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #8088a3;
+        }
+
+        footer a {
+            color: #d4b48c;
+            text-decoration: none;
+            margin-left: 2.5rem;
+            font-size: 1.2rem;
+        }
+
+        .socials i {
+            font-size: 1.8rem;
+            margin: 0 0.8rem;
+            transition: 0.2s;
+        }
+
+        .socials i:hover {
+            color: #b78c4c;
+            text-shadow: 0 0 15px;
+        }
+
+        /* small extras */
+        .icon-large {
+            font-size: 3rem;
+            color: #b78c4c;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- FIXED HEADER (compact via js) -->
+    <header id="mainHeader">
+        <div class="logo"><i class="fas fa-meteor"></i> CELESTIAL CLUB</div>
+        <nav>
+            <a href="#quests">missions</a>
+            <a href="#countdown">countdown</a>
+            <a href="#stats">stats</a>
+            <a href="#levels">telescopes</a>
+            <a href="#membership">membership</a>
+        </nav>
+    </header>
+
+    <!-- canvas for star animation (hero) -->
+    <canvas id="star-canvas"></canvas>
+
+    <div class="spacer"></div>
+
+    <!-- BLOCK 1: HERO (secret observatory) -->
+    <section class="block hero" id="hero">
+        <div class="hero-content reveal">
+            <h1><span>OBSERVE</span> THE UNIVERSE<br>ELITE OBSERVATORY</h1>
+            <div class="mission-tag">
+                <i class="fas fa-user-secret" style="margin-right: 1rem;"></i> 
+                CLASSIFIED DOSSIER · NIGHT MISSION #OB-271
+            </div>
+            <div style="margin-top: 3rem; display: flex; gap: 2rem;">
+                <div><i class="fas fa-telescope icon-large"></i> <span style="font-size: 1.6rem;">1.6m reflector</span></div>
+                <div><i class="fas fa-cloud-moon icon-large"></i> <span style="font-size: 1.6rem;">Bortle 1 skies</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: CARDS "quests" (like escape rooms but cosmic) -->
+    <section class="block" id="quests">
+        <h2 class="block-title reveal"><i class="fas fa-galaxy"></i> COSMIC QUESTS</h2>
+        <div class="grid-3">
+            <div class="dossier-card reveal">
+                <i class="fas fa-skull"></i>
+                <h3>ANDROMEDA STATION</h3>
+                <p>Rescue the science team before the black hole consumes the sector.</p>
+                <div class="stamp"><i class="far fa-clock"></i> 60 min · 2‑6 explorers</div>
+            </div>
+            <div class="dossier-card reveal">
+                <i class="fas fa-saturn"></i>
+                <h3>RINGS OF SATURN</h3>
+                <p>Recover lost data from a Titan research lab — silence is your only ally.</p>
+                <div class="stamp"><i class="far fa-clock"></i> 75 min · 3‑5 agents</div>
+            </div>
+            <div class="dossier-card reveal">
+                <i class="fas fa-robot"></i>
+                <h3>OBSERVATORY χ</h3>
+                <p>AI has locked the dome. Recalibrate the telescope before dawn.</p>
+                <div class="stamp"><i class="far fa-clock"></i> 45 min · 2‑4 astronauts</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: COUNTDOWN (escape timer) -->
+    <section class="block" id="countdown">
+        <div class="countdown-block reveal">
+            <div class="countdown-text">
+                <i class="fas fa-hourglass-half" style="color: #b78c4c;"></i> NEXT LAUNCH WINDOW:
+            </div>
+            <div class="countdown-timer" id="timer">14:22:31</div>
+        </div>
+        <p style="margin-top: 1rem; color: #a1aaca; text-align: right; font-style: italic;">countdown to universal alignment</p>
+    </section>
+
+    <!-- BLOCK 4: STATISTICS (shooting club style but astronomy) -->
+    <section class="block" id="stats">
+        <h2 class="block-title reveal"><i class="fas fa-bullseye"></i> STELLAR STATISTICS</h2>
+        <div class="stats-grid">
+            <div class="stat-item reveal">
+                <div class="stat-number" id="counter1">347</div>
+                <div class="stat-label">deep‑sky objects</div>
+            </div>
+            <div class="stat-item reveal">
+                <div class="stat-number" id="counter2">12</div>
+                <div class="stat-label">research telescopes</div>
+            </div>
+            <div class="stat-item reveal">
+                <div class="stat-number" id="counter3">8.2k+</div>
+                <div class="stat-label">night hours</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: LEVELS OF DIFFICULTY (telescopes power) -->
+    <section class="block" id="levels">
+        <h2 class="block-title reveal"><i class="fas fa-chart-simple"></i> OBSERVATION LEVELS</h2>
+        <div class="grid-2">
+            <div class="dossier-card reveal">
+                <i class="fas fa-binoculars"></i>
+                <h3>GUIDANCE LEVEL I</h3>
+                <p>60mm refractor · lunar & planetary</p>
+                <div class="level-bar"><div class="level-fill" style="width: 40%;"></div></div>
+                <span class="stamp">easy</span>
+            </div>
+            <div class="dossier-card reveal">
+                <i class="fas fa-telescope"></i>
+                <h3>DEEP SPACE II</h3>
+                <p>14” Schmidt‑Cassegrain · nebulae</p>
+                <div class="level-bar"><div class="level-fill" style="width: 72%;"></div></div>
+                <span class="stamp">INTERMEDIATE</span>
+            </div>
+            <div class="dossier-card reveal">
+                <i class="fas fa-satellite-dish"></i>
+                <h3>RESEARCH III</h3>
+                <p>1m RC · spectroscopy · exoplanets</p>
+                <div class="level-bar"><div class="level-fill" style="width: 96%;"></div></div>
+                <span class="stamp">ADVANCED</span>
+            </div>
+            <div class="dossier-card reveal">
+                <i class="fas fa-radio"></i>
+                <h3>INTERFEROMETRY IV</h3>
+                <p>VLBI · black hole horizon</p>
+                <div class="level-bar"><div class="level-fill" style="width: 100%;"></div></div>
+                <span class="stamp">EXPERT LOCK</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 6: MEMBERSHIP (premium) -->
+    <section class="block" id="membership">
+        <h2 class="block-title reveal">🔭 MEMBERSHIP CLUB</h2>
+        <div class="grid-3">
+            <div class="dossier-card reveal">
+                <i class="fas fa-crown"></i>
+                <h3>OBSERVER</h3>
+                <p>3 nights / month · basic dome access</p>
+                <div class="stamp">$290 / month</div>
+            </div>
+            <div class="dossier-card reveal">
+                <i class="fas fa-star"></i>
+                <h3>STELLAR</h3>
+                <p>unlimited nights + astrophotography lab</p>
+                <div class="stamp">$590 / month</div>
+            </div>
+            <div class="dossier-card reveal">
+                <i class="fas fa-galaxy"></i>
+                <h3>INTERSTELLAR</h3>
+                <p>priority remote observation + events</p>
+                <div class="stamp">$990 / month</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div style="font-size: 1.2rem;">© CELESTIAL CLUB — PRIVATE OBSERVATORY</div>
+        <div class="socials">
+            <i class="fab fa-x-twitter"></i>
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-youtube"></i>
+            <i class="fas fa-envelope"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // header compact on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 60) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // canvas stars animation (hero background)
+            const canvas = document.getElementById('star-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let stars = [];
+
+            function initStars() {
+                width = window.innerWidth;
+                height = document.querySelector('.hero').offsetHeight + 200; // cover hero area
+                canvas.width = width;
+                canvas.height = height;
+
+                stars = [];
+                for (let i = 0; i < 140; i++) {
+                    stars.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 2.2 + 0.6,
+                        speed: Math.random() * 0.3 + 0.1,
+                        glow: Math.random() * 0.7 + 0.3
+                    });
+                }
+            }
+
+            function drawStars() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#ffffff';
+                for (let s of stars) {
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 245, 210, ${s.glow})`;
+                    ctx.shadowColor = '#ffedb0';
+                    ctx.shadowBlur = 10 * s.glow;
+                    ctx.fill();
+                }
+                // twinkling (simple) - move some
+                for (let s of stars) {
+                    s.y += s.speed * 0.15;
+                    if (s.y > height) {
+                        s.y = 0;
+                        s.x = Math.random() * width;
+                    }
+                }
+                requestAnimationFrame(drawStars);
+            }
+
+            window.addEventListener('resize', () => {
+                initStars();
+            });
+            initStars();
+            drawStars();
+
+            // COUNTDOWN (fake but dynamic)
+            function updateTimer() {
+                const timerEl = document.getElementById('timer');
+                if (!timerEl) return;
+                // set base countdown 14:22:31, tick backwards
+                let [h, m, s] = timerEl.innerText.split(':').map(Number);
+                s--;
+                if (s < 0) { s = 59; m--; }
+                if (m < 0) { m = 59; h--; }
+                if (h < 0) { h = 23; } // reset (dramatic effect)
+                timerEl.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            }
+            setInterval(updateTimer, 1000);
+
+            // REVEAL ON SCROLL (intersection observer)
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -10px 0px' });
+            reveals.forEach(r => observer.observe(r));
+
+            // small stat counters (fixed numbers, but we animate them on view)
+            const statNumbers = document.querySelectorAll('.stat-number');
+            const statObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.transition = 'transform 0.6s';
+                        entry.target.style.transform = 'scale(1.02)';
+                        setTimeout(() => { entry.target.style.transform = 'scale(1)'; }, 200);
+                    }
+                });
+            }, { threshold: 0.5 });
+            statNumbers.forEach(s => statObserver.observe(s));
+        })();
+    </script>
+    <!-- ensure all reveal default visible if no intersection (fallback) -->
+    <script>
+        (function secondary() {
+            // active class for reveal that might be skipped (just in case)
+            setTimeout(() => {
+                document.querySelectorAll('.reveal').forEach(el => el.classList.add('active'));
+            }, 200);
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

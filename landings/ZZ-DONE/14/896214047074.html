@@ -1,0 +1,603 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Void · tactical sanitation</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #ffffff;
+            color: #111;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll + anchor offset */
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 80px;
+        }
+
+        /* ---------- fixed header (compact on scroll) ---------- */
+        .header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 3rem;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+            z-index: 1000;
+            transition: all 0.2s cubic-bezier(0.2,0,0,1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
+        }
+
+        .header.scrolled {
+            padding: 0.8rem 3rem;
+            background: rgba(255,255,255,0.96);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.03);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: #0b2b26;
+            transition: transform 0.3s ease;
+        }
+
+        .header.scrolled .logo i {
+            transform: rotate(10deg) scale(0.95);
+        }
+
+        .nav {
+            display: flex;
+            gap: 2.8rem;
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #1a1a1a;
+            position: relative;
+            transition: 0.2s;
+        }
+
+        .nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0%;
+            height: 2.5px;
+            background: #0f4038;
+            transition: width 0.3s ease;
+        }
+
+        .nav a:hover::after {
+            width: 100%;
+        }
+
+        /* ---------- common block style ---------- */
+        .block {
+            min-height: 90vh;
+            width: 100%;
+            padding: 7rem 4rem 5rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .block:nth-child(even) {
+            background-color: #fbfbfb;
+        }
+
+        .block__inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h2 {
+            font-size: 3.8rem;
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+        }
+
+        .lead {
+            font-size: 1.5rem;
+            opacity: 0.75;
+            max-width: 780px;
+            font-weight: 380;
+            margin-bottom: 3rem;
+        }
+
+        /* ---------- animations on scroll (intersection) ---------- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px) scale(0.98);
+            transition: all 0.7s cubic-bezier(0.15, 0.9, 0.25, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* staggered children */
+        .grid-reveal > * {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .grid-reveal.active > * {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .grid-reveal.active > *:nth-child(1) { transition-delay: 0.05s; }
+        .grid-reveal.active > *:nth-child(2) { transition-delay: 0.15s; }
+        .grid-reveal.active > *:nth-child(3) { transition-delay: 0.25s; }
+        .grid-reveal.active > *:nth-child(4) { transition-delay: 0.35s; }
+        .grid-reveal.active > *:nth-child(5) { transition-delay: 0.45s; }
+        .grid-reveal.active > *:nth-child(6) { transition-delay: 0.55s; }
+
+        /* ---------- hero header animation (js driven) ---------- */
+        .hero-stats {
+            display: flex;
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 3.2rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #0b2b26;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.55;
+        }
+
+        /* floating icons (header like animation) */
+        .icon-cloud {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            margin-top: 2rem;
+            pointer-events: none;
+        }
+
+        .icon-cloud i {
+            position: absolute;
+            font-size: 2.5rem;
+            color: #1e4d44;
+            opacity: 0.15;
+            animation: float 8s infinite alternate ease-in-out;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(20px, -25px) rotate(8deg); }
+        }
+
+        /* feature grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+
+        .feat-card {
+            padding: 2rem 1.5rem;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 10px 35px -8px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            border: 1px solid #f0f0f0;
+        }
+
+        .feat-card i {
+            font-size: 2.8rem;
+            margin-bottom: 1.5rem;
+            color: #0b2b26;
+        }
+
+        .feat-card h3 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+
+        .feat-card p {
+            opacity: 0.7;
+            font-size: 1.15rem;
+        }
+
+        /* CTA */
+        .cta-button {
+            display: inline-block;
+            background: #0b2b26;
+            color: white;
+            padding: 1.2rem 3.2rem;
+            border-radius: 60px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.3rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 15px 30px -10px rgba(8, 60, 50, 0.3);
+            margin-top: 1.5rem;
+        }
+
+        .cta-button i {
+            margin-left: 10px;
+            transition: transform 0.2s;
+        }
+
+        .cta-button:hover {
+            background: #154f44;
+            box-shadow: 0 20px 35px -8px #0f4038;
+        }
+
+        .cta-button:hover i {
+            transform: translateX(6px);
+        }
+
+        /* footer */
+        .footer {
+            background: #f5f5f5;
+            padding: 2.5rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            border-top: 1px solid #ddd;
+        }
+
+        .footer-icons i {
+            font-size: 1.7rem;
+            margin-left: 1.5rem;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+            cursor: default;
+        }
+
+        .footer-icons i:hover {
+            opacity: 0.8;
+        }
+
+        /* responsive (pc only — but still fine) */
+        @media (max-width: 1000px) {
+            .block { padding: 5rem 2rem; }
+            h2 { font-size: 2.8rem; }
+            .nav { gap: 1.8rem; }
+        }
+
+        /* selected theme: * LENING FOR EXTERMINATION / disinsection * */
+        .theme-tag {
+            position: absolute;
+            top: 120px;
+            right: 4rem;
+            background: #e9f1ef;
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            font-weight: 450;
+            letter-spacing: 0.3px;
+            font-size: 0.9rem;
+        }
+
+        .stat-item i {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            color: #1f544a;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- fixed header (compact on scroll) -->
+    <header class="header" id="mainHeader">
+        <div class="logo">
+            <i class="fas fa-biohazard"></i> 
+            <span>NEUTRA®</span>
+        </div>
+        <nav class="nav">
+            <a href="#home">home</a>
+            <a href="#services">services</a>
+            <a href="#process">process</a>
+            <a href="#benefits">benefits</a>
+            <a href="#contact">contact</a>
+        </nav>
+    </header>
+
+    <!-- BLOCK 1: HOME / HERO -->
+    <section id="home" class="block" style="padding-top: 150px;">
+        <div class="block__inner">
+            <div class="reveal active" style="opacity:1; transform:none;"> <!-- manually visible, but we keep reveal for logic later -->
+                <span class="theme-tag"><i class="fas fa-skull-crosswalk" style="margin-right: 6px;"></i> urban sanitizing</span>
+                <h2 style="font-size: 5rem; max-width: 1000px;">silent. clean.<br>absolute void.</h2>
+                <div class="lead" style="font-size: 1.8rem;">professional disinsection · 24/7 emergency · biological safety</div>
+            </div>
+
+            <!-- JS animated header stats (floating numbers) -->
+            <div class="hero-stats" id="heroStats">
+                <div class="stat-item">
+                    <i class="fas fa-radiation"></i>
+                    <span class="stat-number" id="stat1">0</span>
+                    <span class="stat-label">treatments / month</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-shield-virus"></i>
+                    <span class="stat-number" id="stat2">0</span>
+                    <span class="stat-label">safe zones</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    <span class="stat-number" id="stat3">0</span>
+                    <span class="stat-label">response (min)</span>
+                </div>
+            </div>
+
+            <!-- floating background icons (header decoration) -->
+            <div class="icon-cloud" id="iconCloud">
+                <i class="fas fa-bug" style="top:10%; left:5%; animation-duration: 9s;"></i>
+                <i class="fas fa-viruses" style="top:40%; left:70%; animation-duration: 11s; font-size: 3rem;"></i>
+                <i class="fas fa-spray-can-sparkles" style="bottom:20%; left:30%; animation-duration: 7s;"></i>
+                <i class="fas fa-droplet" style="top:70%; left:15%; animation-duration: 13s;"></i>
+                <i class="fas fa-skull" style="bottom:5%; right:10%; animation-duration: 10s;"></i>
+            </div>
+
+            <a href="#contact" class="cta-button" style="margin-top: 2.5rem;">claim inspection <i class="fas fa-arrow-right"></i></a>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: SERVICES / features (grid) -->
+    <section id="services" class="block">
+        <div class="block__inner grid-reveal" id="servicesGrid">
+            <h2 class="reveal">core elimination</h2>
+            <div class="lead reveal">industrial grade · silent protocols</div>
+            <div class="features-grid">
+                <div class="feat-card">
+                    <i class="fas fa-cockroach"></i>
+                    <h3>crawling</h3>
+                    <p>targeted gels & growth regulators — complete block</p>
+                </div>
+                <div class="feat-card">
+                    <i class="fas fa-locust"></i>
+                    <h3>flying</h3>
+                    <p>UV traps, fogging & spatial repellents</p>
+                </div>
+                <div class="feat-card">
+                    <i class="fas fa-rat"></i>
+                    <h3>rodent</h3>
+                    <p>multipoint stations, exclusion & monitoring</p>
+                </div>
+                <div class="feat-card">
+                    <i class="fas fa-bed"></i>
+                    <p style="margin-top: 2rem;"><strong>bedbug heat</strong> · thermal remediation</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: PROCESS / how it works (numbered) -->
+    <section id="process" class="block">
+        <div class="block__inner reveal" id="processReveal">
+            <h2>zero trace protocol</h2>
+            <div class="lead">inspection · containment · neutralization · verification</div>
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin: 3rem 0;">
+                <div style="flex:1; min-width: 180px;"><i class="fas fa-microscope" style="font-size: 2rem;"></i><br><span style="font-size: 2rem; font-weight: 600;">01</span><p>acoustic detection & moisture scan</p></div>
+                <div style="flex:1; min-width: 180px;"><i class="fas fa-draw-polygon" style="font-size: 2rem;"></i><br><span style="font-size: 2rem; font-weight: 600;">02</span><p>physical & chemical barriers</p></div>
+                <div style="flex:1; min-width: 180px;"><i class="fas fa-wind" style="font-size: 2rem;"></i><br><span style="font-size: 2rem; font-weight: 600;">03</span><p>ULV cold fogging (odorless)</p></div>
+                <div style="flex:1; min-width: 180px;"><i class="fas fa-clipboard-check" style="font-size: 2rem;"></i><br><span style="font-size: 2rem; font-weight: 600;">04</span><p>24h validation report</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: BENEFITS / numbers & safety -->
+    <section id="benefits" class="block">
+        <div class="block__inner grid-reveal" id="benefitsGrid">
+            <h2>beyond the visible</h2>
+            <div class="lead">EPA approved · family & pet friendly</div>
+            <div style="display: flex; gap: 4rem; flex-wrap: wrap; margin-top: 2rem;">
+                <div><i class="fas fa-leaf" style="font-size: 3rem;"></i><br><h3 style="font-size: 2rem;">0</h3><p>volatile residues</p></div>
+                <div><i class="fas fa-shield-halved" style="font-size: 3rem;"></i><br><h3 style="font-size: 2rem;">12</h3><p>month guarantee</p></div>
+                <div><i class="fas fa-flask" style="font-size: 3rem;"></i><br><h3 style="font-size: 2rem;">5</h3><p>lab-tested formulas</p></div>
+                <div><i class="fas fa-clock" style="font-size: 3rem;"></i><br><h3 style="font-size: 2rem;">60'</h3><p>on‑site express</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: TESTIMONIAL (minimal) -->
+    <section class="block">
+        <div class="block__inner reveal">
+            <i class="fas fa-quote-right" style="font-size: 4rem; opacity: 0.2; margin-bottom: 1rem;"></i>
+            <p style="font-size: 2.2rem; max-width: 900px; font-weight: 400;">“completely silent. next morning zero traces. they don’t even leave smell.”</p>
+            <p style="margin-top: 2rem; font-size: 1.4rem;">— head of facilities, NEO tower</p>
+        </div>
+    </section>
+
+    <!-- BLOCK 6: AREAS covered -->
+    <section class="block">
+        <div class="block__inner grid-reveal">
+            <h2>full coverage</h2>
+            <div class="features-grid" style="grid-template-columns: repeat(4,1fr);">
+                <div><i class="fas fa-warehouse"></i>  warehouses</div>
+                <div><i class="fas fa-building"></i>  offices</div>
+                <div><i class="fas fa-hospital"></i>  medical</div>
+                <div><i class="fas fa-utensils"></i>  food industry</div>
+                <div><i class="fas fa-house-chimney"></i>  residential</div>
+                <div><i class="fas fa-hotel"></i>  hospitality</div>
+                <div><i class="fas fa-school"></i>  educational</div>
+                <div><i class="fas fa-truck"></i>  logistics</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 7: contact / CTA -->
+    <section id="contact" class="block">
+        <div class="block__inner reveal">
+            <h2>request<br>site survey</h2>
+            <div class="lead">free inspection · pressure mapping · instant quote</div>
+            <div style="display: flex; gap: 3rem; flex-wrap: wrap; align-items: center;">
+                <a href="#" class="cta-button" style="background: black;">+ book online <i class="fas fa-calendar"></i></a>
+                <span style="font-size: 1.5rem;"><i class="fas fa-phone-alt"></i> 212 · 555 · 9140</span>
+            </div>
+            <p style="margin-top: 3rem; max-width: 600px;"><i class="fas fa-envelope"></i>  sanitation@neutra.void</p>
+        </div>
+    </section>
+
+    <!-- FOOTER (block 9) -->
+    <footer class="footer">
+        <span>© 2025 NEUTRA — tactical urban sanitation</span>
+        <div class="footer-icons">
+            <i class="fab fa-twitter"></i>
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-linkedin-in"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // Fixed header compact class
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 40) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // STATS animation (counts to random target)
+            function animateStats() {
+                const stat1 = document.getElementById('stat1');
+                const stat2 = document.getElementById('stat2');
+                const stat3 = document.getElementById('stat3');
+                const targets = [347, 128, 24];  // treatments, safe zones, response min
+
+                let current1 = 0, current2 = 0, current3 = 0;
+                const step = 1;
+                const interval = 20; // ms
+                const maxSteps = 50;
+
+                function update() {
+                    if (current1 < targets[0]) {
+                        current1 = Math.min(current1 + Math.ceil(targets[0]/maxSteps), targets[0]);
+                        stat1.innerText = current1;
+                    }
+                    if (current2 < targets[1]) {
+                        current2 = Math.min(current2 + Math.ceil(targets[1]/maxSteps), targets[1]);
+                        stat2.innerText = current2;
+                    }
+                    if (current3 < targets[2]) {
+                        current3 = Math.min(current3 + Math.ceil(targets[2]/maxSteps), targets[2]);
+                        stat3.innerText = current3;
+                    }
+                    if (current1 < targets[0] || current2 < targets[1] || current3 < targets[2]) {
+                        setTimeout(update, interval);
+                    }
+                }
+                update();
+            }
+
+            // Scroll reveal (Intersection Observer)
+            const reveals = document.querySelectorAll('.reveal, .grid-reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // if it's the hero stats, trigger counting only once
+                        if (entry.target.id === 'heroStats' || entry.target.contains(document.getElementById('heroStats'))) {
+                            // but we want stats immediately on page load, but also on reveal? fine, trigger anyway.
+                        }
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '20px' });
+
+            reveals.forEach(el => observer.observe(el));
+
+            // additionally trigger stats on page load (hero always visible)
+            window.addEventListener('load', () => {
+                animateStats();
+
+                // extra floating icon animation (already in CSS)
+                // but we can also move them slightly with JS for micro-interaction
+                const cloud = document.getElementById('iconCloud');
+                if (cloud) {
+                    let icons = cloud.querySelectorAll('i');
+                    icons.forEach((icon, index) => {
+                        icon.style.animationDelay = (index * 0.3) + 's';
+                    });
+                }
+
+                // Force reveal for all visible on load (just in case)
+                reveals.forEach(r => {
+                    const rect = r.getBoundingClientRect();
+                    if (rect.top < window.innerHeight-100) {
+                        r.classList.add('active');
+                    }
+                });
+            });
+
+            // add floating class change on header animation
+            // subtle hover effect on logo
+        })();
+    </script>
+
+    <!-- ensure active class for first blocks (already visible) -->
+    <script>
+        (function secondary() {
+            // already active for reveal first
+            document.querySelectorAll('.reveal, .grid-reveal').forEach(el => {
+                if (el.getBoundingClientRect().top < window.innerHeight-50) {
+                    el.classList.add('active');
+                }
+            });
+        })();
+    </script>
+
+</body>
+</html>
+All done!
+```

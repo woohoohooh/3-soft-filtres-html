@@ -1,0 +1,752 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectrum · elite shooting experience</title>
+    <!-- Font & Icons (Google Icons + clean sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #1e1e1e;
+            line-height: 1.3;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* ===== CUSTOM CROSSHAIR / DYNAMIC ELEMENTS ===== */
+        .crosshair-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.06;
+            background-image: 
+                radial-gradient(circle at 20% 30%, #1e1e1e 1px, transparent 1px),
+                radial-gradient(circle at 80% 70%, #1e1e1e 1px, transparent 1px),
+                linear-gradient(90deg, transparent 49.9%, rgba(30,30,30,0.2) 50%, transparent 50.1%),
+                linear-gradient(0deg, transparent 49.9%, rgba(30,30,30,0.2) 50%, transparent 50.1%);
+            background-size: 40px 40px, 40px 40px, 100% 2px, 2px 100%;
+            animation: subtlePulse 6s infinite alternate;
+        }
+
+        @keyframes subtlePulse {
+            0% { opacity: 0.04; }
+            100% { opacity: 0.09; }
+        }
+
+        /* fixed smart navigation */
+        .nav-bar {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 12px 28px;
+            box-shadow: 0 15px 35px -10px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            display: flex;
+            gap: 40px;
+        }
+
+        .nav-bar.compact {
+            padding: 8px 24px;
+            background: rgba(255,255,255,0.95);
+            box-shadow: 0 10px 30px -8px rgba(0,0,0,0.15);
+        }
+
+        .nav-bar a {
+            text-decoration: none;
+            color: #1e1e1e;
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav-bar a:hover {
+            border-bottom-color: #d4af37;
+            color: #000;
+        }
+
+        /* container */
+        section {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 90px 40px;
+        }
+
+        .header-section, .footer-section {
+            max-width: none;
+            padding: 0 40px;
+        }
+
+        /* ===== HEADER (block 1) ===== */
+        .header-block {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: #ffffff;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        .header-label {
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: #d4af37;
+            border-left: 5px solid #d4af37;
+            padding-left: 20px;
+            line-height: 1;
+        }
+
+        .header-title {
+            font-size: 6rem;
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: -2px;
+        }
+
+        .header-title span {
+            color: #d4af37;
+            position: relative;
+            display: inline-block;
+        }
+
+        .header-title span::after {
+            content: '';
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            height: 12px;
+            background: rgba(212, 175, 55, 0.2);
+            z-index: -1;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 70px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 3.2rem;
+            font-weight: 700;
+            color: #1e1e1e;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #6b6b6b;
+            letter-spacing: 0.4px;
+        }
+
+        .crosshair-js {
+            margin-top: 40px;
+            width: 70px;
+            height: 70px;
+            position: relative;
+            cursor: crosshair;
+            transition: 0.2s;
+        }
+
+        .crosshair-js:hover {
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        .crosshair-js .line-h {
+            width: 70px;
+            height: 4px;
+            background: #d4af37;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 4px;
+        }
+
+        .crosshair-js .line-v {
+            height: 70px;
+            width: 4px;
+            background: #d4af37;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 4px;
+        }
+
+        /* ===== CORE BLOCKS (2-6) ===== */
+        .block-title {
+            font-size: 3.2rem;
+            font-weight: 650;
+            margin-bottom: 3rem;
+            letter-spacing: -1px;
+        }
+
+        .block-title i {
+            color: #d4af37;
+            margin-right: 15px;
+        }
+
+        /* disciplines grid */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .discipline-card {
+            background: #fbfbfb;
+            border: 1px solid #ececec;
+            padding: 40px 30px;
+            transition: all 0.25s ease;
+            box-shadow: 0 10px 25px -15px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .discipline-card:hover {
+            border-color: #d4af37;
+            transform: translateY(-8px);
+            box-shadow: 0 25px 35px -18px rgba(0,0,0,0.15);
+        }
+
+        .discipline-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 0;
+            background: #d4af37;
+            transition: height 0.2s;
+        }
+
+        .discipline-card:hover::before {
+            height: 100%;
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            color: #d4af37;
+            margin-bottom: 25px;
+        }
+
+        .discipline-card h3 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .discipline-card p {
+            color: #5f5f5f;
+            font-weight: 400;
+            font-size: 1.1rem;
+            line-height: 1.4;
+        }
+
+        /* coaches */
+        .coach-list {
+            display: flex;
+            gap: 35px;
+        }
+
+        .coach-item {
+            flex: 1;
+            background: #fafafa;
+            padding: 35px 30px;
+            border: 1px solid #eee;
+            transition: 0.2s;
+        }
+
+        .coach-item:hover {
+            background: #fff;
+            border-color: #d4af37;
+        }
+
+        .coach-item h4 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .coach-tag {
+            color: #d4af37;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .coach-desc {
+            font-size: 1.1rem;
+            color: #3a3a3a;
+        }
+
+        /* stats / counters (block with hit stats) */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            background: #f6f6f6;
+            padding: 60px 50px;
+            border-radius: 0px;
+            border: 1px solid #e2e2e2;
+        }
+
+        .hit-counter-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .hit-counter-item .num {
+            font-size: 4.5rem;
+            font-weight: 700;
+            color: #1e1e1e;
+            line-height: 1;
+        }
+
+        .hit-counter-item .label {
+            font-size: 1rem;
+            color: #7a7a7a;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        /* packages */
+        .packages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+
+        .package {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 40px 30px;
+            transition: 0.15s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.01);
+        }
+
+        .package:hover {
+            border-color: #d4af37;
+            transform: scale(1.02);
+            box-shadow: 0 18px 30px -12px rgba(0,0,0,0.1);
+        }
+
+        .package .price {
+            font-size: 3.2rem;
+            font-weight: 700;
+            margin: 25px 0 15px;
+        }
+
+        .package .price small {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #a1a1a1;
+        }
+
+        .package ul {
+            list-style: none;
+            margin-top: 25px;
+        }
+
+        .package li {
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            font-weight: 300;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .package li i {
+            color: #d4af37;
+            width: 20px;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer-block {
+            background: #f2f2f2;
+            border-top: 1px solid #dbdbdb;
+            padding: 60px 40px;
+            margin-top: 30px;
+        }
+
+        .footer-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-copy {
+            font-weight: 300;
+            color: #3a3a3a;
+        }
+
+        .footer-icons i {
+            font-size: 1.6rem;
+            margin-left: 30px;
+            color: #1e1e1e;
+            transition: 0.2s;
+        }
+
+        .footer-icons i:hover {
+            color: #d4af37;
+            transform: translateY(-4px);
+        }
+
+        /* animation on scroll (reveal) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* glow text */
+        .glow-text {
+            background: linear-gradient(145deg, #1e1e1e 0%, #d4af37 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* responsive (only desktop touch) */
+        @media (max-width: 1100px) {
+            .header-title { font-size: 5rem; }
+            .grid-3 { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="crosshair-bg"></div>
+
+    <!-- fixed navigation (compact on scroll) -->
+    <div class="nav-bar" id="mainNav">
+        <a href="#home">HOME</a>
+        <a href="#disciplines">DISCIPLINES</a>
+        <a href="#coaches">COACHES</a>
+        <a href="#stats">STATS</a>
+        <a href="#packages">PACKAGES</a>
+        <a href="#contact">CONTACT</a>
+    </div>
+
+    <!-- BLOCK 1: HEADER / hero -->
+    <section class="header-block" id="home">
+        <div class="header-content reveal">
+            <div class="header-label">SPECTRUM · PRECISION SHOOTING CLUB</div>
+            <div class="header-title">
+                ACCURACY<br>THAT <span>DEFINES</span><br>EDGE
+            </div>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="stat1">47</span>
+                    <span class="stat-label">NATIONAL TITLES</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="stat2">18</span>
+                    <span class="stat-label">OLYMPIC PODIUMS</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="stat3">6</span>
+                    <span class="stat-label">WORLD RECORDS</span>
+                </div>
+            </div>
+            <!-- interactive js crosshair animation -->
+            <div class="crosshair-js" id="crosshairAnim">
+                <div class="line-h"></div>
+                <div class="line-v"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: disciplines -->
+    <section id="disciplines">
+        <h2 class="block-title reveal"><i class="fas fa-bullseye"></i> ELITE DISCIPLINES</h2>
+        <div class="grid-3">
+            <div class="discipline-card reveal">
+                <div class="card-icon"><i class="fas fa-crosshairs"></i></div>
+                <h3>Precision rifle</h3>
+                <p>800m+ steel challenges · ballistic mastery · zero compromise</p>
+            </div>
+            <div class="discipline-card reveal">
+                <div class="card-icon"><i class="fas fa-stopwatch"></i></div>
+                <h3>Speed pistol</h3>
+                <p>IPSC / USPSA action · sub-second draws · movement dynamics</p>
+            </div>
+            <div class="discipline-card reveal">
+                <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
+                <h3>Tactical shotgun</h3>
+                <p>Multi-target · slug & buckshot · stress drills</p>
+            </div>
+            <div class="discipline-card reveal">
+                <div class="card-icon"><i class="fas fa-bolt"></i></div>
+                <h3>3-gun combat</h3>
+                <p>Transition stages · competitive edge · team challenges</p>
+            </div>
+            <div class="discipline-card reveal">
+                <div class="card-icon"><i class="fas fa-eye"></i></div>
+                <h3>Long range spotter</h3>
+                <p>Wind reading · mirage · data book precision</p>
+            </div>
+            <div class="discipline-card reveal">
+                <div class="card-icon"><i class="fas fa-history"></i></div>
+                <h3>Vintage marksmanship</h3>
+                <p>Classic firearms · iron sights · legacy series</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: coaches / trainers -->
+    <section id="coaches">
+        <h2 class="block-title reveal"><i class="fas fa-user-graduate"></i> LEAD FACILITATORS</h2>
+        <div class="coach-list">
+            <div class="coach-item reveal">
+                <h4>M. STEINER</h4>
+                <div class="coach-tag">ex‑USAMU / 12 yrs</div>
+                <div class="coach-desc">precision rifle & ballistics scientist. 3x national long‑range champion.</div>
+            </div>
+            <div class="coach-item reveal">
+                <h4>K. VOSS</h4>
+                <div class="coach-tag">world speed record holder</div>
+                <div class="coach-desc">pistol & action shooting. 15 international gold medals.</div>
+            </div>
+            <div class="coach-item reveal">
+                <h4>J. RYKER</h4>
+                <div class="coach-tag">special tactics group</div>
+                <div class="coach-desc">tactical shotgun & close quarters. former special mission unit.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: statistics / counters + hit animation -->
+    <section id="stats">
+        <h2 class="block-title reveal"><i class="fas fa-chart-line"></i> ACCURACY METRICS</h2>
+        <div class="stats-row reveal" id="counterSection">
+            <div class="hit-counter-item">
+                <span class="num" id="counter1" data-target="9876">0</span>
+                <span class="label">TARGETS HIT</span>
+            </div>
+            <div class="hit-counter-item">
+                <span class="num" id="counter2" data-target="342">0</span>
+                <span class="label">PERFECT SCORES</span>
+            </div>
+            <div class="hit-counter-item">
+                <span class="num" id="counter3" data-target="12800">0</span>
+                <span class="label">HOURS COACHING</span>
+            </div>
+            <div class="hit-counter-item">
+                <span class="num" id="counter4" data-target="100">0</span>
+                <span class="label">PRECISION RATING</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: packages / pricing -->
+    <section id="packages">
+        <h2 class="block-title reveal"><i class="fas fa-gem"></i> MEMBERSHIP TIERS</h2>
+        <div class="packages-grid">
+            <div class="package reveal">
+                <h3>MARKSMAN</h3>
+                <div class="price">$190 <small>/mo</small></div>
+                <ul>
+                    <li><i class="fas fa-check"></i> 8 range days</li>
+                    <li><i class="fas fa-check"></i> Basic ballistics lab</li>
+                    <li><i class="fas fa-check"></i> Locker & gear storage</li>
+                    <li><i class="fas fa-check"></i> Guest pass (1/mo)</li>
+                </ul>
+            </div>
+            <div class="package reveal">
+                <h3>COMPETITOR</h3>
+                <div class="price">$340 <small>/mo</small></div>
+                <ul>
+                    <li><i class="fas fa-check"></i> Unlimited range access</li>
+                    <li><i class="fas fa-check"></i> Advanced data coaching</li>
+                    <li><i class="fas fa-check"></i> Priority lane booking</li>
+                    <li><i class="fas fa-check"></i> 2 guest passes</li>
+                </ul>
+            </div>
+            <div class="package reveal">
+                <h3>ELITE</h3>
+                <div class="price">$590 <small>/mo</small></div>
+                <ul>
+                    <li><i class="fas fa-check"></i> Private coaching (4h)</li>
+                    <li><i class="fas fa-check"></i> Ammo & equipment program</li>
+                    <li><i class="fas fa-check"></i> Invitation to invitationals</li>
+                    <li><i class="fas fa-check"></i> VIP simulator & analysis</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 6: extra vibe (call to action) and footer combined? but we keep footer separate. let's add a subtle block with crosshair quote -->
+    <section id="contact" style="padding-top: 20px; padding-bottom: 20px;">
+        <div style="background: #f9f9f9; padding: 70px 50px; border: 1px solid #e0e0e0; text-align: center;" class="reveal">
+            <h2 style="font-size: 3.5rem; font-weight: 600;">READY TO <span class="glow-text">FIRE</span>?</h2>
+            <div style="font-size: 1.5rem; margin-top: 30px; letter-spacing: 2px;">BOOK YOUR ELITE EXPERIENCE · INFO@SPECTRUMSHOOTING.COM</div>
+            <div style="margin-top: 40px; display: flex; gap: 25px; justify-content: center;">
+                <i class="fas fa-phone-alt" style="color:#d4af37;"> </i> +1 (212) 555 8740
+                <i class="fas fa-location-dot" style="color:#d4af37;"> </i> 221B range road, VA
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER block 7 -->
+    <footer class="footer-block" id="footer">
+        <div class="footer-inner">
+            <div class="footer-copy">© SPECTRUM PRECISION CLUB · EST. 2012</div>
+            <div class="footer-icons">
+                <i class="fab fa-instagram"></i>
+                <i class="fab fa-x-twitter"></i>
+                <i class="fab fa-youtube"></i>
+                <i class="fas fa-bullseye"></i>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript: counters, scroll effects, compact nav, header stats update -->
+    <script>
+        (function() {
+            // ----- compact nav on scroll -----
+            const nav = document.getElementById('mainNav');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 70) {
+                    nav.classList.add('compact');
+                } else {
+                    nav.classList.remove('compact');
+                }
+            });
+
+            // ----- reveal on scroll (simple intersection) -----
+            const reveals = document.querySelectorAll('.reveal');
+            function checkReveal() {
+                for (let el of reveals) {
+                    const windowHeight = window.innerHeight;
+                    const rect = el.getBoundingClientRect();
+                    const revealPoint = 100;
+                    if (rect.top < windowHeight - revealPoint) {
+                        el.classList.add('active');
+                    } else {
+                        // optional: keep active once shown (we keep active persistent)
+                        // but we can leave it as is – we add class permanently
+                    }
+                }
+            }
+            window.addEventListener('scroll', checkReveal);
+            checkReveal();
+
+            // ----- counters (stats block) with animation on appear + header numbers animation-----
+            const headerStat1 = document.getElementById('stat1');
+            const headerStat2 = document.getElementById('stat2');
+            const headerStat3 = document.getElementById('stat3');
+            // set some random impressive numbers at start + later dynamic?
+            headerStat1.innerText = '47';
+            headerStat2.innerText = '18';
+            headerStat3.innerText = '6';
+
+            // Counters for #counterSection
+            const counters = [
+                { element: document.getElementById('counter1'), target: 9876, current: 0, increment: 80 },
+                { element: document.getElementById('counter2'), target: 342, current: 0, increment: 3 },
+                { element: document.getElementById('counter3'), target: 12800, current: 0, increment: 100 },
+                { element: document.getElementById('counter4'), target: 100, current: 0, increment: 1 }
+            ];
+
+            // initial zero
+            counters.forEach(c => c.element.innerText = '0');
+
+            let countingStarted = false;
+            function startCountersIfVisible() {
+                const statsSec = document.getElementById('counterSection');
+                if (!statsSec) return;
+                const rect = statsSec.getBoundingClientRect();
+                const isVisible = rect.top < window.innerHeight - 50 && rect.bottom > 0;
+                if (isVisible && !countingStarted) {
+                    countingStarted = true;
+                    counters.forEach(c => {
+                        let target = c.target;
+                        let inc = c.increment;
+                        let interval = setInterval(() => {
+                            c.current += inc;
+                            if (c.current >= target) {
+                                c.element.innerText = target.toLocaleString();
+                                clearInterval(interval);
+                            } else {
+                                c.element.innerText = c.current.toLocaleString();
+                            }
+                        }, 20);
+                    });
+                }
+            }
+
+            window.addEventListener('scroll', startCountersIfVisible);
+            startCountersIfVisible(); // on load
+
+            // crosshair rotation extra (on hover already from css)
+            const cross = document.getElementById('crosshairAnim');
+            if (cross) {
+                cross.addEventListener('mouseenter', () => {
+                    cross.style.transform = 'rotate(90deg) scale(1.1)';
+                });
+                cross.addEventListener('mouseleave', () => {
+                    cross.style.transform = 'rotate(0deg) scale(1)';
+                });
+            }
+
+            // additional micro-interaction: change header numbers on click (wow effect)
+            headerStat1.addEventListener('click', () => headerStat1.innerText = '48');
+            headerStat2.addEventListener('click', () => headerStat2.innerText = '19');
+            headerStat3.addEventListener('click', () => headerStat3.innerText = '7');
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

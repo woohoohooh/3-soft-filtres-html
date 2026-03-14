@@ -1,0 +1,602 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logic Puzzles · brain training (prototype)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        :root {
+            /* light mode (default) */
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --text: #0F172A;
+            --text-light: #334155;
+            --border: #E2E8F0;
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent: #38BDF8;
+            --inactive-icon: #94A3B8;
+            --nav-bg: #FFFFFF;
+            --shadow: 0 4px 12px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.05);
+            --header-border: #F1F5F9;
+            --badge-bg: #EFF6FF;
+            --badge-text: #1E40AF;
+            --progress-bg: #E2E8F0;
+        }
+
+        body.dark {
+            --bg: #0F172A;
+            --card: #1E293B;
+            --text: #E2E8F0;
+            --text-light: #CBD5E1;
+            --border: #334155;
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --accent: #38BDF8;
+            --inactive-icon: #64748B;
+            --nav-bg: #1E293B;
+            --shadow: 0 4px 12px rgba(0,0,0,0.5);
+            --header-border: #334155;
+            --badge-bg: #1E3A8A;
+            --badge-text: #BFDBFE;
+            --progress-bg: #334155;
+        }
+
+        body {
+            background: #111827;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+        }
+
+        /* phone frame */
+        .phone {
+            width: 360px;
+            height: 780px;
+            background: var(--bg);
+            border-radius: 48px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 8px #2c3e50;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.2s;
+        }
+
+        .screen-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px 16px 0 16px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--inactive-icon) transparent;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0 8px 0;
+            border-bottom: 1px solid var(--header-border);
+            margin-bottom: 16px;
+        }
+
+        .header h2 {
+            font-size: 22px;
+            font-weight: 650;
+            color: var(--text);
+            letter-spacing: -0.3px;
+        }
+
+        .profile-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            transition: background 0.1s;
+        }
+        .profile-btn:hover { background: var(--border); }
+
+        /* bottom navigation */
+        .bottom-nav {
+            background: var(--nav-bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 8px 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px 0 4px;
+            border-radius: 20px;
+            transition: transform 0.15s ease, background 0.1s;
+            color: var(--inactive-icon);
+            fill: var(--inactive-icon);
+        }
+
+        .nav-item.active {
+            fill: var(--primary);
+            color: var(--primary);
+            transform: scale(1.05);
+            background: rgba(37, 99, 235, 0.08);
+        }
+
+        .nav-item.active svg {
+            stroke: var(--primary);
+        }
+
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+
+        /* cards / elements */
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 18px 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .badge {
+            background: var(--badge-bg);
+            color: var(--badge-text);
+            font-weight: 600;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            display: inline-block;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--progress-bg);
+            border-radius: 20px;
+            margin: 12px 0 6px;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 20px;
+            transition: width 0.4s ease;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .lesson-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .lesson-item:last-child { border: none; }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+        .modal {
+            background: var(--card);
+            width: 280px;
+            padding: 24px;
+            border-radius: 32px;
+            color: var(--text);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .modal button {
+            margin-top: 16px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+
+        .icon-grid {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .achievement {
+            background: var(--card);
+            border-radius: 18px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid var(--border);
+        }
+
+        button { cursor: pointer; }
+
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 16px 20px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 18px;
+            width: 100%;
+            transition: 0.1s;
+        }
+        .btn-primary:active { background: var(--primary-dark); }
+
+        .link-row {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin: 20px 0 8px;
+            font-size: 14px;
+            color: var(--primary);
+        }
+
+        /* hide/show screens */
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        .screen.active {
+            display: flex;
+        }
+
+        /* chart mimic */
+        .chart {
+            display: flex;
+            align-items: flex-end;
+            height: 100px;
+            gap: 12px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        .bar {
+            width: 30px;
+            background: var(--primary);
+            border-radius: 12px 12px 4px 4px;
+            height: 0;
+            transition: height 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+<div class="phone" id="phoneContainer">
+    <!-- dynamic header & screens will be injected via JS -->
+    <div id="app"></div>
+    <div class="bottom-nav" id="bottomNav"></div>
+</div>
+
+<script>
+    (function() {
+        // ---------- icon system ----------
+        const icons = {
+            home: (active) => `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${active ? '#2563EB' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v11a2 2 0 0 1-2 2h-5v-8H10v8H5a2 2 0 0 1-2-2z"/></svg>`,
+            learn: (active) => `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${active ? '#2563EB' : 'currentColor'}" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
+            progress: (active) => `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${active ? '#2563EB' : 'currentColor'}" stroke-width="2"><path d="M21 12v2a9 9 0 0 1-9 9 9 9 0 0 1-9-9 9 9 0 0 1 9-9h2"/><path d="M15 9h6v6"/><circle cx="12" cy="12" r="9"/></svg>`,
+            settings: (active) => `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${active ? '#2563EB' : 'currentColor'}" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.07.08A10 10 0 0 0 12 17.66a10 10 0 0 0 6.18-2.58z"/><path d="M16.5 6.5 15 8"/><path d="M7.5 6.5 9 8"/></svg>`,
+            profile: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+            lesson: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>`,
+            chart: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21H4V4"/><path d="M7 15v4"/><path d="M11 11v8"/><path d="M15 7v12"/><path d="M19 3v16"/></svg>`,
+            flashcards: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16v12H4z"/><path d="M8 4v2"/><path d="M16 4v2"/><rect x="6" y="10" width="4" height="4"/></svg>`,
+            play: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`,
+            check: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`,
+        };
+
+        // ---------- state ----------
+        let activeScreen = 'onboarding';
+        let activeTab = 'onboarding'; // for nav highlight
+        let darkMode = false;
+        let screenshotCounter = 1;
+
+        // ---------- render root ----------
+        const appDiv = document.getElementById('app');
+        const bottomNavDiv = document.getElementById('bottomNav');
+
+        function renderBottomNav() {
+            const tabs = [
+                { id: 'home', label: 'Home', icon: icons.home },
+                { id: 'learn', label: 'Learn', icon: icons.learn },
+                { id: 'progress', label: 'Progress', icon: icons.progress },
+                { id: 'settings', label: 'Settings', icon: icons.settings }
+            ];
+            let navHtml = '';
+            tabs.forEach(tab => {
+                const isActive = (activeScreen === tab.id) || (activeScreen==='onboarding' && tab.id==='home') ? false : (activeScreen === tab.id);
+                // special: onboarding not in tabs, so only match exactly
+                const activeNow = (activeScreen === tab.id);
+                navHtml += `
+                    <button class="nav-item ${activeNow ? 'active' : ''}" data-nav="${tab.id}">
+                        ${tab.icon(activeNow)}
+                        <span>${tab.label}</span>
+                    </button>
+                `;
+            });
+            bottomNavDiv.innerHTML = navHtml;
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const navId = btn.dataset.nav;
+                    if (navId === 'home') showScreen('home');
+                    else if (navId === 'learn') showScreen('learn');
+                    else if (navId === 'progress') showScreen('progress');
+                    else if (navId === 'settings') showScreen('settings');
+                });
+            });
+        }
+
+        // ---------- show screen ----------
+        function showScreen(screenId) {
+            activeScreen = screenId;
+            renderApp();
+        }
+
+        // ---------- modals ----------
+        let modalHtml = null;
+        function closeModal() { modalHtml = null; renderApp(); }
+        function openModal(content) {
+            modalHtml = content;
+            renderApp();
+        }
+
+        // ---------- dark mode toggle ----------
+        function toggleTheme() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark', darkMode);
+            renderApp();
+        }
+
+        // ---------- simulate progress / chart animation ----------
+        function animateProgress() {
+            setTimeout(() => {
+                document.querySelectorAll('.progress-fill').forEach(el => {
+                    if (el.id === 'dailyFill') el.style.width = '65%';
+                    if (el.id === 'puzzleFill') el.style.width = '42%';
+                });
+                document.querySelectorAll('.bar').forEach((bar, idx) => {
+                    if (idx === 0) bar.style.height = '70px';
+                    if (idx === 1) bar.style.height = '45px';
+                    if (idx === 2) bar.style.height = '90px';
+                });
+            }, 200);
+        }
+
+        // ---------- main render ----------
+        function renderApp() {
+            let headerTitle = 'Welcome';
+            if (activeScreen === 'home') headerTitle = 'Home';
+            else if (activeScreen === 'learn') headerTitle = 'Logic puzzles';
+            else if (activeScreen === 'progress') headerTitle = 'Statistics';
+            else if (activeScreen === 'settings') headerTitle = 'Settings';
+            else if (activeScreen === 'onboarding') headerTitle = 'Brain training';
+
+            let contentHtml = '';
+
+            // ----- ONBOARDING -----
+            if (activeScreen === 'onboarding') {
+                contentHtml = `
+                    <div class="header">
+                        <h2>🧠 Logic Master</h2>
+                        <button class="profile-btn" id="profileBtnHeader">${icons.profile}</button>
+                    </div>
+                    <div class="card" style="text-align: center; padding: 36px 20px;">
+                        <div style="font-size: 56px; margin-bottom: 8px;">🧩</div>
+                        <h1 style="font-size: 36px; font-weight:700; color:var(--primary);">puzzl</h1>
+                        <p style="font-weight: 500; margin:8px 0 4px;">train your brain daily</p>
+                        <p style="color: var(--text-light); font-size:14px;">Short logic bursts. 5-min puzzles. Improve IQ & focus.</p>
+                        <button class="btn-primary" style="margin: 28px 0 20px;" id="getStartedBtn">Get Started</button>
+                        <div class="link-row">
+                            <span style="color:var(--primary); cursor:pointer;" id="privacyLink">Privacy</span>
+                            <span style="color:var(--primary); cursor:pointer;" id="termsLink">Terms</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // ----- HOME -----
+            if (activeScreen === 'home') {
+                contentHtml = `
+                    <div class="header">
+                        <h2>Today</h2>
+                        <button class="profile-btn" id="profileBtnHeader">${icons.profile}</button>
+                    </div>
+                    <div class="card">
+                        <div class="row"><span class="badge">🔥 streak 12 days</span><span>⭐ 340 pts</span></div>
+                        <div style="font-size: 20px; font-weight:600;">Daily challenge</div>
+                        <div class="lesson-item">
+                            ${icons.lesson} <span style="flex:1;">Match the pattern</span> ${icons.play}
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" id="dailyFill" style="width:65%"></div></div>
+                        <div style="display:flex; justify-content:space-between; margin-top: 12px;">
+                            <span>🧩 3/5 puzzles</span><span>+50 XP</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div style="font-weight:600; margin-bottom:10px;">Continue learning</div>
+                        <div class="lesson-item">${icons.flashcards} <span>Logic grids</span> <span style="color:var(--primary);">75%</span></div>
+                        <div class="lesson-item">${icons.lesson} <span>Truth tellers</span> <span style="color:var(--primary);">2/6</span></div>
+                    </div>
+                    <div class="card">
+                        <span class="badge">🧠 brain boost</span>
+                        <p style="margin-top:8px;">"Only 2% solve this — try the knight/knave puzzle"</p>
+                    </div>
+                `;
+            }
+
+            // ----- LEARN (practice) -----
+            if (activeScreen === 'learn') {
+                contentHtml = `
+                    <div class="header">
+                        <h2>Puzzles</h2>
+                        <button class="profile-btn" id="profileBtnHeader">${icons.profile}</button>
+                    </div>
+                    <div class="card">
+                        <div class="row"><span class="badge">15 new</span><span>⚡ 4 levels</span></div>
+                        <div class="lesson-item">${icons.play} <span>Nonograms (easy)</span></div>
+                        <div class="lesson-item">${icons.play} <span>Einstein's riddle</span></div>
+                        <div class="lesson-item">${icons.play} <span>Sudoku · chain</span></div>
+                        <div class="lesson-item">${icons.play} <span>Mastermind logic</span></div>
+                    </div>
+                    <div class="card">
+                        <span style="font-weight:600;">Today’s free puzzle</span>
+                        <div style="background: var(--border); padding: 12px; border-radius: 20px; margin: 12px 0;">
+                            <span>🔢 find the missing number: 3, 9, 27, ?</span>
+                        </div>
+                        <button class="btn-primary" style="padding:12px;" id="practiceBtn">show answer</button>
+                    </div>
+                `;
+            }
+
+            // ----- PROGRESS -----
+            if (activeScreen === 'progress') {
+                contentHtml = `
+                    <div class="header">
+                        <h2>Insights</h2>
+                        <button class="profile-btn" id="profileBtnHeader">${icons.profile}</button>
+                    </div>
+                    <div class="card">
+                        <div class="row"><span>🏆 rank: logic rookie</span><span>🔥 12d</span></div>
+                        <div class="stat-grid">
+                            <div class="achievement">🧩 142 puzzles</div>
+                            <div class="achievement">✅ 89% correct</div>
+                        </div>
+                        <div class="chart">
+                            <div class="bar" style="height:70px;"></div><div class="bar" style="height:45px;"></div><div class="bar" style="height:90px;"></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <span>🏅 earned badges</span>
+                        <div class="icon-grid" style="margin-top:16px;">
+                            <span>🔥 7day</span><span>⚡ speed</span><span>🧩 novice</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" id="puzzleFill" style="width:42%"></div></div>
+                    <p style="text-align:right;">42% to next level</p>
+                `;
+            }
+
+            // ----- SETTINGS / PROFILE -----
+            if (activeScreen === 'settings') {
+                contentHtml = `
+                    <div class="header">
+                        <h2>Settings</h2>
+                        <button class="profile-btn" id="profileBtnHeader">${icons.profile}</button>
+                    </div>
+                    <div class="card">
+                        <div class="row">
+                            <span>🌙 Dark mode</span>
+                            <button id="themeToggleBtn" style="background: var(--primary); border:none; color:white; padding:6px 16px; border-radius:40px;">${darkMode?'light':'dark'}</button>
+                        </div>
+                        <div class="row"><span>🔔 Notifications</span><span>on</span></div>
+                        <div class="row"><span>👤 Profile</span><span>Alex G.</span></div>
+                        <div style="margin-top:24px;">—— App version 2.6.0 ——</div>
+                    </div>
+                `;
+            }
+
+            // assemble full app
+            let fullHtml = `<div class="screen active" id="activeScreen">${contentHtml}</div>`;
+            if (modalHtml) {
+                fullHtml += `<div class="modal-overlay" id="modalOverlay"><div class="modal">${modalHtml}<button id="closeModalBtn">OK</button></div></div>`;
+            }
+
+            appDiv.innerHTML = fullHtml;
+            renderBottomNav();
+
+            // event listeners
+            document.getElementById('profileBtnHeader')?.addEventListener('click', () => showScreen('settings'));
+            document.getElementById('getStartedBtn')?.addEventListener('click', () => showScreen('home'));
+            document.getElementById('privacyLink')?.addEventListener('click', () => openModal('<h3>Privacy Policy</h3><p>We respect your data. No sharing.</p>'));
+            document.getElementById('termsLink')?.addEventListener('click', () => openModal('<h3>Terms of Service</h3><p>Keep solving puzzles fairly.</p>'));
+            document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
+            document.getElementById('practiceBtn')?.addEventListener('click', () => alert('81 (3^4)'));
+            document.getElementById('closeModalBtn')?.addEventListener('click', closeModal);
+            document.getElementById('modalOverlay')?.addEventListener('click', closeModal);
+
+            // animate chart / progress on progress screen
+            if (activeScreen === 'progress' || activeScreen === 'home') animateProgress();
+        }
+
+        // ---------- screenshot (SHIFT+W) ----------
+        window.addEventListener('keydown', (e) => {
+            if (e.shiftKey && e.key === 'W') {
+                e.preventDefault();
+                const phone = document.getElementById('phoneContainer');
+                // simplistic capture simulation (in real world would use canvas, but we just generate name)
+                let fileName = darkMode ? '6.png' : (screenshotCounter + '.png');
+                if (!darkMode && screenshotCounter <=5) fileName = screenshotCounter + '.png';
+                if (darkMode) fileName = '6.png';
+                alert(`📸 screenshot captured: ${fileName} (simulated)`);
+                if (!darkMode && screenshotCounter <5) screenshotCounter++;
+            }
+        });
+
+        // init
+        renderApp();
+
+        // expose for later increments
+        window.screenshotCounter = screenshotCounter;
+    })();
+</script>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,757 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atlas · private members club</title>
+  <!-- Font Awesome 6 (free) for icons, clean & sharp -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0c0b0e;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-weight: 300;
+      line-height: 1.5;
+      color: #e2dfe7;
+      scroll-behavior: smooth;
+    }
+
+    /* inter font via fallback, but we can load instantly */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,200;14..32,300;14..32,400;14..32,500;14..32,600&display=swap');
+
+    /* custom cursor / crosshair? subtle */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ===== fixed smart header ===== */
+    header {
+      position: fixed;
+      top: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 4rem);
+      max-width: 1280px;
+      background: rgba(18, 16, 22, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(200, 170, 100, 0.15);
+      border-radius: 60px;
+      padding: 0.6rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 999;
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.7);
+    }
+
+    header.scrolled {
+      top: 0.8rem;
+      background: rgba(10, 8, 12, 0.9);
+      border-color: rgba(220, 180, 100, 0.3);
+      padding: 0.3rem 2rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      font-size: 1.5rem;
+      letter-spacing: 2px;
+    }
+    .logo i {
+      color: #c9a96b;
+      font-size: 2rem;
+      transition: transform 1s ease;
+    }
+    .logo span {
+      background: linear-gradient(135deg, #f5e6d3 0%, #dcc29e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 600;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.8rem;
+    }
+    .nav-links a {
+      color: #ddd8e5;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 400;
+      letter-spacing: 1px;
+      transition: 0.2s;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 4px;
+    }
+    .nav-links a:hover {
+      color: #ebd3b0;
+      border-bottom-color: #c9a96b;
+    }
+    .member-tag {
+      background: rgba(201, 169, 107, 0.12);
+      padding: 0.4rem 1.4rem;
+      border-radius: 40px;
+      border: 1px solid rgba(201, 169, 107, 0.3);
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: #ebd3b0;
+      transition: 0.25s;
+      cursor: default;
+    }
+    .member-tag i {
+      margin-right: 6px;
+      color: #c9a96b;
+    }
+
+    /* ===== reveal / scroll animations base ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(38px);
+      transition: all 1s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== hero ===== */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg-pulse {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 30% 40%, #2b262f 0%, #0a0810 70%);
+      z-index: -2;
+    }
+    /* animated orbs / js */
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+    .hero-content {
+      max-width: 700px;
+    }
+    .hero-meta {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      letter-spacing: 3px;
+      color: #b99e76;
+      text-transform: uppercase;
+    }
+    .hero-meta i {
+      margin-right: 6px;
+    }
+    h1 {
+      font-size: 5.2rem;
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      background: linear-gradient(to right, #ffffff, #d8c6a8, #f0e0c4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.2rem;
+    }
+    .hero-para {
+      font-size: 1.3rem;
+      color: #b6adc2;
+      margin-bottom: 2.5rem;
+      max-width: 600px;
+      font-weight: 300;
+      border-left: 3px solid #c9a96b;
+      padding-left: 2rem;
+    }
+    .btn-group {
+      display: flex;
+      gap: 1.8rem;
+    }
+    .btn-primary {
+      background: #c9a96b;
+      border: none;
+      padding: 1rem 3rem;
+      border-radius: 50px;
+      color: #0c0b0e;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      font-size: 0.9rem;
+      transition: 0.2s;
+      cursor: default;
+      border: 1px solid #c9a96b;
+    }
+    .btn-primary i {
+      margin-right: 8px;
+    }
+    .btn-primary:hover {
+      background: transparent;
+      color: #ebd3b0;
+      border-color: #ebd3b0;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid rgba(201, 169, 107, 0.5);
+      padding: 1rem 2.5rem;
+      border-radius: 50px;
+      color: #ddd;
+      font-weight: 400;
+      transition: 0.2s;
+      cursor: default;
+    }
+    .btn-outline i {
+      margin-right: 8px;
+      color: #c9a96b;
+    }
+    .btn-outline:hover {
+      border-color: #ebd3b0;
+      color: #fff;
+    }
+
+    /* ===== block2 – dossier cards ===== */
+    .section {
+      padding: 7rem 0;
+      border-bottom: 1px solid rgba(201, 169, 107, 0.1);
+    }
+    .section-header {
+      margin-bottom: 4rem;
+    }
+    .section-tag {
+      color: #c9a96b;
+      letter-spacing: 4px;
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+    .section-header h2 {
+      font-size: 3.5rem;
+      font-weight: 400;
+      letter-spacing: -0.5px;
+      color: #f0e4d2;
+    }
+    .dossier-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+    .dossier-card {
+      background: #141118;
+      border: 1px solid #2d272f;
+      padding: 2.5rem 2rem;
+      border-radius: 32px;
+      transition: 0.25s ease;
+      box-shadow: 0 20px 30px -20px black;
+    }
+    .dossier-card:hover {
+      border-color: #c9a96b55;
+      transform: translateY(-8px);
+      background: #1b171f;
+    }
+    .card-icon {
+      font-size: 2.6rem;
+      color: #c9a96b;
+      margin-bottom: 1.8rem;
+    }
+    .dossier-card h3 {
+      font-size: 2rem;
+      font-weight: 300;
+      margin-bottom: 0.8rem;
+    }
+    .dossier-meta {
+      font-family: monospace;
+      color: #b5a48b;
+      border-bottom: 1px dashed #423d38;
+      padding-bottom: 0.8rem;
+      margin-bottom: 1rem;
+    }
+    .dossier-card p {
+      color: #b1a9bb;
+      font-size: 1rem;
+    }
+
+    /* ===== timer / countdown block ===== */
+    .countdown-block {
+      background: #0f0d12;
+      border-radius: 60px;
+      padding: 3.5rem 3rem;
+      border: 1px solid #c9a96b20;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .countdown-text h3 {
+      font-size: 2.8rem;
+      font-weight: 300;
+      margin-bottom: 0.5rem;
+    }
+    .countdown-text i {
+      color: #c9a96b;
+      margin-right: 10px;
+    }
+    .countdown-timer {
+      display: flex;
+      gap: 2rem;
+    }
+    .timer-unit {
+      text-align: center;
+      min-width: 90px;
+    }
+    .timer-unit .digit {
+      font-size: 3.8rem;
+      font-weight: 300;
+      line-height: 1;
+      background: #1e1a24;
+      padding: 1rem 0.8rem;
+      border-radius: 20px;
+      border: 1px solid #c9a96b40;
+      color: #ebd3b0;
+      margin-bottom: 8px;
+    }
+    .timer-unit .label {
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #948c9c;
+      font-size: 0.7rem;
+    }
+
+    /* ===== stats / precision ===== */
+    .stats-grid {
+      display: flex;
+      gap: 4rem;
+      justify-content: space-between;
+    }
+    .stat-item {
+      text-align: left;
+    }
+    .stat-number {
+      font-size: 5rem;
+      font-weight: 200;
+      line-height: 1;
+      background: linear-gradient(145deg, #d8bc91, #a68e66);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.2rem;
+    }
+    .stat-label {
+      letter-spacing: 3px;
+      font-size: 0.8rem;
+      color: #9b8f7a;
+    }
+    .stat-desc {
+      font-size: 0.9rem;
+      color: #b9a68c;
+    }
+
+    /* ===== level cards (sophisticated) ===== */
+    .levels {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.8rem;
+    }
+    .level-card {
+      padding: 2.8rem 2rem;
+      border: 1px solid #353035;
+      border-radius: 40px;
+      transition: 0.3s;
+      background: linear-gradient(145deg, #100e14, #18151d);
+    }
+    .level-card:hover {
+      border-color: #c9a96b;
+      box-shadow: 0 0 0 2px rgba(201, 169, 107, 0.1);
+    }
+    .level-icon {
+      font-size: 2.5rem;
+      color: #c9a96b;
+      margin-bottom: 1.5rem;
+    }
+    .level-card h4 {
+      font-size: 2rem;
+      font-weight: 300;
+      margin-bottom: 1rem;
+    }
+    .level-card ul {
+      list-style: none;
+    }
+    .level-card li {
+      margin: 0.8rem 0;
+      color: #b7adc0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .level-card li i {
+      color: #b99e76;
+      font-size: 0.8rem;
+    }
+
+    /* ===== footer ===== */
+    footer {
+      padding: 3rem 0 4rem;
+      background: #08070a;
+      border-top: 1px solid #2a232e;
+    }
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-logo i {
+      font-size: 2.5rem;
+      color: #c9a96b;
+    }
+    .footer-links {
+      display: flex;
+      gap: 3rem;
+    }
+    .footer-links a {
+      color: #a697b3;
+      text-decoration: none;
+    }
+    .footer-links a:hover {
+      color: #ebd3b0;
+    }
+    .copyright {
+      color: #5f5566;
+      font-size: 0.9rem;
+    }
+
+    /* misc */
+    .signature-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c9a96b, transparent);
+      width: 80%;
+      margin: 2rem 0;
+    }
+    i {
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <header id="main-header">
+    <div class="logo">
+      <i class="fa-regular fa-compass"></i>
+      <span>ATLAS</span>
+    </div>
+    <div class="nav-links">
+      <a href="#missions">missions</a>
+      <a href="#escape">escape</a>
+      <a href="#stats">stats</a>
+      <a href="#levels">levels</a>
+    </div>
+    <div class="member-tag"><i class="fa-regular fa-id-card"></i> private 1885</div>
+  </header>
+
+  <!-- HERO with canvas animation -->
+  <section class="hero" id="home">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-bg-pulse"></div>
+    <div class="container hero-content">
+      <div class="hero-meta reveal active">
+        <span><i class="fa-regular fa-eye"></i> CLASSIFIED</span>
+        <span><i class="fa-regular fa-map"></i> LONDON · GENEVA</span>
+      </div>
+      <h1 class="reveal active">The last<br>escape room.</h1>
+      <p class="hero-para reveal active">You are not here by accident.破解 the legacy dossier — only 24精英 spots left.</p>
+      <div class="btn-group reveal active">
+        <span class="btn-primary"><i class="fa-regular fa-pen-to-square"></i> reserve</span>
+        <span class="btn-outline"><i class="fa-regular fa-compass"></i> briefing</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 2: dossier cards (missions) -->
+  <section class="section" id="missions">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-tag"><i class="fa-regular fa-folder-open"></i> ∙ active dossiers</div>
+        <h2>classified missions</h2>
+      </div>
+      <div class="dossier-grid">
+        <div class="dossier-card reveal">
+          <div class="card-icon"><i class="fa-regular fa-gem"></i></div>
+          <h3>OBSIDIAN</h3>
+          <div class="dossier-meta">LEVEL 9 · 75 MIN</div>
+          <p>Steal the Renaissance cipher from a floating vault. 47° escape rate.</p>
+        </div>
+        <div class="dossier-card reveal">
+          <div class="card-icon"><i class="fa-regular fa-snowflake"></i></div>
+          <h3>NOVA PROTOCOL</h3>
+          <div class="dossier-meta">LEVEL 12 · 90 MIN</div>
+          <p>Cryo–lab meltdown. Only 3 teams succeeded in 2024.</p>
+        </div>
+        <div class="dossier-card reveal">
+          <div class="card-icon"><i class="fa-regular fa-compass"></i></div>
+          <h3>ATLAS FALL</h3>
+          <div class="dossier-meta">LEVEL 7 · 60 MIN</div>
+          <p>Submarine bay simulation. Pressure hull breach imminent.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 3: countdown / escape timer -->
+  <section class="section" id="escape">
+    <div class="container">
+      <div class="countdown-block reveal">
+        <div class="countdown-text">
+          <h3><i class="fa-regular fa-hourglass-half"></i> next escape window</h3>
+          <p class="section-tag" style="margin-bottom:0;">global sync · limited capacity</p>
+        </div>
+        <div class="countdown-timer" id="countdown">
+          <div class="timer-unit"><span class="digit" id="days">29</span><span class="label">days</span></div>
+          <div class="timer-unit"><span class="digit" id="hours">14</span><span class="label">hrs</span></div>
+          <div class="timer-unit"><span class="digit" id="minutes">37</span><span class="label">min</span></div>
+          <div class="timer-unit"><span class="digit" id="seconds">42</span><span class="label">sec</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 4: stats / escape record -->
+  <section class="section" id="stats">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-tag"><i class="fa-regular fa-chart-bar"></i> ∙ escape precision</div>
+        <h2>survival metrics</h2>
+      </div>
+      <div class="stats-grid reveal">
+        <div class="stat-item"><div class="stat-number">47%</div><div class="stat-label">escape rate</div><div class="stat-desc">global success</div></div>
+        <div class="stat-item"><div class="stat-number">1.9k</div><div class="stat-label">agents</div><div class="stat-desc">trained 2024</div></div>
+        <div class="stat-item"><div class="stat-number">13</div><div class="stat-label">rooms</div><div class="stat-desc">active worldwide</div></div>
+        <div class="stat-item"><div class="stat-number">112</div><div class="stat-label">clues</div><div class="stat-desc">per mission avg.</div></div>
+      </div>
+      <div class="signature-line"></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 5: levels of complexity (cards) -->
+  <section class="section" id="levels">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-tag"><i class="fa-regular fa-shield"></i> ∙ clearance levels</div>
+        <h2>choose your challenge</h2>
+      </div>
+      <div class="levels">
+        <div class="level-card reveal">
+          <div class="level-icon"><i class="fa-regular fa-key"></i></div>
+          <h4>level 3</h4>
+          <ul>
+            <li><i class="fa-regular fa-circle-check"></i> puzzle intro</li>
+            <li><i class="fa-regular fa-circle-check"></i> 45 min duration</li>
+            <li><i class="fa-regular fa-circle-check"></i> guide support</li>
+          </ul>
+        </div>
+        <div class="level-card reveal">
+          <div class="level-icon"><i class="fa-regular fa-gem"></i></div>
+          <h4>level 7</h4>
+          <ul>
+            <li><i class="fa-regular fa-circle-check"></i> narrative depth</li>
+            <li><i class="fa-regular fa-circle-check"></i> 75 min · no hints</li>
+            <li><i class="fa-regular fa-circle-check"></i> laser / motion</li>
+          </ul>
+        </div>
+        <div class="level-card reveal">
+          <div class="level-icon"><i class="fa-regular fa-skull"></i></div>
+          <h4>level 12</h4>
+          <ul>
+            <li><i class="fa-regular fa-circle-check"></i> multi-room</li>
+            <li><i class="fa-regular fa-circle-check"></i> 90 min · actor</li>
+            <li><i class="fa-regular fa-circle-check"></i> psychological</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER (block7) -->
+  <footer>
+    <div class="container footer-grid">
+      <div class="footer-logo">
+        <i class="fa-regular fa-compass"></i>
+        <span style="margin-left: 10px; font-weight: 300;">ATLAS · PRIVATE</span>
+      </div>
+      <div class="footer-links">
+        <a href="#missions">dossiers</a>
+        <a href="#escape">timer</a>
+        <a href="#levels">levels</a>
+      </div>
+      <div class="copyright">© 2025 — off‑record</div>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // fixed header shrink on scroll
+      const header = document.getElementById('main-header');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // REVEAL on scroll (Intersection Observer)
+      const reveals = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          } else {
+            // optional: remove class if you want re-animate? better keep active.
+            // but we keep them active once seen.
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+      reveals.forEach(r => observer.observe(r));
+
+      // COUNTDOWN dynamic (fake but smooth)
+      function updateCountdown() {
+        // just a stylish decreasing effect (not real deadline – stays approx)
+        let d = document.getElementById('days');
+        let h = document.getElementById('hours');
+        let m = document.getElementById('minutes');
+        let s = document.getElementById('seconds');
+        if (!d) return;
+        let days = parseInt(d.innerText) || 29;
+        let hours = parseInt(h.innerText) || 14;
+        let minutes = parseInt(m.innerText) || 37;
+        let seconds = parseInt(s.innerText) || 42;
+
+        seconds -= 1;
+        if (seconds < 0) { seconds = 59; minutes -= 1; }
+        if (minutes < 0) { minutes = 59; hours -= 1; }
+        if (hours < 0) { hours = 23; days -= 1; }
+        if (days < 0) { days = 14; hours = 8; minutes = 0; seconds = 0; } // reset cool
+
+        d.innerText = days.toString().padStart(2, '0');
+        h.innerText = hours.toString().padStart(2, '0');
+        m.innerText = minutes.toString().padStart(2, '0');
+        s.innerText = seconds.toString().padStart(2, '0');
+      }
+      setInterval(updateCountdown, 1000);
+
+      // ===== canvas animation (glowing orbs / particles) =====
+      const canvas = document.getElementById('hero-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function initParticles() {
+          const pCount = 45;
+          particles = [];
+          for (let i = 0; i < pCount; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              r: Math.random() * 2.2 + 1,
+              speedX: (Math.random() - 0.5) * 0.4,
+              speedY: (Math.random() - 0.5) * 0.2,
+              alpha: Math.random() * 0.4 + 0.2,
+              glow: Math.random() * 0.8 + 0.3,
+            });
+          }
+        }
+
+        function resizeCanvas() {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = width;
+          canvas.height = height;
+          initParticles();
+        }
+
+        function draw() {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          
+          // draw faint connecting lines near center? (like constellation)
+          ctx.strokeStyle = '#c9a96b15';
+          ctx.lineWidth = 0.5;
+          for (let i = 0; i < particles.length; i+=2) {
+            for (let j=i+1; j<particles.length; j+=3) {
+              let dx = particles[i].x - particles[j].x;
+              let dy = particles[i].y - particles[j].y;
+              let dist = Math.sqrt(dx*dx + dy*dy);
+              if (dist < 130) {
+                ctx.beginPath();
+                ctx.moveTo(particles[i].x, particles[i].y);
+                ctx.lineTo(particles[j].x, particles[j].y);
+                ctx.strokeStyle = `rgba(201, 169, 107, ${0.08 * (1 - dist/150)})`;
+                ctx.stroke();
+              }
+            }
+          }
+
+          particles.forEach(p => {
+            // update
+            p.x += p.speedX;
+            p.y += p.speedY;
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+
+            // draw glow circle
+            ctx.beginPath();
+            let gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 8);
+            gradient.addColorStop(0, `rgba(230, 200, 150, ${p.alpha})`);
+            gradient.addColorStop(0.5, `rgba(180, 140, 100, ${p.alpha*0.3})`);
+            gradient.addColorStop(1, `rgba(30, 20, 20, 0)`);
+            ctx.fillStyle = gradient;
+            ctx.arc(p.x, p.y, p.r * 7, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // core
+            ctx.beginPath();
+            ctx.fillStyle = `rgba(255, 230, 190, ${p.alpha+0.2})`;
+            ctx.arc(p.x, p.y, p.r * 1.2, 0, Math.PI*2);
+            ctx.fill();
+          });
+          requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        draw();
+      }
+
+      // extra: subtle floating icon effect (just for wow)
+      const logoIcon = document.querySelector('.logo i');
+      if (logoIcon) {
+        setInterval(() => {
+          logoIcon.style.transform = 'rotate(4deg) scale(1.05)';
+          setTimeout(() => logoIcon.style.transform = 'rotate(-2deg) scale(1)', 100);
+        }, 2500);
+      }
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

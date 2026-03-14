@@ -1,0 +1,424 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vertex Window Systems · precision · performance · design</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      color: #1e1e1e;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* inter font via fallback */
+    h1, h2, h3, .logo, .big-text { font-weight: 600; letter-spacing: -0.02em; }
+    p, li, a, .small { font-weight: 400; }
+
+    /* fixed header with smart shrink */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.6rem 2.5rem;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      transition: padding 0.25s ease, background 0.3s ease;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .header.shrink {
+      padding: 0.7rem 2.5rem;
+      background: rgba(255,255,255,0.98);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.04);
+    }
+
+    .logo {
+      font-size: 1.9rem;
+      font-weight: 650;
+      background: linear-gradient(145deg, #121212, #3a3a3a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+    .logo i { color: #2b2b2b; margin-right: 6px; -webkit-text-fill-color: initial; background: none; }
+
+    .nav a {
+      margin-left: 2.6rem;
+      text-decoration: none;
+      color: #222;
+      font-weight: 500;
+      font-size: 1.1rem;
+      transition: opacity 0.2s;
+      border-bottom: 1px solid transparent;
+    }
+    .nav a:hover { opacity: 0.6; }
+
+    /* menu icon dummy for style */
+    .menu-tag { display: flex; gap: 0.5rem; align-items: center; }
+
+    /* sections general */
+    section {
+      min-height: 85vh;
+      padding: 7rem 3rem 5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 1400px;
+      margin: 0 auto;
+      opacity: 1;
+      transition: transform 0.3s;
+    }
+
+    .section-header {
+      font-size: 3.5rem;
+      line-height: 1.1;
+      margin-bottom: 2rem;
+      font-weight: 650;
+      max-width: 900px;
+    }
+
+    .section-sub {
+      font-size: 1.4rem;
+      color: #3b3b3b;
+      max-width: 700px;
+      margin-bottom: 2.5rem;
+      font-weight: 370;
+    }
+
+    /* card / grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5rem;
+      margin-top: 2rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2.5rem;
+    }
+
+    .glass-card {
+      background: #ffffff;
+      border: 1px solid #ececec;
+      border-radius: 2.5rem;
+      padding: 2.2rem 2rem;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.03);
+      transition: all 0.3s ease;
+    }
+    .glass-card:hover {
+      box-shadow: 0 30px 40px -20px rgba(0,0,0,0.15);
+      transform: translateY(-6px);
+    }
+
+    .icon-big {
+      font-size: 2.8rem;
+      color: #1f1f1f;
+      margin-bottom: 1.5rem;
+    }
+
+    h3 { font-size: 2rem; margin-bottom: 0.8rem; }
+    .glass-card p { font-size: 1.2rem; color: #3d3d3d; }
+
+    /* hero block special */
+    .hero {
+      padding-top: 10rem;
+      background: white;
+    }
+
+    .hero .section-header {
+      font-size: 5rem;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-cta {
+      background: #0f0f0f;
+      color: white;
+      border: none;
+      padding: 1.2rem 3.2rem;
+      border-radius: 60px;
+      font-size: 1.4rem;
+      font-weight: 550;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 25px 30px -12px rgba(0,0,0,0.2);
+    }
+    .hero-cta i { margin-left: 12px; }
+    .hero-cta:hover { background: #2f2f2f; transform: scale(1.02); }
+
+    /* floating elements animation */
+    .floating-badge {
+      display: inline-block;
+      background: #f2f2f2;
+      border-radius: 100px;
+      padding: 0.4rem 1.2rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+    }
+
+    /* custom scroll reveal will be handled by intersection observer via js */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* divider */
+    hr { border: none; border-top: 1px solid #eee; width: 90%; margin: 0 auto; }
+
+    /* footer */
+    .footer {
+      background: #fafafa;
+      padding: 3rem 2.5rem 2rem 2.5rem;
+      color: #3c3c3c;
+      border-top: 1px solid #e2e2e2;
+    }
+
+    .footer-content {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: 1.2rem;
+    }
+    .footer i { color: #222; margin: 0 10px; font-size: 1.6rem; }
+
+    /* adaptive for desktop only (no mobile break) – fine as-is */
+    .stats {
+      font-size: 3rem;
+      font-weight: 650;
+    }
+
+    /* random details */
+    .tiny-border {
+      width: 70px;
+      height: 4px;
+      background: #1e1e1e;
+      margin: 2rem 0 1.5rem 0;
+    }
+
+    .list-check {
+      list-style: none;
+      font-size: 1.25rem;
+      line-height: 2.2;
+    }
+    .list-check i { margin-right: 1rem; color: #1f1f1f; }
+
+    /* header shrink js */
+    /* no mobile queries — as requested */
+  </style>
+</head>
+<body>
+
+  <!-- fixed header -->
+  <header class="header" id="mainHeader">
+    <div class="logo"><i class="fas fa-compass"></i> VERTEX</div>
+    <div class="nav">
+      <a href="#home">home</a>
+      <a href="#process">process</a>
+      <a href="#models">systems</a>
+      <a href="#why">why us</a>
+      <a href="#contact">contact</a>
+    </div>
+  </header>
+
+  <!-- block 1 / hero -->
+  <section id="home" class="hero reveal">
+    <span class="floating-badge"><i class="fas fa-sparkle"></i> since 2012 · berlin</span>
+    <h1 class="section-header" style="max-width: 1100px;">windows that breathe<br>with your space.</h1>
+    <p class="section-sub">Minimal profile. Maximum insulation. Engineered in Germany — installed anywhere in the city within 5 days.</p>
+    <div style="display: flex; gap: 2rem; align-items: center;">
+      <button class="hero-cta">free measure <i class="fas fa-arrow-right"></i></button>
+      <span style="font-size: 1.3rem; border-bottom: 2px solid black;">or call +49 30 8456 121</span>
+    </div>
+    <div style="margin-top: 4rem; display: flex; gap: 3rem;">
+      <div><span class="stats">-12°C</span> <span style="color:#555;"> bridge factor</span></div>
+      <div><span class="stats">44 dB</span> <span style="color:#555;"> acoustic shield</span></div>
+      <div><span class="stats">A++</span> <span style="color:#555;"> energy class</span></div>
+    </div>
+  </section>
+
+  <!-- block 2 / intro benefits with icons (glass) -->
+  <section id="process" class="reveal">
+    <h2 class="section-header">precision · performance · design</h2>
+    <div class="grid-3">
+      <div class="glass-card"><i class="fas fa-temperature-low icon-big"></i><h3>thermal break</h3><p>polyamide 25 mm — zero condensation, even at arctic -25°C.</p></div>
+      <div class="glass-card"><i class="fas fa-shield-alt icon-big"></i><h3>security class RC3</h3><p>multi-point locks, reinforced frame — tested against burglars.</p></div>
+      <div class="glass-card"><i class="fas fa-wind icon-big"></i><h3>hurricane proof</h3><p>designed for 240 km/h gusts. your shelter stays silent.</p></div>
+    </div>
+  </section>
+
+  <!-- block 3 / process (2 column) -->
+  <section class="reveal">
+    <div class="grid-2">
+      <div>
+        <span class="floating-badge"><i class="fas fa-clock"></i> 5‑day install</span>
+        <h2 style="font-size: 3.2rem; line-height: 1.1; margin: 1rem 0 1.5rem;">from laser scan to perfect seal.</h2>
+        <ul class="list-check">
+          <li><i class="fas fa-check-circle"></i> 3D laser measure — 0.1mm accuracy</li>
+          <li><i class="fas fa-check-circle"></i> custom profiles, any shape</li>
+          <li><i class="fas fa-check-circle"></i> silent fitting, no dust</li>
+          <li><i class="fas fa-check-circle"></i> smart home ready</li>
+        </ul>
+      </div>
+      <div class="glass-card" style="background: #f7f7f7;">
+        <i class="fas fa-ruler-combined icon-big"></i>
+        <h3>augmented reality preview</h3>
+        <p style="font-size: 1.3rem;">see your new windows in real‑time before production — using our webAR.</p>
+        <div class="tiny-border"></div>
+        <span style="font-weight: 600;">available on any device</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 4 / systems (product cards) -->
+  <section id="models" class="reveal">
+    <h2 class="section-header">three series. one clarity.</h2>
+    <div class="grid-3">
+      <div class="glass-card"><i class="fas fa-window-maximize icon-big"></i><h3>SLIM 70</h3><p>face width 70mm · invisible frame · ideal for panoramic views.</p></div>
+      <div class="glass-card"><i class="fas fa-thermometer-half icon-big"></i><h3>THERMO 86</h3><p>passive house certified · Uw ≤ 0,75 · for zero‑energy buildings.</p></div>
+      <div class="glass-card"><i class="fas fa-volume-off icon-big"></i><h3>ACOUSTIC 52</h3><p>soundproof 48 dB · triple laminated glass · for airports, avenues.</p></div>
+    </div>
+  </section>
+
+  <!-- block 5 / why us (testimonial / facts) -->
+  <section id="why" class="reveal">
+    <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+      <span class="floating-badge"><i class="fas fa-star"></i> 14 years · 4.800+ projects</span>
+      <h2 class="section-header" style="max-width: 900px;">trusted by architects, <br>specified by builders.</h2>
+      <div style="display: flex; gap: 6rem; justify-content: center; margin: 3rem 0;">
+        <div><i class="fas fa-building" style="font-size: 3rem;"></i><div style="font-weight: 700; font-size: 2rem;">240+</div><div>construction firms</div></div>
+        <div><i class="fas fa-home" style="font-size: 3rem;"></i><div style="font-weight: 700; font-size: 2rem;">3.2k</div><div>private homes</div></div>
+        <div><i class="fas fa-trophy" style="font-size: 3rem;"></i><div style="font-weight: 700; font-size: 2rem;">12</div><div>design awards</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 6 / installation details -->
+  <section class="reveal">
+    <div class="grid-2">
+      <div class="glass-card"><i class="fas fa-user-hard-hat icon-big"></i><h3>master craftsmen</h3><p>all fitters are in‑house, certified, with minimum 7 years experience.</p></div>
+      <div class="glass-card"><i class="fas fa-recycle icon-big"></i><h3>old window disposal</h3><p>we recycle 98% of materials — frames, glass & fittings.</p></div>
+    </div>
+  </section>
+
+  <!-- block 7 / guarantee -->
+  <section class="reveal">
+    <div style="background: #f3f3f3; border-radius: 3rem; padding: 4rem;">
+      <h2 class="section-header" style="margin-bottom: 0;">20 year warranty<br> on profile & colour.</h2>
+      <p class="section-sub" style="max-width: 600px;">no yellowing, no warping. ever.</p>
+      <div style="display: flex; gap: 2rem;"><i class="fas fa-leaf" style="font-size: 2rem;"></i><span>sustainable forestry certified oak effect available.</span></div>
+    </div>
+  </section>
+
+  <!-- block 8 / contact form area (no actual submit, just aesthetic) -->
+  <section id="contact" class="reveal">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2 class="section-header" style="margin-bottom: 0.5rem;">let's talk specs.</h2>
+        <p class="section-sub">on‑site consult or digital blueprint — you choose.</p>
+        <div style="font-size: 1.6rem;"><i class="fas fa-phone-alt"></i> +49 30 8456 121  <span style="margin-left: 2rem;"><i class="fas fa-envelope"></i> hallo@vertexwindow.de</span></div>
+        <div style="margin-top: 2rem;"><i class="fas fa-map-pin"></i> 7 ‑ 9 konstruktor str., 10245 berlin</div>
+      </div>
+      <div class="glass-card" style="max-width: 400px;">
+        <i class="fas fa-qrcode" style="font-size: 2.5rem;"></i>
+        <p style="font-size: 1.3rem;">scan for live catalogue & AR viewer</p>
+        <div style="width: 120px; height: 120px; background: #1e1e1e; margin: 20px 0; display: flex; align-items: center; justify-content: center; color: white; border-radius: 20px;"><i class="fas fa-camera fa-3x"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 9 / footer (9th block) -->
+  <footer class="footer">
+    <div class="footer-content">
+      <span><i class="far fa-copyright"></i> VERTEX 2025 — superior window systems</span>
+      <span>
+        <i class="fab fa-instagram"></i>
+        <i class="fab fa-x-twitter"></i>
+        <i class="fab fa-linkedin-in"></i>
+      </span>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // HEADER SHRINK ON SCROLL
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) {
+          header.classList.add('shrink');
+        } else {
+          header.classList.remove('shrink');
+        }
+      });
+
+      // REVEAL ON SCROLL (intersection observer)
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional: keep revealed
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // small extra: animate badge floating effect (no extra)
+      // also, make first block revealed immediately for better first impression
+      window.addEventListener('load', () => {
+        document.querySelector('.hero').classList.add('revealed');
+      });
+
+      // dynamic hover but that's all
+
+      // JAVASCRIPT ANIMATED BACKGROUND: subtle particle effect in header? just a simple mouse glint? no, but we can create a small floating icon animation in hero as an extra
+      const hero = document.querySelector('.hero');
+      if(hero) {
+        hero.addEventListener('mousemove', (e) => {
+          // just for fun: no heavy stuff, keep clean
+        });
+      }
+
+      // also add random "smart menu" idea: highlight anchor
+      // no need, clean
+    })();
+  </script>
+
+  <!-- subtle extra line to guarantee 9 blocks: yes: header (1) hero(2) process(3) block3(4) systems(5) why(6) install(7) guarantee(8) contact(9) footer makes 10? no: footer = 9th block (counted) header fixed, footer 9th, sections from hero to contact = 8 sections + footer = 9 blocks. done -->
+  <!-- "all blocks between header and footer = 7? hero, process, block3, systems, why, install, guarantee, contact = 8 + footer=9th block. perfect. -->
+</body>
+</html>
+```
+All done!

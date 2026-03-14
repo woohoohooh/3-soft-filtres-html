@@ -1,0 +1,628 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PitchBlack · авто-диагностика на выезде</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      color: #111;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll + anchor offset (fixed header) */
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 90px;
+    }
+
+    /* ---------- fixed header (compact on scroll) ---------- */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.5rem 5vw;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 8px 20px -10px rgba(0,0,0,0.02);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 999;
+      transition: padding 0.25s, background 0.3s, box-shadow 0.3s;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .header.scrolled {
+      padding: 0.8rem 5vw;
+      background: rgba(255,255,255,0.98);
+      box-shadow: 0 10px 30px -15px rgba(0,0,0,0.1);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .logo i {
+      color: #101010;
+      margin-right: 6px;
+      transition: transform 0.3s ease;
+    }
+
+    .header.scrolled .logo i {
+      transform: rotate(10deg) scale(0.95);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 3.2rem;
+      font-weight: 500;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #1e1e1e;
+      font-size: 1.1rem;
+      border-bottom: 1.5px solid transparent;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: #111;
+    }
+
+    /* ---------- blocks general ---------- */
+    section {
+      min-height: 80vh;
+      width: 100%;
+      padding: 5rem 5vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .block-1 { background: #ffffff; }  /* hero */
+    .block-2 { background: #fafafa; }  /* features */
+    .block-3 { background: #ffffff; }  /* process */
+    .block-4 { background: #f6f6f6; }  /* why us */
+    .block-5 { background: #ffffff; }  /* stats / gallery alternative */
+    .block-6 { background: #f4f4f4; }  /* testimonials */
+    .block-7 { background: #ffffff; }  /* pricing / cta */
+    .block-8 { background: #0b0b0b; color: #f0f0f0; }  /* contact / form */
+    .footer   { background: #000000; color: #b0b0b0; padding: 2.5rem 5vw; }
+
+    h2 {
+      font-size: 4rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 2rem;
+    }
+
+    .block-8 h2 { color: #ffffff; }
+
+    /* ---------- scroll animations (intersection observer) ---------- */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(50px);
+      transition: opacity 0.9s cubic-bezier(0.12, 0.71, 0.33, 1), transform 0.9s cubic-bezier(0.12, 0.71, 0.33, 1);
+    }
+
+    .fade-up.appear {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* hero micro‑interaction (js canvas smoke) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 700px;
+    }
+
+    /* ----- random topic pick: "выездная диагностика авто" (car diagnostic / mobile mechanic) ----- */
+    .diagnostic-tag {
+      display: inline-block;
+      background: #111;
+      color: white;
+      padding: 0.3rem 1.2rem;
+      border-radius: 40px;
+      font-weight: 500;
+      font-size: 1rem;
+      letter-spacing: 0.3px;
+      margin-bottom: 1.5rem;
+    }
+
+    /* icons with slight animation */
+    .icon-big {
+      font-size: 2.4rem;
+      color: #111;
+      transition: transform 0.2s ease-out;
+    }
+
+    .icon-big:hover {
+      transform: scale(1.07);
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      background: white;
+      padding: 2rem 2rem 2.5rem;
+      box-shadow: 0 25px 45px -25px rgba(0,0,0,0.1);
+      border: 1px solid #eee;
+      transition: box-shadow 0.4s, border-color 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: #aaa;
+      box-shadow: 0 35px 55px -28px rgba(0,0,0,0.15);
+    }
+
+    .number-stroke {
+      font-size: 3.8rem;
+      font-weight: 700;
+      color: #ddd;
+      line-height: 1;
+    }
+
+    .btn {
+      background: #111;
+      border: none;
+      color: white;
+      padding: 1rem 2.5rem;
+      font-size: 1.2rem;
+      font-weight: 500;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: 0.2s;
+      display: inline-block;
+      text-decoration: none;
+      margin-top: 2rem;
+      border: 1px solid #111;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #111;
+      border: 1px solid #111;
+    }
+
+    .btn-outline:hover {
+      background: #111;
+      color: #fff;
+    }
+
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+    }
+
+    .testi-item {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 4px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+
+    .testi-item i {
+      color: #ccc;
+      font-size: 2rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .price-card {
+      background: #fff;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      border: 1px solid #e4e4e4;
+    }
+
+    .price-card .price {
+      font-size: 3rem;
+      font-weight: 600;
+      margin: 1rem 0;
+    }
+
+    /* contact form */
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-width: 500px;
+    }
+
+    .contact-form input, .contact-form textarea {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #555;
+      padding: 1rem 0.2rem;
+      font-size: 1.2rem;
+      color: #fff;
+      outline: none;
+    }
+
+    .contact-form input::placeholder, .contact-form textarea::placeholder {
+      color: #aaa;
+      font-weight: 300;
+    }
+
+    .contact-form button {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 1.2rem;
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .contact-form button:hover {
+      background: #ddd;
+    }
+
+    /* footer */
+    .footer .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .footer i {
+      color: #fff;
+      margin-right: 1rem;
+      font-size: 1.5rem;
+    }
+
+    hr {
+      margin: 2rem 0;
+      border: 0.5px solid #222;
+    }
+
+    /* ---------- responsive (pc only, but fine) ---------- */
+    @media (max-width: 1000px) {
+      .grid-3, .testimonial-grid {
+        grid-template-columns: 1fr;
+      }
+      h2 { font-size: 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- fixed header (js will toggle .scrolled) -->
+  <header class="header" id="mainHeader">
+    <div class="logo">
+      <i class="fas fa-car-side"></i> DIAG·OUT
+    </div>
+    <div class="nav-links">
+      <a href="#hero">home</a>
+      <a href="#features">features</a>
+      <a href="#process">process</a>
+      <a href="#reviews">reviews</a>
+      <a href="#contact">contact</a>
+    </div>
+  </header>
+
+  <!-- BLOCK 1: HERO (with canvas smoke) -->
+  <section class="block-1" id="hero" style="position: relative; overflow: hidden; min-height: 85vh;">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content fade-up">
+      <span class="diagnostic-tag"><i class="fas fa-bolt" style="margin-right: 8px;"></i> mobile diagnostics · 24/7</span>
+      <h2 style="font-size: 5.2rem; max-width: 900px;">engine <br>whisperers.</h2>
+      <p style="font-size: 1.4rem; max-width: 600px; color: #333;">On‑spot vehicle diagnosis, <br>electronic systems & deep scan.</p>
+      <a href="#contact" class="btn" style="margin-top: 2.5rem;"><i class="fas fa-arrow-right" style="margin-right: 8px;"></i> book expert</a>
+    </div>
+    <div style="position: absolute; bottom: 12%; right: 5%; font-size: 1rem; color: #aaa; z-index: 5;">
+      <i class="fas fa-map-pin"></i> arrive within 40min
+    </div>
+  </section>
+
+  <!-- BLOCK 2: features / icons -->
+  <section class="block-2" id="features">
+    <div class="fade-up">
+      <h2>deep scan.<br>no guess.</h2>
+    </div>
+    <div class="grid-3 fade-up">
+      <div class="feature-card">
+        <i class="fas fa-microchip icon-big"></i>
+        <h3 style="font-size: 2rem; margin: 1.5rem 0 0.8rem;">EOBD · all makes</h3>
+        <p style="font-size: 1.1rem; color: #444;">Multibrand diagnostics, hybrid/EV high‑voltage system check.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fas fa-bolt icon-big"></i>
+        <h3 style="font-size: 2rem; margin: 1.5rem 0 0.8rem;">real‑time data</h3>
+        <p style="font-size: 1.1rem; color: #444;">Live sensor stream, compression test, battery & alternator.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fas fa-mobile-alt icon-big"></i>
+        <h3 style="font-size: 2rem; margin: 1.5rem 0 0.8rem;">digital report</h3>
+        <p style="font-size: 1.1rem; color: #444;">PDF summary + fault codes explanation right on your phone.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 3: process (how we work) -->
+  <section class="block-3" id="process">
+    <h2 class="fade-up">30‑min<br>full autopsy.</h2>
+    <div style="display: flex; gap: 4rem; flex-wrap: wrap;" class="fade-up">
+      <div style="flex:1; min-width: 200px;">
+        <div class="number-stroke">01</div>
+        <h3 style="font-size: 1.8rem; margin: 1rem 0;">arrival</h3>
+        <p style="font-size: 1.2rem;">we come to your location with pro gear.</p>
+      </div>
+      <div style="flex:1; min-width: 200px;">
+        <div class="number-stroke">02</div>
+        <h3 style="font-size: 1.8rem; margin: 1rem 0;">deep link</h3>
+        <p style="font-size: 1.2rem;">connect to OBD2 / CAN / direct ECU.</p>
+      </div>
+      <div style="flex:1; min-width: 200px;">
+        <div class="number-stroke">03</div>
+        <h3 style="font-size: 1.8rem; margin: 1rem 0;">clear report</h3>
+        <p style="font-size: 1.2rem;">you get plain‑english verdict + options.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 4: why us (icons) -->
+  <section class="block-4" id="why">
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: center;">
+      <div style="flex: 1; min-width: 260px;" class="fade-up">
+        <h2 style="font-size: 3.2rem;">no dealer <br>prices.</h2>
+      </div>
+      <div style="flex: 2; min-width: 300px;" class="fade-up">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+          <div><i class="fas fa-shield-alt icon-big"></i> <strong style="font-size:1.4rem;">2yr warranty</strong> on diagnosis</div>
+          <div><i class="fas fa-tachometer-alt icon-big"></i> <strong style="font-size:1.4rem;">180+ points</strong> scan</div>
+          <div><i class="fas fa-clock icon-big"></i> <strong style="font-size:1.4rem;">same day</strong> appointment</div>
+          <div><i class="fas fa-tools icon-big"></i> <strong style="font-size:1.4rem;">no fix, no fee</strong> </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 5: stats / alternative visual (animated counters but we do simple js later) -->
+  <section class="block-5" id="stats">
+    <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 2rem;" class="fade-up">
+      <div style="text-align: center;">
+        <span class="number-stroke" style="font-size:5rem;" id="stat1">0</span>
+        <p style="font-size: 1.2rem;">diagnostics / month</p>
+      </div>
+      <div style="text-align: center;">
+        <span class="number-stroke" style="font-size:5rem;" id="stat2">0</span>
+        <p style="font-size: 1.2rem;">franchised shops</p>
+      </div>
+      <div style="text-align: center;">
+        <span class="number-stroke" style="font-size:5rem;" id="stat3">0</span>
+        <p style="font-size: 1.2rem;">error‑free fixes</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 6: testimonials -->
+  <section class="block-6" id="reviews">
+    <h2 class="fade-up">drivers<br>trust us.</h2>
+    <div class="testimonial-grid fade-up">
+      <div class="testi-item"><i class="fas fa-quote-right"></i>“Found an intermittent fault that dealer missed. Unreal.” <br>— <strong>M. Köhler</strong> <span style="color:#999;">, Audi RS6</span></div>
+      <div class="testi-item"><i class="fas fa-quote-right"></i>“Came to my office, 20min full report. 10/10” <br>— <strong>E. Novak</strong> <span style="color:#999;">, Tesla M3</span></div>
+      <div class="testi-item"><i class="fas fa-quote-right"></i>“Saved me towing costs. Quick & super clear.” <br>— <strong>J. Voss</strong> <span style="color:#999;">, Transit</span></div>
+      <div class="testi-item"><i class="fas fa-quote-right"></i>“Hybrid battery health check – they knew more than dealer.” <br>— <strong>L. Park</strong> <span style="color:#999;">, Kia Niro</span></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 7: pricing / call to action -->
+  <section class="block-7" id="pricing">
+    <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+      <div style="flex: 1;" class="fade-up">
+        <h2 style="font-size: 3.2rem;">flat rate<br>diagnostic.</h2>
+        <div class="price-card" style="max-width: 340px;">
+          <i class="fas fa-search" style="font-size:2.5rem;"></i>
+          <div class="price">€49</div>
+          <p style="font-size: 1rem;">passenger cars / light trucks</p>
+          <p><i class="fas fa-check"></i> on‑site, within 15km free travel</p>
+          <button class="btn" style="margin-top:0; width:100%;">book now</button>
+        </div>
+      </div>
+      <div style="flex: 1; align-self: center;" class="fade-up">
+        <p style="font-size: 1.6rem; font-weight: 300;">fleet & b2b –<br>volume discounts.</p>
+        <i class="fas fa-arrow-down" style="font-size:2rem;"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 8: dark contact area -->
+  <section class="block-8" id="contact">
+    <div style="display: flex; gap: 4rem; flex-wrap: wrap;">
+      <div class="fade-up" style="flex:1;">
+        <h2 style="font-size: 4rem;">call<br>or drive.</h2>
+        <p style="font-size: 1.3rem; color:#ccc; margin-top: 1.5rem;"><i class="fas fa-phone-alt"></i> +49 30 1234 5678 <br>24/7 dispatch</p>
+      </div>
+      <div class="fade-up" style="flex:1;">
+        <form class="contact-form" id="simpleForm">
+          <input type="text" placeholder="name" required>
+          <input type="text" placeholder="phone / plate (opt)">
+          <textarea rows="2" placeholder="tell us about issue"></textarea>
+          <button type="button" onclick="alert('demo · we call you back (mock)');">request callback <i class="fas fa-paper-plane"></i></button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER block 9 -->
+  <footer class="footer">
+    <div class="row">
+      <span><i class="fas fa-copyright"></i> DIAG·OUT 2025 — mobile vehicle forensics</span>
+      <span>
+        <i class="fab fa-instagram"></i>
+        <i class="fab fa-x-twitter"></i>
+        <i class="fab fa-linkedin-in"></i>
+      </span>
+    </div>
+    <hr>
+    <div style="display: flex; gap: 3rem; font-size: 0.95rem;">
+      <span>imprint</span><span>privacy</span><span>terms</span><span>cookies</span>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // HEADER COMPACT ON SCROLL
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // ---------- CANVAS SMOKE / FLOATING DOTS (hero background effect) ----------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        const pCount = 50;
+        particles = [];
+        for (let i = 0; i < pCount; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: 3 + Math.random() * 12,
+            speedX: (Math.random() - 0.5) * 0.2,
+            speedY: (Math.random() - 0.5) * 0.1,
+            opacity: 0.04 + Math.random() * 0.08,
+          });
+        }
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(0, 0, 0, ${p.opacity})`;
+          ctx.fill();
+          // move
+          p.x += p.speedX;
+          p.y += p.speedY;
+          // wrap
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        });
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        initParticles();
+      });
+      initParticles();
+      drawParticles();
+
+      // ---------- FADE UP SCROLL INTERSECTION ----------
+      const faders = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('appear');
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px' });
+
+      faders.forEach(f => observer.observe(f));
+
+      // ---------- SIMPLE COUNTER ANIMATION (block 5) ONCE VISIBLE ----------
+      const statBlock = document.getElementById('stats');
+      let animated = false;
+      const stat1 = document.getElementById('stat1');
+      const stat2 = document.getElementById('stat2');
+      const stat3 = document.getElementById('stat3');
+
+      function animateNumbers() {
+        if (animated) return;
+        animated = true;
+        let val1 = 0, val2 = 0, val3 = 0;
+        const target1 = 3470, target2 = 86, target3 = 98;
+        const step = () => {
+          let done = true;
+          if (val1 < target1) { val1 += 37; if (val1 > target1) val1 = target1; done = false; }
+          if (val2 < target2) { val2 += 1; if (val2 > target2) val2 = target2; done = false; }
+          if (val3 < target3) { val3 += 1; if (val3 > target3) val3 = target3; done = false; }
+          stat1.innerText = val1.toLocaleString();
+          stat2.innerText = val2;
+          stat3.innerText = val3 + '%';
+          if (!done) requestAnimationFrame(step);
+        };
+        step();
+      }
+
+      const statObserver = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            animateNumbers();
+            statObserver.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      statObserver.observe(statBlock);
+    })();
+  </script>
+  <script>
+    // ensure any extra: just demo mock alert override
+    document.querySelectorAll('.btn').forEach(btn => {
+      if (!btn.hasAttribute('data-listener')) {
+        btn.setAttribute('data-listener', 'true');
+        btn.addEventListener('click', (e) => {
+          if (btn.closest('#pricing') || btn.innerText.includes('book now')) {
+            e.preventDefault();
+            alert('⚡ demo: redirect to booking (mock)');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
+```
+All done!

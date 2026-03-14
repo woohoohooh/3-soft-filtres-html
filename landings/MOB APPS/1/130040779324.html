@@ -1,0 +1,638 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashLearn · prototype</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        :root {
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --text: #0F172A;
+            --text-light: #334155;
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent: #38BDF8;
+            --border: #E2E8F0;
+            --grey-icon: #94A3B8;
+            --grey-light: #CBD5E1;
+            --shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.02);
+            --header-height: 56px;
+            --bottom-nav-height: 72px;
+        }
+
+        body.dark {
+            --bg: #0F172A;
+            --card: #1E293B;
+            --text: #E2E8F0;
+            --text-light: #94A3B8;
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --accent: #38BDF8;
+            --border: #334155;
+            --grey-icon: #64748B;
+            --grey-light: #475569;
+            --shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+        }
+
+        body {
+            background: #1a1f2b;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 16px;
+        }
+
+        /* phone container */
+        .phone {
+            width: 360px;
+            height: 780px;
+            background-color: var(--bg);
+            border-radius: 44px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3), 0 0 0 8px #2d313a;
+            position: relative;
+            transition: background-color 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* status bar placeholder (tiny) */
+        .status-bar {
+            height: 28px;
+            background: transparent;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-light);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* main content flex column */
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        .screen-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 16px 8px 16px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--grey-light) transparent;
+        }
+
+        .screen-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .screen-container::-webkit-scrollbar-thumb {
+            background: var(--grey-light);
+            border-radius: 8px;
+        }
+
+        /* header */
+        .header {
+            height: var(--header-height);
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: var(--card);
+        }
+
+        .header .title {
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--text);
+        }
+
+        .profile-icon {
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 12px;
+            transition: background 0.1s;
+        }
+        .profile-icon:hover { background: var(--grey-light); }
+
+        /* bottom navigation */
+        .bottom-nav {
+            height: var(--bottom-nav-height);
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 20px;
+            transition: all 0.15s ease;
+            flex: 1;
+            color: var(--grey-icon);
+            fill: var(--grey-icon);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            fill: var(--primary);
+            background: rgba(37, 99, 235, 0.08);
+            transform: scale(1.02);
+        }
+
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform 0.1s;
+        }
+        .nav-item.active svg {
+            transform: scale(1.15);
+            stroke: var(--primary);
+        }
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .nav-item.active span { color: currentColor; font-weight: 600; }
+
+        /* card styles */
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 18px 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .flex-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            background: var(--accent);
+            color: #0F172A;
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--grey-light);
+            border-radius: 20px;
+            margin: 12px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            border-radius: 20px;
+            transition: width 0.2s;
+        }
+
+        /* modal */
+        .modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background: var(--card);
+            width: 280px;
+            padding: 24px;
+            border-radius: 32px;
+            text-align: center;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .modal-content button {
+            margin-top: 20px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 8px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .hidden { display: none; }
+
+        /* buttons */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 18px;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 8px 14px -6px var(--primary-dark);
+        }
+        .btn-primary:active { transform: scale(0.98); background: var(--primary-dark); }
+
+        .link-row {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: var(--grey-icon);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* chart dummy */
+        .chart-placeholder {
+            display: flex;
+            align-items: flex-end;
+            height: 80px;
+            gap: 10px;
+            margin: 20px 0 10px;
+        }
+        .bar {
+            flex: 1;
+            background: var(--primary);
+            height: calc(30% + 10px);
+            border-radius: 12px 12px 4px 4px;
+            opacity: 0.8;
+            animation: barGrow 0.4s ease;
+        }
+        @keyframes barGrow { from { height: 5px; } to { height: var(--h); } }
+
+        /* lesson row */
+        .lesson-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .lesson-item:last-child { border: none; }
+
+        /* toggle */
+        .switch { display: flex; align-items: center; gap: 16px; }
+        .toggle-btn {
+            background: var(--grey-light);
+            width: 52px; height: 28px;
+            border-radius: 40px;
+            padding: 3px;
+            cursor: pointer;
+        }
+        .toggle-knob {
+            width: 22px; height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.1s;
+        }
+        .dark .toggle-knob { transform: translateX(24px); background: var(--primary); }
+
+        /* small icons */
+        .icon-svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
+    </style>
+</head>
+<body>
+<div class="phone" id="phoneContainer">
+    <div class="app" id="app">
+        <!-- header will be rewritten per screen -->
+        <div class="header" id="appHeader">
+            <div class="title" id="headerTitle">FlashLearn</div>
+            <div class="profile-icon" id="profileBtn"><?xml version="1.0"?><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/><path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/></svg></div>
+        </div>
+
+        <!-- dynamic screen container -->
+        <div class="screen-container" id="screenRoot"></div>
+
+        <!-- bottom nav (4 items) -->
+        <div class="bottom-nav" id="bottomNav">
+            <div class="nav-item" data-screen="home"><svg viewBox="0 0 24 24"><path d="M3 10 L12 3 L21 10 L21 21 L15 21 L15 15 L9 15 L9 21 L3 21 L3 10 Z"/></svg><span>Home</span></div>
+            <div class="nav-item" data-screen="learn"><svg viewBox="0 0 24 24"><path d="M2 3 L12 3 L12 21 L2 21 Z M12 7 L22 7 L22 21 L12 21 Z"/><path d="M7 7 L7 12 M17 7 L17 12"/></svg><span>Learn</span></div>
+            <div class="nav-item" data-screen="progress"><svg viewBox="0 0 24 24"><path d="M21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span>Progress</span></div>
+            <div class="nav-item" data-screen="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82L12 22z"/><path d="M4.6 9a1.65 1.65 0 0 0-.33 1.82c.26.61.86.99 1.51 1h12.44a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82L12 2z"/></svg><span>Settings</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- modal container -->
+<div id="modalContainer" class="hidden"></div>
+
+<script>
+    (function() {
+        // ---------- app state ----------
+        const SCREENS = ['onboarding', 'home', 'learn', 'progress', 'settings'];
+        let currentScreen = 'onboarding';    // first screen
+        let darkMode = false;
+        let screenshotCounter = 1;
+
+        // ---------- icons as inline strings (svg) ----------
+        const icons = {
+            profile: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/><path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/></svg>',
+            lesson: '<svg viewBox="0 0 24 24"><path d="M2 3 L12 3 L12 21 L2 21 Z M12 7 L22 7 L22 21 L12 21 Z"/></svg>',
+            chart: '<svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+            flashcards: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
+            play: '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>',
+            check: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'
+        };
+
+        // ---------- render functions per screen (return HTML string) ----------
+        function renderOnboarding() {
+            return `
+                <div class="card" style="text-align: center; padding: 32px 20px;">
+                    <div style="background: var(--primary); width: 72px; height: 72px; border-radius: 24px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="44" height="44" viewBox="0 0 24 24" stroke="white" stroke-width="2" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <h1 style="font-size: 32px; margin-bottom: 8px;">FlashLearn</h1>
+                    <div style="color: var(--primary); font-weight: 600; margin-bottom: 12px;">flashcards · science</div>
+                    <p style="margin-bottom: 24px;">Daily science facts & brain training. Master 5 new cards every day.</p>
+                    <button class="btn-primary" id="startOnboarding">Get Started →</button>
+                    <div class="link-row">
+                        <span id="privacyLink">Privacy Policy</span>
+                        <span id="termsLink">Terms of Service</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderHome() {
+            return `
+                <div class="card">
+                    <div class="flex-row"><span class="badge">streak 12 days</span><span>🔥</span></div>
+                    <h3 style="margin: 16px 0 8px;">Continue learning</h3>
+                    <div class="lesson-item"><span style="flex:1;">⚡ Science facts</span> <span>80%</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:80%"></div></div>
+                    <div class="lesson-item"><span style="flex:1;">🧠 Brain training</span> <span>45%</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:45%"></div></div>
+                    <button class="btn-primary" style="margin-top: 16px; font-size:16px;" id="homeToLearn">Practice now</button>
+                </div>
+                <div class="card">
+                    <div class="flex-row"><span style="font-weight: 600;">Today's flashcards</span> ${icons.flashcards}</div>
+                    <div class="lesson-item"><span>💡 Did stars twinkle?</span> <span>🤔</span></div>
+                    <div class="lesson-item"><span>🌍 Earth's core temp</span> <span>🌡️</span></div>
+                </div>
+            `;
+        }
+
+        function renderLearn() {
+            return `
+                <div class="card">
+                    <h3>Science flashcards</h3>
+                    <div class="lesson-item">${icons.lesson} <span>Astronomy pack</span> <span class="badge">NEW</span></div>
+                    <div class="lesson-item">${icons.lesson} <span>Human body</span> <span>4/10</span></div>
+                    <div class="lesson-item">${icons.lesson} <span>Physics quiz</span> <span>🔒</span></div>
+                </div>
+                <div class="card">
+                    <h4>Recommended</h4>
+                    <div style="display: flex; gap:10px; margin:12px 0">
+                        <span class="badge">🧠 memory</span>
+                        <span class="badge">⚡ quick</span>
+                    </div>
+                    <div class="lesson-item"><span>Daily 5</span> ${icons.play}</div>
+                </div>
+                <button class="btn-primary" style="font-size:16px;" id="startPractice">start practice</button>
+            `;
+        }
+
+        function renderProgress() {
+            return `
+                <div class="card">
+                    <div class="flex-row"><span>This week</span> ${icons.chart}</div>
+                    <div class="chart-placeholder">
+                        <div class="bar" style="height: 40px;"></div><div class="bar" style="height: 65px;"></div><div class="bar" style="height: 28px;"></div><div class="bar" style="height: 80px;"></div><div class="bar" style="height: 52px;"></div>
+                    </div>
+                    <div class="flex-row"><span>cards learned</span> <strong>324</strong></div>
+                </div>
+                <div class="card">
+                    <span>Achievements</span>
+                    <div style="display:flex; gap:12px; margin-top:12px;">
+                        <span>🏅 7 day streak</span> <span>⭐ 50 cards</span> <span>🔥 scholar</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSettings() {
+            return `
+                <div class="card">
+                    <div class="flex-row"><span>Dark mode</span>
+                        <div class="toggle-btn" id="darkToggle"><div class="toggle-knob"></div></div>
+                    </div>
+                    <div style="margin: 24px 0;">Profile: Alex</div>
+                    <button class="btn-primary" id="resetOnboarding" style="font-size:14px;">Show onboarding</button>
+                </div>
+                <div class="card">
+                    <span>About · v1.0</span>
+                </div>
+            `;
+        }
+
+        // ---------- update screen & header ----------
+        function showScreen(screenId) {
+            currentScreen = screenId;
+            const container = document.getElementById('screenRoot');
+            const headerTitle = document.getElementById('headerTitle');
+            if (!container) return;
+
+            if (screenId === 'onboarding') {
+                headerTitle.innerText = 'Welcome';
+                container.innerHTML = renderOnboarding();
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            } else {
+                // update header title
+                const titles = { home: 'Home', learn: 'Learn', progress: 'Progress', settings: 'Settings' };
+                headerTitle.innerText = titles[screenId] || 'FlashLearn';
+                // render screen
+                if (screenId === 'home') container.innerHTML = renderHome();
+                else if (screenId === 'learn') container.innerHTML = renderLearn();
+                else if (screenId === 'progress') container.innerHTML = renderProgress();
+                else if (screenId === 'settings') container.innerHTML = renderSettings();
+
+                // update active bottom nav
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    const data = item.getAttribute('data-screen');
+                    if (data === screenId) item.classList.add('active');
+                    else item.classList.remove('active');
+                });
+            }
+
+            // re-attach listeners (for dynamic buttons)
+            attachScreenListeners();
+        }
+
+        // ---------- attach listeners after content change ----------
+        function attachScreenListeners() {
+            // onboarding start
+            const startBtn = document.getElementById('startOnboarding');
+            if (startBtn) startBtn.addEventListener('click', () => showScreen('home'));
+
+            // home -> learn button
+            const homeToLearn = document.getElementById('homeToLearn');
+            if (homeToLearn) homeToLearn.addEventListener('click', () => showScreen('learn'));
+
+            // startPractice from learn
+            const practiceBtn = document.getElementById('startPractice');
+            if (practiceBtn) practiceBtn.addEventListener('click', ()=> alert('practice started (demo)'));
+
+            // reset onboarding from settings
+            const resetBtn = document.getElementById('resetOnboarding');
+            if (resetBtn) resetBtn.addEventListener('click', ()=> showScreen('onboarding'));
+
+            // privacy / terms modals
+            const privacy = document.getElementById('privacyLink');
+            const terms = document.getElementById('termsLink');
+            if (privacy) privacy.addEventListener('click', ()=> showModal('Privacy Policy', 'We value your privacy. (demo)'));
+            if (terms) terms.addEventListener('click', ()=> showModal('Terms of Service', 'Standard terms for demo.'));
+
+            // dark toggle in settings
+            const toggleDiv = document.getElementById('darkToggle');
+            if (toggleDiv) {
+                toggleDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    darkMode = !darkMode;
+                    document.body.classList.toggle('dark', darkMode);
+                    // update knob position via class on body? body.dark already transforms knob using css
+                    // force reflow: just toggle
+                });
+            }
+        }
+
+        // modal system
+        function showModal(title, text) {
+            const modalDiv = document.createElement('div');
+            modalDiv.className = 'modal';
+            modalDiv.innerHTML = `<div class="modal-content"><h3>${title}</h3><p style="margin:16px 0;">${text}</p><button id="closeModalBtn">Close</button></div>`;
+            document.body.appendChild(modalDiv);
+            document.getElementById('closeModalBtn').addEventListener('click', ()=> modalDiv.remove());
+            modalDiv.addEventListener('click', (e) => { if(e.target === modalDiv) modalDiv.remove(); });
+        }
+
+        // ---------- bottom nav listeners ----------
+        function initBottomNav() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const screen = item.getAttribute('data-screen');
+                    if (screen) showScreen(screen);
+                });
+            });
+        }
+
+        // profile button (header) -> settings
+        document.getElementById('profileBtn').addEventListener('click', ()=> showScreen('settings'));
+
+        // ---------- screenshot (SHIFT+W) ----------
+        window.addEventListener('keydown', (e) => {
+            if (e.shiftKey && e.key === 'W') {
+                e.preventDefault();
+                const phone = document.getElementById('phoneContainer');
+                // rough: use html2canvas? but we cannot include library. fallback: alert with numbered png.
+                // given constraints, we simulate by alert & instructions.
+                let filename = screenshotCounter + '.png';
+                if (darkMode && screenshotCounter === 1) filename = '6.png';   // dark first shot becomes 6
+                else if (darkMode) filename = '6.png'; // just for demo, but we follow rule
+                // better: sequential, but if dark, name 6.png (first dark), else 1..5
+                // we keep simple: if darkMode active, screenshot always 6.png
+                if (darkMode) filename = '6.png';
+                else filename = screenshotCounter + '.png';
+                alert(`📸 Screenshot saved as ${filename} (simulated)`);
+                screenshotCounter = (screenshotCounter % 5) + 1;  // cycle 1-5
+            }
+        });
+
+        // ---------- initial render ----------
+        showScreen('onboarding');
+        initBottomNav();
+
+        // ---------- final: output json (in console, plus we attach to window for final answer) ----------
+        window.playStoreTitles = {
+            "1.png": "Start Learning",
+            "2.png": "Daily Lessons",
+            "3.png": "Practice Skills",
+            "4.png": "Track Progress",
+            "5.png": "Smart Settings",
+            "6.png": "Dark Theme"
+        };
+        // also print at bottom as requested.
+        console.log('titles =', window.playStoreTitles);
+    })();
+</script>
+
+<script>
+    // ensure JSON is output at the very end (on page, not just console)
+    (function() {
+        const jsonOutput = `titles = {
+    "1.png": "Start Learning",
+    "2.png": "Daily Lessons",
+    "3.png": "Practice Skills",
+    "4.png": "Track Progress",
+    "5.png": "Smart Settings",
+    "6.png": "Dark Theme"
+}`;
+        // create a hidden pre element?
+        const pre = document.createElement('pre');
+        pre.style.position = 'absolute';
+        pre.style.bottom = '0';
+        pre.style.right = '0';
+        pre.style.background = '#111';
+        pre.style.color = '#0f0';
+        pre.style.fontSize = '10px';
+        pre.style.padding = '4px';
+        pre.style.zIndex = '9999';
+        pre.textContent = jsonOutput;
+        document.body.appendChild(pre);
+        // also final "All done!"
+        const done = document.createElement('div');
+        done.style.position = 'fixed';
+        done.style.bottom = '2px';
+        done.style.left = '2px';
+        done.style.background = '#2563EB';
+        done.style.color = 'white';
+        done.style.padding = '2px 6px';
+        done.style.fontSize = '10px';
+        done.style.borderRadius = '12px';
+        done.innerText = 'All done!';
+        document.body.appendChild(done);
+    })();
+</script>
+</body>
+</html>
+```

@@ -1,0 +1,669 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obsidian · private observatory</title>
+  <!-- Font & icons (clean, sharp) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fbfcff;
+      color: #111214;
+      line-height: 1.3;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* custom scroll */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #eaeef2; }
+    ::-webkit-scrollbar-thumb { background: #1f2b3a; border-radius: 20px; }
+
+    /* fixed smart header — compacts on scroll */
+    .site-header {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 64px);
+      max-width: 1360px;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px) saturate(180%);
+      border-radius: 80px;
+      padding: 0.8rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(0,0,0,0.05);
+      box-shadow: 0 10px 28px -6px rgba(0,0,0,0.08);
+      z-index: 999;
+      transition: all 0.3s cubic-bezier(0.2,0,0,1);
+    }
+
+    .site-header.compact {
+      top: 12px;
+      padding: 0.4rem 1.8rem;
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+    }
+
+    .logo i {
+      font-size: 2rem;
+      color: #0a1a2b;
+      transition: transform 0.4s ease;
+    }
+
+    .logo:hover i {
+      transform: rotate(15deg) scale(1.05);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.8rem;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      font-weight: 500;
+      color: #1a2634;
+      font-size: 1rem;
+      transition: 0.2s;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 4px;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: #0f1c2f;
+      color: #000;
+    }
+
+    .nav-links a i {
+      font-size: 0.8rem;
+      margin-left: 5px;
+      opacity: 0.6;
+    }
+
+    .menu-right {
+      display: flex;
+      gap: 18px;
+      font-size: 1.2rem;
+      color: #1b2735;
+    }
+
+    /* main blocks */
+    .block {
+      min-height: 100vh;
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 6rem 4rem 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    /* hero */
+    #home {
+      padding-top: 8rem;
+    }
+
+    .hero-title {
+      font-size: 5.5rem;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      max-width: 1000px;
+    }
+
+    .hero-accent {
+      background: linear-gradient(145deg, #0b1c2e, #253b50);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      display: inline-block;
+      filter: drop-shadow(0 4px 6px rgba(0,40,80,0.15));
+    }
+
+    .hero-sub {
+      font-size: 1.3rem;
+      font-weight: 300;
+      margin-top: 2rem;
+      max-width: 700px;
+      color: #2b3f53;
+      border-left: 5px solid #0b1b2a;
+      padding-left: 2rem;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(4px);
+      border-radius: 0 40px 40px 0;
+    }
+
+    /* starfield animation (js) */
+    .starfield {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      margin: 3rem 0 1rem;
+      background: transparent;
+      border-radius: 60px;
+      overflow: hidden;
+    }
+
+    canvas#heroCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #eaf0f8; /* soft light background */
+      border-radius: 40px;
+      opacity: 0.9;
+    }
+
+    /* count-up / stats */
+    .stats-grid {
+      display: flex;
+      gap: 4rem;
+      margin-top: 4rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      font-size: 2.8rem;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 1rem;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #4a5f74;
+    }
+
+    /* cards with hover glow */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      margin: 3rem 0;
+    }
+
+    .card {
+      background: #ffffffd9;
+      backdrop-filter: blur(8px);
+      padding: 2rem 1.8rem;
+      border-radius: 36px;
+      border: 1px solid rgba(0, 0, 0, 0.03);
+      box-shadow: 0 20px 40px -16px rgba(0,20,40,0.08);
+      transition: all 0.25s ease;
+    }
+
+    .card:hover {
+      transform: scale(1.02) translateY(-6px);
+      box-shadow: 0 28px 48px -18px #030f1c, 0 0 0 1px rgba(70,130,200,0.2);
+    }
+
+    .card i {
+      font-size: 2.8rem;
+      color: #1a3043;
+      margin-bottom: 1.5rem;
+    }
+
+    .card h3 {
+      font-size: 1.9rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    /* telescope list */
+    .telescope-specs {
+      display: flex;
+      gap: 3rem;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+
+    .spec {
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 2rem 2.5rem;
+      box-shadow: 0 20px 35px -10px rgba(0,0,0,0.03);
+      border: 1px solid #eceef5;
+      transition: 0.2s;
+    }
+
+    .spec:hover {
+      border-color: #b3c9e0;
+    }
+
+    .spec .big-number {
+      font-size: 4rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #222, #3a4f65);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      line-height: 1;
+    }
+
+    /* event list special */
+    .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .event-row {
+      display: flex;
+      align-items: baseline;
+      font-size: 2rem;
+      font-weight: 500;
+      border-bottom: 2px dashed #d0ddee;
+      padding: 1.5rem 0;
+    }
+
+    .event-date {
+      font-weight: 300;
+      font-size: 1.3rem;
+      min-width: 200px;
+      color: #3d546b;
+    }
+
+    .event-name {
+      margin-left: 2rem;
+      position: relative;
+    }
+
+    .event-name i {
+      margin-right: 20px;
+      color: #132433;
+      font-size: 1.6rem;
+    }
+
+    /* footer */
+    .site-footer {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 4rem 4rem 2.5rem;
+      background: #ffffff;
+      border-top: 1px solid #e2eaf1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .footer-links i {
+      font-size: 1.8rem;
+      margin: 0 14px;
+      color: #23384b;
+      transition: 0.2s;
+    }
+
+    .footer-links i:hover {
+      color: #000;
+      transform: scale(1.15);
+    }
+
+    .copyright {
+      font-size: 0.95rem;
+      color: #5f748b;
+    }
+
+    /* glow text on scroll (reveal animation) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: all 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* numbers */
+    .big-number small {
+      font-size: 1rem;
+      font-weight: 300;
+      color: #3e5b76;
+    }
+
+    h2 {
+      font-size: 3.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      border-left: 10px solid #0b1f30;
+      padding-left: 2rem;
+    }
+
+    /* responsive only desktop, but small tuning */
+    @media (max-width: 1100px) {
+      .block { padding: 5rem 2rem; }
+      .hero-title { font-size: 4.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- fixed header (compact on scroll) -->
+<header class="site-header" id="mainHeader">
+  <div class="logo">
+    <i class="fas fa-meteor"></i>
+    <span>OBSIDIAN</span>
+  </div>
+  <div class="nav-links">
+    <a href="#home">HOME <i class="fas fa-chevron-down"></i></a>
+    <a href="#telescopes">TELESCOPES <i class="fas fa-crosshairs"></i></a>
+    <a href="#events">EVENTS <i class="fas fa-calendar"></i></a>
+    <a href="#stats">DEEP SKY <i class="fas fa-chart-line"></i></a>
+  </div>
+  <div class="menu-right">
+    <i class="fas fa-search"></i>
+    <i class="fas fa-user-astronaut"></i>
+  </div>
+</header>
+
+<!-- HERO block -->
+<section class="block" id="home">
+  <div class="hero-title reveal">
+    <span class="hero-accent">observe</span><br>
+    <span>the unobserveable</span>
+  </div>
+  <div class="hero-sub reveal">
+    <i class="fas fa-star" style="margin-right: 12px;"></i> 
+    Private observatory · 2800m altitude · no light pollution
+  </div>
+
+  <!-- starfield canvas js animation -->
+  <div class="starfield">
+    <canvas id="heroCanvas"></canvas>
+  </div>
+
+  <!-- stats row -->
+  <div class="stats-grid">
+    <div class="stat-item reveal">+4.7<span class="stat-label">magnitude limit</span></div>
+    <div class="stat-item reveal">18<span class="stat-label">research-grade telescopes</span></div>
+    <div class="stat-item reveal">365<span class="stat-label">clear nights / year</span></div>
+  </div>
+</section>
+
+<!-- TELESCOPES block (карточки) -->
+<section class="block" id="telescopes">
+  <h2 class="reveal">optical / radio arsenal</h2>
+  <div class="card-grid">
+    <div class="card reveal">
+      <i class="fas fa-telescope"></i>
+      <h3>HARPS-N</h3>
+      <p>3.6m · high-precision radial velocity. Exoplanet hunter.</p>
+    </div>
+    <div class="card reveal">
+      <i class="fas fa-saturn"></i>
+      <h3>Planetary imager</h3>
+      <p>1m f/8 · lucky imaging · resolved saturn & jupiter</p>
+    </div>
+    <div class="card reveal">
+      <i class="fas fa-radio"></i>
+      <h3>21cm array</h3>
+      <p>radio interferometer · hydrogen line · galactic rotation</p>
+    </div>
+    <div class="card reveal">
+      <i class="fas fa-sun"></i>
+      <h3>Ha solar scope</h3>
+      <p>0.2Å bandpass · prominences & filaments daily</p>
+    </div>
+  </div>
+
+  <!-- telescope specs as extra -->
+  <div class="telescope-specs">
+    <div class="spec reveal">
+      <span class="big-number">14"<small>  CDK</small></span>
+      <p>astrograph · 0.9° field</p>
+    </div>
+    <div class="spec reveal">
+      <span class="big-number">0.8"<small>  seeing</small></span>
+      <p>median fwhm · adaptive optics ready</p>
+    </div>
+  </div>
+</section>
+
+<!-- EVENTS & EXPERIENCES (ночные наблюдения) -->
+<section class="block" id="events">
+  <h2 class="reveal">celestial events</h2>
+  <div class="event-list">
+    <div class="event-row reveal">
+      <span class="event-date"><i class="far fa-moon"></i> 12 apr 2025</span>
+      <span class="event-name"><i class="fas fa-binoculars"></i> Saturn at opposition · edge-on rings</span>
+    </div>
+    <div class="event-row reveal">
+      <span class="event-date"><i class="fas fa-clock"></i> 17-19 may</span>
+      <span class="event-name"><i class="fas fa-globe"></i> Virgo cluster marathon · 40 galaxies</span>
+    </div>
+    <div class="event-row reveal">
+      <span class="event-date"><i class="fas fa-cloud"></i> 24 jun</span>
+      <span class="event-name"><i class="fas fa-meteor"></i> Noctilucent cloud & deep twilight</span>
+    </div>
+    <div class="event-row reveal">
+      <span class="event-date"><i class="fas fa-star"></i> 12-13 aug</span>
+      <span class="event-name"><i class="fas fa-fire"></i> Perseids · radio meteor echoes</span>
+    </div>
+  </div>
+
+  <!-- extra glow statistic -->
+  <div style="margin-top: 4rem; display: flex; gap: 3rem;">
+    <div class="reveal"><span class="big-number">21 <small>events/year</small></span></div>
+    <div class="reveal"><span class="big-number">8 <small>private sessions/mo</small></span></div>
+  </div>
+</section>
+
+<!-- STATS / deep sky club (membership / data) -->
+<section class="block" id="stats">
+  <h2 class="reveal">deep sky club · 2025</h2>
+  <div style="display: flex; gap: 5rem; flex-wrap: wrap;">
+    <!-- left col: big numbers -->
+    <div style="flex: 1;">
+      <div class="reveal" style="font-size: 5rem; font-weight: 700; line-height: 1;">473<span style="font-size: 1.4rem; font-weight: 300; margin-left: 10px;">ngc objects</span></div>
+      <div class="reveal" style="font-size: 3rem; margin: 2rem 0;">189<span style="font-size: 1rem;">  ic catalog</span></div>
+      <div class="reveal" style="font-size: 2.5rem;"><i class="fas fa-chart-pie"></i> 98% completion · messier</div>
+    </div>
+    <!-- right: membership levels (карточки членства) -->
+    <div style="flex: 1;">
+      <div class="card reveal" style="padding: 2rem;">
+        <i class="fas fa-crown" style="color: #1e2f40;"></i>
+        <h3>OBSIDIAN FELLOW</h3>
+        <p>unlimited nights · remote imaging · data rights</p>
+        <div style="font-size: 2rem; font-weight: 700;">2.8K <span style="font-size: 1rem;">/year</span></div>
+      </div>
+      <div class="card reveal" style="margin-top: 1.5rem; background: #f5faff;">
+        <i class="fas fa-telescope"></i>
+        <h3>VISITOR slot</h3>
+        <p>3 nights · host astronomer · 0.5m scope</p>
+        <div style="font-size: 2rem;">780 <span style="font-size: 0.9rem;">/night</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- one more BLOCK: astro–statistics (wow factor) -->
+<section class="block" style="min-height: 70vh;">
+  <h2 class="reveal">precision metrics</h2>
+  <div style="display: flex; gap: 4rem; align-items: center; flex-wrap: wrap;">
+    <div class="reveal">
+      <div style="font-size: 7rem; font-weight: 700; line-height: 1; color: #101f2e;">0.12</div>
+      <div style="font-size: 1.4rem;">arcsec RMS guiding</div>
+    </div>
+    <div class="reveal">
+      <div style="font-size: 7rem; font-weight: 700; color: #1e2f40;">31<small style="font-size: 2rem;">mag</small></div>
+      <div style="font-size: 1.4rem;">limiting magnitude · cmos</div>
+    </div>
+    <div class="reveal">
+      <i class="fas fa-globe" style="font-size: 5rem; opacity: 0.7;"></i>
+      <div style="font-size: 2rem;"> 2 800 m</div>
+      <div>altitude · 0.4″ median</div>
+    </div>
+  </div>
+
+  <!-- glow line / underline effect -->
+  <hr style="margin: 5rem 0 2rem; border: none; height: 2px; background: linear-gradient(90deg, transparent, #0e2233, transparent);">
+</section>
+
+<!-- FOOTER block -->
+<footer class="site-footer">
+  <div class="copyright">
+    <i class="far fa-copyright"></i> OBSIDIAN PRIVATE OBSERVATORY · MMXXV
+  </div>
+  <div class="footer-links">
+    <i class="fab fa-x-twitter"></i>
+    <i class="fab fa-github"></i>
+    <i class="fas fa-envelope"></i>
+    <i class="fas fa-map-pin"></i>
+  </div>
+  <div style="font-weight: 300; letter-spacing: 0.5px;">atacama · canary islands · tibet</div>
+</footer>
+
+<!-- all JS: header compact, canvas animation, scroll reveal, counters subtle -->
+<script>
+  (function() {
+    // header compact on scroll
+    const header = document.getElementById('mainHeader');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 40) {
+        header.classList.add('compact');
+      } else {
+        header.classList.remove('compact');
+      }
+    });
+
+    // canvas starfield (simple glow dots)
+    const canvas = document.getElementById('heroCanvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        width = canvas.clientWidth;
+        height = canvas.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        particles = [];
+        const num = 110;
+        for (let i = 0; i < num; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 2.2 + 0.8,
+            speedX: (Math.random() - 0.5) * 0.4,
+            speedY: (Math.random() - 0.5) * 0.15,
+            glow: Math.random() * 0.7 + 0.3,
+          });
+        }
+      }
+
+      function drawStars() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        // soft gradient background
+        const grad = ctx.createLinearGradient(0, 0, width*0.5, height);
+        grad.addColorStop(0, '#eef4fa');
+        grad.addColorStop(1, '#dde5f0');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, 2*Math.PI);
+          ctx.fillStyle = `rgba(20, 40, 65, ${p.glow*0.8})`;
+          ctx.fill();
+          // extra glow (bigger faint)
+          ctx.shadowColor = '#3e5f83';
+          ctx.shadowBlur = 10 * p.glow;
+          ctx.fill();
+          ctx.shadowBlur = 0; // reset
+        }
+        // add a few larger glows
+        for (let p of particles.slice(0, 20)) {
+          ctx.beginPath();
+          ctx.arc(p.x-2, p.y-3, p.radius*2.5, 0, 2*Math.PI);
+          ctx.fillStyle = `rgba(255, 255, 240, 0.15)`;
+          ctx.fill();
+        }
+      }
+
+      function update() {
+        for (let p of particles) {
+          p.x += p.speedX;
+          p.y += p.speedY;
+          // wrap
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+        drawStars();
+        requestAnimationFrame(update);
+      }
+
+      window.addEventListener('resize', () => {
+        initParticles();
+        drawStars();
+      });
+
+      initParticles();
+      drawStars();
+      update();
+    }
+
+    // reveal on scroll (simple intersection observer)
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        } else {
+          // optional: remove to re-animate? keep active
+          // entry.target.classList.remove('active'); // if you want each time, but we keep once.
+        }
+      });
+    }, { threshold: 0.2, rootMargin: '0px 0px -60px 0px' });
+
+    reveals.forEach(r => observer.observe(r));
+
+    // tiny count-up effect? (very simple to keep wow)
+    // just set some numbers as active with slight transition
+    // we can add a small incremental effect on stat items (optional minimal)
+    // just for wow: numbers appear with active already
+  })();
+</script>
+<!-- tiny extra style to make sure active works -->
+<style>
+  .reveal.active .big-number, .reveal.active .stat-item, .reveal.active .card { transition: all 0.5s; }
+</style>
+
+<!-- All done! -->
+All done!
+```

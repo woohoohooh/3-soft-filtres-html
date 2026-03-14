@@ -1,0 +1,638 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private astronomy club</title>
+    <!-- Font Awesome 6 (free) for clean icons & astronomical feel -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0c0f;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e2e8f0;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter google font via fallback, but we use system for speed — still elegant */
+        h1, h2, h3, .logo {
+            font-weight: 400;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-size: 3rem;
+            font-weight: 300;
+            border-left: 6px solid #c6a47a;
+            padding-left: 2rem;
+            margin-bottom: 3rem;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+        }
+
+        .section {
+            min-height: 90vh;
+            padding: 6rem 4rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* ----- fixed compact header (shrinks on scroll) ----- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.8rem 4rem;
+            z-index: 100;
+            transition: all 0.3s ease;
+            background: rgba(10, 12, 15, 0.6);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(198, 164, 122, 0.2);
+        }
+
+        header.compact {
+            padding: 0.8rem 4rem;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid #c6a47a;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #fff;
+        }
+
+        .logo span {
+            color: #c6a47a;
+            font-weight: 400;
+            margin-right: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #e2e8f0;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav-links a:hover {
+            color: #c6a47a;
+            border-bottom: 1px solid #c6a47a;
+        }
+
+        /* ----- hero: secret mission among stars ----- */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at 30% 40%, #1a1f2a, #030405 80%);
+            overflow: hidden;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            max-width: 800px;
+            margin-left: 8rem;
+        }
+
+        .hero-pre {
+            font-size: 1rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #c6a47a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hero-pre i {
+            font-size: 1.4rem;
+            opacity: 0.8;
+        }
+
+        .hero h1 {
+            font-size: 5.2rem;
+            font-weight: 200;
+            line-height: 1.1;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 strong {
+            font-weight: 400;
+            color: #c6a47a;
+            display: block;
+            font-size: 6rem;
+            letter-spacing: 12px;
+        }
+
+        .hero-desc {
+            font-size: 1.4rem;
+            font-weight: 200;
+            max-width: 600px;
+            border-left: 2px solid #c6a47a;
+            padding-left: 2rem;
+            margin-bottom: 3rem;
+            color: #b0b8c5;
+        }
+
+        .btn {
+            background: transparent;
+            border: 2px solid #c6a47a;
+            color: #c6a47a;
+            padding: 1rem 3rem;
+            font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: 0.3s;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: #c6a47a;
+            color: #0a0c0f;
+        }
+
+        /* starfield animation (js controlled) */
+        #starCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ----- blocks / cards ----- */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .card {
+            background: rgba(18, 22, 28, 0.8);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(198, 164, 122, 0.15);
+            padding: 2.5rem 2rem;
+            transition: 0.3s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            border-color: #c6a47a;
+            transform: translateY(-12px);
+            box-shadow: 0 30px 40px -20px rgba(198, 164, 122, 0.2);
+        }
+
+        .card i {
+            font-size: 3rem;
+            color: #c6a47a;
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+
+        .card h3 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .card p {
+            color: #9aa5b5;
+            font-weight: 200;
+            font-size: 1rem;
+        }
+
+        .big-number {
+            font-size: 4rem;
+            font-weight: 200;
+            color: #c6a47a;
+            line-height: 1;
+            margin-right: 1rem;
+        }
+
+        .stats-row {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* glow effect on text for selected blocks */
+        .glow-text {
+            text-shadow: 0 0 12px rgba(198, 164, 122, 0.6);
+            transition: text-shadow 0.3s;
+        }
+
+        .card:hover .glow-text {
+            text-shadow: 0 0 20px #c6a47a;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 2rem;
+            margin: 2.5rem 0;
+            align-items: flex-start;
+            border-bottom: 1px dashed rgba(198, 164, 122, 0.3);
+            padding-bottom: 1.5rem;
+        }
+
+        .timeline-item .year {
+            font-size: 2.5rem;
+            font-weight: 200;
+            color: #c6a47a;
+            min-width: 120px;
+            letter-spacing: 4px;
+        }
+
+        .infinite-slider {
+            font-size: 2rem;
+            font-weight: 200;
+            color: #2f3747;
+            white-space: nowrap;
+            overflow: hidden;
+            border-top: 1px solid rgba(198,164,122,0.2);
+            border-bottom: 1px solid rgba(198,164,122,0.2);
+            padding: 1rem 0;
+        }
+
+        .slider-content {
+            display: inline-block;
+            animation: scrollConstellation 22s linear infinite;
+        }
+
+        .slider-content i, .slider-content span {
+            margin: 0 2rem;
+            color: #c6a47a;
+        }
+
+        @keyframes scrollConstellation {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* footer */
+        footer {
+            background: #040608;
+            border-top: 1px solid #c6a47a20;
+            padding: 3rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #5f6b7a;
+            font-weight: 200;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .footer-icons i {
+            margin: 0 0.8rem;
+            font-size: 1.4rem;
+            color: #c6a47a;
+            transition: 0.2s;
+        }
+
+        .footer-icons i:hover {
+            color: #fff;
+        }
+
+        /* scroll appear animation (js triggers .visible) */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* misc */
+        .constellation-icon {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        hr {
+            border-color: #c6a47a20;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starCanvas"></canvas>
+    <header id="mainHeader">
+        <div class="logo"><span>⛬</span> OBSIDIAN</div>
+        <div class="nav-links">
+            <a href="#mission">MISSION</a>
+            <a href="#fleet">FLEET</a>
+            <a href="#events">EVENTS</a>
+            <a href="#stats">DEEP SKY</a>
+            <a href="#join">JOIN</a>
+        </div>
+    </header>
+
+    <section class="hero" id="mission">
+        <div class="hero-content fade-in visible">
+            <div class="hero-pre"><i class="fa-regular fa-compass"></i> <span>classified • averted vision</span></div>
+            <h1>observe the<br><strong>universe</strong></h1>
+            <div class="hero-desc">Private astronomy club · dark sky reserve · elite remote observatories.</div>
+            <a href="#fleet" class="btn">explore fleet</a>
+        </div>
+    </section>
+
+    <!-- block 1: The Fleet / telescopes -->
+    <section class="section" id="fleet">
+        <h2 class="fade-in">/ optical armada</h2>
+        <div class="grid-3">
+            <div class="card fade-in">
+                <i class="fa-solid  fa-telescope"></i>
+                <h3 class="glow-text">HALEAKALA 3.0m</h3>
+                <p>Ritchey–Chrétien • adaptive optics • high-res spectroscopy. Book solo observing slots.</p>
+                <div class="stats-row"><span class="big-number">02</span> <span class="stat-item">available nights / week</span></div>
+            </div>
+            <div class="card fade-in">
+                <i class="fa-solid  fa-satellite"></i>
+                <h3 class="glow-text">MAGDALENA RIDGE</h3>
+                <p>Radio interferometer array · 6m dishes · VLBI capable. Deep space tracking.</p>
+                <div class="stats-row"><span class="big-number">14</span> <span class="stat-item">antennae active</span></div>
+            </div>
+            <div class="card fade-in">
+                <i class="fa-regular  fa-star"></i>
+                <h3 class="glow-text">CORONADO SOLAR</h3>
+                <p>Hydrogen-alpha solar observatory. Chromosphere & prominence imaging.</p>
+                <div class="stats-row"><span class="big-number">0.5</span> <span class="stat-item">Å resolution</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 2: deep sky statistics (interactive counters) -->
+    <section class="section" id="stats">
+        <h2 class="fade-in">/ exposure stats</h2>
+        <div class="grid-3">
+            <div class="card fade-in">
+                <i class="fa-regular  fa-clock"></i>
+                <h3>total photons captured</h3>
+                <div class="stats-row"><span class="big-number" id="photonCounter">3.8</span> <span>zettabytes</span></div>
+            </div>
+            <div class="card fade-in">
+                <i class="fa-regular  fa-map"></i>
+                <h3>messier objects</h3>
+                <div class="stats-row"><span class="big-number" id="messierCounter">110</span> <span>/110</span></div>
+            </div>
+            <div class="card fade-in">
+                <i class="fa-regular  fa-eye"></i>
+                <h3>dark sky members</h3>
+                <div class="stats-row"><span class="big-number" id="memberCounter">224</span> <span>observers</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 3: events / timeline (retro observatory sessions) -->
+    <section class="section" id="events">
+        <h2 class="fade-in">/ celestial events</h2>
+        <div class="timeline-item fade-in">
+            <div class="year">MAY 25</div>
+            <div><strong>SATURN OPPOSITION</strong> — night with Cassini division, 8” refractor + live spectroscopy.</div>
+        </div>
+        <div class="timeline-item fade-in">
+            <div class="year">JUN 12</div>
+            <div><strong>VIRGO CLUSTER MARATHON</strong> — 40 galaxies in one night. members only.</div>
+        </div>
+        <div class="timeline-item fade-in">
+            <div class="year">JUL 8</div>
+            <div><strong>NEW MOON DEEP SKY</strong> — 24h non‑stop imaging, 1m RCOS + CCD.</div>
+        </div>
+        <div class="timeline-item fade-in">
+            <div class="year">AUG 14</div>
+            <div><strong>PERSIED ABOVE ALPS</strong> — high altitude remote site, astrophotography workshop.</div>
+        </div>
+    </section>
+
+    <!-- block 4: membership levels (packages) -->
+    <section class="section" id="join">
+        <h2 class="fade-in">/ membership</h2>
+        <div class="grid-3">
+            <div class="card fade-in">
+                <i class="fa-regular  fa-moon"></i>
+                <h3 class="glow-text">OBSERVER</h3>
+                <p>4 nights / year · access to 0.6m telescopes · basic image processing.</p>
+                <div class="stats-row"><span class="big-number">$2.8k</span></div>
+            </div>
+            <div class="card fade-in">
+                <i class="fa-regular  fa-sun"></i>
+                <h3 class="glow-text">ASTRONOMER</h3>
+                <p>12 nights · all optical & radio fleet · data pipeline priority.</p>
+                <div class="stats-row"><span class="big-number">$7.4k</span></div>
+            </div>
+            <div class="card fade-in">
+                <i class="fa-regular  fa-galaxy"></i>
+                <h3 class="glow-text">COSMOLOGIST</h3>
+                <p>unlimited · remote observing · spectroscopy & fellowship.</p>
+                <div class="stats-row"><span class="big-number">$15k</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 5: infinite cosmic slider (asterisms) -->
+    <div class="infinite-slider">
+        <div class="slider-content">
+            <i class="fa-regular fa-star"></i><span>ORION NEBULA</span> <i class="fa-regular fa-star"></i><span>ANDROMEDA</span> <i class="fa-regular fa-star"></i><span>Pleiades</span> <i class="fa-regular fa-star"></i><span>Sombrero</span> <i class="fa-regular fa-star"></i><span>Whirlpool</span> <i class="fa-regular fa-star"></i><span>Eta Carinae</span> <i class="fa-regular fa-star"></i><span>Horsehead</span> <i class="fa-regular fa-star"></i><span>33 Cygni</span>
+            <!-- duplicated for seamless loop -->
+            <i class="fa-regular fa-star"></i><span>ORION NEBULA</span> <i class="fa-regular fa-star"></i><span>ANDROMEDA</span> <i class="fa-regular fa-star"></i><span>Pleiades</span> <i class="fa-regular fa-star"></i><span>Sombrero</span> <i class="fa-regular fa-star"></i><span>Whirlpool</span> <i class="fa-regular fa-star"></i><span>Eta Carinae</span> <i class="fa-regular fa-star"></i><span>Horsehead</span> <i class="fa-regular fa-star"></i><span>33 Cygni</span>
+        </div>
+    </div>
+
+    <footer>
+        <div>© OBSIDIAN PRIVATE ASTRONOMY CLUB · NGC 5128</div>
+        <div class="footer-icons">
+            <i class="fa-regular  fa-meteor"></i>
+            <i class="fa-regular  fa-comet"></i>
+            <i class="fa-regular  fa-galaxy"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // === HEADER SHRINK ON SCROLL ===
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // === STARFIELD CANVAS (interactive background hero) ===
+            const canvas = document.getElementById('starCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let stars = [];
+            const STAR_COUNT = 300;
+
+            function initStars() {
+                stars = [];
+                for (let i = 0; i < STAR_COUNT; i++) {
+                    stars.push({
+                        x: Math.random(),
+                        y: Math.random(),
+                        radius: Math.random() * 2.2 + 0.3,
+                        alpha: Math.random() * 0.6 + 0.2,
+                        speed: 0.0001 + Math.random() * 0.0003,
+                    });
+                }
+            }
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            function drawStars() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = 'white';
+                for (let s of stars) {
+                    ctx.globalAlpha = s.alpha * (0.8 + 0.4 * Math.sin(Date.now() * 0.002 + s.x * 10)); // subtle twinkle
+                    ctx.beginPath();
+                    ctx.arc(s.x * width, s.y * height, s.radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+
+                // occasional shooting line (custom)
+                if (Math.random() < 0.001) {
+                    ctx.beginPath();
+                    ctx.moveTo(Math.random() * width, Math.random() * height);
+                    ctx.lineTo(Math.random() * width, Math.random() * height);
+                    ctx.strokeStyle = '#c6a47a';
+                    ctx.lineWidth = 1;
+                    ctx.globalAlpha = 0.6;
+                    ctx.stroke();
+                }
+                requestAnimationFrame(drawStars);
+            }
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+            });
+            resizeCanvas();
+            initStars();
+            drawStars();
+
+            // === SCROLL REVEAL (fade-in blocks) ===
+            const fadeElements = document.querySelectorAll('.fade-in');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.25, rootMargin: '0px 0px -50px 0px' });
+            fadeElements.forEach(el => observer.observe(el));
+
+            // === COUNTERS (statistics animation) ===
+            function animateNumber(element, start, end, suffix = '', decimals = 1) {
+                let current = start;
+                const step = (end - start) / 60; // 60fps-like increment
+                const timer = setInterval(() => {
+                    current += step;
+                    if ((step > 0 && current >= end) || (step < 0 && current <= end)) {
+                        current = end;
+                        element.innerText = current.toFixed(decimals) + suffix;
+                        clearInterval(timer);
+                    } else {
+                        element.innerText = current.toFixed(decimals) + suffix;
+                    }
+                }, 16);
+            }
+
+            const photonEl = document.getElementById('photonCounter');
+            const messierEl = document.getElementById('messierCounter');
+            const memberEl = document.getElementById('memberCounter');
+
+            const statsObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        if (photonEl && entry.target.contains(photonEl)) {
+                            animateNumber(photonEl, 2.1, 3.8, ' ZB', 1);
+                        }
+                        if (messierEl && entry.target.contains(messierEl)) {
+                            let m = messierEl;
+                            if (m.innerText !== '110') {
+                                let start = 70;
+                                const timer = setInterval(() => {
+                                    start += 2;
+                                    m.innerText = start;
+                                    if (start >= 110) { m.innerText = '110'; clearInterval(timer); }
+                                }, 20);
+                            }
+                        }
+                        if (memberEl && entry.target.contains(memberEl)) {
+                            let mem = 189;
+                            const t2 = setInterval(() => {
+                                mem += 2;
+                                memberEl.innerText = mem;
+                                if (mem >= 224) { memberEl.innerText = '224'; clearInterval(t2); }
+                            }, 15);
+                        }
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            const statsSection = document.getElementById('stats');
+            if (statsSection) statsObserver.observe(statsSection);
+
+            // subtle additional glow effect on cards hover (already in css)
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

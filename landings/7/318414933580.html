@@ -1,0 +1,740 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLACKOUT · precision shooting club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0c10;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e5e9f0;
+            line-height: 1.4;
+            font-weight: 300;
+            scroll-behavior: smooth;
+        }
+
+        /* inter via google fonts fallback — we use system stack, but for sharpness we add */
+        h1, h2, h3, .nav-logo, .big-stat {
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
+        /* custom crosshair / military vibe */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ===== HEADER (fixed + compact transform) ===== */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            background: rgba(5, 7, 12, 0.2);
+            backdrop-filter: blur(0px);
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+
+        .site-header.compact {
+            padding: 0.7rem 2rem;
+            background: rgba(5, 7, 12, 0.9);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-logo {
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #f0e68c;
+            letter-spacing: 6px;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+            transition: 0.2s;
+        }
+
+        .nav-logo i {
+            color: #d4af37;
+            margin-right: 8px;
+            font-size: 2rem;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2.5rem;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: #c0c5ce;
+            font-weight: 400;
+            text-transform: uppercase;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav-menu a:hover {
+            color: #ffd966;
+            border-bottom: 1px solid #ffd966;
+        }
+
+        /* ===== SECTIONS general ===== */
+        section {
+            padding: 6rem 0;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            margin-bottom: 3rem;
+            color: #ece9e0;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title i {
+            color: #d4af37;
+            margin-right: 15px;
+            font-size: 2.8rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: #ffd966;
+            box-shadow: 0 0 12px gold;
+        }
+
+        /* ===== HERO (secret mission style) ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: radial-gradient(circle at 30% 40%, #1e262c, #030405 80%);
+            padding-top: 80px;
+        }
+
+        .hero-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .hero-pre {
+            font-size: 1rem;
+            letter-spacing: 8px;
+            color: #bfa55b;
+            text-transform: uppercase;
+            border-left: 4px solid #d4af37;
+            padding-left: 20px;
+        }
+
+        .hero-title {
+            font-size: 5.5rem;
+            font-weight: 600;
+            line-height: 1.1;
+            text-transform: uppercase;
+            color: #f0f3f5;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .hero-title span {
+            color: #ffd966;
+            display: block;
+            font-size: 3rem;
+            letter-spacing: 12px;
+        }
+
+        .hero-desc {
+            font-size: 1.3rem;
+            max-width: 600px;
+            color: #b0b8c5;
+            border-right: 3px solid #d4af37;
+            padding-right: 30px;
+            align-self: flex-start;
+        }
+
+        .crosshair-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            opacity: 0.15;
+        }
+
+        /* dynamic crosshair animation (js will update) */
+        #dynamicCross {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px dashed rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.2);
+            top: 50%; left: 50%;
+            animation: pulseGlow 3s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { opacity: 0.2; transform: translate(-50%, -50%) scale(0.8); }
+            100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.3); }
+        }
+
+        /* ===== CARDS (кейсы/квесты) ===== */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .case-card {
+            background: rgba(15, 20, 25, 0.7);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            padding: 2.5rem 1.8rem;
+            transition: all 0.3s ease-out;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px -10px black;
+        }
+
+        .case-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(255, 215, 0, 0.6);
+            box-shadow: 0 20px 40px -5px #000000, 0 0 0 2px rgba(255, 215, 0, 0.2);
+        }
+
+        .case-card i {
+            font-size: 3rem;
+            color: #d4af37;
+            margin-bottom: 1.5rem;
+        }
+
+        .case-card h3 {
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        .case-card .difficulty {
+            display: flex;
+            gap: 5px;
+            margin: 1rem 0;
+            color: #f1c40f;
+        }
+
+        .case-card .difficulty span {
+            background: #2a2f35;
+            padding: 0.2rem 0.8rem;
+            border-radius: 0;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .case-card .difficulty .active {
+            background: #d4af37;
+            color: #0b0c10;
+            font-weight: bold;
+        }
+
+        /* ===== STATS / counters ===== */
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            gap: 2rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #3a3f44;
+            padding: 3rem 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 4.2rem;
+            font-weight: 600;
+            color: #ffd966;
+            line-height: 1;
+            letter-spacing: 2px;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            text-transform: uppercase;
+            color: #9aa3b5;
+            border-top: 1px solid #3e3c35;
+            padding-top: 0.7rem;
+            margin-top: 0.5rem;
+            min-width: 150px;
+        }
+
+        /* ===== TIMER SECTION ===== */
+        .timer-block {
+            background: #0f1217;
+            border: 1px solid #2e2b22;
+            padding: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .timer-info h2 {
+            font-size: 2.4rem;
+            text-transform: uppercase;
+            color: #e0d6b0;
+        }
+
+        .timer-display {
+            font-family: 'Inter', monospace;
+            font-size: 4rem;
+            font-weight: 500;
+            background: #1b1f27;
+            padding: 1rem 2rem;
+            border: 1px solid #c9a43b;
+            color: #ffd966;
+            letter-spacing: 10px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+        }
+
+        .timer-label {
+            text-align: right;
+            color: #8e8f92;
+        }
+
+        /* ===== COACH / instructors (тренеры) ===== */
+        .coach-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .coach-card {
+            background: #12161c;
+            padding: 2rem 2rem 2.5rem 2rem;
+            border-bottom: 4px solid transparent;
+            transition: 0.25s;
+            border-image: linear-gradient(45deg, #d4af37, #5e4b1c);
+            border-image-slice: 1;
+        }
+
+        .coach-card:hover {
+            border-bottom: 4px solid #d4af37;
+            background: #1a1f29;
+        }
+
+        .coach-card i {
+            font-size: 2.8rem;
+            color: #b48c34;
+        }
+
+        .coach-card h4 {
+            font-size: 1.8rem;
+            margin: 1rem 0 0.3rem;
+        }
+
+        .coach-card .exp {
+            color: #9f9f9f;
+            margin-bottom: 0.8rem;
+        }
+
+        .coach-card .badge {
+            background: #2f2a1f;
+            padding: 0.3rem 0.8rem;
+            color: #ebc351;
+            display: inline-block;
+            font-size: 0.8rem;
+        }
+
+        /* ===== PACKAGES (пакеты тренировок) ===== */
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .package-item {
+            background: #0d1015;
+            border: 1px solid #33373e;
+            padding: 2.5rem 2rem;
+            text-align: left;
+            transition: 0.2s;
+        }
+
+        .package-item:hover {
+            border-color: #ffd966;
+            transform: scale(1.02);
+        }
+
+        .package-item .price {
+            font-size: 3rem;
+            font-weight: 500;
+            color: #e5c158;
+            margin: 0.5rem 0;
+        }
+
+        .package-item ul {
+            list-style: none;
+            margin-top: 1.5rem;
+        }
+        .package-item li {
+            margin: 0.6rem 0;
+            border-bottom: 1px dashed #333;
+            padding-bottom: 0.3rem;
+        }
+        .package-item i.fa-check {
+            color: #d4af37;
+            width: 20px;
+        }
+
+        /* ===== FOOTER ===== */
+        .site-footer {
+            background: #030405;
+            padding: 2.5rem 2rem;
+            border-top: 1px solid #2b281e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #868a92;
+        }
+
+        .footer-links i {
+            color: #b49450;
+            margin: 0 0.7rem;
+            font-size: 1.2rem;
+            transition: 0.2s;
+        }
+        .footer-links i:hover {
+            color: #ffd966;
+        }
+
+        /* scroll reveal base */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* highlight effect (text glow) */
+        .highlight-gold {
+            background: linear-gradient(145deg, #f9e181, #dbb42c);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- fixed header (compact on scroll) -->
+    <header class="site-header" id="mainHeader">
+        <div class="nav-logo">
+            <i class="fas fa-bullseye"></i> BLACKOUT
+        </div>
+        <nav class="nav-menu">
+            <a href="#home">home</a>
+            <a href="#missions">missions</a>
+            <a href="#stats">stats</a>
+            <a href="#coaches">operators</a>
+            <a href="#packages">packages</a>
+        </nav>
+    </header>
+
+    <!-- HERO (block 1) -->
+    <section class="hero" id="home">
+        <div class="container hero-content">
+            <div class="hero-pre"><i class="fas fa-skull-crossbow"></i>   TOP SECRET DOSSIER</div>
+            <h1 class="hero-title">PRECISION <span>SHOOTING CLUB</span></h1>
+            <p class="hero-desc">Lock and load. Elite tactical simulations & escape fire zones. Only 0.1% finish.</p>
+            <div style="margin-top: 1rem;">
+                <i class="fas fa-shield-alt" style="color:#bfa55b; font-size: 2rem; margin-right: 20px;"></i>
+                <i class="fas fa-crosshairs" style="color:#bfa55b; font-size: 2rem;"></i>
+            </div>
+        </div>
+        <div class="crosshair-container" id="crosshairContainer">
+            <div id="dynamicCross"></div>
+        </div>
+    </section>
+
+    <!-- block 2: CARDS (квесты / дисциплины) -->
+    <section id="missions">
+        <div class="container">
+            <h2 class="section-title reveal"><i class="fas fa-folder-open"></i> ACTIVE CASES</h2>
+            <div class="grid-3">
+                <div class="case-card reveal">
+                    <i class="fas fa-user-secret"></i>
+                    <h3>NIGHT HAWK</h3>
+                    <div class="difficulty"><span class="active">HARD</span><span>MED</span><span>EASY</span></div>
+                    <p>Eliminate stealth targets with zero noise. 5 rooms, real ballistics.</p>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-skull"></i>
+                    <h3>DEAD DROP</h3>
+                    <div class="difficulty"><span>HARD</span><span class="active">MED</span><span>EASY</span></div>
+                    <p>Undercover mission — survive the crossfire and extract intel.</p>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-bomb"></i>
+                    <h3>LAST STAND</h3>
+                    <div class="difficulty"><span>HARD</span><span>MED</span><span class="active">EASY</span></div>
+                    <p>Time-critical escape room with moving targets. 30min limit.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 3: СТАТИСТИКА ПОБЕГОВ / попаданий -->
+    <section id="stats">
+        <div class="container">
+            <h2 class="section-title reveal"><i class="fas fa-chart-line"></i> COMBAT STATS</h2>
+            <div class="stats-grid reveal">
+                <div class="stat-item">
+                    <div class="stat-number" id="stat1" data-target="847">0</div>
+                    <div class="stat-label">successful escapes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="stat2" data-target="12600">0</div>
+                    <div class="stat-label">rounds fired</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="stat3" data-target="93">0</div>
+                    <div class="stat-label">accuracy rate %</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="stat4" data-target="14">0</div>
+                    <div class="stat-label">active operators</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 4: TIMER (до побега) + небольшой контент -->
+    <section>
+        <div class="container">
+            <div class="timer-block reveal">
+                <div class="timer-info">
+                    <h2><i class="fas fa-hourglass-half" style="color:gold;"></i>  NEXT EXTRACTION</h2>
+                    <p class="timer-label">tactical window closes in</p>
+                </div>
+                <div class="timer-display" id="countdownTimer">23:45:12</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 5: ТРЕНЕРЫ / инструкторы -->
+    <section id="coaches">
+        <div class="container">
+            <h2 class="section-title reveal"><i class="fas fa-user-ninja"></i> OPERATORS</h2>
+            <div class="coach-grid">
+                <div class="coach-card reveal">
+                    <i class="fas fa-eye"></i>
+                    <h4>V. "GHOST"</h4>
+                    <div class="exp">ex‑GROM, 12yrs</div>
+                    <span class="badge"><i class="fas fa-crosshairs"></i> 98% hits</span>
+                    <p style="margin-top:15px;">CQB & hostage rescue specialist.</p>
+                </div>
+                <div class="coach-card reveal">
+                    <i class="fas fa-mask"></i>
+                    <h4>J. "REAPER"</h4>
+                    <div class="exp">USMC Scout Sniper</div>
+                    <span class="badge"><i class="fas fa-crosshairs"></i> 103 eliminations</span>
+                    <p style="margin-top:15px;">Long range / stress fire instructor.</p>
+                </div>
+                <div class="coach-card reveal">
+                    <i class="fas fa-dragon"></i>
+                    <h4>"WRAITH"</h4>
+                    <div class="exp">Spetsnaz alpha</div>
+                    <span class="badge"><i class="fas fa-clock"></i> 0.4s draw</span>
+                    <p style="margin-top:15px;">Tactical pistol & evasion.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 6: ПАКЕТЫ ТРЕНИРОВОК / ЧЛЕНСТВО -->
+    <section id="packages">
+        <div class="container">
+            <h2 class="section-title reveal"><i class="fas fa-box-open"></i> MEMBERSHIP</h2>
+            <div class="package-grid">
+                <div class="package-item reveal">
+                    <h3>BRAVO 2-STAR</h3>
+                    <div class="price">$249</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> 4 escape missions</li>
+                        <li><i class="fas fa-check"></i> Rifle / pistol rental</li>
+                        <li><i class="fas fa-check"></i> Digital brief</li>
+                    </ul>
+                </div>
+                <div class="package-item reveal">
+                    <h3>VIP DELTA</h3>
+                    <div class="price">$799</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> 12 missions + night ops</li>
+                        <li><i class="fas fa-check"></i> Instructor 1on1</li>
+                        <li><i class="fas fa-check"></i> Ballistic vest & patch</li>
+                    </ul>
+                </div>
+                <div class="package-item reveal">
+                    <h3>CMD TIER-1</h3>
+                    <div class="price">$1,499</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> unlimited quarterly</li>
+                        <li><i class="fas fa-check"></i> Guest access + gear</li>
+                        <li><i class="fas fa-check"></i> Night vision sim</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER (блок 7) -->
+    <footer class="site-footer">
+        <div>© 2025 BLACKOUT CLUB — PRECISION OPS</div>
+        <div class="footer-links">
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-x-twitter"></i>
+            <i class="fas fa-envelope"></i>
+            <i class="fas fa-phone-alt"></i>
+        </div>
+    </footer>
+
+    <!-- JavaScript: all effects + compact header + counters + timer + scroll reveal + moving crosshair -->
+    <script>
+        (function() {
+            // ===== COMPACT HEADER on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // ===== DYNAMIC CROSSHAIR (follows mouse)
+            const cross = document.getElementById('dynamicCross');
+            const container = document.getElementById('crosshairContainer');
+            if (cross && container) {
+                document.addEventListener('mousemove', function(e) {
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    cross.style.left = x + 'px';
+                    cross.style.top = y + 'px';
+                });
+            }
+
+            // ===== COUNTDOWN TIMER (to next friday 21:00)
+            function updateTimer() {
+                const now = new Date();
+                const target = new Date();
+                target.setDate(target.getDate() + ((5 - target.getDay() + 7) % 7)); // next friday
+                target.setHours(21, 0, 0, 0); // 9pm
+                if (target < now) {
+                    target.setDate(target.getDate() + 7);
+                }
+                const diff = target - now;
+                const hours = Math.floor(diff / (1000*60*60));
+                const minutes = Math.floor((diff % (1000*60*60)) / (1000*60));
+                const seconds = Math.floor((diff % (1000*60)) / 1000);
+                const timerEl = document.getElementById('countdownTimer');
+                if (timerEl) {
+                    timerEl.innerText = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+                }
+            }
+            setInterval(updateTimer, 1000);
+            updateTimer();
+
+            // ===== STAT COUNTERS (scroll animation)
+            const statNumbers = document.querySelectorAll('.stat-number');
+            const speed = 200;
+            let counted = false;
+
+            function startCounting() {
+                statNumbers.forEach(stat => {
+                    const target = parseInt(stat.getAttribute('data-target'));
+                    let current = 0;
+                    const increment = target / speed;
+                    const updateCount = () => {
+                        if (current < target) {
+                            current += increment;
+                            stat.innerText = Math.ceil(current);
+                            requestAnimationFrame(updateCount);
+                        } else {
+                            stat.innerText = target;
+                        }
+                    };
+                    updateCount();
+                });
+            }
+
+            // ===== SCROLL REVEAL (Intersection Observer)
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // if stats section appears, start counters once
+                        if (entry.target.closest('#stats') && !counted) {
+                            counted = true;
+                            startCounting();
+                        }
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            reveals.forEach(el => observer.observe(el));
+
+            // manual highlight gold for some texts via class (already used span)
+            // extra glow on timer block
+        })();
+    </script>
+    <!-- ensure first view reveals if visible -->
+    <script>
+        (function secondary(){
+            // trigger for elements already visible
+            const observer2 = new IntersectionObserver((entries)=> {
+                entries.forEach(e=> { if(e.isIntersecting) e.target.classList.add('active'); });
+            }, {threshold:0.2});
+            document.querySelectorAll('.reveal').forEach(el=> observer2.observe(el));
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

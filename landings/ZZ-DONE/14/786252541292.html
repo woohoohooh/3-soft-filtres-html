@@ -1,0 +1,746 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DrainJet · emergency clog removal</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      color: #111;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+    }
+
+    /* fixed header – transforms on scroll */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.5rem 5%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+      z-index: 1000;
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    /* compact header on scroll (JS will toggle class) */
+    header.scrolled {
+      padding: 0.8rem 5%;
+      background: rgba(255,255,255,0.98);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo i {
+      color: #0b2b4f;
+      font-size: 2rem;
+      transition: transform 0.4s ease;
+    }
+
+    .logo:hover i {
+      transform: rotate(15deg) scale(1.1);
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 2.5rem;
+      font-weight: 500;
+    }
+
+    .nav-menu a {
+      text-decoration: none;
+      color: #111;
+      font-size: 1.1rem;
+      position: relative;
+      padding-bottom: 4px;
+    }
+
+    .nav-menu a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #0b2b4f;
+      transition: width 0.25s ease;
+    }
+
+    .nav-menu a:hover::after {
+      width: 100%;
+    }
+
+    .cta-btn {
+      background: #0b2b4f;
+      color: white !important;
+      padding: 0.6rem 1.8rem;
+      border-radius: 50px;
+      font-weight: 600;
+      transition: background 0.2s, transform 0.2s;
+      box-shadow: 0 8px 16px rgba(11,43,79,0.15);
+    }
+    .cta-btn:hover {
+      background: #1d3f64;
+      transform: scale(1.02);
+    }
+    .cta-btn::after {
+      display: none;
+    }
+
+    /* main content offset for fixed header */
+    section {
+      scroll-margin-top: 80px;
+    }
+
+    .block {
+      min-height: 85vh;
+      padding: 6rem 5%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    /* block 1 – hero with js canvas animation */
+    .hero {
+      background: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      max-width: 700px;
+    }
+
+    .hero h1 {
+      font-size: 4.2rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 i {
+      color: #0b2b4f;
+      font-size: 3.8rem;
+      margin-right: 8px;
+    }
+
+    .hero p {
+      font-size: 1.4rem;
+      color: #2c3e4f;
+      margin-bottom: 2.5rem;
+      max-width: 600px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .primary-btn {
+      background: #0b2b4f;
+      border: none;
+      color: white;
+      padding: 1rem 2.8rem;
+      border-radius: 60px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 15px 25px rgba(11,43,79,0.25);
+      transition: all 0.25s;
+      border: 1px solid #0b2b4f;
+    }
+
+    .primary-btn:hover {
+      background: #1d3f64;
+      transform: translateY(-5px);
+      box-shadow: 0 25px 35px rgba(11,43,79,0.3);
+    }
+
+    .outline-btn {
+      background: transparent;
+      border: 1.5px solid #0b2b4f;
+      color: #0b2b4f;
+      padding: 1rem 2.8rem;
+      border-radius: 60px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.25s;
+    }
+
+    .outline-btn:hover {
+      background: #f4f8fd;
+      transform: translateY(-3px);
+    }
+
+    /* BLOCK 2 – features (icons + animation on scroll) */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .feature-card {
+      background: #fafbfc;
+      padding: 2.5rem 1.8rem;
+      border-radius: 32px;
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+      opacity: 0;
+      transform: translateY(35px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .feature-card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .feature-card:hover {
+      background: white;
+      box-shadow: 0 20px 30px -10px rgba(0,40,70,0.12);
+    }
+
+    .feature-card i {
+      font-size: 2.6rem;
+      color: #0b2b4f;
+      margin-bottom: 1.5rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+    }
+
+    .feature-card p {
+      font-size: 1.15rem;
+      color: #2d4055;
+    }
+
+    /* block 3 – process */
+    .process-steps {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+      margin: 4rem 0;
+    }
+
+    .step {
+      flex: 1;
+      text-align: center;
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 0.5s, transform 0.5s;
+    }
+
+    .step.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .step .step-icon {
+      background: #eef3f9;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      font-size: 2.8rem;
+      color: #0b2b4f;
+      transition: 0.3s;
+    }
+
+    .step:hover .step-icon {
+      background: #0b2b4f;
+      color: white;
+    }
+
+    .step h3 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+    }
+
+    .step p {
+      font-size: 1.2rem;
+      color: #33485d;
+    }
+
+    /* block 4 – pricing / offers */
+    .pricing-cards {
+      display: flex;
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .price-card {
+      flex: 1;
+      background: #fbfdff;
+      border-radius: 36px;
+      padding: 2.8rem 2rem;
+      border: 1px solid #eaeef3;
+      transition: all 0.4s;
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: opacity 0.6s, transform 0.6s, box-shadow 0.3s;
+    }
+
+    .price-card.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .price-card:hover {
+      box-shadow: 0 35px 50px -25px rgba(0,35,70,0.2);
+      border-color: transparent;
+    }
+
+    .price-card .price {
+      font-size: 3.2rem;
+      font-weight: 800;
+      margin: 1rem 0;
+    }
+
+    .price-card ul {
+      list-style: none;
+      margin: 2rem 0;
+    }
+
+    .price-card li {
+      font-size: 1.2rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed #dce5ec;
+    }
+
+    .price-card li i {
+      color: #0b2b4f;
+      width: 28px;
+    }
+
+    /* block 5 – about / guarantee */
+    .guarantee-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 4rem;
+      background: #f6faff;
+      border-radius: 60px;
+      padding: 3.5rem;
+      margin-top: 2rem;
+    }
+
+    .guarantee-icon {
+      font-size: 6rem;
+      color: #0b2b4f;
+    }
+
+    .guarantee-text h2 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    .guarantee-text p {
+      font-size: 1.3rem;
+    }
+
+    /* block 6 – testimonials */
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .testi {
+      background: #fafcff;
+      padding: 2.5rem;
+      border-radius: 30px;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s, transform 0.7s;
+    }
+
+    .testi.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .testi i {
+      color: #0b2b4f;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .testi p {
+      font-size: 1.25rem;
+      font-style: italic;
+      margin: 1rem 0;
+    }
+
+    .testi h4 {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    /* block 7 – faq */
+    .faq-list {
+      max-width: 900px;
+      margin: 2rem auto 0;
+    }
+
+    .faq-item {
+      border-bottom: 2px solid #eceff3;
+      padding: 1.8rem 0;
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: opacity 0.5s, transform 0.5s;
+    }
+
+    .faq-item.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .faq-question {
+      font-size: 1.6rem;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .faq-answer {
+      font-size: 1.2rem;
+      color: #2a4055;
+      padding-top: 1rem;
+      display: none;
+    }
+
+    .faq-item.active .faq-answer {
+      display: block;
+    }
+
+    /* block 8 – contact / map alternative (just icons) */
+    .contact-flex {
+      display: flex;
+      gap: 4rem;
+      margin-top: 3rem;
+    }
+
+    .contact-info {
+      flex: 1;
+    }
+
+    .contact-info h3 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    .contact-info p {
+      font-size: 1.3rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .contact-info i {
+      font-size: 2rem;
+      color: #0b2b4f;
+      width: 40px;
+    }
+
+    /* footer block 9 */
+    footer {
+      background: white;
+      padding: 2.5rem 5%;
+      border-top: 1px solid #eef2f6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .social i {
+      font-size: 1.8rem;
+      margin-left: 1.8rem;
+      color: #1a3046;
+      transition: 0.2s;
+    }
+
+    .social i:hover {
+      color: #0b2b4f;
+      transform: scale(1.2);
+    }
+
+    /* animation helper */
+    .hidden-init {
+      opacity: 0;
+      transform: translateY(25px);
+      transition: opacity 0.8s, transform 0.8s;
+    }
+
+    .hidden-init.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 1200px) { /* keep desktop-ish, minor shrink */ }
+  </style>
+</head>
+<body>
+  <header id="mainHeader">
+    <div class="logo">
+      <i class="fas fa-bolt"></i> DrainJet
+    </div>
+    <div class="nav-menu">
+      <a href="#home">home</a>
+      <a href="#services">services</a>
+      <a href="#process">process</a>
+      <a href="#pricing">pricing</a>
+      <a href="#contact" class="cta-btn">call now</a>
+    </div>
+  </header>
+
+  <!-- BLOCK 1 HERO (canvas animation) -->
+  <section class="block hero" id="home">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1><i class="fas fa-pipe-valve"></i> clogged?<br>we own the flow.</h1>
+      <p>Emergency drain cleaning & root removal — 24/7, 30 min arrival.</p>
+      <div class="button-group">
+        <button class="primary-btn">book instant</button>
+        <button class="outline-btn">see offers</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 2 FEATURES (4 icons) -->
+  <section class="block" id="services">
+    <h2>why professionals choose us</h2>
+    <div class="features-grid">
+      <div class="feature-card hidden-init"><i class="fas fa-clock"></i><h3>24/7</h3><p>anytime emergency, weekends & nights</p></div>
+      <div class="feature-card hidden-init"><i class="fas fa-tv"></i><h3>camera inspection</h3><p>pinpoint problem without digging</p></div>
+      <div class="feature-card hidden-init"><i class="fas fa-leaf"></i><h3>bio-friendly</h3><p>safe for pipes & environment</p></div>
+      <div class="feature-card hidden-init"><i class="fas fa-trophy"></i><h3>5‑year guarantee</h3><p>on all main line repairs</p></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 3 PROCESS -->
+  <section class="block" id="process">
+    <h2>3‑step rapid recovery</h2>
+    <div class="process-steps">
+      <div class="step hidden-init"><div class="step-icon"><i class="fas fa-search"></i></div><h3>diagnose</h3><p>camera scan & locate</p></div>
+      <div class="step hidden-init"><div class="step-icon"><i class="fas fa-water"></i></div><h3>jet blast</h3><p>high-pressure drain jetting</p></div>
+      <div class="step hidden-init"><div class="step-icon"><i class="fas fa-check-circle"></i></div><h3>flow test</h3><p>full pressure restore</p></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 4 PRICING -->
+  <section class="block" id="pricing">
+    <h2>simple plans</h2>
+    <div class="pricing-cards">
+      <div class="price-card hidden-init"><h3>rescue</h3><div class="price">$149</div><ul><li><i class="fas fa-check"></i> snaking / auger</li><li><i class="fas fa-check"></i> toilet/sink unclog</li><li><i class="fas fa-check"></i> 30-day warranty</li></ul></div>
+      <div class="price-card hidden-init"><h3>hydro-jet</h3><div class="price">$349</div><ul><li><i class="fas fa-check"></i> full line jetting</li><li><i class="fas fa-check"></i> camera inspection</li><li><i class="fas fa-check"></i> 1 year warranty</li></ul></div>
+      <div class="price-card hidden-init"><h3>emergency</h3><div class="price">$499+</div><ul><li><i class="fas fa-check"></i> immediate dispatch</li><li><i class="fas fa-check"></i> root removal</li><li><i class="fas fa-check"></i> 5‑year guarantee</li></ul></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 5 GUARANTEE -->
+  <section class="block">
+    <div class="guarantee-wrapper hidden-init">
+      <div class="guarantee-icon"><i class="fas fa-shield-halved"></i></div>
+      <div class="guarantee-text"><h2>unconditional 5‑year warranty</h2><p>If the same clog returns within 5 years, we fix it free — including parts & labor. only from drainjet.</p></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 6 TESTIMONIALS -->
+  <section class="block">
+    <h2>trusted by 2,000+ homes</h2>
+    <div class="testimonial-grid">
+      <div class="testi hidden-init"><i class="fas fa-star"></i><p>"they unblocked a 30yr old root in 1h. pure magic."</p><h4>— m. chen</h4></div>
+      <div class="testi hidden-init"><i class="fas fa-star"></i><p>"hydro‑jet service saved my basement. super fast."</p><h4>— j. kowalski</h4></div>
+      <div class="testi hidden-init"><i class="fas fa-star"></i><p>"camera inspection found a broken pipe. honest work."</p><h4>— l. vasquez</h4></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 7 FAQ -->
+  <section class="block">
+    <h2>common answers</h2>
+    <div class="faq-list">
+      <div class="faq-item hidden-init"><div class="faq-question">do you work on weekends? <i class="fas fa-chevron-down"></i></div><div class="faq-answer">247, including holidays — same price, no extra fees.</div></div>
+      <div class="faq-item hidden-init"><div class="faq-question">is camera inspection extra? <i class="fas fa-chevron-down"></i></div><div class="faq-answer">included in every hydro-jet and emergency plan.</div></div>
+      <div class="faq-item hidden-init"><div class="faq-question">what chemicals do you use? <i class="fas fa-chevron-down"></i></div><div class="faq-answer">only bio-enzymatic, 100% eco-safe for gardens.</div></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 8 CONTACT -->
+  <section class="block" id="contact">
+    <h2>speak to a technician now</h2>
+    <div class="contact-flex">
+      <div class="contact-info hidden-init"><h3>📞 direct line</h3><p><i class="fas fa-phone-alt"></i> +1 (800) 422-1919</p><p><i class="fas fa-map-pin"></i> 24/7 dispatch — 30 min guarantee</p><p><i class="fas fa-envelope"></i> help@drainjet.tech</p></div>
+      <div class="contact-info hidden-init"><h3>📍 service area</h3><p><i class="fas fa-city"></i> entire metro & suburbs</p><p><i class="fas fa-truck"></i> 12 units ready</p></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 9 FOOTER -->
+  <footer>
+    <div class="logo" style="font-size:1.5rem;"><i class="fas fa-bolt"></i> DrainJet</div>
+    <div class="social"><i class="fab fa-instagram"></i><i class="fab fa-x-twitter"></i><i class="fab fa-linkedin-in"></i></div>
+    <div style="color:#4e5f6e;">© 2025 — clog free since ‘12</div>
+  </footer>
+
+  <script>
+    (function() {
+      // ----- CANVAS ANIMATION (block 1) -----
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function resizeCanvas() {
+        width = canvas.clientWidth;
+        height = canvas.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      function initParticles() {
+        particles = [];
+        const count = Math.floor((width * height) / 10000);
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 2 + 0.8,
+            speedY: Math.random() * 0.5 + 0.1,
+            speedX: (Math.random() - 0.5) * 0.2,
+            opacity: Math.random() * 0.4 + 0.1,
+          });
+        }
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#0b2b4f';
+        for (let p of particles) {
+          ctx.globalAlpha = p.opacity * 0.5;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+          ctx.fill();
+          // move
+          p.y += p.speedY;
+          p.x += p.speedX;
+          if (p.y > height + 10) p.y = -10;
+          if (p.x > width + 10) p.x = -10;
+          if (p.x < -10) p.x = width + 10;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => { resizeCanvas(); });
+      resizeCanvas();
+      drawParticles();
+
+      // ----- HEADER SCROLL COMPACT -----
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // ----- INTERSECTION OBSERVER (reveal blocks, cards, etc) -----
+      const hiddenElements = document.querySelectorAll('.hidden-init, .feature-card, .step, .price-card, .testi, .faq-item, .guarantee-wrapper, .contact-info');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+
+      hiddenElements.forEach(el => observer.observe(el));
+
+      // ----- FAQ accordion (simple) -----
+      const faqItems = document.querySelectorAll('.faq-item');
+      faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        question.addEventListener('click', () => {
+          const isActive = item.classList.contains('active');
+          faqItems.forEach(i => i.classList.remove('active'));
+          if (!isActive) item.classList.add('active');
+        });
+      });
+
+      // small extra: smooth anchor + close others
+      document.querySelectorAll('.nav-menu a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          const href = this.getAttribute('href');
+          if (href && href.startsWith('#')) {
+            e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
+```
+All done!

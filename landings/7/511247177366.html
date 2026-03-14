@@ -1,0 +1,805 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private shooting club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0c10;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e3e6ed;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter google font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* custom crosshair cursor */
+        * {
+            cursor: crosshair;
+        }
+
+        a, button, .clickable {
+            cursor: crosshair;
+        }
+
+        /* fixed header – becomes compact on scroll */
+        .site-header {
+            position: fixed;
+            top: 20px;
+            left: 30px;
+            right: 30px;
+            background: rgba(10, 14, 23, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(220, 180, 80, 0.15);
+            border-radius: 60px;
+            padding: 0.7rem 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+            box-shadow: 0 15px 35px -10px rgba(0,0,0,0.8);
+        }
+
+        .site-header.compact {
+            top: 12px;
+            left: 20px;
+            right: 20px;
+            padding: 0.4rem 1.8rem;
+            background: rgba(5, 7, 12, 0.95);
+            border-color: rgba(220, 180, 80, 0.4);
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 1.6rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #f5e7c8, #c9a45b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            transition: 0.2s;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #dadfeb;
+            font-weight: 500;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            position: relative;
+            padding: 4px 0;
+            transition: 0.25s;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 1.5px;
+            background: #c9a45b;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: #f2e3c4;
+        }
+
+        /* main blocks container */
+        main {
+            padding-top: 130px; /* header offset */
+        }
+
+        section {
+            scroll-margin-top: 100px;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            min-height: 85vh;
+            display: flex;
+            align-items: center;
+            padding: 2rem 8%;
+            position: relative;
+            border-bottom: 1px solid rgba(201, 164, 91, 0.2);
+            background: radial-gradient(ellipse at 70% 30%, rgba(30, 27, 40, 0.9), #0b0c10 70%);
+        }
+
+        .hero-content {
+            max-width: 750px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .crosshair-animation {
+            position: absolute;
+            top: 0;
+            right: 5%;
+            width: 400px;
+            height: 400px;
+            opacity: 0.25;
+            pointer-events: none;
+        }
+
+        #crosshairCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .pre-title {
+            font-size: 1rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #b89e6b;
+            border-left: 3px solid #b89e6b;
+            padding-left: 16px;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: 5.2rem;
+            font-weight: 700;
+            line-height: 1.0;
+            text-transform: uppercase;
+            margin-bottom: 1.8rem;
+        }
+
+        .hero h1 span {
+            color: #c9a45b;
+            text-shadow: 0 0 12px rgba(201, 164, 91, 0.4);
+            display: inline-block;
+        }
+
+        .hero-desc {
+            font-size: 1.3rem;
+            max-width: 550px;
+            color: #aab3c4;
+            margin-bottom: 2.5rem;
+            border-right: 2px solid rgba(201, 164, 91, 0.3);
+            padding-right: 30px;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: #e4d5b6;
+            letter-spacing: 2px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #8f96a3;
+        }
+
+        /* ===== DISCIPLINES (cards) ===== */
+        .disciplines {
+            padding: 100px 8%;
+            background: #0f111a;
+            position: relative;
+        }
+
+        .section-label {
+            font-size: 0.9rem;
+            letter-spacing: 6px;
+            color: #b89e6b;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .section-title {
+            font-size: 3.5rem;
+            font-weight: 600;
+            margin-bottom: 4rem;
+            border-bottom: 1px solid #2f2b27;
+            padding-bottom: 20px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .discipline-card {
+            background: rgba(20, 22, 32, 0.7);
+            border: 1px solid #302c28;
+            padding: 2.4rem 2rem;
+            transition: 0.25s ease-out;
+            position: relative;
+            backdrop-filter: blur(2px);
+        }
+
+        .discipline-card:hover {
+            border-color: #c9a45b;
+            transform: translateY(-12px);
+            background: #131724;
+            box-shadow: 0 30px 30px -15px black;
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            color: #c9a45b;
+            margin-bottom: 1.6rem;
+        }
+
+        .discipline-card h3 {
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .discipline-card p {
+            color: #9da6b5;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px dashed #3e3b36;
+            padding-top: 1.2rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: #b89e6b;
+        }
+
+        /* ===== INSTRUCTORS ===== */
+        .instructors {
+            padding: 100px 8%;
+            background: #0b0c10;
+        }
+
+        .instructor-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+        }
+
+        .instructor-card {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            background: #12141e;
+            border: 1px solid #2a2825;
+            padding: 2rem;
+        }
+
+        .instructor-icon {
+            font-size: 4rem;
+            color: #c9a45b;
+            background: #1b1d2b;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid #5f4f33;
+        }
+
+        .instructor-info h4 {
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 0.2rem;
+        }
+
+        .instructor-info .role {
+            color: #b89e6b;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .instructor-info .exp {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .exp i {
+            color: #c9a45b;
+        }
+
+        /* ===== TRAINING PACKAGES (cards with price) ===== */
+        .packages {
+            padding: 100px 8%;
+            background: #0e1018;
+            border-top: 1px solid #25221e;
+            border-bottom: 1px solid #25221e;
+        }
+
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .package-item {
+            background: #151a24;
+            padding: 2.5rem 2rem;
+            border: 1px solid #35312b;
+            text-align: left;
+            transition: 0.2s;
+        }
+
+        .package-item:hover {
+            border-color: #c9a45b;
+            background: #1b212e;
+        }
+
+        .package-name {
+            font-size: 1.8rem;
+            font-weight: 500;
+            border-bottom: 1px solid #c9a45b;
+            display: inline-block;
+            padding-bottom: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .package-price {
+            font-size: 3.2rem;
+            font-weight: 700;
+            color: #e2cfaa;
+            margin-bottom: 1.5rem;
+        }
+
+        .package-price small {
+            font-size: 1rem;
+            font-weight: 300;
+            color: #8891a0;
+        }
+
+        .package-features {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .package-features li {
+            padding: 0.4rem 0;
+            color: #b7bfcc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .package-features i {
+            color: #c9a45b;
+            width: 20px;
+        }
+
+        .package-cta {
+            background: transparent;
+            border: 1px solid #c9a45b;
+            color: #f2e3c4;
+            padding: 0.8rem 2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        .package-cta:hover {
+            background: #c9a45b;
+            color: #0b0c10;
+        }
+
+        /* ===== STATISTICS (counters) ===== */
+        .stats-block {
+            padding: 90px 8%;
+            background: #0b0c10;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .stat-large {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-large .digit {
+            font-size: 5rem;
+            font-weight: 800;
+            color: #c9a45b;
+            line-height: 1;
+        }
+
+        .stat-large .stat-desc {
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #969fb0;
+            margin-top: 10px;
+        }
+
+        /* ===== FOOTER ===== */
+        .site-footer {
+            background: #07080d;
+            padding: 50px 8% 30px;
+            border-top: 1px solid #2c2822;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-logo {
+            font-size: 1.8rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #dac292, #b2894b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .footer-links a {
+            color: #9eaaBA;
+            text-decoration: none;
+            margin: 0 20px;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        .footer-links a:hover {
+            color: #c9a45b;
+        }
+
+        .footer-copy {
+            color: #5b6372;
+            font-size: 0.8rem;
+            width: 100%;
+            text-align: center;
+            margin-top: 35px;
+            letter-spacing: 1px;
+        }
+
+        /* scroll reveal animation (simple) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(25px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .fade-up.appeared {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* interactive crosshair canvas */
+        #dynamicCrosshair {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.2;
+            mix-blend-mode: overlay;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- fixed header (javascript will toggle compact) -->
+    <header class="site-header" id="mainHeader">
+        <div class="logo">OBSIDIAN</div>
+        <div class="nav-links">
+            <a href="#hero">MISSION</a>
+            <a href="#disciplines">DISCIPLINES</a>
+            <a href="#instructors">OPERATORS</a>
+            <a href="#packages">FIREPOWER</a>
+            <a href="#stats">STATS</a>
+        </div>
+        <div><i class="fas fa-crosshairs" style="color: #c9a45b; font-size: 1.2rem;"></i></div>
+    </header>
+
+    <!-- floating crosshair overlay canvas (dynamic) -->
+    <canvas id="dynamicCrosshair"></canvas>
+
+    <main>
+        <!-- HERO block with canvas animation inside -->
+        <section class="hero" id="hero">
+            <div class="hero-content fade-up">
+                <div class="pre-title"><i class="fas fa-skull" style="margin-right: 8px;"></i>ELITE FIREARMS</div>
+                <h1>PRECISION <span>SHOOTING</span> CLUB</h1>
+                <div class="hero-desc">Where accuracy meets instinct. Classified training grounds for marksmen.</div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="counter1">850+</span>
+                        <span class="stat-label">ROUNDS/YEAR</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="counter2">47</span>
+                        <span class="stat-label">EXPERT INSTRUCT.</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="counter3">100%</span>
+                        <span class="stat-label">HIT RATIO</span>
+                    </div>
+                </div>
+            </div>
+            <div class="crosshair-animation">
+                <canvas id="crosshairCanvas" width="400" height="400"></canvas>
+            </div>
+        </section>
+
+        <!-- DISCIPLINES (cards) -->
+        <section class="disciplines" id="disciplines">
+            <div class="section-label fade-up"><i class="fas fa-bullseye"></i> · ARSENAL</div>
+            <h2 class="section-title fade-up">SHOOTING DISCIPLINES</h2>
+            <div class="card-grid">
+                <div class="discipline-card fade-up">
+                    <div class="card-icon"><i class="fas fa-gun"></i></div>
+                    <h3>PRECISION RIFLE</h3>
+                    <p>Long-range engagements up to 1200m. Ballistics & wind reading.</p>
+                    <div class="card-meta"><span>MAX: 1.5 MOA</span> <span>🔴 24/7</span></div>
+                </div>
+                <div class="discipline-card fade-up">
+                    <div class="card-icon"><i class="fas fa-crosshairs"></i></div>
+                    <h3>PISTOL DYNAMICS</h3>
+                    <p>Speed draws, target transitions, close-quarters drills.</p>
+                    <div class="card-meta"><span>0.6s DRAW</span> <span>⚡ 7YDS</span></div>
+                </div>
+                <div class="discipline-card fade-up">
+                    <div class="card-icon"><i class="fas fa-burst"></i></div>
+                    <h3>TACTICAL SHOTGUN</h3>
+                    <p>Multi-target, slugs, and breaching simulations.</p>
+                    <div class="card-meta"><span>12 GA.</span> <span>💥 9 rounds</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INSTRUCTORS -->
+        <section class="instructors" id="instructors">
+            <div class="section-label fade-up"><i class="fas fa-user-secret"></i> · OPERATORS</div>
+            <h2 class="section-title fade-up">COMBAT READINESS MENTORS</h2>
+            <div class="instructor-grid">
+                <div class="instructor-card fade-up">
+                    <div class="instructor-icon"><i class="fas fa-eye"></i></div>
+                    <div class="instructor-info">
+                        <h4>V. STONE</h4>
+                        <div class="role">EX–FORCE RECON</div>
+                        <div class="exp"><i class="fas fa-bolt"></i> 14yrs · 2,300+ students</div>
+                    </div>
+                </div>
+                <div class="instructor-card fade-up">
+                    <div class="instructor-icon"><i class="fas fa-crown"></i></div>
+                    <div class="instructor-info">
+                        <h4>M. CROSS</h4>
+                        <div class="role">WORLD SHOOTING CHAMP</div>
+                        <div class="exp"><i class="fas fa-trophy"></i> 31 medals · 9x national</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PACKAGES -->
+        <section class="packages" id="packages">
+            <div class="section-label fade-up"><i class="fas fa-box"></i> · MEMBERSHIP</div>
+            <h2 class="section-title fade-up">TRAINING PACKAGES</h2>
+            <div class="package-grid">
+                <div class="package-item fade-up">
+                    <div class="package-name">MARKSMAN</div>
+                    <div class="package-price">$280 <small>/mo</small></div>
+                    <ul class="package-features">
+                        <li><i class="fas fa-check"></i> 8h range access</li>
+                        <li><i class="fas fa-check"></i> 1 instructor session</li>
+                        <li><i class="fas fa-check"></i> Rifle/pistol rental</li>
+                    </ul>
+                    <button class="package-cta">ZERO IN</button>
+                </div>
+                <div class="package-item fade-up">
+                    <div class="package-name">OPERATOR</div>
+                    <div class="package-price">$540 <small>/mo</small></div>
+                    <ul class="package-features">
+                        <li><i class="fas fa-check"></i> unlimited range</li>
+                        <li><i class="fas fa-check"></i> 4 private sessions</li>
+                        <li><i class="fas fa-check"></i> tactical drills</li>
+                        <li><i class="fas fa-check"></i> guest pass</li>
+                    </ul>
+                    <button class="package-cta">BREACH</button>
+                </div>
+                <div class="package-item fade-up">
+                    <div class="package-name">LEGEND</div>
+                    <div class="package-price">$999 <small>/mo</small></div>
+                    <ul class="package-features">
+                        <li><i class="fas fa-check"></i> VIP lane + catering</li>
+                        <li><i class="fas fa-check"></i> 10h one-on-one</li>
+                        <li><i class="fas fa-check"></i> custom loadout</li>
+                        <li><i class="fas fa-check"></i> competition entry</li>
+                    </ul>
+                    <button class="package-cta">DOMINATE</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STATISTICS BLOCK (counters animation) -->
+        <section class="stats-block" id="stats">
+            <div class="stat-large fade-up">
+                <span class="digit" id="statPrecision">97</span>
+                <span class="stat-desc">PRECISION RATING</span>
+            </div>
+            <div class="stat-large fade-up">
+                <span class="digit" id="statMembers">1.2k</span>
+                <span class="stat-desc">ACTIVE MEMBERS</span>
+            </div>
+            <div class="stat-large fade-up">
+                <span class="digit" id="statDrills">54</span>
+                <span class="stat-desc">DRILL STATIONS</span>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="site-footer">
+            <div class="footer-logo">OBSIDIAN · PC</div>
+            <div class="footer-links">
+                <a href="#hero">MISSION</a>
+                <a href="#disciplines">TRACK</a>
+                <a href="#instructors">TEAM</a>
+                <a href="#packages">GEAR</a>
+            </div>
+            <div class="footer-copy">
+                <i class="fas fa-crosshairs" style="margin-right: 6px;"></i> NO COMPROMISE · EST. MMXXV
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        (function() {
+            // ----- HEADER COMPACT ON SCROLL -----
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // ----- CANVAS ANIMATION (hero rotating crosshair) -----
+            const canvas = document.getElementById('crosshairCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let angle = 0;
+                function drawCrosshair() {
+                    ctx.clearRect(0, 0, 400, 400);
+                    ctx.save();
+                    ctx.translate(200, 200);
+                    ctx.rotate(angle);
+                    ctx.strokeStyle = '#c9a45b';
+                    ctx.lineWidth = 2.5;
+                    ctx.shadowColor = '#e3b37c';
+                    ctx.shadowBlur = 12;
+                    // cross
+                    ctx.beginPath();
+                    ctx.moveTo(-80, 0);
+                    ctx.lineTo(80, 0);
+                    ctx.moveTo(0, -80);
+                    ctx.lineTo(0, 80);
+                    ctx.stroke();
+                    // circle
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 50, 50, 0, 0, 2 * Math.PI);
+                    ctx.strokeStyle = '#dbb67b';
+                    ctx.setLineDash([6, 8]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.restore();
+                    angle += 0.003;
+                    requestAnimationFrame(drawCrosshair);
+                }
+                drawCrosshair();
+            }
+
+            // ----- DYNAMIC CROSSHAIR OVERLAY (follows mouse) -----
+            const dynCanvas = document.getElementById('dynamicCrosshair');
+            const ctxDyn = dynCanvas.getContext('2d');
+            let mouseX = 0, mouseY = 0;
+            dynCanvas.width = window.innerWidth;
+            dynCanvas.height = window.innerHeight;
+            window.addEventListener('resize', () => {
+                dynCanvas.width = window.innerWidth;
+                dynCanvas.height = window.innerHeight;
+            });
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+            function drawDynCross() {
+                ctxDyn.clearRect(0, 0, dynCanvas.width, dynCanvas.height);
+                if (mouseX > 0 && mouseY > 0) {
+                    ctxDyn.beginPath();
+                    ctxDyn.strokeStyle = '#c9a45b';
+                    ctxDyn.lineWidth = 1.2;
+                    ctxDyn.setLineDash([6, 6]);
+                    ctxDyn.moveTo(mouseX - 30, mouseY);
+                    ctxDyn.lineTo(mouseX - 12, mouseY);
+                    ctxDyn.moveTo(mouseX + 12, mouseY);
+                    ctxDyn.lineTo(mouseX + 30, mouseY);
+                    ctxDyn.moveTo(mouseX, mouseY - 30);
+                    ctxDyn.lineTo(mouseX, mouseY - 12);
+                    ctxDyn.moveTo(mouseX, mouseY + 12);
+                    ctxDyn.lineTo(mouseX, mouseY + 30);
+                    ctxDyn.stroke();
+                    ctxDyn.beginPath();
+                    ctxDyn.ellipse(mouseX, mouseY, 20, 20, 0, 0, 2 * Math.PI);
+                    ctxDyn.strokeStyle = '#e9cba7';
+                    ctxDyn.setLineDash([2, 8]);
+                    ctxDyn.stroke();
+                }
+                requestAnimationFrame(drawDynCross);
+            }
+            drawDynCross();
+
+            // ----- SCROLL REVEAL (fade-up) + counter increment effect (just visual) -----
+            const faders = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appeared');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -20px 0px' });
+            faders.forEach(el => observer.observe(el));
+
+            // tiny static counters (no big animation, just static but styled)
+            // (we keep numbers from html, but you can update them on appear)
+            // set some increments for wow
+            document.querySelectorAll('#counter1, #counter2, #counter3, #statPrecision, #statMembers, #statDrills').forEach(el => {
+                observer.observe(el);
+            });
+        })();
+    </script>
+
+    <!-- ensure all fade-up become visible if observer fails -->
+    <noscript><style>.fade-up { opacity:1; transform:none; }</style></noscript>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,495 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashLearn • vocabulary builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1a1e2b;
+            padding: 12px;
+        }
+        :root {
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --text: #0F172A;
+            --text-light: #334155;
+            --primary: #2563EB;
+            --secondary: #1E40AF;
+            --accent: #38BDF8;
+            --border: #E2E8F0;
+            --icon-inactive: #94A3B8;
+            --shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.02);
+        }
+        body.dark {
+            --bg: #0F172A;
+            --card: #1E293B;
+            --text: #E2E8F0;
+            --text-light: #CBD5E1;
+            --primary: #3B82F6;
+            --secondary: #2563EB;
+            --accent: #38BDF8;
+            --border: #334155;
+            --icon-inactive: #64748B;
+            --shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+        }
+        .phone-frame {
+            width: 360px;
+            height: 780px;
+            background-color: var(--bg);
+            border-radius: 42px;
+            overflow: hidden;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.4), 0 0 0 8px #2c303a;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.2s;
+        }
+        .app-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        /* screens */
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            overflow-y: auto;
+            padding: 16px 16px 8px 16px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--border);
+        }
+        .screen.active {
+            display: flex;
+        }
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+        }
+        .header h2 {
+            font-size: 24px;
+            font-weight: 650;
+            color: var(--text);
+            letter-spacing: -0.3px;
+        }
+        .profile-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            transition: 0.1s;
+        }
+        .profile-btn:hover { background: var(--border); }
+        /* bottom nav */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 12px 14px;
+            background-color: var(--card);
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
+            transition: 0.2s;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--icon-inactive);
+            transition: all 0.15s ease;
+            padding: 6px 12px;
+            border-radius: 30px;
+        }
+        .nav-item.active {
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.08);
+            transform: scale(1.05);
+        }
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2px;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .nav-item.active svg {
+            stroke: var(--primary);
+        }
+        /* cards & elements */
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+        }
+        .row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .badge {
+            background: var(--accent);
+            color: #0F172A;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 13px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 14px 24px;
+            border-radius: 40px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 6px 0 var(--secondary);
+        }
+        .btn-primary:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--secondary); }
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .stat-item {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 18px;
+            text-align: center;
+        }
+        .modal {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--card);
+            padding: 24px;
+            border-radius: 32px;
+            width: 280px;
+            color: var(--text);
+        }
+        .close-btn {
+            margin-top: 16px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 30px;
+            width: 100%;
+        }
+        .lesson-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .icon-svg {
+            width: 40px; height: 40px;
+            stroke: var(--primary);
+            stroke-width: 2;
+            fill: none;
+        }
+        .toggle-switch {
+            width: 44px; height: 24px;
+            background: var(--border);
+            border-radius: 40px;
+            appearance: none;
+            cursor: pointer;
+            position: relative;
+        }
+        .toggle-switch:checked {
+            background: var(--primary);
+        }
+        .toggle-switch::before {
+            content: '';
+            position: absolute;
+            width: 20px; height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px; left: 2px;
+            transition: 0.2s;
+        }
+        .toggle-switch:checked::before { left: 22px; }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: var(--primary);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="phone-frame" id="phoneContainer">
+    <div class="app-container" id="app">
+
+        <!-- ONBOARDING SCREEN -->
+        <div id="screenOnboarding" class="screen active">
+            <div style="flex:1; display: flex; flex-direction: column; justify-content: center;">
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 24px;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8"/><path d="M8 11h6"/></svg>
+                    <h1 style="font-size: 32px; color: var(--primary);">FlashLearn</h1>
+                </div>
+                <h2 style="color: var(--text); margin-bottom: 8px;">English vocabulary builder</h2>
+                <p style="color: var(--text-light); margin-bottom: 24px;">Master 3000+ words with smart flashcards. Daily 5‑min workouts.</p>
+                <button class="btn-primary" id="getStartedBtn">Get Started</button>
+                <div class="footer-links">
+                    <span id="privacyLink">Privacy Policy</span>
+                    <span id="termsLink">Terms of Service</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOME DASHBOARD -->
+        <div id="screenHome" class="screen">
+            <div class="header">
+                <h2>Home</h2>
+                <button class="profile-btn" id="profileBtnHome"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+            </div>
+            <div class="card" style="background: linear-gradient(145deg, var(--primary), #1E4BB5); color: white;">
+                <div class="row" style="justify-content: space-between;"><span>🔥 streak 12 days</span> <span class="badge">+45 xp</span></div>
+                <div style="font-size: 32px; font-weight: 700; margin: 8px 0 4px;">672 words</div>
+                <div class="progress-bar" style="background: #ffffff50;"><div class="progress-fill" style="width: 67%; background: white;"></div></div>
+                <span>67% mastered</span>
+            </div>
+            <div class="card">
+                <div style="display: flex; gap: 12px; margin-bottom: 12px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span style="font-weight:600;">Daily goal: 15 min</span></div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 60%;"></div></div>
+                <p style="margin-top:6px;">9 min left</p>
+            </div>
+            <h3 style="color: var(--text); margin: 8px 0;">continue learning</h3>
+            <div class="card row" style="justify-content:space-between;">
+                <span>📘 Business English</span>
+                <button class="btn-primary" style="padding:8px 16px; font-size:14px;" id="quickLearn">Practice</button>
+            </div>
+            <div class="card row" style="justify-content:space-between;">
+                <span>🗣️ IELTS vocabulary</span>
+                <button class="btn-primary" style="padding:8px 16px; font-size:14px;">Start</button>
+            </div>
+        </div>
+
+        <!-- LEARN / PRACTICE -->
+        <div id="screenLearn" class="screen">
+            <div class="header"><h2>Learn</h2><button class="profile-btn" id="profileBtnLearn"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button></div>
+            <div class="card">
+                <div class="lesson-item"><span>🔤 Word sets: Animals</span><span><input type="checkbox"> learned</span></div>
+                <div class="lesson-item"><span>🏛️ History terms</span><span>12 left</span></div>
+                <div class="lesson-item"><span>🧪 Science: 50 words</span><span>78%</span></div>
+                <button class="btn-primary" style="margin-top:12px;" id="startPracticeBtn">start practice</button>
+            </div>
+            <div class="card" style="text-align: center;">
+                <span style="display:block; margin-bottom:8px;">daily flashcard session</span>
+                <svg width="48" height="48" viewBox="0 0 24 24" stroke="var(--accent)" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg>
+                <div class="progress-bar" style="margin:12px 0;"><div class="progress-fill" style="width:45%"></div></div>
+                <span>9/20 today</span>
+            </div>
+        </div>
+
+        <!-- PROGRESS / STATISTICS -->
+        <div id="screenProgress" class="screen">
+            <div class="header"><h2>Progress</h2><button class="profile-btn" id="profileBtnProgress"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button></div>
+            <div class="stats-grid">
+                <div class="stat-item"><span style="font-size:20px;">🔥 12</span><br>day streak</div>
+                <div class="stat-item"><span style="font-size:20px;">672</span><br>words</div>
+                <div class="stat-item"><span style="font-size:20px;">45</span><br>xp today</div>
+                <div class="stat-item"><span style="font-size:20px;">3</span><br>badges</div>
+            </div>
+            <div class="card">
+                <h4>Weekly activity</h4>
+                <div style="display:flex; gap:6px; height:80px; align-items:flex-end; margin:16px 0;">
+                    <div style="flex:1; background:var(--primary); height:40px; border-radius:8px;"></div>
+                    <div style="flex:1; background:var(--primary); height:70px;"></div>
+                    <div style="flex:1; background:var(--primary); height:55px;"></div>
+                    <div style="flex:1; background:var(--primary); height:20px;"></div>
+                    <div style="flex:1; background:var(--primary); height:68px;"></div>
+                    <div style="flex:1; background:var(--primary); height:44px;"></div>
+                    <div style="flex:1; background:var(--primary); height:30px;"></div>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div>
+                <p style="margin-top:6px;">72% of weekly goal</p>
+            </div>
+            <div class="card row"><svg width="28" height="28" stroke="var(--primary)"><circle cx="14" cy="14" r="10"/><path d="M12 8v8l4-2"/></svg><span>➕ 2 achievements this week</span></div>
+        </div>
+
+        <!-- SETTINGS / PROFILE -->
+        <div id="screenSettings" class="screen">
+            <div class="header"><h2>Settings</h2><button class="profile-btn" disabled style="opacity:0.5;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button></div>
+            <div class="card row" style="justify-content: space-between;">
+                <span>Dark mode</span>
+                <input type="checkbox" class="toggle-switch" id="darkModeToggle">
+            </div>
+            <div class="card">
+                <p style="margin-bottom:12px;">Profile: Alex</p>
+                <p>🏅 member since 2025</p>
+            </div>
+            <div class="card">⚙️ notifications<br>🔊 sound effects<br>🌐 language: English</div>
+            <div style="margin-top:20px; padding:16px;">version 2.6 · FlashLearn</div>
+        </div>
+    </div>
+    <!-- bottom nav fixed -->
+    <div class="bottom-nav" id="bottomNav">
+        <button class="nav-item" data-screen="home"><svg viewBox="0 0 24 24"><path d="M3 10l9-7 9 7v11a2 2 0 0 1-2 2h-5v-8H10v8H5a2 2 0 0 1-2-2z"/></svg><span>Home</span></button>
+        <button class="nav-item" data-screen="learn"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Learn</span></button>
+        <button class="nav-item" data-screen="progress"><svg viewBox="0 0 24 24"><path d="M21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/><path d="M15 2v4h4"/><path d="M9 16h6"/><path d="M9 12h6"/><path d="M9 8h2"/></svg><span>Progress</span></button>
+        <button class="nav-item" data-screen="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
+    </div>
+    <!-- Modals -->
+    <div id="privacyModal" class="modal"><div class="modal-content"><h3>Privacy Policy</h3><p style="margin:12px 0;">We respect your data. No selling to third parties.</p><button class="close-btn" data-modal="privacy">Close</button></div></div>
+    <div id="termsModal" class="modal"><div class="modal-content"><h3>Terms of Service</h3><p style="margin:12px 0;">Use FlashLearn for personal learning only.</p><button class="close-btn" data-modal="terms">Close</button></div></div>
+</div>
+
+<script>
+    (function() {
+        const screens = {
+            onboarding: document.getElementById('screenOnboarding'),
+            home: document.getElementById('screenHome'),
+            learn: document.getElementById('screenLearn'),
+            progress: document.getElementById('screenProgress'),
+            settings: document.getElementById('screenSettings')
+        };
+        const navItems = document.querySelectorAll('.nav-item');
+        const profileBtns = document.querySelectorAll('.profile-btn');
+        const body = document.body;
+        const phone = document.getElementById('phoneContainer');
+
+        // theme
+        const darkToggle = document.getElementById('darkModeToggle');
+        darkToggle.addEventListener('change', (e) => {
+            if(e.target.checked) body.classList.add('dark');
+            else body.classList.remove('dark');
+        });
+
+        function showScreen(screenId) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[screenId].classList.add('active');
+            navItems.forEach(item => {
+                const data = item.getAttribute('data-screen');
+                if(data === screenId) item.classList.add('active');
+                else item.classList.remove('active');
+            });
+        }
+
+        navItems.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = btn.getAttribute('data-screen');
+                showScreen(target);
+            });
+        });
+
+        profileBtns.forEach(btn => {
+            btn.addEventListener('click', () => showScreen('settings'));
+        });
+
+        document.getElementById('getStartedBtn').addEventListener('click', () => showScreen('home'));
+
+        // start practice from learn -> just update progress
+        document.getElementById('startPracticeBtn')?.addEventListener('click', ()=>{
+            const fill = document.querySelector('#screenLearn .progress-fill');
+            if(fill) fill.style.width = '68%';
+        });
+        document.getElementById('quickLearn')?.addEventListener('click', ()=>{
+            const fill = document.querySelector('#screenHome .progress-fill');
+            if(fill) fill.style.width = '75%';
+        });
+
+        // modal logic
+        const modalPrivacy = document.getElementById('privacyModal');
+        const modalTerms = document.getElementById('termsModal');
+        document.getElementById('privacyLink').addEventListener('click',()=> modalPrivacy.classList.add('active'));
+        document.getElementById('termsLink').addEventListener('click',()=> modalTerms.classList.add('active'));
+        document.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click',(e)=>{
+            const modal = e.target.closest('.modal');
+            if(modal) modal.classList.remove('active');
+        }));
+
+        // initial active nav
+        document.querySelector('[data-screen="home"]').classList.add('active');
+
+        // screenshot SHIFT+W
+        let screenshotCounter = 1;
+        window.addEventListener('keydown', (e) => {
+            if(e.shiftKey && e.key === 'W') {
+                e.preventDefault();
+                const container = document.getElementById('phoneContainer');
+                const isDark = body.classList.contains('dark');
+                const name = isDark ? '6.png' : (screenshotCounter + '.png');
+                if (!isDark) screenshotCounter = (screenshotCounter % 5) + 1;
+
+                // simulated download (data url). In real browser would trigger download.
+                alert(`📸 Screenshot saved as ${name} (simulated)`);
+            }
+        });
+
+        // fix for icons style consistency
+    })();
+</script>
+</body>
+</html>
+All done!
+{
+  "1.png": "Start Learning",
+  "2.png": "Daily Lessons",
+  "3.png": "Practice Skills",
+  "4.png": "Track Progress",
+  "5.png": "Smart Settings",
+  "6.png": "Dark Theme"
+}
+```

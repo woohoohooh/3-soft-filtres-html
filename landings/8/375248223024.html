@@ -1,0 +1,654 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AXIS · precision shooting club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0c10;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #eaeef2;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        h1, h2, h3, .big-number, .nav-links a {
+            font-weight: 500;
+            letter-spacing: -0.02em;
+        }
+
+        /* custom crosshair cursor / vibe */
+        .crosshair-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 30% 40%, rgba(120, 180, 100, 0.02) 0%, transparent 40%),
+                        repeating-linear-gradient(45deg, rgba(255,255,255,0.005) 0px, rgba(255,255,255,0.005) 2px, transparent 2px, transparent 8px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 5;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* fixed header (compact on scroll) */
+        header {
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+            background: rgba(10, 14, 18, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(220, 240, 200, 0.15);
+            border-radius: 60px;
+            padding: 12px 32px;
+            margin: 20px 0 40px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            box-shadow: 0 12px 30px -10px rgba(0,0,0,0.8);
+        }
+
+        header.scrolled {
+            padding: 6px 28px;
+            background: rgba(5, 8, 10, 0.9);
+            border-color: rgba(140, 210, 100, 0.4);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #d4edc9;
+            letter-spacing: -0.02em;
+        }
+        .logo i {
+            color: #b1e184;
+            margin-right: 10px;
+            font-size: 2rem;
+            transform: rotate(15deg);
+            transition: transform 0.3s;
+        }
+        .logo:hover i {
+            transform: rotate(0deg) scale(1.1);
+        }
+
+        .nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            margin: 0 18px;
+            font-size: 1rem;
+            font-weight: 400;
+            position: relative;
+        }
+        .nav-links a:after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: #b1e184;
+            transition: 0.25s;
+        }
+        .nav-links a:hover:after {
+            width: 100%;
+        }
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        /* hero */
+        .hero {
+            min-height: 85vh;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(180, 220, 140, 0.2);
+            margin-bottom: 40px;
+            position: relative;
+        }
+        .hero-content {
+            max-width: 800px;
+        }
+        .hero-label {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            color: #b1e184;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-size: 5.2rem;
+            line-height: 1;
+            font-weight: 600;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+        .hero h1 span {
+            color: #b1e184;
+            text-shadow: 0 0 10px rgba(140, 220, 100, 0.3);
+            display: inline-block;
+            animation: glitch 4s infinite;
+        }
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            2% { transform: skew(1deg, -1deg) translate(1px, -1px); text-shadow: -2px 0 #a0f0a0; }
+            4% { transform: skew(0); }
+        }
+        .hero-desc {
+            font-size: 1.5rem;
+            max-width: 600px;
+            color: #b2bec3;
+            border-left: 4px solid #b1e184;
+            padding-left: 30px;
+            margin-bottom: 40px;
+        }
+        .crosshair-btn {
+            background: transparent;
+            border: 2px solid #b1e184;
+            color: #b1e184;
+            font-size: 1.2rem;
+            font-weight: 500;
+            padding: 16px 48px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+        .crosshair-btn i {
+            font-size: 1.5rem;
+            opacity: 0.7;
+        }
+        .crosshair-btn:hover {
+            background: #b1e184;
+            color: #0a0e12;
+            box-shadow: 0 0 30px #b1e184;
+        }
+
+        /* blocks general */
+        .block {
+            padding: 90px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+        .block-title {
+            font-size: 3rem;
+            margin-bottom: 50px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .block-title i {
+            color: #b1e184;
+            font-size: 2.8rem;
+        }
+
+        /* disciplines cards */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .discipline-card {
+            background: rgba(30, 38, 42, 0.6);
+            backdrop-filter: blur(4px);
+            border: 1px solid #2f3a40;
+            padding: 40px 20px;
+            text-align: center;
+            transition: 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .discipline-card i {
+            font-size: 3rem;
+            color: #b1e184;
+            margin-bottom: 20px;
+        }
+        .discipline-card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 10px;
+        }
+        .discipline-card p {
+            color: #9aaeb9;
+        }
+        .discipline-card:hover {
+            border-color: #b1e184;
+            transform: translateY(-6px);
+            box-shadow: 0 20px 30px -10px #1d2a1d;
+        }
+        .discipline-card:hover i {
+            animation: aim 0.4s;
+        }
+        @keyframes aim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(5deg); }
+        }
+
+        /* trainers */
+        .trainers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        .trainer-card {
+            background: #12181c;
+            border: 1px solid #283239;
+            padding: 30px;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .trainer-card:hover {
+            border-color: #b1e184;
+            background: #1b252b;
+        }
+        .trainer-icon {
+            background: #1f2c33;
+            border-radius: 50%;
+            width: 70px; height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            color: #b1e184;
+        }
+        .trainer-card h3 {
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+        .trainer-card .badge {
+            color: #b1e184;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin: 8px 0 16px;
+            letter-spacing: 1px;
+        }
+
+        /* stats block (цифры) */
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+            border-right: 1px dashed #3b4b44;
+            padding: 0 20px;
+        }
+        .stat-item:last-child {
+            border-right: none;
+        }
+        .big-number {
+            font-size: 4.5rem;
+            font-weight: 600;
+            color: #b1e184;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+        .crosshair-line {
+            width: 40px; height: 2px;
+            background: #b1e184;
+            margin: 15px auto;
+            opacity: 0.5;
+        }
+
+        /* packages */
+        .packages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        .package-card {
+            background: #0e151a;
+            border: 1px solid #263238;
+            padding: 40px 30px;
+            transition: 0.2s;
+            position: relative;
+        }
+        .package-card.premium {
+            border-color: #b1e184;
+            background: #142026;
+            transform: scale(1.02);
+        }
+        .package-card h3 {
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        .package-card .price {
+            font-size: 2.8rem;
+            font-weight: 500;
+            color: #b1e184;
+            margin-bottom: 30px;
+        }
+        .package-card ul {
+            list-style: none;
+        }
+        .package-card li {
+            margin: 15px 0;
+            color: #a3b8c2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .package-card li i {
+            color: #b1e184;
+        }
+        .package-card:hover {
+            border-color: #b1e184;
+            box-shadow: 0 0 30px rgba(140, 220, 100, 0.15);
+        }
+
+        /* footer */
+        footer {
+            padding: 40px 0 80px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #1f2b2f;
+            margin-top: 40px;
+            color: #859aa6;
+        }
+        .social i {
+            font-size: 1.6rem;
+            margin-left: 25px;
+            transition: 0.2s;
+            color: #748e9c;
+        }
+        .social i:hover {
+            color: #b1e184;
+            transform: scale(1.2);
+        }
+
+        /* scroll reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* glow text spans */
+        .highlight {
+            color: #b1e184;
+            font-weight: 500;
+            text-shadow: 0 0 6px #b1e18470;
+        }
+
+        /* small extras */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="crosshair-bg"></div>
+
+    <div class="wrapper">
+        <!-- fixed header (js will add class) -->
+        <header id="mainHeader">
+            <div class="logo">
+                <i class="fas fa-crosshairs"></i> AXIS
+            </div>
+            <div class="nav-links">
+                <a href="#home">home</a>
+                <a href="#disciplines">disciplines</a>
+                <a href="#trainers">trainers</a>
+                <a href="#packages">packages</a>
+                <a href="#stats">stats</a>
+            </div>
+        </header>
+
+        <!-- hero -->
+        <section id="home" class="hero">
+            <div class="hero-content reveal">
+                <div class="hero-label">precision shooting club</div>
+                <h1>ONE SHOT.<br><span>ONE KILL.</span></h1>
+                <div class="hero-desc">Where elite marksmen refine focus, breath & trigger control. Join the axis of accuracy.</div>
+                <a href="#packages" class="crosshair-btn"><i class="fas fa-bullseye"></i> lock & load</a>
+            </div>
+        </section>
+
+        <!-- дисциплины (блок 2) -->
+        <section id="disciplines" class="block">
+            <h2 class="block-title reveal"><i class="fas fa-gun"></i> precision disciplines</h2>
+            <div class="cards-grid">
+                <div class="discipline-card reveal">
+                    <i class="fas fa-bullseye"></i>
+                    <h3>benchrest</h3>
+                    <p>extreme accuracy from 100 to 1000 yd</p>
+                </div>
+                <div class="discipline-card reveal">
+                    <i class="fas fa-crosshairs"></i>
+                    <h3>practical rifle</h3>
+                    <p>moving targets, obstacles, speed</p>
+                </div>
+                <div class="discipline-card reveal">
+                    <i class="fas fa-eye"></i>
+                    <h3>sniper simulation</h3>
+                    <p>wind calls, unknown distance</p>
+                </div>
+                <div class="discipline-card reveal">
+                    <i class="fas fa-stopwatch"></i>
+                    <h3>action pistol</h3>
+                    <p>dynamic steel & competition</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- статистика (блок 3) цифры -->
+        <section id="stats" class="block">
+            <div class="stats-row">
+                <div class="stat-item reveal">
+                    <div class="big-number" data-target="847">0</div>
+                    <div class="crosshair-line"></div>
+                    <p>precision hits <br>(this month)</p>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="big-number" data-target="23">0</div>
+                    <div class="crosshair-line"></div>
+                    <p>national champions <br>trained</p>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="big-number" data-target="15600">0</div>
+                    <div class="crosshair-line"></div>
+                    <p>rounds downrange <br>weekly</p>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="big-number" data-target="100">0</div>
+                    <div class="crosshair-line"></div>
+                    <p>accuracy score <br>% elite</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- тренеры (блок 4) -->
+        <section id="trainers" class="block">
+            <h2 class="block-title reveal"><i class="fas fa-user-secret"></i> master instructors</h2>
+            <div class="trainers-grid">
+                <div class="trainer-card reveal">
+                    <div class="trainer-icon"><i class="fas fa-skull"></i></div>
+                    <h3>Victor Cross</h3>
+                    <div class="badge">ex‑force sniper</div>
+                    <p>17 years operational. 127 confirmed precision kills. Coach of 3 world champions.</p>
+                </div>
+                <div class="trainer-card reveal">
+                    <div class="trainer-icon"><i class="fas fa-ghost"></i></div>
+                    <h3>Lena "Viper" Sato</h3>
+                    <div class="badge">action pistol grandmaster</div>
+                    <p>5x IPSC champion. Reflex & transition specialist. Fastest draw north hemisphere.</p>
+                </div>
+                <div class="trainer-card reveal">
+                    <div class="trainer-icon"><i class="fas fa-dragon"></i></div>
+                    <h3>Dimitri Volkov</h3>
+                    <div class="badge">extreme long range</div>
+                    <p>held 2200m confirmed hit. Ballistics genius, trains wind-reading like no other.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- пакеты (блок 5) + цены -->
+        <section id="packages" class="block">
+            <h2 class="block-title reveal"><i class="fas fa-box-open"></i> training packages</h2>
+            <div class="packages-grid">
+                <div class="package-card reveal">
+                    <h3>precision base</h3>
+                    <div class="price">$390</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> 4h range & class</li>
+                        <li><i class="fas fa-check"></i> 100 rounds match</li>
+                        <li><i class="fas fa-check"></i> zeroing workshop</li>
+                        <li><i class="fas fa-check"></i> basic ballistics</li>
+                    </ul>
+                </div>
+                <div class="package-card premium reveal">
+                    <h3>tactical operator</h3>
+                    <div class="price">$890</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> 2 full days</li>
+                        <li><i class="fas fa-check"></i> 400 rounds + night shoot</li>
+                        <li><i class="fas fa-check"></i> one‑on‑one coaching</li>
+                        <li><i class="fas fa-check"></i> data book & analysis</li>
+                        <li><i class="fas fa-check"></i> wind assessment</li>
+                    </ul>
+                </div>
+                <div class="package-card reveal">
+                    <h3>sniper immersion</h3>
+                    <div class="price">$1,490</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> 3 days / 2 nights</li>
+                        <li><i class="fas fa-check"></i> unknown distance</li>
+                        <li><i class="fas fa-check"></i> hide construction</li>
+                        <li><i class="fas fa-check"></i> spotter communication</li>
+                        <li><i class="fas fa-check"></i> precision ghillie</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- футер (блок 6) -->
+        <footer>
+            <div>© AXIS precision club · est. 2021 · <span class="highlight">trigger control</span> is everything</div>
+            <div class="social">
+                <i class="fab fa-instagram"></i>
+                <i class="fab fa-x-twitter"></i>
+                <i class="fab fa-youtube"></i>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        (function() {
+            // compact header on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // scroll reveal (active class)
+            const reveals = document.querySelectorAll('.reveal');
+            function checkReveal() {
+                for (let el of reveals) {
+                    const windowHeight = window.innerHeight;
+                    const rect = el.getBoundingClientRect();
+                    const revealPoint = 120;
+                    if (rect.top < windowHeight - revealPoint) {
+                        el.classList.add('active');
+                    }
+                }
+            }
+            window.addEventListener('scroll', checkReveal);
+            window.addEventListener('resize', checkReveal);
+            checkReveal(); // initial
+
+            // анимация счётчиков (статистика) + красивое появление
+            const statNumbers = document.querySelectorAll('.big-number');
+            let counted = false;
+            function startCounting() {
+                if (counted) return;
+                const statsSection = document.getElementById('stats');
+                if (!statsSection) return;
+                const rect = statsSection.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 100) {
+                    counted = true;
+                    statNumbers.forEach(num => {
+                        const target = parseInt(num.getAttribute('data-target'), 10);
+                        let current = 0;
+                        const increment = target / 60; // 60 increments ~ 1.2 sec
+                        const timer = setInterval(() => {
+                            current += increment;
+                            if (current >= target) {
+                                num.innerText = target.toLocaleString();
+                                clearInterval(timer);
+                            } else {
+                                num.innerText = Math.floor(current).toLocaleString();
+                            }
+                        }, 20);
+                    });
+                }
+            }
+            window.addEventListener('scroll', startCounting);
+            window.addEventListener('load', startCounting);
+            startCounting(); // if visible
+
+            // small hover crosshair animation in header (noise)
+        })();
+    </script>
+
+    <!-- extra smooth block appearance, small style for numbers etc -->
+    <style>
+        /* faster counters / polish */
+        .big-number {
+            transition: all 0.1s;
+            font-feature-settings: "tnum";
+        }
+        .package-card li i.fa-check {
+            color: #b1e184;
+        }
+        ::selection {
+            background: #b1e184;
+            color: #0b0c10;
+        }
+        /* якорь плавность */
+        html {
+            scroll-padding-top: 100px;
+        }
+    </style>
+</body>
+</html>
+All done!
+```

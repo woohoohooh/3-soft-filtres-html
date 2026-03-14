@@ -1,0 +1,643 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private astronomy club</title>
+    <!-- Font & Icons (Font Awesome for clean, sharp icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0e14;
+            color: #e2e8f0;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            font-weight: 300;
+            scroll-behavior: smooth;
+        }
+
+        /* inter font via fallback */
+        h1, h2, h3, .logo, .menu a, .big-number {
+            font-weight: 400;
+            letter-spacing: -0.02em;
+        }
+
+        /* cosmic glow & transitions */
+        .section {
+            padding: 6rem 2rem;
+            max-width: 1280px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 1s cubic-bezier(0.2, 0.9, 0.3, 1), transform 1s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* fixed header – compact + dynamic */
+        .header-fixed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            padding: 1rem 2rem;
+            background: rgba(5, 8, 15, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(100, 200, 255, 0.1);
+            transition: padding 0.3s ease, background 0.4s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+        }
+
+        .header-fixed.compact {
+            padding: 0.5rem 2rem;
+            background: rgba(0, 0, 0, 0.95);
+            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 500;
+            background: linear-gradient(135deg, #fff, #b5b5ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 3px;
+        }
+        .logo i {
+            color: #ffd966;
+            margin-right: 6px;
+            font-size: 2rem;
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            color: #f0c45a;
+        }
+
+        .menu a {
+            color: #ddd;
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 1.1rem;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .menu a:hover {
+            color: white;
+            border-bottom-color: #f5c542;
+        }
+
+        /* hero animation: celestial body */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at 30% 40%, #1b2a3a, #03050b);
+            padding-top: 80px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            max-width: 900px;
+        }
+
+        .hero h1 {
+            font-size: 5rem;
+            font-weight: 400;
+            line-height: 1.1;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(145deg, #ffffff, #b3c7ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(70, 150, 255, 0.4);
+        }
+
+        .hero .sub {
+            font-size: 1.6rem;
+            letter-spacing: 6px;
+            word-spacing: 12px;
+            color: #c0d4ff;
+            border-top: 1px solid rgba(255, 215, 0, 0.4);
+            border-bottom: 1px solid rgba(255, 215, 0, 0.4);
+            display: inline-block;
+            padding: 0.8rem 2rem;
+            backdrop-filter: blur(4px);
+        }
+
+        /* floating orbs (js-animated) */
+        #orbCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* cosmic cards */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .card {
+            background: rgba(20, 30, 45, 0.7);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(200, 220, 255, 0.1);
+            border-radius: 32px;
+            padding: 2.5rem 2rem;
+            transition: transform 0.3s ease, box-shadow 0.5s;
+            box-shadow: 0 20px 30px -15px black;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-12px) scale(1.02);
+            border-color: rgba(255, 200, 100, 0.5);
+            box-shadow: 0 30px 50px -15px #2f4f7f;
+        }
+
+        .card i {
+            font-size: 2.8rem;
+            color: #f5bd3b;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h3 {
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+
+        .card p {
+            color: #b0c2d9;
+            font-size: 1.1rem;
+        }
+
+        /* stats block with counters */
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            background: rgba(0, 8, 20, 0.6);
+            border-radius: 70px;
+            padding: 3rem 2rem;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-item {
+            flex: 1;
+        }
+
+        .big-number {
+            font-size: 4rem;
+            font-weight: 300;
+            color: #ffe18a;
+            display: block;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        /* event list (timeline idea) */
+        .event-timeline {
+            border-left: 2px solid rgba(255, 200, 70, 0.5);
+            padding-left: 2rem;
+        }
+
+        .event-item {
+            margin-bottom: 2.5rem;
+            position: relative;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 1.5rem 2rem;
+            border-radius: 20px;
+            transition: 0.2s;
+        }
+
+        .event-item:hover {
+            background: rgba(255, 220, 120, 0.05);
+            box-shadow: 0 0 30px rgba(200, 160, 50, 0.2);
+        }
+
+        .event-item .date {
+            color: #f3b954;
+            font-weight: 500;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+        }
+
+        /* membership cards */
+        .membership-pack {
+            background: linear-gradient(145deg, #0f172a, #07111f);
+            border-radius: 40px;
+            padding: 3rem;
+            border: 1px solid #575e7b;
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .pack {
+            flex: 1 1 200px;
+            background: #101c30;
+            border-radius: 28px;
+            padding: 2rem;
+            text-align: center;
+            border: 1px solid #3a4966;
+        }
+
+        .pack .price {
+            font-size: 2.8rem;
+            color: #ffd966;
+        }
+
+        .btn-outline {
+            border: 1px solid #bca454;
+            background: transparent;
+            padding: 0.8rem 2.5rem;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            color: white;
+            margin-top: 1.5rem;
+            cursor: default;
+            transition: 0.2s;
+        }
+
+        .btn-outline i {
+            margin-left: 6px;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: #f5c542;
+        }
+
+        /* footer */
+        .footer {
+            background: #03050f;
+            border-top: 1px solid #2b3b4e;
+            padding: 3rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            color: #8f9bb3;
+        }
+
+        .footer a {
+            color: #cdd7e9;
+            text-decoration: none;
+            margin-left: 2rem;
+        }
+
+        .footer a:hover {
+            color: #f2cd6e;
+        }
+
+        /* glow text */
+        .glow-text {
+            color: #fcd47c;
+            text-shadow: 0 0 6px #f9b81b;
+        }
+
+        /* section titles */
+        h2 {
+            font-size: 3.2rem;
+            font-weight: 350;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid rgba(255, 200, 0, 0.3);
+            padding-bottom: 1rem;
+            display: inline-block;
+        }
+
+        /* simple scroll reveal + visible class */
+        .section {
+            transition-delay: 0.1s;
+        }
+
+        /* responsive desktop only (but fine) */
+        @media (max-width: 1100px) {
+            .cards-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- fixed header with JS compact behaviour -->
+<div class="header-fixed" id="mainHeader">
+    <div class="logo"><i class="fas fa-meteor"></i> OBSIDIAN</div>
+    <div class="menu">
+        <a href="#home">HOME</a>
+        <a href="#quests">EVENTS</a>
+        <a href="#stats">DATA</a>
+        <a href="#membership">MEMBERSHIP</a>
+        <a href="#contact">CONTACT</a>
+    </div>
+</div>
+
+<!-- HOME / HERO (section 1) -->
+<section id="home" class="hero">
+    <canvas id="orbCanvas"></canvas>
+    <div class="hero-content">
+        <h1>OBSERVE THE<br>UNIVERSE</h1>
+        <div class="sub">PRIVATE ASTRONOMY CLUB · ALPS</div>
+        <div style="margin-top: 3rem; font-size: 1.5rem; opacity: 0.8;"><i class="fas fa-chevron-down"></i></div>
+    </div>
+</section>
+
+<!-- BLOCK 2: telescopes & tech (cards) -->
+<section class="section" id="quests">
+    <h2><i class="fas fa-telescope" style="margin-right: 15px;"></i> OBSERVATORIES & GEAR</h2>
+    <div class="cards-grid">
+        <div class="card">
+            <i class="fas fa-satellite"></i>
+            <h3>1m Reflector</h3>
+            <p>Prime focus · spectrograph · adaptive optics. Deep sky imaging.</p>
+        </div>
+        <div class="card">
+            <i class="fas fa-globe"></i>
+            <h3>Radio dome</h3>
+            <p>3.2m dish · hydrogen line · pulsar timing array.</p>
+        </div>
+        <div class="card">
+            <i class="fas fa-user-astronaut"></i>
+            <h3>Coronado solar</h3>
+            <p>H-alpha · prominences · flare patrol · daily live.</p>
+        </div>
+    </div>
+</section>
+
+<!-- BLOCK 3: stats counters + mission -->
+<section class="section" id="stats">
+    <div class="stats-row">
+        <div class="stat-item">
+            <span class="big-number" id="counter1">0</span>
+            <span>NIGHTS ACTIVE</span>
+        </div>
+        <div class="stat-item">
+            <span class="big-number" id="counter2">0</span>
+            <span>DISCOVERIES</span>
+        </div>
+        <div class="stat-item">
+            <span class="big-number" id="counter3">0</span>
+            <span>MEMBERS</span>
+        </div>
+    </div>
+    <div style="margin-top: 4rem; text-align: center; font-size: 1.8rem; font-style: italic;">
+        "We turn photons into wonder."
+    </div>
+</section>
+
+<!-- BLOCK 4: events / timeline -->
+<section class="section" id="events">
+    <h2><i class="fas fa-calendar-alt" style="margin-right: 15px;"></i> NIGHTS & EVENTS</h2>
+    <div class="event-timeline">
+        <div class="event-item">
+            <div class="date">MAY 27 · 21:00</div>
+            <div style="font-size: 2rem;">Saturn at opposition</div>
+            <div>Live through 1m reflector + champagne reception</div>
+        </div>
+        <div class="event-item">
+            <div class="date">JUN 09 · 20:30</div>
+            <div style="font-size: 2rem;">Virgo galaxy marathon</div>
+            <div>36 galaxies in one night · guided by staff</div>
+        </div>
+        <div class="event-item">
+            <div class="date">JUN 22 · 19:00</div>
+            <div style="font-size: 2rem;">Solar session · parents & kids</div>
+            <div>Safe solar viewing, flares & sunspots</div>
+        </div>
+    </div>
+</section>
+
+<!-- BLOCK 5: membership packages -->
+<section class="section" id="membership">
+    <h2><i class="fas fa-crown" style="margin-right: 15px;"></i> CLUB LEVELS</h2>
+    <div class="membership-pack">
+        <div class="pack">
+            <i class="fas fa-star" style="font-size: 3rem; color: #a0b5ee;"></i>
+            <h3>Stargazer</h3>
+            <div class="price">$290</div>
+            <p>/year · 4 open nights, basic training</p>
+            <div class="btn-outline">SELECT <i class="fas fa-arrow-right"></i></div>
+        </div>
+        <div class="pack">
+            <i class="fas fa-moon" style="font-size: 3rem; color: #efd471;"></i>
+            <h3>Observer</h3>
+            <div class="price">$790</div>
+            <p>/year · 12 nights + spectroscopy lab</p>
+            <div class="btn-outline">SELECT <i class="fas fa-arrow-right"></i></div>
+        </div>
+        <div class="pack">
+            <i class="fas fa-sun" style="font-size: 3rem; color: gold;"></i>
+            <h3>Cosmic</h3>
+            <div class="price">$2.1k</div>
+            <p>/year · unlimited, remote observation, events</p>
+            <div class="btn-outline">SELECT <i class="fas fa-arrow-right"></i></div>
+        </div>
+    </div>
+</section>
+
+<!-- BLOCK 6: location / contact (minimal) -->
+<section class="section" id="contact" style="margin-bottom: 0;">
+    <h2><i class="fas fa-map-pin"></i> DARK SKY RESERVE</h2>
+    <div style="display: flex; gap: 3rem; background: #0d1624; border-radius: 70px; padding: 3rem;">
+        <div style="flex: 1;">
+            <div style="font-size: 1.8rem;">Swiss Alps · 2100m</div>
+            <div style="margin-top: 1rem;"><i class="fas fa-cloud-moon"></i> Bortle 2 ·  privat access</div>
+            <div style="margin-top: 2rem;"><i class="fas fa-envelope"></i>   hello@obsidianclub.ch</div>
+            <div><i class="fas fa-phone-alt"></i>   +41 79 866 22 44</div>
+        </div>
+        <div style="flex:1; font-size: 1.4rem; border-left: 1px solid #576e8b; padding-left: 2rem;">
+            <span class="glow-text">Exclusive  →</span> 12 guests per night
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div>© OBSIDIAN PRIVATE CLUB · 2026 · all rights reserved</div>
+    <div>
+        <a href="#">privacy</a>
+        <a href="#">access</a>
+        <a href="#">ethics</a>
+    </div>
+</footer>
+
+<script>
+    (function() {
+        // ---------- fixed header compact on scroll ----------
+        const header = document.getElementById('mainHeader');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 60) {
+                header.classList.add('compact');
+            } else {
+                header.classList.remove('compact');
+            }
+        });
+
+        // ---------- canvas animation (floating orbs) ----------
+        const canvas = document.getElementById('orbCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function initParticles() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            const count = 40;
+            particles = [];
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    rad: 2 + Math.random() * 8,
+                    speedX: (Math.random() - 0.5) * 0.2,
+                    speedY: (Math.random() - 0.5) * 0.2,
+                    glow: 0.4 + Math.random() * 0.6
+                });
+            }
+        }
+
+        function drawOrbs() {
+            ctx.clearRect(0, 0, width, height);
+            for (let p of particles) {
+                // update
+                p.x += p.speedX;
+                p.y += p.speedY;
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+
+                // draw glow
+                ctx.beginPath();
+                let gradient = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, p.rad * 3);
+                gradient.addColorStop(0, `rgba(255, 220, 150, ${p.glow})`);
+                gradient.addColorStop(0.6, `rgba(180, 150, 250, 0.2)`);
+                gradient.addColorStop(1, `rgba(20, 30, 60, 0)`);
+                ctx.fillStyle = gradient;
+                ctx.arc(p.x, p.y, p.rad * 3, 0, Math.PI * 2);
+                ctx.fill();
+                // core
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.rad * 0.9, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 245, 200, 0.9)`;
+                ctx.fill();
+            }
+            requestAnimationFrame(drawOrbs);
+        }
+
+        window.addEventListener('resize', () => {
+            initParticles();
+        });
+        initParticles();
+        drawOrbs();
+
+        // ---------- section reveal on scroll (intersection) ----------
+        const sections = document.querySelectorAll('.section');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px' });
+        sections.forEach(s => observer.observe(s));
+
+        // manually trigger for first section quickly
+        setTimeout(() => {
+            document.getElementById('quests').classList.add('visible');
+        }, 200);
+
+        // ---------- counters animation (stats) ----------
+        function animateCounter(el, target, duration = 2000) {
+            let start = 0;
+            const increment = target / (duration / 16);
+            function update() {
+                start += increment;
+                if (start < target) {
+                    el.innerText = Math.floor(start);
+                    requestAnimationFrame(update);
+                } else {
+                    el.innerText = target;
+                }
+            }
+            update();
+        }
+
+        // start counters when stats section becomes visible
+        const statsSection = document.getElementById('stats');
+        let countersFired = false;
+        const statsObserver = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !countersFired) {
+                countersFired = true;
+                animateCounter(document.getElementById('counter1'), 247);
+                animateCounter(document.getElementById('counter2'), 38);
+                animateCounter(document.getElementById('counter3'), 212);
+            }
+        }, { threshold: 0.3 });
+        statsObserver.observe(statsSection);
+
+        // ---------- small hover extras: text highlight (js optional) -----
+        // also we make menu links anchor scroll smooth
+        document.querySelectorAll('.menu a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1); // remove #
+                if (targetId === 'home') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    })();
+</script>
+<!-- extra style for initial section visible via small delay -->
+<style>
+    .section { opacity: 0; transform: translateY(30px); }
+    .hero { opacity: 1; transform: none; } /* hero always visible */
+</style>
+<!-- make first block visible earlier -->
+<script>
+    (function(){
+        document.getElementById('quests').classList.add('visible');
+    })();
+</script>
+
+All done!
+```

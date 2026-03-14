@@ -1,0 +1,632 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observe Universe · Astro Club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #111111;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll + anchor offset (fixed header) */
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 90px;
+        }
+
+        /* header — fixed compact / transparent → solid on scroll */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 28px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.25s ease;
+            background: transparent;
+            color: #111;
+            mix-blend-mode: exclusion;  /* subtle inversion on white sections, but we keep text dark */
+            backdrop-filter: blur(0px);
+        }
+
+        .header.scrolled {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 16px 48px;
+            box-shadow: 0 8px 20px -10px rgba(0,0,0,0.05);
+            mix-blend-mode: normal;
+            color: #111;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .logo i {
+            margin-right: 8px;
+            color: #111;
+            transition: transform 0.2s;
+        }
+
+        .nav {
+            display: flex;
+            gap: 40px;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 1.5px solid transparent;
+            transition: border-color 0.2s, opacity 0.2s;
+            opacity: 0.8;
+            letter-spacing: 0.3px;
+        }
+
+        .nav a:hover {
+            opacity: 1;
+            border-bottom: 1.5px solid #111;
+        }
+
+        /* main container */
+        main {
+            margin-top: 0;
+        }
+
+        /* universal section styling */
+        section {
+            padding: 100px 48px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            min-height: 95vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: white;
+            padding-top: 140px;
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: 5.5rem;
+            font-weight: 700;
+            line-height: 1.0;
+            letter-spacing: -0.03em;
+            margin-bottom: 25px;
+        }
+
+        .hero h1 i {
+            color: #111;
+            margin-right: 10px;
+            opacity: 0.9;
+            display: inline-block;
+            animation: float 3s infinite ease;
+        }
+
+        .hero p {
+            font-size: 1.6rem;
+            font-weight: 350;
+            max-width: 700px;
+            color: #333;
+            margin-bottom: 40px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 16px 42px;
+            background: #111;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-radius: 0px;
+            transition: 0.2s;
+            border: 2px solid #111;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #111;
+        }
+
+        .btn:hover {
+            background: #333;
+            border-color: #333;
+            color: white;
+        }
+
+        .btn-outline:hover {
+            background: #111;
+            color: white;
+        }
+
+        /* animated star field behind hero (very minimal) */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background: #111;
+            width: 2px;
+            height: 2px;
+            opacity: 0.3;
+            animation: twinkle 4s infinite;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.5); }
+            100% { opacity: 0.1; transform: scale(1); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0); }
+        }
+
+        /* card layouts */
+        .section-title {
+            font-size: 3rem;
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            margin-bottom: 60px;
+            position: relative;
+            display: inline-block;
+        }
+        .section-title i {
+            margin-right: 15px;
+            font-size: 2.8rem;
+            vertical-align: middle;
+        }
+
+        .grid-3, .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .card {
+            background: #f8f8f8;
+            padding: 35px 30px;
+            border: 1px solid #eee;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            cursor: default;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 40px -20px rgba(0,0,0,0.15);
+            background: white;
+            border-color: #ddd;
+        }
+
+        .card i {
+            font-size: 2.8rem;
+            margin-bottom: 25px;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        .card:hover i {
+            transform: scale(1.1);
+        }
+
+        .card h3 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            font-size: 1rem;
+            color: #444;
+            line-height: 1.5;
+        }
+
+        /* stat cards */
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #555;
+        }
+
+        /* glow text effect */
+        .glow-text {
+            background: linear-gradient(145deg, #111, #333);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        /* scroll reveal animation (simple class toggled by intersection) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* footer */
+        .footer {
+            background: #f0f0f0;
+            padding: 60px 48px 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .footer-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .footer a {
+            color: #111;
+            text-decoration: none;
+            border-bottom: 1px dotted #aaa;
+        }
+
+        .small-menu {
+            display: flex;
+            gap: 40px;
+        }
+
+        .small-menu a {
+            border-bottom: none;
+            font-weight: 500;
+        }
+
+        .copyright {
+            color: #555;
+            margin-top: 30px;
+            text-align: center;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        /* extra hover crosshair effect (telescope) */
+        .crosshair {
+            cursor: crosshair;
+        }
+
+        /* timeline minimal */
+        .event-row {
+            display: flex;
+            gap: 40px;
+            background: #fafafa;
+            padding: 40px;
+            border-left: 5px solid #111;
+            margin-bottom: 20px;
+            transition: 0.2s;
+        }
+        .event-row:hover {
+            background: white;
+            box-shadow: 0 10px 25px -10px rgba(0,0,0,0.1);
+        }
+        .event-date {
+            font-size: 2rem;
+            font-weight: 700;
+            min-width: 150px;
+        }
+        .event-desc h4 {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        /* membership card */
+        .membership-highlight {
+            background: #111;
+            color: white;
+            padding: 40px;
+        }
+        .membership-highlight .stat-number {
+            color: white;
+        }
+
+        /* responsive-ish (only desktop-like) */
+        @media (max-width: 1100px) {
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .hero h1 { font-size: 4rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header" id="mainHeader">
+        <div class="logo">
+            <i class="fas fa-telescope"></i> STELLARIS
+        </div>
+        <div class="nav">
+            <a href="#home">HOME</a>
+            <a href="#telescopes">TELESCOPES</a>
+            <a href="#events">EVENTS</a>
+            <a href="#stats">DEEP SKY</a>
+            <a href="#membership">MEMBERSHIP</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- HERO: block 1 (home) -->
+        <section class="hero" id="home">
+            <div class="stars" id="starfield"></div>
+            <div class="hero-content">
+                <h1>
+                    <i class="fas fa-meteor"></i> OBSERVE <br>THE UNIVERSE
+                </h1>
+                <p>Private astronomy club · darkest skies · expert guided nights</p>
+                <div class="btn-group">
+                    <a href="#membership" class="btn">JOIN THE CLUB <i class="fas fa-arrow-right"></i></a>
+                    <a href="#telescopes" class="btn btn-outline">EXPLORE <i class="fas fa-star"></i></a>
+                </div>
+            </div>
+        </section>
+
+        <!-- TELESCOPES (block 2)  -->
+        <section id="telescopes">
+            <h2 class="section-title reveal"><i class="fas fa-binoculars"></i> optical fleet</h2>
+            <div class="grid-3">
+                <div class="card reveal">
+                    <i class="fas fa-moon"></i>
+                    <h3>1m Reflector</h3>
+                    <p>Deep-space imaging, remote operation, spectroscopy lab.</p>
+                </div>
+                <div class="card reveal">
+                    <i class="fas fa-sun"></i>
+                    <h3>Solar H-alpha</h3>
+                    <p>Daytime solar flares, prominences, calcium-K telescope.</p>
+                </div>
+                <div class="card reveal">
+                    <i class="fas fa-globe"></i>
+                    <h3>Planetary 14"</h3>
+                    <p>High-contrast Mars, Saturn, Jupiter. ADC corrector.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STATS / DEEP SKY (block 3) -->
+        <section id="stats">
+            <h2 class="section-title reveal"><i class="fas fa-chart-line"></i> deep sky stats</h2>
+            <div class="grid-4">
+                <div class="card reveal">
+                    <div class="stat-number">4.2M</div>
+                    <div class="stat-label">objects catalogued</div>
+                    <p style="margin-top:15px;">NGC/IC, PGC, Abell — updated yearly</p>
+                </div>
+                <div class="card reveal">
+                    <div class="stat-number">21.8</div>
+                    <div class="stat-label">sq. arcsec SQM</div>
+                    <p>pristine Bortle 2 sky · no light pollution</p>
+                </div>
+                <div class="card reveal">
+                    <div class="stat-number">127</div>
+                    <div class="stat-label">observing nights</div>
+                    <p>per year · 280+ with remote access</p>
+                </div>
+                <div class="card reveal membership-highlight">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">member success</div>
+                    <p style="color:#ccc;">first night observation guarantee</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- EVENTS (block 4) : timeline style -->
+        <section id="events">
+            <h2 class="section-title reveal"><i class="fas fa-calendar-alt"></i> celestial events</h2>
+            <div class="event-row reveal">
+                <div class="event-date">MAY 5/6</div>
+                <div class="event-desc">
+                    <h4>η-Aquariids peak</h4>
+                    <p>Dark moon · meteor rate ZHR 50 · overnight camp</p>
+                </div>
+            </div>
+            <div class="event-row reveal">
+                <div class="event-date">JUN 21</div>
+                <div class="event-desc">
+                    <h4>Summer solstice solar session</h4>
+                    <p>H-alpha & white light · corona visible? special filter set</p>
+                </div>
+            </div>
+            <div class="event-row reveal">
+                <div class="event-date">AUG 12/13</div>
+                <div class="event-desc">
+                    <h4>Perseids Gala</h4>
+                    <p>Dark location, live music, astrophotography workshop</p>
+                </div>
+            </div>
+            <div class="event-row reveal">
+                <div class="event-date">SEP 22</div>
+                <div class="event-desc">
+                    <h4>Neptune at opposition</h4>
+                    <p>1m telescope dedicated + tracking of Triton</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- MEMBERSHIP (block 5) + extra CTA -->
+        <section id="membership">
+            <h2 class="section-title reveal"><i class="fas fa-id-card"></i> private club access</h2>
+            <div style="display: flex; gap: 40px; align-items: center;">
+                <div class="card reveal" style="flex:1; padding: 50px;">
+                    <i class="fas fa-crown" style="font-size:4rem;"></i>
+                    <h3>Astro fellowship</h3>
+                    <p style="font-size:1.2rem; margin: 20px 0;">Full access to all telescopes · 24/7 remote observing · private dome · guest nights</p>
+                    <div style="font-size:3rem; font-weight:700;">$2.8K<span style="font-size:1rem;">/yr</span></div>
+                    <a href="#" class="btn" style="margin-top:30px; width:fit-content;">APPLY <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="card reveal" style="flex:1; background: #111; color: white; border-color:#333;">
+                    <i class="fas fa-user-astronaut" style="font-size:4rem; color:white;"></i>
+                    <h3 style="color:white;">Young observer</h3>
+                    <p style="color:#ccc; font-size:1.2rem;">Under 30 · same privileges · dedicated mentor</p>
+                    <div style="font-size:3rem; font-weight:700; color:white;">$1.1K</div>
+                    <a href="#" class="btn btn-outline" style="margin-top:30px; border-color:white; color:white; background:transparent;">APPLY <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </section>
+
+        <!-- EXTRA MINI BAND: QUOTE / GLOW -->
+        <section style="padding: 60px 48px; text-align: center;">
+            <p style="font-size: 2.6rem; font-weight: 300; max-width: 1000px; margin:0 auto;" class="reveal">
+                <i class="fas fa-quote-left" style="opacity:0.3;"></i> 
+                <span class="glow-text">We are stardust</span> — then and now.
+                <i class="fas fa-quote-right" style="opacity:0.3;"></i>
+            </p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="logo"><i class="fas fa-telescope"></i> STELLARIS</div>
+            <div class="small-menu">
+                <a href="#home">HOME</a>
+                <a href="#telescopes">TELESCOPES</a>
+                <a href="#events">EVENTS</a>
+                <a href="#membership">MEMBERSHIP</a>
+            </div>
+        </div>
+        <div class="copyright">
+            <i class="fas fa-star"></i> private observatory club · est. 2022 · <a href="#">contact</a> · all data simulated
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // 1) header shrink on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // 2) generate random stars (hero background)
+            const starContainer = document.getElementById('starfield');
+            if (starContainer) {
+                for (let i = 0; i < 130; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    const x = Math.random() * 100;
+                    const y = Math.random() * 100;
+                    const size = Math.random() * 3 + 1;
+                    const delay = Math.random() * 5;
+                    star.style.left = x + '%';
+                    star.style.top = y + '%';
+                    star.style.width = size + 'px';
+                    star.style.height = size + 'px';
+                    star.style.animationDelay = delay + 's';
+                    star.style.opacity = Math.random() * 0.4 + 0.1;
+                    starContainer.appendChild(star);
+                }
+            }
+
+            // 3) scroll reveal (intersection observer)
+            const revealElements = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        // optional: keep revealed, no need to unobserve, but we can keep watching?
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' });
+            revealElements.forEach(el => observer.observe(el));
+
+            // 4) add some cursor micro-animation? not needed, but add a tiny parallax? skip.
+
+            // 5) tiny extra: make anchor links smooth but already done via css
+
+            // 6) highlight for menu? optional
+
+            // 7) dynamic year (footer) not needed
+        })();
+    </script>
+
+    <!-- small inline style for touch -->
+    <style>
+        /* guarantee that revealed become visible */
+        .reveal.revealed {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+        /* fallback for no-js (but we have js) */
+        .reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .no-js .reveal { opacity: 1; } /* ignore */
+        /* for sections: */
+        .card, .event-row { will-change: transform; }
+        .header { will-change: background, backdrop-filter, padding; }
+        .btn { transition: all 0.2s; }
+        i { transition: transform 0.2s; }
+        a, button { cursor: crosshair; }  /* telescope cursor theme */
+    </style>
+    <noscript><style>.reveal { opacity:1; transform:none; }</style></noscript>
+<!-- All done! -->
+</body>
+</html>
+All done!
+```

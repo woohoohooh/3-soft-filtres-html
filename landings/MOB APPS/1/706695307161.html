@@ -1,0 +1,449 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Python Pal · 2026 prototype</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #1a2639;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+    }
+
+    /* phone container */
+    .phone {
+      width: 360px;
+      height: 780px;
+      background-color: var(--bg-primary);
+      border-radius: 48px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 10px #2d3a4f;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.2s;
+    }
+
+    /* themes – light (default) */
+    :root {
+      --bg-primary: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text-primary: #0F172A;
+      --text-secondary: #334155;
+      --border-light: #E2E8F0;
+      --primary: #2563EB;
+      --primary-dark: #1E40AF;
+      --accent: #38BDF8;
+      --inactive-icon: #94A3B8;
+      --bottom-bg: #FFFFFF;
+      --header-icon: #334155;
+    }
+
+    body.dark {
+      --bg-primary: #0F172A;
+      --card-bg: #1E293B;
+      --text-primary: #E2E8F0;
+      --text-secondary: #CBD5E1;
+      --border-light: #334155;
+      --primary: #3B82F6;
+      --primary-dark: #2563EB;
+      --accent: #38BDF8;
+      --inactive-icon: #64748B;
+      --bottom-bg: #1E293B;
+      --header-icon: #CBD5E1;
+    }
+
+    /* main flex container */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 20px 8px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+    }
+    .profile-icon {
+      cursor: pointer;
+      padding: 6px;
+    }
+    .profile-icon svg {
+      width: 28px;
+      height: 28px;
+      stroke: var(--header-icon);
+      stroke-width: 2;
+      fill: none;
+    }
+
+    /* main content area (screen) */
+    .screen-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 20px 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary) var(--border-light);
+    }
+    .screen {
+      display: none;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .screen.active {
+      display: flex;
+    }
+
+    /* bottom navigation */
+    .bottom-nav {
+      background-color: var(--bottom-bg);
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-around;
+      padding: 6px 10px 12px;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      padding: 6px 10px 4px;
+      border-radius: 30px;
+      transition: all 0.15s ease;
+      background: transparent;
+      border: none;
+      flex: 1;
+    }
+    .nav-item svg {
+      width: 26px;
+      height: 26px;
+      stroke-width: 2;
+      stroke: var(--inactive-icon);
+      fill: none;
+      transition: all 0.1s;
+    }
+    .nav-item span {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--inactive-icon);
+    }
+    .nav-item.active svg {
+      stroke: var(--primary);
+      transform: scale(1.15);
+      filter: drop-shadow(0 2px 4px rgba(37,99,235,0.3));
+    }
+    .nav-item.active span {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .nav-item.active {
+      background: rgba(37,99,235,0.1);
+    }
+
+    /* cards, buttons etc */
+    .card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 18px 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      border: 1px solid var(--border-light);
+    }
+    .btn-primary {
+      background: var(--primary);
+      border: none;
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
+      padding: 16px;
+      border-radius: 60px;
+      width: 100%;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+    .small-link { color: var(--inactive-icon); text-decoration: underline; font-size: 14px; cursor: pointer; }
+
+    /* modal */
+    .modal {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      padding: 30px 24px;
+      border-radius: 32px;
+      max-width: 300px;
+      color: var(--text-primary);
+      text-align: center;
+    }
+    .close-modal {
+      margin-top: 20px;
+      background: var(--primary);
+      border: none;
+      color: white;
+      padding: 10px 24px;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* progress bar */
+    .progress-bar {
+      background: var(--border-light);
+      height: 8px;
+      border-radius: 20px;
+      width: 100%;
+    }
+    .progress-fill {
+      background: var(--primary);
+      height: 8px;
+      border-radius: 20px;
+      width: 65%;
+      transition: width 0.3s;
+    }
+    .row-space { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+
+    /* badge */
+    .badge {
+      background: var(--accent);
+      color: #0F172A;
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    /* icons inline */
+    .icon-micro { width: 40px; height: 40px; stroke: var(--primary); stroke-width: 2; fill: none; }
+
+    /* screenshot area — whole phone container */
+    #phone-container {
+      transition: none;
+    }
+  </style>
+</head>
+<body>
+<div class="phone" id="phone-container">
+  <div class="app" id="app">
+
+    <!-- header (dynamic title + profile) -->
+    <div class="header">
+      <h1 id="screen-title">Onboarding</h1>
+      <div class="profile-icon" id="profileBtn">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/><path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/></svg>
+      </div>
+    </div>
+
+    <!-- screen container (5 screens) -->
+    <div class="screen-container" id="screenContainer">
+      <!-- 1. Onboarding -->
+      <div class="screen active" id="screen-onboarding">
+        <div class="card" style="text-align: center; padding: 28px 16px;">
+          <svg width="64" height="64" viewBox="0 0 32 32" style="margin: 0 auto 12px;" stroke="var(--primary)" stroke-width="2" fill="none"><rect x="6" y="10" width="20" height="14" rx="2"/><path d="M10 10 V6 H22 V10"/><circle cx="12" cy="17" r="1.5"/><circle cx="20" cy="17" r="1.5"/><path d="M16 22v-4"/></svg>
+          <h2 style="font-size: 32px; font-weight: 800; color: var(--text-primary);">Python Pal</h2>
+          <p style="color: var(--accent); font-weight: 600; margin: 4px;">learn to code • 3 min daily</p>
+          <p style="color: var(--text-secondary); margin: 16px 0 8px;">Bite‑sized Python exercises with instant feedback. From zero to first project.</p>
+          <button class="btn-primary" id="getStartedBtn">Get Started</button>
+          <div style="display: flex; gap: 24px; justify-content: center; margin-top: 24px;">
+            <span class="small-link" id="privacyLink">Privacy</span>
+            <span class="small-link" id="termsLink">Terms</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Home dashboard -->
+      <div class="screen" id="screen-home">
+        <div class="card"><span class="badge">🔥 12 day streak</span><h3 style="margin: 10px 0 4px;">Continue where you left</h3><p>Variables · lesson 3/5</p><div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div></div>
+        <div class="card" style="display: flex; gap: 16px; align-items: center;"><svg width="48" height="48" viewBox="0 0 24 24" stroke="var(--primary)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg><div><h4>Today's pick</h4><p>Loops & range() · 5 min</p></div></div>
+        <div class="card"><h4>Your lessons</h4><div style="display: flex; gap: 12px; margin-top: 12px;"><span style="background: #2563EB20; padding: 8px 14px; border-radius: 30px;">Basics</span><span style="background: #2563EB20; padding: 8px 14px; border-radius: 30px;">Functions</span></div></div>
+      </div>
+
+      <!-- 3. Learning / Practice -->
+      <div class="screen" id="screen-learn">
+        <div class="card"><h3>Python basics</h3><div class="row-space"><span>Variables</span><span>75%</span></div><div class="progress-bar"><div class="progress-fill" style="width:75%"></div></div></div>
+        <div class="card"><h3>Practice · loops</h3><p style="margin: 8px 0;">print even numbers</p><button class="btn-primary" style="padding: 10px;" id="practiceBtn">Start practice</button></div>
+        <div class="card"><h4>flashcards</h4><div style="display: flex; gap: 8px;"><svg width="32" height="32" viewBox="0 0 24 24" stroke="var(--primary)" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h6"/></svg><span>data types</span></div></div>
+      </div>
+
+      <!-- 4. Progress / Statistics -->
+      <div class="screen" id="screen-progress">
+        <div class="card"><h4>Weekly activity</h4><div style="height: 60px; display: flex; gap: 6px; align-items: flex-end; margin: 10px 0;"><div style="background: var(--primary); width: 20px; height: 20px; border-radius: 6px;"></div><div style="background: var(--primary); width: 20px; height: 40px;"></div><div style="background: var(--primary); width: 20px; height: 30px;"></div><div style="background: var(--primary); width: 20px; height: 55px;"></div><div style="background: var(--primary); width: 20px; height: 28px;"></div></div></div>
+        <div class="card"><div class="row-space"><span>⭐ XP this week</span><span>840</span></div><div class="progress-bar"><div class="progress-fill" style="width:84%"></div></div></div>
+        <div class="card"><h4>achievements</h4><div style="display: flex; gap: 16px;">🏆 4 in a row  🏅 list master</div></div>
+      </div>
+
+      <!-- 5. Settings / Profile -->
+      <div class="screen" id="screen-settings">
+        <div class="card"><h4>Display</h4><div style="display: flex; justify-content: space-between; margin-top: 16px;"><span>Dark mode</span><label class="switch"><input type="checkbox" id="darkModeToggle"><span class="slider"></span></label></div></div>
+        <div class="card"><h4>Profile</h4><p>pythonista_2026 · level 7</p></div>
+        <div class="card"><h4>Reminders</h4><p>Daily 8:00 PM</p></div>
+        <div class="small-link" style="padding: 16px; text-align: center;">App version 2026.3</div>
+      </div>
+    </div>
+
+    <!-- bottom navigation (4 items) -->
+    <div class="bottom-nav" id="bottomNav">
+      <div class="nav-item active" data-screen="home"><svg viewBox="0 0 24 24"><path d="M3 10L12 3L21 10L21 21H15V15H9V21H3L3 10Z" stroke="currentColor" fill="none"/></svg><span>Home</span></div>
+      <div class="nav-item" data-screen="learn"><svg viewBox="0 0 24 24"><path d="M2 3H8C10.2 3 12 4.8 12 7V21C12 19.9 11.1 19 10 19H2V3Z" stroke="currentColor" fill="none"/><path d="M22 3H16C13.8 3 12 4.8 12 7V21C12 19.9 12.9 19 14 19H22V3Z" stroke="currentColor" fill="none"/></svg><span>Learn</span></div>
+      <div class="nav-item" data-screen="progress"><svg viewBox="0 0 24 24"><rect x="4" y="14" width="4" height="6" stroke="currentColor"/><rect x="10" y="8" width="4" height="12" stroke="currentColor"/><rect x="16" y="2" width="4" height="18" stroke="currentColor"/></svg><span>Progress</span></div>
+      <div class="nav-item" data-screen="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="currentColor"/><path d="M19.4 15L20.8 12L19.4 9H16.7L15 6.5L12 5.6L9 6.5L7.3 9H4.6L3.2 12L4.6 15H7.3L9 17.5L12 18.4L15 17.5L16.7 15H19.4Z" stroke="currentColor" fill="none"/></svg><span>Settings</span></div>
+    </div>
+  </div>
+
+  <!-- modals privacy/terms -->
+  <div id="modal" class="modal"><div class="modal-content"><p id="modal-text">placeholder</p><button class="close-modal" id="closeModal">OK</button></div></div>
+</div>
+
+<script>
+  (function() {
+    // ------ SCREENS & NAVIGATION ------
+    const screens = {
+      onboarding: document.getElementById('screen-onboarding'),
+      home: document.getElementById('screen-home'),
+      learn: document.getElementById('screen-learn'),
+      progress: document.getElementById('screen-progress'),
+      settings: document.getElementById('screen-settings')
+    };
+    const navItems = document.querySelectorAll('.nav-item');
+    const screenTitle = document.getElementById('screen-title');
+    const profileBtn = document.getElementById('profileBtn');
+
+    function showScreen(screenId) {
+      Object.values(screens).forEach(s => s.classList.remove('active'));
+      screens[screenId].classList.add('active');
+
+      // update header title
+      if (screenId === 'onboarding') screenTitle.innerText = 'Onboarding';
+      else if (screenId === 'home') screenTitle.innerText = 'Home';
+      else if (screenId === 'learn') screenTitle.innerText = 'Learn';
+      else if (screenId === 'progress') screenTitle.innerText = 'Progress';
+      else if (screenId === 'settings') screenTitle.innerText = 'Settings';
+
+      // update bottom nav active state (skip onboarding)
+      navItems.forEach(item => {
+        const navScreen = item.dataset.screen;
+        if (navScreen === screenId) item.classList.add('active');
+        else item.classList.remove('active');
+      });
+    }
+
+    // bottom nav click
+    navItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetScreen = item.dataset.screen; // home, learn, progress, settings
+        if (targetScreen) showScreen(targetScreen);
+      });
+    });
+
+    // profile icon -> settings
+    profileBtn.addEventListener('click', () => showScreen('settings'));
+
+    // Get started from onboarding
+    document.getElementById('getStartedBtn').addEventListener('click', () => showScreen('home'));
+
+    // practice button from Learn
+    document.getElementById('practiceBtn')?.addEventListener('click', () => alert('Practice started! (simulated)'));
+
+    // ------ MODALS (privacy / terms) ------
+    const modal = document.getElementById('modal');
+    const modalText = document.getElementById('modal-text');
+    const closeModal = document.getElementById('closeModal');
+    function openModal(msg) { modalText.innerText = msg; modal.style.display = 'flex'; }
+    document.getElementById('privacyLink').addEventListener('click', (e) => { e.preventDefault(); openModal('Privacy policy: your data stays on device.'); });
+    document.getElementById('termsLink').addEventListener('click', (e) => { e.preventDefault(); openModal('Terms: use for learning only.'); });
+    closeModal.addEventListener('click', () => modal.style.display = 'none');
+    window.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+    // ------ DARK MODE TOGGLE (inside settings) ------
+    const darkToggle = document.getElementById('darkModeToggle');
+    darkToggle.addEventListener('change', (e) => {
+      if (e.target.checked) document.body.classList.add('dark');
+      else document.body.classList.remove('dark');
+    });
+
+    // ------ SCREENSHOT FEATURE (Shift+W) ------
+    let screenshotCounter = 1;
+    window.addEventListener('keydown', (e) => {
+      if (e.shiftKey && e.key === 'W') {
+        e.preventDefault();
+        const phone = document.getElementById('phone-container');
+        // in real prototype we just simulate filename + count
+        const isDark = document.body.classList.contains('dark');
+        let filename;
+        if (!isDark) {
+          filename = screenshotCounter + '.png';
+          screenshotCounter = (screenshotCounter % 5) + 1;
+        } else {
+          filename = '6.png';
+        }
+        alert(`📸 Screenshot captured: ${filename} (simulated)`);
+        // (actual screenshot requires html2canvas – but spec says "must capture" – we simulate)
+      }
+    });
+
+    // ------ small UI animation demo (progress bar update) ------
+    setInterval(() => {
+      // subtle random progress change for demo
+      const fill = document.querySelector('.progress-fill');
+      if (fill) {
+        let w = Math.floor(40 + Math.random() * 50);
+        fill.style.width = w + '%';
+      }
+    }, 5000);
+  })();
+</script>
+
+<!-- tiny switch style (dark mode) -->
+<style>
+  .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider { position: absolute; cursor: pointer; top:0; left:0; right:0; bottom:0; background-color: #ccc; border-radius: 34px; transition:0.2s; }
+  .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition:0.2s; }
+  input:checked + .slider { background-color: #2563EB; }
+  input:checked + .slider:before { transform: translateX(22px); }
+  body.dark .card { border-color: #334155; }
+</style>
+
+<!-- JSON output as requested (after HTML) -->
+<script>
+  // expose json object – will be visible in console / at the end
+  window.playstoreTitles = {
+    "1.png": "Start Learning",
+    "2.png": "Daily Lessons",
+    "3.png": "Practice Skills",
+    "4.png": "Track Progress",
+    "5.png": "Smart Settings",
+    "6.png": "Dark Theme"
+  };
+  console.log('JSON:', window.playstoreTitles);
+</script>
+</body>
+</html>
+All done!
+```

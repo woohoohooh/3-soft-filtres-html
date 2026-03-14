@@ -1,0 +1,632 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observe Universe · Astronomy Club</title>
+    <!-- Font & Icons (Font Awesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #101010;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* smooth reveal on scroll + subtle motion */
+        .section {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 1s cubic-bezier(0.2, 0.9, 0.1, 1), transform 1s cubic-bezier(0.2, 0.9, 0.1, 1);
+            will-change: opacity, transform;
+        }
+
+        .section.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* fixed elegant header – compact + glassy */
+        .fixed-header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 8px 28px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0,0,0,0.02);
+            z-index: 999;
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .fixed-header a {
+            text-decoration: none;
+            color: #111;
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: -0.01em;
+            padding: 6px 0;
+            border-bottom: 1.5px solid transparent;
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .fixed-header a:hover {
+            border-bottom-color: #111;
+        }
+
+        /* wrapper */
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* HERO = "secret mission" vibes, but astronomy twist */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            background: #fff;
+            margin-bottom: 20px;
+        }
+
+        .hero-content {
+            max-width: 1000px;
+            margin-top: 40px;
+        }
+
+        .pre-title {
+            font-size: 1.4rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: #2d3748;
+            background: #f1f5f9;
+            display: inline-block;
+            padding: 8px 24px;
+            border-radius: 40px;
+            margin-bottom: 30px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .hero h1 {
+            font-size: 5.5rem;
+            font-weight: 700;
+            line-height: 1.0;
+            letter-spacing: -0.02em;
+            color: #0b0e14;
+        }
+
+        .hero-highlight {
+            background: linear-gradient(145deg, #0b1e33, #1b2f47);
+            color: white;
+            padding: 0 20px;
+            border-radius: 100px;
+            display: inline-block;
+            transform: rotate(-1deg);
+            box-shadow: 0 10px 20px -8px rgba(0,20,50,0.2);
+        }
+
+        .hero-sub {
+            font-size: 1.6rem;
+            margin-top: 30px;
+            color: #334155;
+            max-width: 750px;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: 380;
+        }
+
+        /* floating celestial objects (JS driven later) */
+        .orbit-icon {
+            position: absolute;
+            font-size: 2.5rem;
+            color: #d4d4d4;
+            opacity: 0.2;
+            transition: all 0.2s;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #icon1 { top: 15%; left: 8%; animation: float 18s infinite; }
+        #icon2 { bottom: 20%; right: 6%; animation: float 22s infinite reverse; }
+        #icon3 { top: 30%; right: 15%; animation: float 16s infinite; }
+        #icon4 { bottom: 15%; left: 12%; animation: float 20s infinite; }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(10deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        /* telescopes / card style */
+        .telescope-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin: 70px 0 40px;
+        }
+
+        .scope-card {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 40px 28px;
+            box-shadow: 0 15px 35px -8px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            transition: transform 0.3s ease, box-shadow 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scope-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 45px -12px rgba(0,20,40,0.15);
+            border-color: #cbd5e1;
+        }
+
+        .scope-card i {
+            font-size: 3.5rem;
+            color: #163A5F;
+            margin-bottom: 25px;
+        }
+
+        .scope-card h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .scope-card p {
+            color: #2d3c4b;
+            font-size: 1.2rem;
+            line-height: 1.4;
+        }
+
+        .glow-text {
+            background: #eef2ff;
+            padding: 2px 8px;
+            border-radius: 24px;
+            font-weight: 500;
+            color: #102a43;
+        }
+
+        /* stats block */
+        .stat-block {
+            background: #f8fafc;
+            border-radius: 70px;
+            padding: 70px 50px;
+            margin: 80px 0;
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid #e9edf2;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #0b1f33;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-label {
+            font-size: 1.4rem;
+            color: #334155;
+            font-weight: 380;
+            margin-top: 8px;
+        }
+
+        /* events / calendar style */
+        .events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin: 50px 0;
+        }
+
+        .event-item {
+            display: flex;
+            align-items: center;
+            padding: 22px 32px;
+            background: white;
+            border-radius: 70px;
+            border: 1px solid #e4eaf1;
+            transition: all 0.3s;
+            font-size: 1.3rem;
+            cursor: default;
+        }
+
+        .event-item:hover {
+            background: #f2f6fc;
+            border-color: #9aaec5;
+            padding-left: 45px;
+        }
+
+        .event-date {
+            font-weight: 600;
+            background: #1c2f44;
+            color: white;
+            padding: 6px 28px;
+            border-radius: 50px;
+            margin-right: 30px;
+            font-size: 1.1rem;
+        }
+
+        .event-name {
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .event-location i {
+            margin-right: 10px;
+            color: #163A5F;
+        }
+
+        /* observation cta */
+        .night-obs {
+            background: #05121e;
+            color: white;
+            border-radius: 70px;
+            padding: 70px 60px;
+            margin: 90px 0;
+            display: flex;
+            align-items: center;
+            gap: 50px;
+        }
+
+        .night-obs h2 {
+            font-size: 3.5rem;
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .night-obs .btn {
+            background: white;
+            color: #05121e;
+            border: none;
+            padding: 18px 50px;
+            border-radius: 60px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            cursor: default;
+            transition: 0.2s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+
+        .night-obs .btn:hover {
+            background: #eef5ff;
+            transform: scale(1.02);
+        }
+
+        /* membership cards */
+        .member-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin: 60px 0;
+        }
+
+        .member-tier {
+            background: white;
+            border-radius: 40px;
+            padding: 45px 40px;
+            border: 1px solid #eceff3;
+            transition: box-shadow 0.3s;
+        }
+
+        .member-tier:hover {
+            box-shadow: 0 30px 45px -15px rgba(0,30,60,0.1);
+            border-color: #bac8d9;
+        }
+
+        .member-tier h3 {
+            font-size: 2.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+        }
+
+        .member-price {
+            font-size: 2.2rem;
+            font-weight: 500;
+            margin: 20px 0;
+            color: #163A5F;
+        }
+
+        .member-price small {
+            font-size: 1rem;
+            color: #64748b;
+        }
+
+        hr {
+            margin: 40px 0 20px;
+            border: 1px solid #dee5ed;
+        }
+
+        .footer {
+            padding: 60px 0 40px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            color: #1f2a3a;
+            font-size: 1.1rem;
+            margin-top: 70px;
+        }
+
+        .footer i {
+            color: #163A5F;
+            margin-right: 8px;
+        }
+
+        .big-quote {
+            font-size: 2.2rem;
+            font-weight: 400;
+            border-left: 7px solid #0a2942;
+            padding-left: 40px;
+            margin: 70px 0;
+            color: #1e2f40;
+        }
+
+        /* glow / highlight micro */
+        ::selection {
+            background: #cbdff5;
+            color: #02111f;
+        }
+
+        /* js animated typing or extra? header appear fine */
+        #typewriter span {
+            background: #f2f0ff;
+            padding: 5px 15px;
+            border-radius: 60px;
+        }
+
+        /* responsiveness (pc only, but simple scaling) */
+        @media (max-width: 1100px) {
+            .container { padding: 0 30px; }
+            .hero h1 { font-size: 4.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Fixed compact header (elegant) -->
+<div class="fixed-header">
+    <a href="#home">HOME</a>
+    <a href="#telescopes">TELESCOPES</a>
+    <a href="#events">EVENTS</a>
+    <a href="#membership">MEMBERSHIP</a>
+    <a href="#contact">CONTACT</a>
+</div>
+
+<!-- floating icons (animated via js tiny but pure css) -->
+<i class="fas fa-meteor orbit-icon" id="icon1"></i>
+<i class="fas fa-saturn orbit-icon" id="icon2"></i>
+<i class="fas fa-moon orbit-icon" id="icon3"></i>
+<i class="fas fa-star orbit-icon" id="icon4"></i>
+
+<main>
+    <!-- HERO block (section 1) -->
+    <section id="home" class="hero section">
+        <div class="hero-content">
+            <span class="pre-title"><i class="fas fa-binoculars" style="margin-right: 10px;"></i>2025 · PRIVATE ACCESS</span>
+            <h1>
+                <span class="hero-highlight">OBSERVE</span><br>
+                THE UNIVERSE
+            </h1>
+            <div class="hero-sub">
+                <i class="fas fa-circle" style="font-size: 0.4rem; vertical-align: middle; margin: 0 10px; color: #163A5F;"></i>
+                ELITE ASTRONOMY CLUB · DOME RESERVATION
+            </div>
+            <!-- typewriter effect placeholder but keep minimal -->
+            <div id="typewriter" style="margin-top: 40px; font-size: 1.5rem; color: #0b1e33;">
+                <span>🔭 12" TAKAHASHI · PLANETARIUM · DEEP SKY</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 2: telescopes / equipment (glow cards) -->
+    <section id="telescopes" class="container section">
+        <h2 style="font-size: 3rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 20px;">optical arsenal</h2>
+        <div class="telescope-grid">
+            <div class="scope-card">
+                <i class="fas fa-telescope"></i>
+                <h3>RCOS 16"</h3>
+                <p>Carbon-truss <span class="glow-text">astrograph</span> · perfect for distant galaxies. Equipped with 4K CCD.</p>
+            </div>
+            <div class="scope-card">
+                <i class="fas fa-satellite-dish"></i>
+                <h3>Planewave 20"</h3>
+                <p>DeltaRho corrector · <span class="glow-text">uncompromised</span> resolution. Used for exoplanet hunting.</p>
+            </div>
+            <div class="scope-card">
+                <i class="fas fa-globe"></i>
+                <h3>Solar scope</h3>
+                <p>Ha-alpha 120mm · observe prominences & surface details <span class="glow-text">daily</span>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 3: stats (clean large numbers) -->
+    <section class="container section">
+        <div class="stat-block">
+            <div class="stat-item">
+                <div class="stat-number">2.6M</div>
+                <div class="stat-label">objects catalogued</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">14</div>
+                <div class="stat-label">research-grade telescopes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">365</div>
+                <div class="stat-label">clear nights / year</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 4: night events / dark sky (glow) -->
+    <section id="events" class="container section">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <h2 style="font-size: 3rem; font-weight: 600;">🔦 night observations</h2>
+            <p style="font-size: 1.4rem;"><i class="fas fa-calendar-alt"></i>  private & members–only</p>
+        </div>
+        <div class="events-list">
+            <div class="event-item">
+                <span class="event-date">MAY 24</span>
+                <span class="event-name"><i class="fas fa-moon"></i>  Saturn at opposition · champagne night</span>
+                <span class="event-location"><i class="fas fa-map-pin"></i>  dome A</span>
+            </div>
+            <div class="event-item">
+                <span class="event-date">JUN 07</span>
+                <span class="event-name"><i class="fas fa-sun"></i>  Partial solar eclipse · Ha view</span>
+                <span class="event-location"><i class="fas fa-map-pin"></i>  terrace</span>
+            </div>
+            <div class="event-item">
+                <span class="event-date">JUN 21</span>
+                <span class="event-name"><i class="fas fa-cloud"></i>  Milky Way core · dark sky retreat</span>
+                <span class="event-location"><i class="fas fa-map-pin"></i>  remote field</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 5: big dark cta (cosmic vibe) -->
+    <section class="container section">
+        <div class="night-obs">
+            <div style="flex: 2;">
+                <h2>private <br>observation suite</h2>
+                <p style="font-size: 1.4rem; margin-top: 20px; opacity: 0.8;">Your personal astronomer · 1-on-1 session</p>
+            </div>
+            <div style="flex: 1; text-align: right;">
+                <span class="btn"><i class="fas fa-star" style="margin-right: 10px;"></i> RESERVE DOME</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 6: membership / pricing cards (premium) -->
+    <section id="membership" class="container section">
+        <h2 style="font-size: 3rem; font-weight: 600;">join the club</h2>
+        <div class="member-grid">
+            <div class="member-tier">
+                <h3>OBSERVER</h3>
+                <p style="font-size: 1.2rem;">6 nights / year + basic events</p>
+                <div class="member-price">$1,800 <small>/yr</small></div>
+                <ul style="list-style: none; font-size: 1.2rem; line-height: 2;">
+                    <li><i class="fas fa-check" style="color:#163A5F;"></i> all dome access (off-peak)</li>
+                    <li><i class="fas fa-check" style="color:#163A5F;"></i> digital star chart</li>
+                </ul>
+            </div>
+            <div class="member-tier">
+                <h3>FELLOW</h3>
+                <p style="font-size: 1.2rem;">unlimited nights + guest passes</p>
+                <div class="member-price">$4,200 <small>/yr</small></div>
+                <ul style="list-style: none; font-size: 1.2rem; line-height: 2;">
+                    <li><i class="fas fa-check" style="color:#163A5F;"></i> remote telescope access</li>
+                    <li><i class="fas fa-check" style="color:#163A5F;"></i> astro-photography workshop</li>
+                </ul>
+            </div>
+        </div>
+        <hr>
+    </section>
+
+    <!-- block 7: quote / testimonial minimal -->
+    <section class="container section">
+        <div class="big-quote">
+            “the clearest sky i’ve ever witnessed — it’s like the milky way is alive.”
+            <div style="margin-top: 25px; font-size: 1.3rem; color: #2f4052;">— M. H., fellow since 2021</div>
+        </div>
+    </section>
+
+    <!-- footer as second last block? we have contact inside footer -->
+    <footer id="contact" class="container footer section">
+        <div><i class="fas fa-location-dot"></i>  astronomy club · mauna kea access road</div>
+        <div><i class="fas fa-envelope"></i>  hello@obs.universe</div>
+        <div><i class="fas fa-lock"></i>  private  ·  members 2025</div>
+    </footer>
+</main>
+
+<!-- minimal JS: scroll reveal & header animation + extra glow -->
+<script>
+    (function() {
+        // reveal sections on scroll
+        const sections = document.querySelectorAll('.section');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                }
+            });
+        }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+        sections.forEach(s => observer.observe(s));
+
+        // tiny dynamic header animation (color, but we keep it clean)
+        const header = document.querySelector('.fixed-header');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(255, 255, 255, 0.95)';
+                header.style.boxShadow = '0 15px 35px -10px rgba(0,0,0,0.1)';
+            } else {
+                header.style.background = 'rgba(255, 255, 255, 0.7)';
+                header.style.boxShadow = '0 12px 30px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0,0,0,0.02)';
+            }
+        });
+
+        // randomize floating icon positions slightly (still within css, but just for fun we add small rotation)
+        // also add a tiny mousemove effect to first hero? light 3d – but very subtle
+        document.addEventListener('mousemove', function(e) {
+            const moveX = (e.clientX / window.innerWidth - 0.5) * 8;
+            const moveY = (e.clientY / window.innerHeight - 0.5) * 8;
+            const icons = document.querySelectorAll('.orbit-icon');
+            icons.forEach((icon, idx) => {
+                if (idx === 0) icon.style.transform = `translate(${moveX}px, ${moveY}px) rotate(5deg)`;
+                else if (idx === 1) icon.style.transform = `translate(${-moveX}px, ${-moveY*0.5}px)`;
+                // too much? reset after a while – but keep smooth
+            });
+        });
+
+        // ensure first section visible (if page load at top)
+        setTimeout(() => {
+            document.querySelector('#home').classList.add('revealed');
+        }, 100);
+    })();
+</script>
+
+<!-- pre-reveal first block manually -->
+<style>
+    .section { opacity: 0; } /* waiting for js */
+    #home.revealed, .section.revealed { opacity: 1; }
+</style>
+
+<!-- All done! (exactly as required) -->
+All done!
+</body>
+</html>
+```

@@ -1,0 +1,737 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · Private Shooting Club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0b0c10;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e4e6ed;
+            line-height: 1.5;
+            font-weight: 300;
+            scroll-behavior: smooth;
+        }
+
+        /* inter font via fallback (no google fonts, system) */
+        h1, h2, h3, .stat-number, .menu-link {
+            font-weight: 400;
+            letter-spacing: 0.02em;
+        }
+
+        /* custom crosshair cursor */
+        body * {
+            cursor: none; 
+        }
+        .custom-cursor {
+            position: fixed;
+            width: 32px;
+            height: 32px;
+            border: 2px solid rgba(200, 170, 100, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            transition: width 0.2s, height 0.2s, border-color 0.2s;
+            mix-blend-mode: difference;
+        }
+        .custom-cursor::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            background: #c8aa64;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        a:hover ~ .custom-cursor, button:hover ~ .custom-cursor, .card:hover ~ .custom-cursor {
+            width: 48px;
+            height: 48px;
+            border-color: #c8aa64;
+            background: rgba(200, 170, 100, 0.05);
+        }
+
+        /* fixed menu — transforms on scroll */
+        .navbar {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(10, 12, 18, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(200, 170, 100, 0.25);
+            border-radius: 60px;
+            padding: 12px 32px;
+            z-index: 100;
+            display: flex;
+            gap: 48px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.8);
+        }
+        .navbar.compact {
+            top: 16px;
+            padding: 8px 24px;
+            gap: 32px;
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #c8aa64;
+        }
+        .menu-link {
+            color: #ddd;
+            text-decoration: none;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: color 0.2s;
+            font-weight: 400;
+        }
+        .menu-link:hover {
+            color: #c8aa64;
+        }
+
+        /* sections */
+        section {
+            padding: 100px 8% 120px;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 140px;
+            background: radial-gradient(circle at 30% 40%, #1f232e, #0a0c10 70%);
+            border-bottom: 1px solid rgba(200,170,100,0.15);
+        }
+
+        .hero-content {
+            max-width: 600px;
+        }
+
+        .crosshair-animation {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            border: 2px dashed rgba(200, 170, 100, 0.3);
+            border-radius: 50%;
+            animation: rotateSlow 40s infinite linear;
+        }
+        .crosshair-animation::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #c8aa64, transparent);
+            transform: translate(-50%, -50%) rotate(0deg);
+            animation: pulseLine 3s infinite;
+        }
+        .crosshair-animation::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            height: 80%;
+            width: 2px;
+            background: linear-gradient(180deg, transparent, #c8aa64, transparent);
+            transform: translate(-50%, -50%);
+            animation: pulseLine 3s infinite 1.5s;
+        }
+        .inner-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 24px;
+            height: 24px;
+            background: #c8aa64;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 40px #c8aa64;
+            opacity: 0.8;
+        }
+
+        @keyframes rotateSlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulseLine {
+            0% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+
+        h1 {
+            font-size: 4.5rem;
+            font-weight: 300;
+            line-height: 1.1;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .glow {
+            color: #c8aa64;
+            text-shadow: 0 0 15px rgba(200,170,100,0.5);
+        }
+        .hero p {
+            font-size: 1.3rem;
+            max-width: 500px;
+            margin-bottom: 40px;
+            border-left: 3px solid #c8aa64;
+            padding-left: 24px;
+            opacity: 0.85;
+        }
+
+        .btn {
+            background: transparent;
+            border: 2px solid #c8aa64;
+            color: #c8aa64;
+            padding: 16px 42px;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.3s;
+            font-weight: 500;
+            border-radius: 60px;
+        }
+        .btn:hover {
+            background: #c8aa64;
+            color: #0b0c10;
+            box-shadow: 0 0 30px #c8aa64;
+        }
+
+        /* disciplines cards */
+        .section-title {
+            font-size: 3rem;
+            font-weight: 300;
+            margin-bottom: 60px;
+            border-bottom: 1px solid rgba(200,170,100,0.3);
+            padding-bottom: 20px;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 30px;
+        }
+        .discipline-card {
+            background: rgba(20, 22, 30, 0.7);
+            backdrop-filter: blur(4px);
+            border: 1px solid #2a2c36;
+            padding: 40px 30px;
+            transition: all 0.3s ease;
+            text-align: center;
+            border-radius: 4px;
+            box-shadow: 0 10px 20px -10px black;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease, border 0.3s, background 0.3s;
+        }
+        .discipline-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .discipline-card:hover {
+            border-color: #c8aa64;
+            background: rgba(30, 32, 42, 0.9);
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px -10px #c8aa6430;
+        }
+        .discipline-card i {
+            font-size: 3.5rem;
+            color: #c8aa64;
+            margin-bottom: 20px;
+        }
+        .discipline-card h3 {
+            font-size: 1.8rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+        .discipline-card p {
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+
+        /* trainers — military style */
+        .trainer-grid {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .trainer-card {
+            flex: 1 1 240px;
+            background: #15181e;
+            border: 1px solid #2f3542;
+            padding: 30px 20px;
+            transform: scale(0.95);
+            transition: 0.3s;
+            text-align: center;
+            border-radius: 2px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s, transform 0.6s;
+        }
+        .trainer-card.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        .trainer-card:hover {
+            border-color: #c8aa64;
+            box-shadow: inset 0 0 30px #0f0f15, 0 10px 20px #00000080;
+        }
+        .trainer-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #232833;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #c8aa64;
+            font-size: 3rem;
+            color: #c8aa64;
+        }
+
+        /* stats section with counters */
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            flex-wrap: wrap;
+            background: #0f1117;
+            padding: 60px 40px;
+            border: 1px solid #2a2c34;
+            margin-top: 30px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 300;
+            color: #c8aa64;
+            line-height: 1;
+            letter-spacing: 2px;
+        }
+        .stat-label {
+            text-transform: uppercase;
+            font-size: 1rem;
+            opacity: 0.6;
+            letter-spacing: 2px;
+        }
+
+        /* packages / pricing */
+        .package-grid {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .package {
+            background: linear-gradient(145deg, #14171f, #0b0d12);
+            padding: 50px 30px;
+            flex: 1 1 260px;
+            border: 1px solid #2b2f3b;
+            position: relative;
+            transition: 0.3s;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .package.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .package.premium {
+            border: 2px solid #c8aa64;
+            box-shadow: 0 0 40px #c8aa6420;
+        }
+        .package .price {
+            font-size: 3rem;
+            color: #c8aa64;
+            margin: 20px 0;
+        }
+        .package ul {
+            list-style: none;
+            margin: 30px 0;
+        }
+        .package li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #2f3542;
+        }
+
+        /* footer */
+        footer {
+            background: #07080c;
+            padding: 50px 8%;
+            border-top: 1px solid #c8aa6420;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .footer-links a {
+            color: #aaa;
+            margin-left: 30px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        }
+        .footer-links a:hover {
+            color: #c8aa64;
+        }
+
+        /* reveal base */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.9s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* hit effect */
+        .highlight-target {
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .highlight-target.highlight {
+            background: rgba(200, 170, 100, 0.15);
+            box-shadow: 0 0 0 4px rgba(200, 170, 100, 0.3);
+            border-radius: 4px;
+        }
+
+        /* small tweaks */
+        i {
+            color: #c8aa64;
+        }
+        .scope-icon {
+            font-size: 1.4rem;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- custom crosshair cursor -->
+    <div class="custom-cursor" id="cursor"></div>
+
+    <!-- fixed navbar (will be transformed on scroll) -->
+    <nav class="navbar" id="navbar">
+        <a href="#home" class="menu-link">Home</a>
+        <a href="#disciplines" class="menu-link">Disciplines</a>
+        <a href="#trainers" class="menu-link">Trainers</a>
+        <a href="#stats" class="menu-link">Stats</a>
+        <a href="#packages" class="menu-link">Packages</a>
+    </nav>
+
+    <!-- HERO block -->
+    <section class="hero" id="home">
+        <div class="hero-content reveal">
+            <span class="scope-icon"><i class="fas fa-crosshairs"></i>  PRECISION</span>
+            <h1>OBSIDIAN<br><span class="glow">SHOOTING</span> CLUB</h1>
+            <p>Where accuracy meets instinct. Elite tactical training & membership in a private, low-light range.</p>
+            <a href="#packages" class="btn">Join the mission</a>
+        </div>
+        <div class="crosshair-animation">
+            <div class="inner-dot"></div>
+        </div>
+    </section>
+
+    <!-- block 2: disciplines (cards) -->
+    <section id="disciplines">
+        <h2 class="section-title reveal"><i class="fas fa-bullseye"></i> disciplines</h2>
+        <div class="card-grid">
+            <div class="discipline-card reveal">
+                <i class="fas fa-gun"></i>
+                <h3>practical pistol</h3>
+                <p>dynamic target transitions, movement & accuracy under pressure</p>
+            </div>
+            <div class="discipline-card reveal">
+                <i class="fas fa-bow-arrow"></i>
+                <h3>precision rifle</h3>
+                <p>long range up to 300m · wind reading & ballistics</p>
+            </div>
+            <div class="discipline-card reveal">
+                <i class="fas fa-shield-halved"></i>
+                <h3>tactical shotgun</h3>
+                <p>breaching, speed reload & multi-target engagement</p>
+            </div>
+            <div class="discipline-card reveal">
+                <i class="fas fa-eye"></i>
+                <h3>low-light combat</h3>
+                <p>night vision & weaponlight tactics · cqc scenarios</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 3: trainers -->
+    <section id="trainers">
+        <h2 class="section-title reveal"><i class="fas fa-users"></i> operators / trainers</h2>
+        <div class="trainer-grid">
+            <div class="trainer-card reveal">
+                <div class="trainer-icon"><i class="fas fa-skull"></i></div>
+                <h3>ex-operator “ghost”</h3>
+                <p>15yrs special forces · counter-terror specialist</p>
+                <p style="color:#c8aa64">1,200+ students</p>
+            </div>
+            <div class="trainer-card reveal">
+                <div class="trainer-icon"><i class="fas fa-medal"></i></div>
+                <h3>D. Vasquez</h3>
+                <p>national pistol champion · ipsc grandmaster</p>
+                <p style="color:#c8aa64">accuracy coach</p>
+            </div>
+            <div class="trainer-card reveal">
+                <div class="trainer-icon"><i class="fas fa-mask"></i></div>
+                <h3>“viper”</h3>
+                <p>tactical firearms instructor · usmc veteran</p>
+                <p style="color:#c8aa64">close quarters battle</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 4: stats counters -->
+    <section id="stats">
+        <h2 class="section-title reveal"><i class="fas fa-chart-simple"></i> impact statistics</h2>
+        <div class="stats-grid reveal">
+            <div class="stat-item">
+                <div class="stat-number" data-target="18">0</div>
+                <div class="stat-label">years active</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="7">0</div>
+                <div class="stat-label">ranges</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="3400">0</div>
+                <div class="stat-label">members</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="96">0</div>
+                <div class="stat-label">% accuracy rate</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 5: packages / membership -->
+    <section id="packages">
+        <h2 class="section-title reveal"><i class="fas fa-tags"></i> membership packages</h2>
+        <div class="package-grid">
+            <div class="package reveal">
+                <h3>carbine</h3>
+                <div class="price">$290<span style="font-size:1rem">/mo</span></div>
+                <ul>
+                    <li>4 range days / month</li>
+                    <li>basic equipment rental</li>
+                    <li>1 group session</li>
+                </ul>
+                <a href="#" class="btn" style="padding:12px 32px;">select</a>
+            </div>
+            <div class="package premium reveal">
+                <h3>.308 <span style="color:#c8aa64">(premium)</span></h3>
+                <div class="price">$590</div>
+                <ul>
+                    <li>unlimited range access</li>
+                    <li>private coaching (2h/mo)</li>
+                    <li>guest passes + events</li>
+                    <li>ballistics lab</li>
+                </ul>
+                <a href="#" class="btn" style="padding:12px 32px;">select</a>
+            </div>
+            <div class="package reveal">
+                <h3>tactical</h3>
+                <div class="price">$420</div>
+                <ul>
+                    <li>8 range days / month</li>
+                    <li>tactical simunition rounds</li>
+                    <li>force-on-force sessions</li>
+                </ul>
+                <a href="#" class="btn" style="padding:12px 32px;">select</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer block -->
+    <footer>
+        <div style="opacity:0.6">© OBSIDIAN SHOOTING CLUB — est. 2008</div>
+        <div class="footer-links">
+            <a href="#">range rules</a>
+            <a href="#">waiver</a>
+            <a href="#">contact</a>
+            <a href="#"><i class="fas fa-crosshairs"></i> book trial</a>
+        </div>
+    </footer>
+
+    <!-- javascript: animations, counters, menu, cursor, highlights -->
+    <script>
+        (function() {
+            // custom cursor move
+            const cursor = document.getElementById('cursor');
+            document.addEventListener('mousemove', (e) => {
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+            });
+
+            // navbar compact on scroll
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 120) {
+                    navbar.classList.add('compact');
+                } else {
+                    navbar.classList.remove('compact');
+                }
+            });
+
+            // reveal on scroll (intersection observer)
+            const revealElements = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        // if it's stat numbers, trigger counter after reveal
+                        if (entry.target.classList.contains('stats-grid') || entry.target.querySelector('.stat-number')) {
+                            const stats = entry.target.querySelectorAll('.stat-number');
+                            if (stats.length) startCounter(stats);
+                        }
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -10px 0px' });
+            revealElements.forEach(el => observer.observe(el));
+
+            // counters (only once)
+            function startCounter(statNumbers) {
+                statNumbers.forEach(counter => {
+                    if (counter.getAttribute('data-counted') === 'true') return;
+                    const target = +counter.getAttribute('data-target');
+                    let current = 0;
+                    const increment = target / 50; // smooth
+                    const updateCounter = () => {
+                        current += increment;
+                        if (current < target) {
+                            counter.innerText = Math.floor(current);
+                            requestAnimationFrame(updateCounter);
+                        } else {
+                            counter.innerText = target;
+                            counter.setAttribute('data-counted', 'true');
+                        }
+                    };
+                    updateCounter();
+                });
+            }
+
+            // separate observer for cards inside stats grid (already triggered)
+            // pre-start if stats already visible
+            const statsGrid = document.querySelector('.stats-grid');
+            if (statsGrid && statsGrid.getBoundingClientRect().top < window.innerHeight) {
+                const nums = statsGrid.querySelectorAll('.stat-number');
+                startCounter(nums);
+            }
+
+            // highlight menu sections (anchor highlight on scroll + highlightTarget class)
+            const sections = document.querySelectorAll('section');
+            const menuLinks = document.querySelectorAll('.menu-link');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 200;
+                    if (scrollY >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                menuLinks.forEach(link => {
+                    link.style.color = link.getAttribute('href').includes(current) ? '#c8aa64' : '#ddd';
+                });
+
+                // additional highlight on #home? not needed
+            });
+
+            // bonus: hover crosshair on cards? via css already
+
+            // interactive highlight for any block when anchored (hash highlight)
+            if (window.location.hash) {
+                const target = document.querySelector(window.location.hash);
+                if (target) {
+                    target.classList.add('highlight-target', 'highlight');
+                    setTimeout(() => target.classList.remove('highlight'), 2000);
+                }
+            }
+            menuLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // remove any old highlight
+                    document.querySelectorAll('.highlight-target').forEach(el => el.classList.remove('highlight'));
+                    const hash = link.getAttribute('href');
+                    const target = document.querySelector(hash);
+                    if (target) {
+                        target.classList.add('highlight-target', 'highlight');
+                        setTimeout(() => target.classList.remove('highlight'), 2000);
+                    }
+                });
+            });
+
+            // subtle animation: crosshair rotates already in css, fine
+        })();
+    </script>
+
+    <!-- ensure numbers start if stats visible without scroll -->
+    <script>
+        (function immediateCount() {
+            const stats = document.querySelectorAll('.stat-number');
+            const statsGrid = document.querySelector('.stats-grid');
+            if (statsGrid && statsGrid.getBoundingClientRect().top < window.innerHeight*1.5) {
+                stats.forEach(counter => {
+                    if (!counter.getAttribute('data-counted')) {
+                        const target = +counter.getAttribute('data-target');
+                        let current = 0;
+                        const inc = target / 40;
+                        (function upd() {
+                            current += inc;
+                            if (current < target) {
+                                counter.innerText = Math.floor(current);
+                                requestAnimationFrame(upd);
+                            } else {
+                                counter.innerText = target;
+                                counter.setAttribute('data-counted', 'true');
+                            }
+                        })();
+                    }
+                });
+            }
+        })();
+    </script>
+
+    <!-- additional style for highlight -->
+    <style>
+        .highlight-target.highlight {
+            background: rgba(200,170,100,0.2);
+            box-shadow: 0 0 0 4px rgba(200,170,100,0.5);
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        /* fallback font */
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    </style>
+</body>
+</html>
+All done!
+```

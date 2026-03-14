@@ -1,0 +1,572 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBSERVER · private astronomy club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #03050a;
+            color: #e0e6f0;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            font-weight: 300;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap');
+
+        /* custom glow & selection */
+        ::selection {
+            background: #b78c5a;
+            color: #03050a;
+        }
+
+        /* fixed sleek nav */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(5, 10, 20, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(183, 140, 90, 0.25);
+            border-radius: 60px;
+            padding: 0.7rem 1.8rem;
+            z-index: 999;
+            box-shadow: 0 15px 35px -10px rgba(0,0,0,0.8), 0 0 0 1px rgba(183,140,90,0.1) inset;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #d4dff0;
+            font-weight: 400;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: 0.3s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 2px;
+        }
+
+        .nav-links a:hover {
+            color: #f5d7b3;
+            border-bottom-color: #b78c5a;
+        }
+
+        .nav-links .brand-mark {
+            color: #b78c5a;
+            font-weight: 600;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            margin-right: 1rem;
+            border: none;
+        }
+        .nav-links .brand-mark:hover { border-bottom: none; opacity: 0.9; }
+
+        /* sections */
+        section {
+            min-height: 100vh;
+            padding: 5rem 2rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* typography */
+        h1, h2, h3 {
+            font-weight: 400;
+            letter-spacing: -0.02em;
+        }
+
+        h1 {
+            font-size: clamp(3.5rem, 8vw, 6rem);
+            line-height: 1;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+
+        h2 {
+            font-size: 2.8rem;
+            margin-bottom: 2rem;
+            display: inline-block;
+            border-left: 6px solid #b78c5a;
+            padding-left: 1.5rem;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 12px rgba(183, 140, 90, 0.7);
+        }
+
+        /* header star animation */
+        .hero {
+            background: radial-gradient(ellipse at 30% 40%, #13212e, #010101 80%);
+        }
+        .star-field {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 12px #f5e5c0;
+            opacity: 0.7;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 20px #f7d9a0; }
+        }
+        .shooting-star {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #fff5d0;
+            border-radius: 50%;
+            box-shadow: 0 0 30px 6px #ffd78c;
+            top: var(--start-y);
+            left: var(--start-x);
+            animation: shoot var(--shoot-duration) linear infinite;
+            opacity: 0;
+        }
+        @keyframes shoot {
+            0% { transform: translateX(0) translateY(0) scale(1); opacity: 1; }
+            70% { opacity: 0.8; }
+            100% { transform: translateX(800px) translateY(300px) scale(0.2); opacity: 0; }
+        }
+
+        /* hero content */
+        .hero-content {
+            position: relative;
+            z-index: 5;
+        }
+        .hero p {
+            font-size: 1.4rem;
+            max-width: 650px;
+            margin: 2rem 0 3rem;
+            color: #bebebe;
+            border-left: 2px solid #b78c5a;
+            padding-left: 2rem;
+        }
+        .cta-button {
+            background: transparent;
+            border: 2px solid #b78c5a;
+            color: #f5d7b3;
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.4s;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 50px;
+            backdrop-filter: blur(4px);
+        }
+        .cta-button:hover {
+            background: #b78c5a;
+            color: #03050a;
+            box-shadow: 0 0 35px #b78c5a;
+        }
+
+        /* card grids */
+        .grid-3, .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .telescope-card, .event-card, .stat-card {
+            background: rgba(12, 20, 30, 0.6);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(183, 140, 90, 0.2);
+            padding: 2rem 1.5rem;
+            border-radius: 30px;
+            transition: all 0.3s ease-out;
+            box-shadow: 0 20px 30px -20px black;
+        }
+
+        .telescope-card:hover, .event-card:hover {
+            border-color: #b78c5a;
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 30px 40px -15px #030202, 0 0 0 2px rgba(183,140,90,0.3);
+        }
+
+        .stat-card {
+            text-align: center;
+            background: rgba(0,0,0,0.4);
+            border-radius: 40px;
+        }
+
+        .big-number {
+            font-size: 3.8rem;
+            font-weight: 300;
+            color: #b78c5a;
+            line-height: 1;
+            margin-bottom: 0.2rem;
+        }
+
+        /* icons */
+        .icon-large {
+            font-size: 2.8rem;
+            color: #b78c5a;
+            margin-bottom: 1.5rem;
+        }
+
+        hr.gold-hr {
+            width: 70px;
+            height: 3px;
+            background: #b78c5a;
+            border: 0;
+            margin: 2rem 0 1rem;
+        }
+
+        /* timeline / schedule */
+        .timeline-item {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            align-items: center;
+            background: rgba(20, 25, 35, 0.6);
+            padding: 1.5rem 2rem;
+            border-radius: 50px;
+            border-left: 6px solid #b78c5a;
+            backdrop-filter: blur(5px);
+        }
+        .time {
+            font-size: 1.8rem;
+            font-weight: 200;
+            color: #b78c5a;
+            min-width: 150px;
+        }
+
+        /* membership */
+        .membership-grid {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .member-tier {
+            background: linear-gradient(145deg, #0a101a, #020408);
+            padding: 2.8rem 2rem;
+            border-radius: 50px;
+            flex: 1 1 280px;
+            border: 1px solid #2a2f3a;
+            transition: 0.3s;
+        }
+        .member-tier:hover {
+            border-color: #b78c5a;
+            transform: scale(1.03);
+        }
+        .price {
+            font-size: 3rem;
+            color: #f5d7b3;
+            font-weight: 300;
+        }
+
+        /* footer */
+        footer {
+            background: #020407;
+            border-top: 1px solid #b78c5a30;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        .footer-links a {
+            color: #aaa;
+            margin: 0 1rem;
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+        .footer-links a:hover { color: #b78c5a; }
+
+        /* scroll animations (fade-up) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(35px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* responsive desktop first — fine */
+        @media (max-width: 900px) {
+            h2 { font-size: 2.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- fixed elegant navbar (compact + logo-like) -->
+    <nav class="navbar">
+        <ul class="nav-links">
+            <li><a href="#home" class="brand-mark"><i class="fas fa-meteor"></i> OBSERVER</a></li>
+            <li><a href="#instruments">optics</a></li>
+            <li><a href="#events">events</a></li>
+            <li><a href="#stats">cosmos</a></li>
+            <li><a href="#membership">join</a></li>
+        </ul>
+    </nav>
+
+    <!-- SECTION 1: HERO (dossier/secret mission style but space) -->
+    <section id="home" class="hero" style="position: relative;">
+        <!-- animated stars via js -->
+        <div class="star-field" id="starfield"></div>
+        <div class="container hero-content">
+            <h1 class="glow-text">OBSERVER<br>PRIVATE ASTRONOMY CLUB</h1>
+            <p><i class="fa-regular fa-compass" style="color: #b78c5a;"></i>   beyond ordinary — access the most advanced private observatories, elite astro-events & cosmic intelligence.</p>
+            <a href="#membership" class="cta-button">become a member</a>
+        </div>
+        <!-- scroll hint -->
+        <div style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #b78c5a; letter-spacing: 4px; font-size: 0.8rem; z-index: 20;"><i class="fas fa-chevron-down"></i> EXPLORE</div>
+    </section>
+
+    <!-- SECTION 2: TELESCOPES / INSTRUMENTS (cards like secret dossiers) -->
+    <section id="instruments">
+        <div class="container fade-up">
+            <h2>🔭 observation fleet</h2>
+            <div class="grid-3">
+                <div class="telescope-card">
+                    <div class="icon-large"><i class="fas fa-satellite-dish"></i></div>
+                    <h3>Ritchey–Chrétien 1.2m</h3>
+                    <hr class="gold-hr">
+                    <p>Professional-grade research telescope with adaptive optics. Available for members every new moon.</p>
+                </div>
+                <div class="telescope-card">
+                    <div class="icon-large"><i class="fas fa-globe"></i></div>
+                    <h3>Solar patrol · H-alpha</h3>
+                    <hr class="gold-hr">
+                    <p>Dedicated solar telescope for prominence & flare imaging. Exclusive daytime sessions.</p>
+                </div>
+                <div class="telescope-card">
+                    <div class="icon-large"><i class="fas fa-meteor"></i></div>
+                    <h3>radio array · 3m dish</h3>
+                    <hr class="gold-hr">
+                    <p>Listen to the universe: 21cm hydrogen line, pulsars & radio galaxies. guided by astronomers.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: EVENTS / OBSERVING NIGHTS (timeline style) -->
+    <section id="events" style="background: #050a12;">
+        <div class="container fade-up">
+            <h2>🌌 upcoming cosmic events</h2>
+            <div class="timeline-item">
+                <div class="time">MAY 24</div>
+                <div><strong>deep sky marathon</strong> · 8pm – dawn · virgo cluster, galaxies & nebulae</div>
+            </div>
+            <div class="timeline-item">
+                <div class="time">JUN 12</div>
+                <div><strong>mars opposition viewing</strong> · exclusive red planet session with 1.2m RC</div>
+            </div>
+            <div class="timeline-item">
+                <div class="time">JUL 8-9</div>
+                <div><strong>astrophotography masterclass</strong> · 2 nights with pro astrophotographer</div>
+            </div>
+            <div class="timeline-item">
+                <div class="time">AUG 2</div>
+                <div><strong>private solar brunch</strong> · H-alpha & white light — plus coronagraph</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: STATS / COSMIC NUMBERS (escape room style dossier stats) -->
+    <section id="stats">
+        <div class="container fade-up">
+            <h2>📡 observatory in numbers</h2>
+            <div class="grid-4">
+                <div class="stat-card"><span class="big-number" data-target="13">0</span> <span>optical telescopes</span></div>
+                <div class="stat-card"><span class="big-number" data-target="7">0</span> <span>dark sky sites</span></div>
+                <div class="stat-card"><span class="big-number" data-target="320">0</span> <span>clear nights / year</span></div>
+                <div class="stat-card"><span class="big-number" data-target="8000">0</span> <span>celestial objects</span></div>
+            </div>
+            <p style="margin-top: 2rem; font-style: italic; color: #b78c5a;"><i class="fa-regular fa-star"></i> 43°观测 latitude — perfect for northern & southern hemispheres</p>
+        </div>
+    </section>
+
+    <!-- SECTION 5: MEMBERSHIP (luxury tiers) -->
+    <section id="membership" style="background: #0a0f18;">
+        <div class="container fade-up">
+            <h2>⚜️ membership tiers</h2>
+            <div class="membership-grid">
+                <div class="member-tier">
+                    <span class="price">$3.2k</span><span style="color: #aaa;"> / year</span>
+                    <h3>OBSERVER</h3>
+                    <ul style="list-style: none; margin-top: 1.5rem; color: #ccc;">
+                        <li><i class="fas fa-check" style="color: #b78c5a;"></i> 4 private nights</li>
+                        <li><i class="fas fa-check" style="color: #b78c5a;"></i> all events access</li>
+                        <li><i class="fas fa-check" style="color: #b78c5a;"></i> digital star charts</li>
+                    </ul>
+                </div>
+                <div class="member-tier" style="border-color: #b78c5a; transform: scale(1.02);">
+                    <span class="price">$8.5k</span><span style="color: #aaa;"> / year</span>
+                    <h3>STELLAR · most popular</h3>
+                    <ul style="list-style: none; margin-top: 1.5rem;">
+                        <li><i class="fas fa-check" style="color: #b78c5a;"></i> unlimited nights</li>
+                        <li><i class="fas fa-check" style="color: #b78c5a;"></i> 1-on-1 with astronomer</li>
+                        <li><i class="fas fa-check" style="color: #b78c5a;"></i> remote observation</li>
+                        <li><i class="fas fa-check" style="color: #b78c5a;"></i> astro-photo processing</li>
+                    </ul>
+                </div>
+                <div class="member-tier">
+                    <span class="price">$18k</span><span style="color: #aaa;"> / year</span>
+                    <h3>GALACTIC</h3>
+                    <ul style="list-style: none; margin-top: 1.5rem;">
+                        <li><i class="fas fa-check" style="color: #b78c5a;"></i> all instruments priority</li>
+                        <li><i class="fas fa-check" style="color: #b78c5a;"></i> private events for 10</li>
+                        <li><i class="fas fa-check" style="color: #b78c5a;"></i> data & spectroscopy</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-links">
+            <a href="#home">home</a>
+            <a href="#instruments">optics</a>
+            <a href="#events">events</a>
+            <a href="#stats">cosmic stats</a>
+            <a href="#membership">join</a>
+        </div>
+        <p style="margin-top: 2.5rem; color: #5a6578;"><i class="fa-regular fa-copyright"></i> OBSERVER PRIVATE CLUB · 2025 · all skies reserved</p>
+        <p style="color: #b78c5a; margin-top: 1rem;">✦ under the same stars ✦</p>
+    </footer>
+
+    <!-- JavaScript: star generation, count-up, scroll animation -->
+    <script>
+        (function() {
+            // STAR FIELD (header animation)
+            const starfield = document.getElementById('starfield');
+            if (starfield) {
+                for (let i = 0; i < 140; i++) {
+                    const star = document.createElement('div');
+                    star.classList.add('star');
+                    const size = Math.random() * 3 + 1;
+                    star.style.width = size + 'px';
+                    star.style.height = size + 'px';
+                    star.style.left = Math.random() * 100 + '%';
+                    star.style.top = Math.random() * 100 + '%';
+                    star.style.setProperty('--duration', (Math.random() * 5 + 3) + 's');
+                    starfield.appendChild(star);
+                }
+                // shooting stars (3)
+                for (let s = 0; s < 4; s++) {
+                    const shoot = document.createElement('div');
+                    shoot.classList.add('shooting-star');
+                    shoot.style.setProperty('--start-x', Math.random() * 30 + '%');
+                    shoot.style.setProperty('--start-y', Math.random() * 30 + '%');
+                    shoot.style.setProperty('--shoot-duration', (Math.random() * 8 + 6) + 's');
+                    shoot.style.animationDelay = (Math.random() * 5) + 's';
+                    starfield.appendChild(shoot);
+                }
+            }
+
+            // COUNT UP on stats (simple + scroll trigger)
+            const statNumbers = document.querySelectorAll('.big-number');
+            let countStarted = false;
+            
+            function startCounters() {
+                if (countStarted) return;
+                const statsSection = document.getElementById('stats');
+                if (!statsSection) return;
+                const rect = statsSection.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 100) {
+                    countStarted = true;
+                    statNumbers.forEach(el => {
+                        const target = parseInt(el.getAttribute('data-target'), 10);
+                        if (isNaN(target)) return;
+                        let current = 0;
+                        const increment = target / 60; // smooth 60fps approx
+                        const timer = setInterval(() => {
+                            current += increment;
+                            if (current >= target) {
+                                el.innerText = target;
+                                clearInterval(timer);
+                            } else {
+                                el.innerText = Math.floor(current);
+                            }
+                        }, 20);
+                    });
+                }
+            }
+
+            // SCROLL REVEAL (fade-up)
+            const fadeElements = document.querySelectorAll('.fade-up');
+            function checkFade() {
+                fadeElements.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < window.innerHeight - 60) {
+                        el.classList.add('appear');
+                    }
+                });
+            }
+
+            // trigger on load & scroll
+            window.addEventListener('load', () => {
+                checkFade();
+                startCounters();
+            });
+            window.addEventListener('scroll', () => {
+                checkFade();
+                startCounters();
+            });
+
+            // nav link scroll (smooth)
+            document.querySelectorAll('.nav-links a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#home') {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                        const targetEl = document.querySelector(targetId);
+                        if (targetEl) {
+                            targetEl.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }
+                });
+            });
+
+            // additional compact effect: navbar hides on scroll down? not needed but keep simple
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

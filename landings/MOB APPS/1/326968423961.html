@@ -1,0 +1,519 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashLearn · prototype</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1e1e2f;
+            padding: 12px;
+        }
+
+        /* phone container */
+        .phone {
+            width: 360px;
+            height: 780px;
+            background-color: var(--bg-primary);
+            border-radius: 42px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4), 0 0 0 8px #2d2d3a;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.2s;
+        }
+
+        /* light / dark variables */
+        :root {
+            --bg-primary: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --border-light: #E2E8F0;
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent: #38BDF8;
+            --inactive: #94A3B8;
+            --nav-bg: #FFFFFF;
+            --shadow: 0 4px 12px rgba(0,0,0,0.05);
+            --progress-bg: #E2E8F0;
+        }
+
+        .dark-mode {
+            --bg-primary: #0F172A;
+            --bg-card: #1E293B;
+            --text-primary: #E2E8F0;
+            --text-secondary: #CBD5E1;
+            --border-light: #334155;
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --accent: #38BDF8;
+            --inactive: #64748B;
+            --nav-bg: #1E293B;
+            --shadow: 0 4px 12px rgba(0,0,0,0.5);
+            --progress-bg: #334155;
+        }
+
+        .app-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            padding: 16px 16px 8px 16px;
+            gap: 16px;
+            background: var(--bg-primary);
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        .header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .profile-icon {
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 12px;
+            transition: background 0.1s;
+        }
+        .profile-icon:hover { background: rgba(37,99,235,0.1); }
+
+        /* bottom navigation */
+        .bottom-nav {
+            background: var(--nav-bg);
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 6px 8px 10px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 30px;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+            background: transparent;
+            color: var(--inactive);
+            fill: var(--inactive);
+        }
+        .nav-item.active {
+            background: rgba(37,99,235,0.12);
+            color: var(--primary);
+            fill: var(--primary);
+            transform: scale(1.05);
+        }
+        .nav-icon {
+            width: 26px;
+            height: 26px;
+            stroke-width: 2;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .nav-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: currentColor;
+        }
+
+        /* cards / elements */
+        .card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+        .flex-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 6px 14px rgba(37,99,235,0.3);
+            transition: 0.15s;
+        }
+        .btn-primary:active { transform: scale(0.98); background: var(--primary-dark); }
+        .link-row {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            font-size: 0.8rem;
+            color: var(--inactive);
+            margin: 12px 0 4px;
+        }
+        .link-row span { cursor: pointer; text-decoration: underline; }
+
+        /* modal */
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-card {
+            background: var(--bg-card);
+            width: 280px;
+            padding: 24px;
+            border-radius: 32px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+        .modal-card button {
+            margin-top: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+
+        /* progress bar */
+        .progress-bar {
+            height: 8px;
+            background: var(--progress-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            width: 100%;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* small chart simulation */
+        .chart-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            height: 80px;
+            margin: 10px 0;
+        }
+        .chart-bar {
+            width: 22px;
+            background: var(--accent);
+            border-radius: 12px 12px 4px 4px;
+            transition: height 0.4s;
+        }
+
+        /* icons list */
+        .badge-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            background: rgba(56,189,248,0.15);
+            color: var(--primary);
+            border-radius: 40px;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* utilities */
+        .hidden { display: none !important; }
+        .mt-2 { margin-top: 8px; }
+        .mt-4 { margin-top: 16px; }
+    </style>
+</head>
+<body>
+<div class="phone" id="phoneContainer">
+    <!-- dynamic screens injected via js -->
+    <div id="screenRoot" class="app-screen"></div>
+    <!-- bottom nav -->
+    <div class="bottom-nav" id="bottomNav"></div>
+</div>
+
+<script>
+    (function() {
+        // ---------- THEME ----------
+        let darkMode = false;
+        const root = document.documentElement;
+        function toggleTheme() {
+            darkMode = !darkMode;
+            if (darkMode) root.classList.add('dark-mode');
+            else root.classList.remove('dark-mode');
+            renderActiveScreen(); // refresh icons/colors
+        }
+
+        // ---------- MODAL ----------
+        let modalContent = null;
+        function showModal(title, text) {
+            modalContent = { title, text };
+            renderModal();
+        }
+        function closeModal() { modalContent = null; renderModal(); }
+
+        // ---------- SCREEN STATE ----------
+        const screens = ['onboarding', 'home', 'learn', 'progress', 'settings'];
+        let activeScreen = 'onboarding'; // start with onboarding
+
+        // ---------- ICONS (inline svg, outline 2px rounded) ----------
+        function renderIcon(name, className = 'nav-icon', active = false) {
+            const color = active ? '#2563EB' : 'currentColor';
+            const strokeW = '2';
+            // all icons are minimal geometric, same style
+            const icons = {
+                home: `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10L12 3L21 10V20H3V10Z"/><path d="M9 20V14H15V20"/></svg>`,
+                learn: `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6L12 2L22 6L12 10L2 6Z"/><path d="M2 6V16L12 20L22 16V6"/><path d="M8 9V14"/></svg>`,
+                progress: `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H12"/><path d="M15 9L21 3"/><path d="M15 3H21V9"/></svg>`,
+                settings: `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15C19 15.6 18.7 16.2 18.4 16.8L19.5 18.9L18.9 19.5L16.8 18.4C16.2 18.7 15.6 19 15 19.4L14.2 21.8H9.8L9 19.4C8.4 19 7.8 18.7 7.2 18.4L5.1 19.5L4.5 18.9L5.6 16.8C5.3 16.2 5 15.6 4.6 15L2.2 14.2V9.8L4.6 9C5 8.4 5.3 7.8 5.6 7.2L4.5 5.1L5.1 4.5L7.2 5.6C7.8 5.3 8.4 5 9 4.6L9.8 2.2H14.2L15 4.6C15.6 5 16.2 5.3 16.8 5.6L18.9 4.5L19.5 5.1L18.4 7.2C18.7 7.8 19 8.4 19.4 9L21.8 9.8V14.2L19.4 15Z"/></svg>`,
+                profile: `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21V19C20 16.8 18.2 15 16 15H8C5.8 15 4 16.8 4 19V21"/><circle cx="12" cy="7" r="4"/></svg>`,
+                lesson: `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 7H16"/><path d="M8 11H14"/><path d="M8 15H12"/></svg>`,
+                chart: `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21H3V3"/><path d="M7 15L10 10L13 13L18 7"/></svg>`,
+                flashcards: `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 7H16"/><path d="M8 12H14"/><path d="M8 17H12"/></svg>`,
+                play: `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8L16 12L10 16V8Z"/></svg>`,
+                check: `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17L4 12"/></svg>`,
+            };
+            return icons[name] || icons['home'];
+        }
+
+        // ---------- RENDER SCREEN + BOTTOM NAV ----------
+        function renderActiveScreen() {
+            const rootEl = document.getElementById('screenRoot');
+            const navEl = document.getElementById('bottomNav');
+            if (!rootEl) return;
+
+            // render header left/right (dynamic based on screen)
+            let headerLeft = activeScreen === 'onboarding' ? 'Welcome' : 
+                             activeScreen === 'home' ? 'Home' :
+                             activeScreen === 'learn' ? 'Flashcards' :
+                             activeScreen === 'progress' ? 'Progress' : 'Settings';
+            let profileClick = () => navigateTo('settings');
+
+            const headerHtml = `
+                <div class="header">
+                    <h2>${headerLeft}</h2>
+                    <div class="profile-icon" onclick="(function(){ navigateTo('settings') })()">${renderIcon('profile', 'nav-icon')}</div>
+                </div>
+            `;
+
+            // screen content
+            let contentHtml = '';
+            if (activeScreen === 'onboarding') {
+                contentHtml = `
+                    <div class="card" style="text-align:center; padding:32px 16px;">
+                        <div style="margin-bottom:16px;">${renderIcon('flashcards', 'nav-icon', true)}</div>
+                        <h1 style="font-size:2rem; color:var(--primary);">FlashLearn</h1>
+                        <p style="font-size:1rem; margin:8px 0;"><strong>master flashcards, faster</strong></p>
+                        <p style="color:var(--text-secondary); margin:16px 0;">Daily science facts & vocabulary builder with smart repetition. Bite-sized learning.</p>
+                        <button class="btn-primary" onclick="navigateTo('home')">Get Started</button>
+                        <div class="link-row">
+                            <span onclick="showModal('Privacy Policy','We respect your data. No tracking.')">Privacy</span>
+                            <span onclick="showModal('Terms of Service','Use FlashLearn for personal learning only.')">Terms</span>
+                        </div>
+                    </div>
+                `;
+            } else if (activeScreen === 'home') {
+                contentHtml = `
+                    <div class="card flex-row" style="justify-content: space-between;">
+                        <span><strong>🔥 5 day streak</strong></span>
+                        <span>⚡ 120 XP today</span>
+                    </div>
+                    <div class="card">
+                        <h3>Continue learning</h3>
+                        <div class="flex-row" style="justify-content:space-between; margin-top:12px;">
+                            <span>Science facts</span>
+                            <span>lesson 3/5</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div>
+                        <button class="btn-primary mt-2" style="padding:10px;" onclick="navigateTo('learn')">continue</button>
+                    </div>
+                    <div class="card">
+                        <div class="flex-row" style="gap:6px;">${renderIcon('flashcards','nav-icon')}<span>Daily deck: 10 cards</span></div>
+                        <div class="badge-group mt-2">
+                            <span class="badge">${renderIcon('check','nav-icon')} biology</span>
+                            <span class="badge">${renderIcon('check','nav-icon')} space</span>
+                        </div>
+                    </div>
+                    <div class="card flex-row" style="justify-content:center;">
+                        ${renderIcon('play','nav-icon')} <span>practice quiz ready</span>
+                    </div>
+                `;
+            } else if (activeScreen === 'learn') {
+                contentHtml = `
+                    <div class="card">
+                        <h3>Science facts · 12 cards</h3>
+                        <div class="flex-row">${renderIcon('lesson','nav-icon')} <span>Photosynthesis</span></div>
+                        <div class="progress-bar mt-2"><div class="progress-fill" style="width:30%"></div></div>
+                        <button class="btn-primary mt-2" style="padding:10px;" onclick="alert('practice started!')">study now</button>
+                    </div>
+                    <div class="card">
+                        <span>Vocabulary (English)</span>
+                        <div class="flex-row">${renderIcon('flashcards','nav-icon')} 20 words left</div>
+                    </div>
+                    <div class="card flex-row">
+                        ${renderIcon('chart','nav-icon')} <span>mastery: 42%</span>
+                    </div>
+                `;
+            } else if (activeScreen === 'progress') {
+                contentHtml = `
+                    <div class="card">
+                        <h3>Weekly activity</h3>
+                        <div class="chart-row">
+                            <div class="chart-bar" style="height:50px;"></div>
+                            <div class="chart-bar" style="height:70px;"></div>
+                            <div class="chart-bar" style="height:40px;"></div>
+                            <div class="chart-bar" style="height:90px;"></div>
+                            <div class="chart-bar" style="height:60px;"></div>
+                        </div>
+                    </div>
+                    <div class="card flex-row" style="justify-content:space-between;">
+                        <span>lessons completed</span><span><strong>24</strong></span>
+                    </div>
+                    <div class="card">
+                        <span>Badges (3)</span>
+                        <div class="badge-group mt-2">
+                            <span class="badge">🔥 7 day</span>
+                            <span class="badge">⚡ quick learner</span>
+                        </div>
+                    </div>
+                `;
+            } else if (activeScreen === 'settings') {
+                contentHtml = `
+                    <div class="card">
+                        <div class="flex-row" style="justify-content:space-between;">
+                            <span>Dark theme</span>
+                            <label><input type="checkbox" id="themeToggle" ${darkMode ? 'checked' : ''} onchange="toggleTheme()"></label>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="flex-row">${renderIcon('profile','nav-icon')} Profile: Alex</div>
+                        <div class="flex-row mt-2">${renderIcon('settings','nav-icon')} App version 1.0</div>
+                    </div>
+                    <div class="card" style="text-align:center;" onclick="showModal('Reset progress','This would reset all data')">
+                        reset progress (sim)
+                    </div>
+                `;
+            }
+
+            rootEl.innerHTML = headerHtml + contentHtml;
+
+            // bottom nav
+            const navItems = [
+                { id: 'home', label: 'Home' },
+                { id: 'learn', label: 'Learn' },
+                { id: 'progress', label: 'Progress' },
+                { id: 'settings', label: 'Settings' }
+            ];
+            let navHtml = '';
+            navItems.forEach(item => {
+                const isActive = activeScreen === item.id;
+                const icon = renderIcon(item.id, 'nav-icon', isActive);
+                navHtml += `
+                    <div class="nav-item ${isActive ? 'active' : ''}" onclick="navigateTo('${item.id}')">
+                        ${icon}
+                        <span class="nav-label">${item.label}</span>
+                    </div>
+                `;
+            });
+            navEl.innerHTML = navHtml;
+
+            // re-attach modal if needed
+            renderModal();
+        }
+
+        function renderModal() {
+            let modalRoot = document.getElementById('modalRoot');
+            if (!modalRoot) {
+                modalRoot = document.createElement('div');
+                modalRoot.id = 'modalRoot';
+                document.querySelector('.phone').appendChild(modalRoot);
+            }
+            if (modalContent) {
+                modalRoot.innerHTML = `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal-card" onclick="event.stopPropagation()">
+                            <h3>${modalContent.title}</h3>
+                            <p>${modalContent.text}</p>
+                            <button onclick="closeModal()">OK</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                modalRoot.innerHTML = '';
+            }
+        }
+
+        window.navigateTo = (screen) => {
+            if (screens.includes(screen)) {
+                activeScreen = screen;
+                renderActiveScreen();
+            }
+        };
+
+        // screenshot feature SHIFT+W
+        document.addEventListener('keydown', (e) => {
+            if (e.shiftKey && e.key === 'W') {
+                e.preventDefault();
+                const phone = document.getElementById('phoneContainer');
+                // simplistic: generate filename based on screen + dark mode
+                let index = 1;
+                if (activeScreen === 'home') index = 2;
+                else if (activeScreen === 'learn') index = 3;
+                else if (activeScreen === 'progress') index = 4;
+                else if (activeScreen === 'settings') index = 5;
+                if (darkMode) index = 6;
+                const filename = index + '.png';
+                alert(`📸 Screenshot simulated: ${filename} would be saved. (real capture needs html2canvas)`);
+                console.log(`capture: ${filename}`);
+            }
+        });
+
+        // expose globals
+        window.toggleTheme = toggleTheme;
+        window.showModal = showModal;
+        window.closeModal = closeModal;
+
+        // initial render
+        renderActiveScreen();
+    })();
+</script>
+</body>
+</html>
+All done!
+```

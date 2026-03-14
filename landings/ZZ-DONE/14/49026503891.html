@@ -1,0 +1,655 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Novasight · video security</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      color: #1e1e2f;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll + section snap (subtle) */
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 70px;
+    }
+
+    /* ---------- header / fixed smart nav ---------- */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.2rem 5%;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.02);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      transition: all 0.25s ease;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    /* compact on scroll (js will toggle class) */
+    .header.scrolled {
+      padding: 0.6rem 5%;
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 8px 30px rgba(0,20,50,0.08);
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(130deg, #0b2b5c, #1b4a8b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo i {
+      background: none;
+      -webkit-text-fill-color: #1f3a6b;
+      font-size: 2rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.8rem;
+      font-weight: 500;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #1e293b;
+      font-size: 1.1rem;
+      position: relative;
+      transition: 0.2s;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      width: 0%;
+      height: 2.5px;
+      background: #1f4a9c;
+      transition: 0.2s ease;
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .nav-links a:hover {
+      color: #0a2a4e;
+    }
+
+    /* ---------- global section style ---------- */
+    section {
+      min-height: 90vh;
+      padding: 6rem 5% 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: white;
+      border-bottom: 1px solid #f0f3f9;
+    }
+
+    .section-title {
+      font-size: 3.2rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 2rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(145deg, #111c2e, #253b5c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* ----- reveal on scroll (intersection observer) ----- */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.7s cubic-bezier(0.15, 0.85, 0.35, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* header animation (js canvas particles) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      border-radius: 0 0 40px 40px;
+      pointer-events: none;
+    }
+
+    .hero {
+      position: relative;
+      background: white;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 800px;
+    }
+
+    .hero h1 {
+      font-size: 4.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(to right, #0b1d33, #203a61);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.4rem;
+      color: #2d3f5e;
+      margin-bottom: 2.5rem;
+      max-width: 600px;
+    }
+
+    .cta-btn {
+      background: #11263f;
+      border: none;
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 600;
+      padding: 1.2rem 3.5rem;
+      border-radius: 60px;
+      cursor: pointer;
+      box-shadow: 0 20px 30px -10px rgba(12, 40, 80, 0.25);
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cta-btn i {
+      font-size: 1.6rem;
+    }
+
+    .cta-btn:hover {
+      background: #1f3e6b;
+      transform: scale(1.02);
+      box-shadow: 0 25px 35px -8px #0c2644;
+    }
+
+    /* features grid / cards */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      background: #f8fafd;
+      padding: 2.5rem 2rem;
+      border-radius: 40px;
+      transition: 0.2s;
+      border: 1px solid #e9eef3;
+    }
+
+    .feature-card i {
+      font-size: 2.8rem;
+      background: linear-gradient(135deg, #1f3f6f, #375e96);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+
+    .feature-card h3 {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+      color: #12263f;
+    }
+
+    .feature-card p {
+      font-size: 1.2rem;
+      color: #33455f;
+    }
+
+    /* stats */
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+      background: #f2f6fc;
+      border-radius: 100px;
+      padding: 2rem 3rem;
+      margin: 2rem 0;
+    }
+
+    .stat-item {
+      text-align: center;
+      flex: 1;
+    }
+
+    .stat-number {
+      font-size: 3.2rem;
+      font-weight: 800;
+      color: #10305b;
+    }
+
+    .stat-label {
+      font-size: 1.3rem;
+      color: #314a70;
+    }
+
+    /* steps / process */
+    .step-list {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .step {
+      flex: 1;
+      background: #ffffff;
+      border: 1px solid #dee7f2;
+      border-radius: 30px;
+      padding: 2rem;
+    }
+
+    .step .step-num {
+      background: #0b2647;
+      color: white;
+      width: 50px;
+      height: 50px;
+      font-size: 1.8rem;
+      font-weight: 700;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .step h4 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .step p {
+      font-size: 1.2rem;
+      color: #2b405e;
+    }
+
+    /* footer */
+    .footer {
+      background: #0a1627;
+      color: #dfeaf7;
+      padding: 2.5rem 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .footer .social i {
+      font-size: 1.8rem;
+      margin-left: 1.8rem;
+      color: #b0c8e5;
+      transition: 0.2s;
+    }
+
+    .footer .social i:hover {
+      color: white;
+      transform: scale(1.1);
+    }
+
+    /* responsive (minimal, desktop first) */
+    @media (max-width: 1100px) {
+      .section-title { font-size: 2.8rem; }
+      .hero h1 { font-size: 3.5rem; }
+      .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* camera animation dots (in header) */
+    #cameraGlow {
+      position: absolute;
+      right: 8%;
+      top: 20%;
+      width: 380px;
+      height: 380px;
+      background: radial-gradient(circle, rgba(75,130,220,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      z-index: 0;
+      filter: blur(50px);
+    }
+  </style>
+</head>
+<body>
+  <header class="header" id="mainHeader">
+    <div class="logo">
+      <i class="fas fa-shield-hal"></i> NovaSight
+    </div>
+    <div class="nav-links">
+      <a href="#home">home</a>
+      <a href="#features">features</a>
+      <a href="#process">process</a>
+      <a href="#stats">stats</a>
+      <a href="#contact">contact</a>
+    </div>
+  </header>
+
+  <!-- block 1 / hero -->
+  <section class="hero" id="home" style="padding-top: 130px;">
+    <canvas id="heroCanvas"></canvas>
+    <div id="cameraGlow"></div>
+    <div class="hero-content reveal">
+      <h1>security that <br>never blinks.</h1>
+      <p>4K · AI analytics · 24/7 monitoring — <br>enterprise-grade video surveillance for your home or business.</p>
+      <button class="cta-btn"><i class="fa-regular fa-eye"></i> secure your place</button>
+    </div>
+  </section>
+
+  <!-- block 2 / features -->
+  <section id="features">
+    <h2 class="section-title reveal">why novassight</h2>
+    <div class="grid-3">
+      <div class="feature-card reveal">
+        <i class="fas fa-microchip"></i>
+        <h3>AI edge</h3>
+        <p>on-device face / vehicle recognition · instant alerts</p>
+      </div>
+      <div class="feature-card reveal">
+        <i class="fas fa-cloud-sun"></i>
+        <h3>weatherproof</h3>
+        <p>IP67 & night vision 100ft · -30°C to 60°C</p>
+      </div>
+      <div class="feature-card reveal">
+        <i class="fas fa-lock"></i>
+        <h3>encrypted</h3>
+        <p>end‑to‑end encryption · local or cloud storage</p>
+      </div>
+      <div class="feature-card reveal">
+        <i class="fas fa-mobile-alt"></i>
+        <h3>dual app</h3>
+        <p>live view & playback · iOS / Android · push notifications</p>
+      </div>
+      <div class="feature-card reveal">
+        <i class="fas fa-sync-alt"></i>
+        <h3>unlimited cams</h3>
+        <p>scale from 1 to 128 cameras · no license fees</p>
+      </div>
+      <div class="feature-card reveal">
+        <i class="fas fa-bolt"></i>
+        <h3>instant setup</h3>
+        <p>POE / Wi-Fi 6 · guided app · 15 min installation</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 3 / process / steps -->
+  <section id="process">
+    <h2 class="section-title reveal">your security in 3 moves</h2>
+    <div class="step-list">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <h4>consult</h4>
+        <p>free site survey & risk analysis – online or on‑site.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <h4>install</h4>
+        <p>certified techs, hidden cabling, zero downtime.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <h4>monitor</h4>
+        <p>24/7 remote guarding + you get the app access.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 4 / stats & trust -->
+  <section id="stats">
+    <div class="stats-row reveal">
+      <div class="stat-item">
+        <div class="stat-number">12+</div>
+        <div class="stat-label">years protecting</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">8.2k</div>
+        <div class="stat-label">cameras active</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">99.8%</div>
+        <div class="stat-label">uptime SLA</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">24/7</div>
+        <div class="stat-label">support</div>
+      </div>
+    </div>
+    <div style="margin-top: 4rem; display: flex; gap: 3rem; align-items: center; flex-wrap: wrap;" class="reveal">
+      <i class="fas fa-shield-alt" style="font-size: 4rem; color: #2e4b7a;"></i>
+      <span style="font-size: 1.5rem; font-weight: 300; max-width: 500px;">"replaced 3 old systems – NovaSight paid itself in 4 months." – T. Nguyen, retail chain</span>
+    </div>
+  </section>
+
+  <!-- block 5 / technology highlight -->
+  <section style="background: #f5f9ff;">
+    <h2 class="section-title reveal">AI that prevents</h2>
+    <div style="display: flex; gap: 4rem; align-items: center;">
+      <div class="reveal" style="flex:1">
+        <i class="fas fa-wave-square" style="font-size: 5rem; color: #19355b;"></i>
+        <p style="font-size: 1.6rem; margin-top: 1rem;">radar + thermal optional</p>
+      </div>
+      <div class="reveal" style="flex:2">
+        <p style="font-size: 1.5rem; font-weight: 400; line-height: 1.6;">Deep learning filters out pets / trees · human detection only · reduce false alarms by 97%.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 6 / packages -->
+  <section>
+    <h2 class="section-title reveal">simple plans</h2>
+    <div class="grid-3">
+      <div class="feature-card reveal" style="background: white;">
+        <i class="fas fa-home"></i>
+        <h3>residence</h3>
+        <p style="font-size: 2rem; font-weight: 700; color: #102542;">$299</p>
+        <p>4 cams · 1TB NVR · installation</p>
+      </div>
+      <div class="feature-card reveal" style="background: white; border: 2px solid #abc0da;">
+        <i class="fas fa-building"></i>
+        <h3>business</h3>
+        <p style="font-size: 2rem; font-weight: 700; color: #102542;">$899</p>
+        <p>8 cams · 4K AI NVR · 2yr warranty</p>
+      </div>
+      <div class="feature-card reveal" style="background: white;">
+        <i class="fas fa-warehouse"></i>
+        <h3>enterprise</h3>
+        <p style="font-size: 2rem; font-weight: 700; color: #102542;">custom</p>
+        <p>analytics · access control · support</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 7 / contact / consultation -->
+  <section id="contact" style="min-height: 60vh;">
+    <h2 class="section-title reveal">ready to see?</h2>
+    <div style="background: #eef3fb; padding: 3rem; border-radius: 80px; display: flex; justify-content: space-between; align-items: center;" class="reveal">
+      <span style="font-size: 2.2rem; font-weight: 600; color: #11263f;">📹 free demo · on‑site estimate</span>
+      <button class="cta-btn" style="font-size: 1.3rem; padding: 1rem 3rem;"><i class="fa-regular fa-calendar"></i> pick a time</button>
+    </div>
+  </section>
+
+  <!-- block 8 / footer -->
+  <footer class="footer">
+    <span style="font-size: 1.2rem;">© 2025 NovaSight — smart protection.</span>
+    <div class="social">
+      <i class="fab fa-instagram"></i>
+      <i class="fab fa-x-twitter"></i>
+      <i class="fab fa-linkedin-in"></i>
+      <i class="fab fa-youtube"></i>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // compact header on scroll
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // intersection observer (reveal)
+      const reveals = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          } else {
+            // optional: remove class if you want repeat animation (keeping it for elegance)
+            // entry.target.classList.remove('active'); // (commented – they stay visible)
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -80px 0px' });
+      
+      reveals.forEach(r => observer.observe(r));
+
+      // canvas animation (header particle / camera lens flare effect)
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initCanvas() {
+        width = window.innerWidth;
+        height = document.querySelector('.hero').offsetHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // create slow floating particles (lens shapes)
+        particles = [];
+        for (let i = 0; i < 42; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: 2 + Math.random() * 6,
+            speedX: (Math.random() - 0.5) * 0.25,
+            speedY: (Math.random() - 0.5) * 0.15,
+            opacity: 0.3 + Math.random() * 0.4,
+            color: `rgba(70, 130, 220, ${0.2 + Math.random()*0.2})`
+          });
+        }
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height); // white bg behind particles
+
+        // draw extra faint grid lines (tech vibe)
+        ctx.strokeStyle = '#d4e0f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 0; i < width; i += 50) {
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, height);
+        }
+        for (let i = 0; i < height; i += 50) {
+          ctx.moveTo(0, i);
+          ctx.lineTo(width, i);
+        }
+        ctx.strokeStyle = '#e5ecf5';
+        ctx.stroke();
+
+        // draw particles (tiny cams / circles)
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+          // draw small ring around some (aperture)
+          if (p.radius > 4) {
+            ctx.strokeStyle = '#2f559b';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius + 2, 0, 2 * Math.PI);
+            ctx.stroke();
+          }
+        });
+      }
+
+      function animateParticles() {
+        particles.forEach(p => {
+          p.x += p.speedX;
+          p.y += p.speedY;
+          // wrap around
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        });
+        drawParticles();
+        requestAnimationFrame(animateParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        initCanvas();
+        drawParticles();
+      });
+
+      initCanvas();
+      animateParticles();
+
+      // extra camera glow follow mouse (micro interaction)
+      const glow = document.getElementById('cameraGlow');
+      document.querySelector('.hero').addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        glow.style.transform = `translate(${x - 180}px, ${y - 180}px)`;
+      });
+    })();
+  </script>
+  <!-- simple anchor for home -->
+  <div style="position: fixed; bottom: 30px; right: 30px; background: #11263f; color: white; width: 55px; height: 55px; border-radius: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px #00000020;">
+    <i class="fa-regular fa-comment-dots" style="font-size: 2rem;"></i>
+  </div>
+</body>
+</html>
+```
+All done!

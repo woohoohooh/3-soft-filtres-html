@@ -1,0 +1,722 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private shooting club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0c0f;
+            color: #e5e9f0;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            font-weight: 300;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,200;14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+
+        /* custom cursor / crosshair vibe */
+        .cursor-dot {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 8px;
+            background: #c9a96b;
+            border-radius: 50%;
+            mix-blend-mode: exclusion;
+            z-index: 9999;
+            opacity: 0.8;
+            transition: transform 0.1s;
+        }
+
+        .cursor-outline {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 40px;
+            border: 1.5px solid rgba(201, 169, 107, 0.5);
+            border-radius: 50%;
+            z-index: 9998;
+            transition: all 0.2s ease-out;
+        }
+
+        /* fixed compact header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1rem 2.5rem;
+            background: rgba(10, 12, 15, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(201, 169, 107, 0.25);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: padding 0.3s ease, background 0.3s;
+        }
+
+        .header.scrolled {
+            padding: 0.6rem 2.5rem;
+            background: rgba(6, 8, 10, 0.95);
+            border-bottom: 1px solid #c9a96b;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #fff;
+        }
+
+        .logo span {
+            color: #c9a96b;
+            font-weight: 300;
+            margin-right: 4px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2.8rem;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #e5e9f0;
+            font-weight: 400;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            position: relative;
+            padding: 0.4rem 0;
+            transition: color 0.2s;
+        }
+
+        .nav a:hover {
+            color: #c9a96b;
+        }
+
+        .nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #c9a96b;
+            transition: width 0.25s;
+        }
+
+        .nav a:hover::after {
+            width: 100%;
+        }
+
+        /* main blocks */
+        section {
+            min-height: 100vh;
+            padding: 7rem 2.5rem 4rem;
+            max-width: 1440px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px solid rgba(201, 169, 107, 0.15);
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hero {
+            padding-top: 8rem;
+        }
+
+        h1 {
+            font-size: 5.5rem;
+            font-weight: 300;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 .accent {
+            color: #c9a96b;
+            font-weight: 500;
+            display: inline-block;
+            border-bottom: 3px solid #c9a96b;
+            padding-bottom: 8px;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            max-width: 700px;
+            color: #a6acb9;
+            margin-bottom: 2.5rem;
+            border-left: 4px solid #c9a96b;
+            padding-left: 2rem;
+        }
+
+        .crosshair-badge {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: 400;
+        }
+
+        .crosshair-badge i {
+            color: #c9a96b;
+            font-size: 2rem;
+        }
+
+        /* cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .card {
+            background: rgba(20, 24, 28, 0.7);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(201, 169, 107, 0.25);
+            padding: 2.5rem 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            border-color: #c9a96b;
+            transform: translateY(-10px);
+            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(201, 169, 107, 0.5);
+        }
+
+        .card i {
+            font-size: 3rem;
+            color: #c9a96b;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h3 {
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+        }
+
+        .card .stat-tag {
+            font-size: 3.8rem;
+            font-weight: 600;
+            color: #c9a96b;
+            line-height: 1;
+        }
+
+        .small-meta {
+            color: #868e9c;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        /* counter / stats row */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            margin: 3rem 0 1rem;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            border-right: 1px solid #2b3139;
+        }
+
+        .stat-item:last-child {
+            border-right: none;
+        }
+
+        .stat-number {
+            font-size: 4.5rem;
+            font-weight: 300;
+            color: #c9a96b;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* instructors grid */
+        .instructors {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .instructor-card {
+            flex: 1;
+            background: #111519;
+            padding: 2rem;
+            border-bottom: 3px solid #c9a96b;
+            transition: 0.2s;
+        }
+
+        .instructor-card:hover {
+            background: #1b2128;
+        }
+
+        .instructor-card h4 {
+            font-size: 2rem;
+            font-weight: 300;
+        }
+
+        .instructor-card p {
+            color: #c9a96b;
+            margin: 0.5rem 0 1rem;
+            font-size: 1.1rem;
+        }
+
+        .instructor-card i {
+            margin-right: 0.7rem;
+            color: #c9a96b;
+            width: 24px;
+        }
+
+        .badge {
+            background: #c9a96b;
+            color: #0a0c0f;
+            display: inline-block;
+            padding: 0.4rem 1.2rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            border-radius: 30px;
+        }
+
+        /* packages */
+        .packages {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .package {
+            background: #111519;
+            padding: 2.5rem 2rem;
+            border: 1px solid #2f363f;
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .package:hover {
+            border-color: #c9a96b;
+            transform: scale(1.02);
+        }
+
+        .package .price {
+            font-size: 3rem;
+            font-weight: 300;
+            color: #c9a96b;
+        }
+
+        .package ul {
+            list-style: none;
+            margin: 1.5rem 0;
+        }
+
+        .package li {
+            padding: 0.4rem 0;
+            border-bottom: 1px dashed #2f363f;
+        }
+
+        .package li i {
+            color: #c9a96b;
+            width: 24px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #c9a96b;
+            color: #e5e9f0;
+            padding: 0.8rem 2.2rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .btn-outline:hover {
+            background: #c9a96b;
+            color: #0a0c0f;
+        }
+
+        /* footer */
+        .footer {
+            background: #07090c;
+            padding: 3rem 2.5rem;
+            border-top: 2px solid #c9a96b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            color: #8a919e;
+        }
+
+        .footer a {
+            color: #e5e9f0;
+            text-decoration: none;
+            margin: 0 1.2rem 0 0;
+        }
+
+        .footer a:hover {
+            color: #c9a96b;
+        }
+
+        /* scroll indicator */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: #c9a96b;
+            z-index: 999;
+            transition: width 0.1s;
+        }
+
+        /* section headers */
+        h2 {
+            font-size: 3.5rem;
+            font-weight: 300;
+            border-left: 8px solid #c9a96b;
+            padding-left: 2rem;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+        }
+
+        /* glowing text highlight */
+        .glow {
+            background: linear-gradient(145deg, #fff4e0, #c9a96b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 500;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #c9a96b, transparent);
+            margin: 2rem 0;
+        }
+
+        /* responsive for desktop only (no mobile) */
+        @media (max-width: 1100px) {
+            h1 { font-size: 4.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+    <div class="scroll-progress"></div>
+
+    <header class="header" id="mainHeader">
+        <div class="logo"><span>✧</span> OBSIDIAN</div>
+        <nav class="nav">
+            <a href="#home">home</a>
+            <a href="#disciplines">disciplines</a>
+            <a href="#stats">stats</a>
+            <a href="#instructors">instructors</a>
+            <a href="#packages">packages</a>
+        </nav>
+    </header>
+
+    <!-- block 1 - hero -->
+    <section id="home" class="hero">
+        <h1>precision <span class="accent">shooting</span><br>club · obsidian</h1>
+        <p>✧ where accuracy meets instinct. exclusive private range, tactical mastery & ballistic performance.</p>
+        <div class="crosshair-badge">
+            <i class="fas fa-crosshairs"></i>
+            <span>members only · zeroing from 7am</span>
+            <i class="fas fa-bullseye"></i>
+        </div>
+        <hr>
+        <div class="stats-row">
+            <div class="stat-item"><span class="stat-number" id="counter1">147</span><div class="stat-label">active members</div></div>
+            <div class="stat-item"><span class="stat-number" id="counter2">23</span><div class="stat-label">world titles</div></div>
+            <div class="stat-item"><span class="stat-number" id="counter3">980</span><div class="stat-label">drills / month</div></div>
+        </div>
+    </section>
+
+    <!-- block 2 - disciplines (cards) -->
+    <section id="disciplines">
+        <h2>weapon disciplines</h2>
+        <div class="card-grid">
+            <div class="card">
+                <i class="fas fa-gun"></i>
+                <h3>pistol<br>precision</h3>
+                <p>from 7 to 25 yards · competitive & defensive.</p>
+                <div class="stat-tag">.45</div>
+            </div>
+            <div class="card">
+                <i class="fas fa-arrow-up-from-bracket"></i>
+                <h3>tactical<br>rifle</h3>
+                <p>dynamic multi-lane · up to 300m simulation.</p>
+                <div class="stat-tag">5.56</div>
+            </div>
+            <div class="card">
+                <i class="fas fa-eye"></i>
+                <h3>long range</h3>
+                <p>precision bolt action · 1000m electronic targets.</p>
+                <div class="stat-tag">.338</div>
+            </div>
+        </div>
+        <hr>
+        <div style="display: flex; gap: 3rem; margin-top: 2rem;">
+            <span><i class="fas fa-check-circle" style="color: #c9a96b;"></i> night vision sessions</span>
+            <span><i class="fas fa-check-circle" style="color: #c9a96b;"></i> ballistic analysts</span>
+            <span><i class="fas fa-check-circle" style="color: #c9a96b;"></i> gun concierge</span>
+        </div>
+    </section>
+
+    <!-- block 3 - stats / secret dossier style (hits) -->
+    <section id="stats">
+        <h2><span class="glow">accuracy</span> dossier</h2>
+        <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+            <div style="flex: 2;">
+                <div style="font-size: 6rem; font-weight: 200; color: #c9a96b; line-height: 1;">96<span style="font-size: 2rem;">%</span></div>
+                <div class="small-meta">first shot hit ratio (members)</div>
+                <div style="margin-top: 2rem; background: #1b2128; padding: 1.5rem; border-left: 4px solid #c9a96b;">
+                    <i class="fas fa-skull" style="color: #c9a96b;"></i> “elite precision — the difference between cover and casualty.”
+                </div>
+            </div>
+            <div style="flex: 1; background: #111519; padding: 2rem;">
+                <i class="fas fa-stopwatch fa-2x" style="color: #c9a96b; margin-bottom: 1rem;"></i>
+                <div style="font-size: 2.5rem;">0.8<span style="font-size: 1rem;">s</span></div>
+                <div>average draw-to-first-shot</div>
+                <hr style="margin: 1rem 0;">
+                <div><i class="fas fa-bullseye"></i> 12.000 rounds/month</div>
+            </div>
+        </div>
+        <!-- animated counters will be triggered later -->
+    </section>
+
+    <!-- block 4 - instructors (with mini crosshair hover) -->
+    <section id="instructors">
+        <h2>shadow <span class="accent">instructors</span></h2>
+        <div class="instructors">
+            <div class="instructor-card">
+                <h4>V. Krauss</h4>
+                <p>ex‑GSG 9 · precision rifle</p>
+                <i class="fas fa-medal"></i> 14y operative<br>
+                <i class="fas fa-crosshairs"></i> 127 competition podiums
+            </div>
+            <div class="instructor-card">
+                <h4>M. Hayes</h4>
+                <p>usmc scout sniper · ballistics</p>
+                <i class="fas fa-medal"></i> 2× national champion<br>
+                <i class="fas fa-crosshairs"></i> 800+ students trained
+            </div>
+            <div class="instructor-card">
+                <h4>S. Nováková</h4>
+                <p>ipsc grandmaster · pistol</p>
+                <i class="fas fa-medal"></i> world shoot-off finalist<br>
+                <i class="fas fa-crosshairs"></i> 8 years ipsc
+            </div>
+        </div>
+        <div style="margin-top: 3rem;">
+            <span class="badge">private coaching available</span>
+        </div>
+    </section>
+
+    <!-- block 5 - packages / membership (cards) -->
+    <section id="packages">
+        <h2>membership plans</h2>
+        <div class="packages">
+            <div class="package">
+                <h3>patron</h3>
+                <div class="price">$350</div>
+                <div class="small-meta">/ month</div>
+                <ul>
+                    <li><i class="fas fa-check"></i> 8h range / week</li>
+                    <li><i class="fas fa-check"></i> basic ballistics</li>
+                    <li><i class="fas fa-check"></i> locker room</li>
+                </ul>
+                <button class="btn-outline">enroll</button>
+            </div>
+            <div class="package" style="border-color: #c9a96b; background: #151e24;">
+                <h3>marksman</h3>
+                <div class="price">$720</div>
+                <div class="small-meta">/ month</div>
+                <ul>
+                    <li><i class="fas fa-check"></i> 16h range / week</li>
+                    <li><i class="fas fa-check"></i> advanced data</li>
+                    <li><i class="fas fa-check"></i> guest pass +2</li>
+                    <li><i class="fas fa-check"></i> night vision access</li>
+                </ul>
+                <button class="btn-outline">enroll</button>
+            </div>
+            <div class="package">
+                <h3>legacy</h3>
+                <div class="price">$1250</div>
+                <div class="small-meta">/ month</div>
+                <ul>
+                    <li><i class="fas fa-check"></i> unlimited range</li>
+                    <li><i class="fas fa-check"></i> private coach</li>
+                    <li><i class="fas fa-check"></i> armorer concierge</li>
+                    <li><i class="fas fa-check"></i> international invites</li>
+                </ul>
+                <button class="btn-outline">enroll</button>
+            </div>
+        </div>
+        <p style="margin-top: 3rem; text-align: right; font-style: italic;">✧ annual members receive custom gun fitting ✧</p>
+    </section>
+
+    <!-- footer (block extra) -->
+    <footer class="footer">
+        <div>© 2025 OBSIDIAN · private shooting club</div>
+        <div>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-x-twitter"></i></a>
+            <a href="#"><i class="fas fa-crosshairs"></i></a>
+            <span style="margin-left: 2rem;">📍 1207 black range rd</span>
+        </div>
+    </footer>
+
+    <!-- JS: animations, counters, scroll effects, custom cursor -->
+    <script>
+        (function() {
+            // header shrink on scroll
+            const header = document.getElementById('mainHeader');
+            const progressBar = document.querySelector('.scroll-progress');
+            
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+                // scroll progress
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                progressBar.style.width = scrolled + '%';
+            });
+
+            // Intersection observer - reveal sections
+            const sections = document.querySelectorAll('section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px' });
+            sections.forEach(s => observer.observe(s));
+
+            // tiny counter animation (just for wow)
+            function animateValue(el, start, end, duration) {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    const value = Math.floor(progress * (end - start) + start);
+                    el.innerText = value;
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    } else {
+                        el.innerText = end;
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+
+            // counters when stats block visible
+            const statsSection = document.getElementById('stats');
+            const counter1 = document.getElementById('counter1');
+            const counter2 = document.getElementById('counter2');
+            const counter3 = document.getElementById('counter3');
+            
+            let animated = false;
+            const statsObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !animated) {
+                        animateValue(counter1, 100, 147, 1300);
+                        animateValue(counter2, 10, 23, 1300);
+                        animateValue(counter3, 800, 980, 1300);
+                        animated = true;
+                    }
+                });
+            }, { threshold: 0.5 });
+            statsObserver.observe(statsSection);
+
+            // custom cursor
+            const cursorDot = document.querySelector('.cursor-dot');
+            const cursorOutline = document.querySelector('.cursor-outline');
+            window.addEventListener('mousemove', (e) => {
+                cursorDot.style.transform = `translate(${e.clientX - 4}px, ${e.clientY - 4}px)`;
+                cursorOutline.style.transform = `translate(${e.clientX - 20}px, ${e.clientY - 20}px)`;
+            });
+
+            // hover effect for cards, links etc
+            const hoverables = document.querySelectorAll('.card, .nav a, .btn-outline, .instructor-card');
+            hoverables.forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    cursorOutline.style.transform += ' scale(1.5)';
+                    cursorOutline.style.borderColor = '#c9a96b';
+                    cursorOutline.style.backgroundColor = 'rgba(201,169,107,0.1)';
+                });
+                el.addEventListener('mouseleave', () => {
+                    cursorOutline.style.borderColor = 'rgba(201,169,107,0.5)';
+                    cursorOutline.style.backgroundColor = 'transparent';
+                });
+            });
+
+            // dynamic compact menu effect already done via header class
+            // also add hover text glow for fun
+            const headings = document.querySelectorAll('h2, h1 .accent');
+            headings.forEach(h => {
+                h.addEventListener('mouseenter', () => h.classList.add('glow'));
+                h.addEventListener('mouseleave', () => h.classList.remove('glow'));
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

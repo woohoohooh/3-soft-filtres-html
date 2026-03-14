@@ -1,0 +1,582 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZoomOut · Снос с вайбом</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #ffffff;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.4;
+      color: #1e1e1e;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* inter via fallback */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+    /* ===== CUSTOM HEADER ANIM (js driven) ===== */
+    .header-scroll {
+      transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    }
+    .header-scroll.compact {
+      padding-block: 0.75rem !important;
+      background: rgba(255,255,255,0.9) !important;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.02);
+    }
+
+    /* block reveal staggering */
+    .reveal-group {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .reveal-group.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* fixed anchor nav */
+    .nav-dots {
+      position: fixed;
+      right: 2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      z-index: 99;
+    }
+    .nav-dots a {
+      display: block;
+      width: 10px;
+      height: 10px;
+      border-radius: 10px;
+      background: #ccc;
+      transition: 0.25s;
+      box-shadow: 0 0 0 2px white;
+    }
+    .nav-dots a.active-dot {
+      background: #2d2d2d;
+      width: 24px;
+      transform: scale(1.2);
+    }
+
+    /* general */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+    .block-header, .block-footer {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem;
+      width: 100%;
+    }
+    h2 {
+      font-size: 2.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 2rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+    .accent-text {
+      color: #2f5b4d;
+      font-weight: 500;
+    }
+
+    /* header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: white;
+      transition: all 0.2s;
+      border-bottom: 1px solid #eaeaea;
+    }
+    .header-scroll {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-block: 1.5rem;
+    }
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 650;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo i {
+      font-size: 2.2rem;
+      color: #2b2b2b;
+    }
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      font-weight: 500;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: #2d2d2d;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .nav-links a:hover {
+      border-bottom: 1px solid #2d2d2d;
+    }
+    .btn-outline {
+      border: 1px solid #1e1e1e;
+      background: transparent;
+      padding: 0.7rem 2rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-outline:hover {
+      background: #1e1e1e;
+      color: white;
+    }
+
+    /* block 1 hero */
+    .hero-grid {
+      display: flex;
+      align-items: center;
+      gap: 4rem;
+    }
+    .hero-left {
+      flex: 1.2;
+    }
+    .hero-left h1 {
+      font-size: 4.2rem;
+      font-weight: 650;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .hero-left p {
+      font-size: 1.4rem;
+      color: #4a4a4a;
+      margin: 2rem 0 2.5rem;
+      max-width: 500px;
+    }
+    .hero-right {
+      flex: 0.9;
+      background: #f0f5f2;
+      border-radius: 60% 40% 50% 50% / 40% 30% 70% 60%;
+      aspect-ratio: 1/1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      color: #2f5b4d;
+      animation: float 5s infinite alternate ease-in-out;
+    }
+    @keyframes float {
+      0% { border-radius: 60% 40% 50% 50% / 40% 30% 70% 60%; transform: translateY(0); }
+      100% { border-radius: 40% 60% 30% 70% / 50% 60% 40% 50%; transform: translateY(-20px); }
+    }
+
+    /* stats block (2) */
+    .stats-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .stat-item {
+      flex: 1;
+      border-right: 1px solid #ddd;
+      padding: 1rem 2rem;
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-number {
+      font-size: 3.5rem;
+      font-weight: 650;
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 1.2rem;
+      color: #4f4f4f;
+    }
+
+    /* services block (3) */
+    .service-cards {
+      display: flex;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: #fafafa;
+      border-radius: 32px;
+      padding: 2.5rem 1.8rem;
+      flex: 1;
+      transition: all 0.25s;
+      border: 1px solid #f0f0f0;
+    }
+    .card i {
+      font-size: 2.8rem;
+      margin-bottom: 1.5rem;
+      color: #2f5b4d;
+    }
+    .card h4 {
+      font-size: 1.8rem;
+      font-weight: 550;
+      margin-bottom: 1rem;
+    }
+    .card p {
+      color: #3d3d3d;
+      font-size: 1rem;
+    }
+    .card:hover {
+      background: #ffffff;
+      box-shadow: 0 30px 40px -20px rgba(0,0,0,0.15);
+      transform: scale(1.02);
+    }
+
+    /* how it works (4) */
+    .steps {
+      display: flex;
+      gap: 3rem;
+      margin: 3rem 0;
+    }
+    .step {
+      flex: 1;
+      position: relative;
+      padding-left: 2rem;
+    }
+    .step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -2rem;
+      top: 1rem;
+      font-size: 2rem;
+      color: #bbb;
+    }
+    .step .step-num {
+      font-size: 1.2rem;
+      color: #2f5b4d;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    /* waste types (5) */
+    .waste-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .waste-item {
+      background: #f3f7f5;
+      padding: 1.8rem 1rem;
+      border-radius: 28px;
+      text-align: center;
+      font-weight: 500;
+      font-size: 1.2rem;
+      transition: 0.15s;
+    }
+    .waste-item i {
+      display: block;
+      font-size: 2rem;
+      margin-bottom: 0.8rem;
+    }
+
+    /* testimonials (6) */
+    .testi-grid {
+      display: flex;
+      gap: 2rem;
+    }
+    .testi {
+      background: #f9f9f9;
+      border-radius: 40px;
+      padding: 2rem 2rem 2rem 2rem;
+      flex: 1;
+    }
+    .testi i.fa-quote-left {
+      font-size: 2rem;
+      color: #2f5b4d;
+      opacity: 0.4;
+      margin-bottom: 0.5rem;
+    }
+    .testi p {
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+    .testi-author {
+      font-weight: 600;
+    }
+
+    /* cta block (7) */
+    .cta-block {
+      background: #1e2b26;
+      color: white;
+      border-radius: 60px;
+      padding: 4rem 3rem;
+      text-align: center;
+    }
+    .cta-block h2 {
+      color: white;
+    }
+    .cta-block .btn-outline {
+      border-color: white;
+      color: white;
+      margin-top: 2rem;
+      font-size: 1.2rem;
+      padding: 1rem 3rem;
+    }
+    .cta-block .btn-outline:hover {
+      background: white;
+      color: #1e2b26;
+    }
+
+    /* footer (block 9) */
+    footer {
+      background: #ffffff;
+      border-top: 1px solid #e0e0e0;
+    }
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .socials i {
+      font-size: 1.8rem;
+      margin-left: 1.5rem;
+      color: #333;
+      transition: 0.1s;
+    }
+    .socials i:hover {
+      color: #2f5b4d;
+    }
+
+    /* responsiveness (minimal, only desktop) */
+    @media (max-width: 1000px) {
+      .hero-grid { flex-direction: column; }
+      .nav-dots { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- fixed anchor dots (js will handle active) -->
+  <div class="nav-dots">
+    <a href="#home" class="active-dot"></a>
+    <a href="#stats"></a>
+    <a href="#services"></a>
+    <a href="#how"></a>
+    <a href="#waste"></a>
+    <a href="#reviews"></a>
+    <a href="#cta"></a>
+    <a href="#footer"></a>
+  </div>
+
+  <!-- header (block 1) actually header outside sections count? but spec says 9 blocks incl header/footer so header block1 -->
+  <header id="home">
+    <div class="block-header header-scroll" id="mainHeader">
+      <div class="logo">
+        <i class="fa-solid fa-trash-can"></i> ZoomOut
+      </div>
+      <div class="nav-links">
+        <a href="#home">Home</a>
+        <a href="#services">Services</a>
+        <a href="#how">Process</a>
+        <a href="#reviews">Clients</a>
+      </div>
+      <button class="btn-outline"><i class="fa-regular fa-message"></i> Contact</button>
+    </div>
+  </header>
+
+  <!-- block 2 hero (since header is block 1, but counting header+footer+7 =9. so hero = block2) -->
+  <section class="reveal-group" id="hero">
+    <div class="hero-grid">
+      <div class="hero-left">
+        <h1>Rubble?<br>We make it vanish.</h1>
+        <p>Same‑day waste & debris removal — construction, renovation, bulk trash. Licensed & insured.</p>
+        <button class="btn-outline" style="border-width: 2px; padding: 1rem 3rem;">🚀 Get free estimate</button>
+      </div>
+      <div class="hero-right">
+        <i class="fa-solid fa-truck"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 3 stats -->
+  <section class="reveal-group" id="stats">
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-number">15+</div><div class="stat-label">years on market</div></div>
+      <div class="stat-item"><div class="stat-number">12k</div><div class="stat-label">jobs completed</div></div>
+      <div class="stat-item"><div class="stat-number">≈40min</div><div class="stat-label">avg response</div></div>
+    </div>
+  </section>
+
+  <!-- block 4 services -->
+  <section class="reveal-group" id="services">
+    <h2><span class="accent-text">/03</span> What we haul</h2>
+    <div class="service-cards">
+      <div class="card"><i class="fa-solid fa-brush"></i><h4>Renovation</h4><p>Drywall, tiles, old fixtures — we clear after renovation crews.</p></div>
+      <div class="card"><i class="fa-solid fa-dumpster"></i><h4>Construction</h4><p>Concrete, lumber, metal, mixed construction debris.</p></div>
+      <div class="card"><i class="fa-solid fa-couch"></i><h4>Bulk trash</h4><p>Furniture, appliances, electronics, mattresses.</p></div>
+    </div>
+  </section>
+
+  <!-- block 5 how it works -->
+  <section class="reveal-group" id="how">
+    <h2><span class="accent-text">/04</span> In 3 moves</h2>
+    <div class="steps">
+      <div class="step"><span class="step-num">01 —</span> <h3>Snap & send</h3><p>Text photo of waste, get instant price.</p></div>
+      <div class="step"><span class="step-num">02 —</span> <h3>We show up</h3><p>Same‑day, fully equipped crew.</p></div>
+      <div class="step"><span class="step-num">03 —</span> <h3>Clean sweep</h3><p>Load, haul, recycle — you relax.</p></div>
+    </div>
+  </section>
+
+  <!-- block 6 waste types -->
+  <section class="reveal-group" id="waste">
+    <h2><span class="accent-text">/05</span> Any junk accepted</h2>
+    <div class="waste-grid">
+      <div class="waste-item"><i class="fa-regular fa-building"></i>Concrete</div>
+      <div class="waste-item"><i class="fa-solid fa-tree"></i>Yard waste</div>
+      <div class="waste-item"><i class="fa-solid fa-tv"></i>E‑waste</div>
+      <div class="waste-item"><i class="fa-solid fa-bed"></i>Furniture</div>
+      <div class="waste-item"><i class="fa-solid fa-tire"></i>Tires</div>
+      <div class="waste-item"><i class="fa-solid fa-bottle-droplet"></i>Hazmat*</div>
+      <div class="waste-item"><i class="fa-solid fa-shovel"></i>Soil</div>
+      <div class="waste-item"><i class="fa-solid fa-wood"></i>Lumber</div>
+    </div>
+    <p style="font-size: 0.9rem; color: #777;">*special handling for hazardous — ask operator</p>
+  </section>
+
+  <!-- block 7 reviews -->
+  <section class="reveal-group" id="reviews">
+    <h2><span class="accent-text">/06</span> Trusted by crews</h2>
+    <div class="testi-grid">
+      <div class="testi"><i class="fa-solid fa-quote-left"></i><p>Booked online, they arrived within an hour. Cleared two truckloads of debris from our reno. Respectful and fast.</p><div class="testi-author">— M. Chen, contractor</div></div>
+      <div class="testi"><i class="fa-solid fa-quote-left"></i><p>Finally a service that takes old appliances and scrap metal without extra fees. Even swept the garage.</p><div class="testi-author">— J. Rivera, homeowner</div></div>
+    </div>
+  </section>
+
+  <!-- block 8 CTA -->
+  <section class="reveal-group" id="cta">
+    <div class="cta-block">
+      <h2>Ready to clear the clutter?</h2>
+      <p style="font-size: 1.5rem; margin-bottom: 0;">Same‑day / next‑day • free quote</p>
+      <button class="btn-outline"><i class="fa-regular fa-calendar-check"></i> Claim 15% off first haul</button>
+    </div>
+  </section>
+
+  <!-- block 9 footer (as per spec: 2 blocks header+footer +7 =9) -->
+  <footer id="footer">
+    <div class="block-footer footer-grid">
+      <div class="logo" style="font-size: 1.6rem;"><i class="fa-solid fa-trash-can"></i> ZoomOut</div>
+      <div style="color: #444;">© 2025 — waste & debris experts</div>
+      <div class="socials">
+        <i class="fa-brands fa-instagram"></i>
+        <i class="fa-brands fa-x-twitter"></i>
+        <i class="fa-brands fa-linkedin-in"></i>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // compact header on scroll
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 40) {
+          header.classList.add('compact');
+        } else {
+          header.classList.remove('compact');
+        }
+      });
+
+      // block reveal on scroll (intersection observer)
+      const groups = document.querySelectorAll('.reveal-group');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+      groups.forEach(g => observer.observe(g));
+
+      // anchor dots + active state + smooth scroll
+      const sections = [
+        document.getElementById('home'), // header
+        document.getElementById('stats'),
+        document.getElementById('services'),
+        document.getElementById('how'),
+        document.getElementById('waste'),
+        document.getElementById('reviews'),
+        document.getElementById('cta'),
+        document.getElementById('footer')
+      ];
+      const dots = document.querySelectorAll('.nav-dots a');
+
+      function updateActiveDot() {
+        let currentIndex = sections.length - 1; // fallback to last
+        const scrollPos = window.scrollY + 120; // offset for header
+
+        sections.forEach((sec, idx) => {
+          if (sec) {
+            const offsetTop = sec.offsetTop;
+            const offsetBottom = offsetTop + sec.offsetHeight;
+            if (scrollPos >= offsetTop && scrollPos < offsetBottom) {
+              currentIndex = idx;
+            }
+          }
+        });
+
+        dots.forEach((dot, i) => {
+          if (i === currentIndex) dot.classList.add('active-dot');
+          else dot.classList.remove('active-dot');
+        });
+      }
+
+      window.addEventListener('scroll', updateActiveDot);
+      window.addEventListener('resize', updateActiveDot);
+      updateActiveDot();
+
+      // anchor click smooth (prevent default, use scroll)
+      dots.forEach((dot, idx) => {
+        dot.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (sections[idx]) {
+            sections[idx].scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+
+      // add click to navlinks too
+      document.querySelectorAll('.nav-links a').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const hash = link.getAttribute('href'); // #services etc
+          const target = document.querySelector(hash);
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+    })();
+  </script>
+  <!-- additional tiny animation for header compact already done -->
+</body>
+</html>
+```
+All done!

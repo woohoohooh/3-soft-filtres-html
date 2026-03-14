@@ -1,0 +1,388 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashLearn • vocabulary builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #1a202c;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        :root {
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --border-light: #E2E8F0;
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent: #38BDF8;
+            --inactive: #94A3B8;
+            --shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.02);
+            --header-footer-bg: #FFFFFFCC;
+            --backdrop: #FFFFFF;
+        }
+        body.dark {
+            --bg: #0F172A;
+            --card: #1E293B;
+            --text-primary: #E2E8F0;
+            --text-secondary: #CBD5E1;
+            --border-light: #334155;
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --accent: #38BDF8;
+            --inactive: #64748B;
+            --shadow: 0 10px 25px -5px #00000050;
+            --header-footer-bg: #1E293BE0;
+            --backdrop: #0F172A;
+        }
+        .phone-mock {
+            width: 360px;
+            height: 780px;
+            background: var(--bg);
+            border-radius: 48px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3), 0 0 0 8px #2d3748;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.2s;
+        }
+        .screen-container {
+            flex: 1;
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: var(--inactive) var(--bg);
+            padding-bottom: 12px;
+        }
+        .screen {
+            display: none;
+            flex-direction: column;
+            min-height: 100%;
+            width: 100%;
+            padding: 16px 16px 8px 16px;
+            gap: 20px;
+        }
+        .screen.active {
+            display: flex;
+        }
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0 8px 0;
+            background: transparent;
+            backdrop-filter: blur(2px);
+        }
+        .header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+        .profile-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.1s;
+        }
+        .profile-btn:hover { background: var(--border-light); }
+        /* bottom nav */
+        .bottom-nav {
+            background: var(--card);
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 12px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.02);
+        }
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            gap: 4px;
+            cursor: pointer;
+            padding: 6px 0;
+            border-radius: 16px;
+            transition: all 0.15s ease;
+            color: var(--inactive);
+            fill: var(--inactive);
+        }
+        .nav-item.active {
+            color: var(--primary);
+            fill: var(--primary);
+            background: var(--primary-light);
+            transform: scale(1.05);
+        }
+        .nav-item.active svg { transform: scale(1.1); }
+        .nav-item svg { transition: transform 0.15s; }
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        /* cards */
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 18px 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+        }
+        .flex-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .badge {
+            background: var(--accent);
+            color: #0F172A;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 13px;
+        }
+        .progress-bar {
+            height: 8px;
+            background: var(--border-light);
+            border-radius: 40px;
+            margin: 12px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 60%;
+            background: var(--primary);
+            border-radius: 40px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .stat-item {
+            background: var(--bg);
+            border-radius: 18px;
+            padding: 14px;
+        }
+        .lesson-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .lesson-item:last-child { border: none; }
+        .icon-bg {
+            background: var(--bg);
+            padding: 10px;
+            border-radius: 18px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #00000080;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--card);
+            max-width: 280px;
+            padding: 24px;
+            border-radius: 32px;
+            color: var(--text-primary);
+            box-shadow: 0 30px 50px black;
+        }
+        .modal-close {
+            margin-top: 20px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="phone-mock" id="phoneContainer">
+    <!-- screens wrapper -->
+    <div class="screen-container" id="appScreens">
+        <!-- Onboarding screen -->
+        <div class="screen active" id="onboarding">
+            <div class="header">
+                <h2>✨ FlashLearn</h2>
+                <button class="profile-btn" id="onboardProfile"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+            </div>
+            <div style="flex:1; display: flex; flex-direction: column; justify-content: center;">
+                <div style="background: var(--primary); width: 70px; height: 70px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                </div>
+                <h1 style="font-size: 36px; font-weight:800; color: var(--text-primary);">FlashLearn</h1>
+                <p style="font-size: 18px; color: var(--primary); font-weight:500;">English vocabulary builder</p>
+                <p style="margin: 20px 0; color: var(--text-secondary);">Master 10 words daily with smart flashcards & science‑backed repetition. Track your growing lexicon.</p>
+                <button class="nav-item" id="getStartedBtn" style="background: var(--primary); color: white; fill: white; padding: 16px; border-radius: 60px; font-size: 18px; font-weight:600;">Get Started →</button>
+                <div style="display:flex; gap:20px; justify-content:center; margin-top: 30px;">
+                    <button id="privacyLink" style="background: none; border: none; color: var(--inactive); text-decoration:underline;">Privacy</button>
+                    <button id="termsLink" style="background: none; border: none; color: var(--inactive); text-decoration:underline;">Terms</button>
+                </div>
+            </div>
+        </div>
+        <!-- Home -->
+        <div class="screen" id="home">
+            <div class="header"><h2>Home</h2><button class="profile-btn" id="homeProfile"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button></div>
+            <div class="card"><div class="flex-row"><span style="font-weight:600;">🔥 streak 12 days</span><span class="badge">+45 XP</span></div><div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div><p style="color:var(--text-secondary)">daily goal: 7/10 words</p></div>
+            <div class="card"><h3>continue learning</h3><div class="lesson-item"><div class="icon-bg"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div><div style="font-weight:600;">business · 5 cards</div><div style="font-size:13px;color:var(--inactive)">68% mastered</div></div></div><div class="lesson-item"><div class="icon-bg"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><div><div style="font-weight:600;">idioms · 8 cards</div><div style="font-size:13px;color:var(--inactive)">new</div></div></div></div>
+            <div class="grid-2"><div class="stat-item"><span style="color:var(--inactive)">words learned</span><div style="font-size:28px;font-weight:700;">248</div></div><div class="stat-item"><span style="color:var(--inactive)">active days</span><div style="font-size:28px;font-weight:700;">18</div></div></div>
+        </div>
+        <!-- Learn -->
+        <div class="screen" id="learn">
+            <div class="header"><h2>Learn</h2><button class="profile-btn" id="learnProfile"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button></div>
+            <div class="card" style="background:var(--primary); color:white;"><div style="font-weight:600;font-size:20px;">today's review</div><div style="font-size:14px;">8 due · 5 new</div><button id="startPracticeBtn" style="background:white; color:var(--primary); border:none; border-radius:40px; padding:12px; font-weight:600; margin-top:12px;">start practice</button></div>
+            <div class="card"><h3>flashcard sets</h3><div class="lesson-item"><div class="icon-bg"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg></div><div><div>phrasal verbs</div><div style="font-size:13px;">32 cards</div></div></div><div class="lesson-item"><div class="icon-bg"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><div><div>academic word list</div><div style="font-size:13px;">20 cards</div></div></div></div>
+        </div>
+        <!-- Progress -->
+        <div class="screen" id="progress">
+            <div class="header"><h2>Progress</h2><button class="profile-btn" id="progressProfile"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button></div>
+            <div class="card"><span class="badge" style="margin-bottom:8px; display:inline-block">🏆 1800 XP</span><div class="flex-row"><span>mastery</span><span>64%</span></div><div class="progress-bar"><div class="progress-fill" style="width:64%"></div></div></div>
+            <div class="card"><h3>weekly activity</h3><div style="display:flex; gap:6px; height:80px; align-items:flex-end; margin:16px 0;"><div style="background:var(--primary); width:18%; height:40px; border-radius:12px;"></div><div style="background:var(--primary); width:18%; height:70px; border-radius:12px;"></div><div style="background:var(--primary); width:18%; height:55px; border-radius:12px;"></div><div style="background:var(--primary); width:18%; height:80px; border-radius:12px;"></div><div style="background:var(--primary); width:18%; height:30px; border-radius:12px;"></div></div><div style="display:flex; justify-content:space-between;color:var(--inactive)"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span></div></div>
+            <div class="grid-2"><div class="stat-item">🏅 streak 12</div><div class="stat-item">⭐ level 7</div></div>
+        </div>
+        <!-- Settings/Profile -->
+        <div class="screen" id="settings">
+            <div class="header"><h2>Settings</h2><button class="profile-btn" id="settingsProfile"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button></div>
+            <div class="card"><div class="flex-row"><span>Dark mode</span><label style="width: 44px; height: 24px; background: var(--border-light); border-radius:40px; position:relative;"><input type="checkbox" id="themeToggle" style="opacity:0; width:0;"><span class="slider" style="display:block; width:20px; height:20px; background:var(--primary); border-radius:50%; position:relative; top:2px; left:2px; transition:0.2s;"></span></label></div></div>
+            <div class="card"><h3>Account</h3><div style="color:var(--text-secondary)">user@example.com</div><div style="margin-top:12px;">profile icon • notifications</div></div>
+            <div class="card">⚙️ app version 2.4.0</div>
+        </div>
+    </div>
+    <!-- bottom nav -->
+    <div class="bottom-nav" id="bottomNav">
+        <button class="nav-item active" data-screen="home"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2h-5v-8h-4v8H5a2 2 0 0 1-2-2z"/></svg><span class="nav-label">Home</span></button>
+        <button class="nav-item" data-screen="learn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="nav-label">Learn</span></button>
+        <button class="nav-item" data-screen="progress"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12v-2a5 5 0 0 0-5-5H8a5 5 0 0 0-5 5v2"/><circle cx="12" cy="16" r="5"/><path d="M12 11v5"/></svg><span class="nav-label">Progress</span></button>
+        <button class="nav-item" data-screen="settings"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.04.04A10 10 0 0 0 12 17.66a10 10 0 0 0 6.36-2.62z"/><path d="M16.5 6.5 17 7l-1.5 2.5"/><path d="M7 7l1.5 2.5L7 11"/></svg><span class="nav-label">Settings</span></button>
+    </div>
+</div>
+<!-- modal privacy/terms -->
+<div class="modal" id="infoModal"><div class="modal-content"><h3 id="modalTitle"></h3><p id="modalBody"></p><button class="modal-close" id="closeModal">OK</button></div></div>
+<script>
+    (function(){
+        // theme + icons defined inline already
+        const screens = {
+            onboarding: document.getElementById('onboarding'),
+            home: document.getElementById('home'),
+            learn: document.getElementById('learn'),
+            progress: document.getElementById('progress'),
+            settings: document.getElementById('settings')
+        };
+        const navItems = document.querySelectorAll('.nav-item');
+        const profileBtns = {
+            onboard: document.getElementById('onboardProfile'),
+            home: document.getElementById('homeProfile'),
+            learn: document.getElementById('learnProfile'),
+            progress: document.getElementById('progressProfile'),
+            settings: document.getElementById('settingsProfile')
+        };
+        // helper switch screen
+        function showScreen(screenId) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            if (screens[screenId]) screens[screenId].classList.add('active');
+            navItems.forEach(item => {
+                const tab = item.getAttribute('data-screen');
+                if (tab === screenId) item.classList.add('active');
+                else item.classList.remove('active');
+            });
+        }
+        // profile click -> settings
+        Object.values(profileBtns).forEach(btn => {
+            if(btn) btn.addEventListener('click', (e) => { e.preventDefault(); showScreen('settings'); });
+        });
+        // get started
+        document.getElementById('getStartedBtn').addEventListener('click', ()=>{
+            showScreen('home');
+        });
+        // bottom nav
+        navItems.forEach(item => {
+            item.addEventListener('click', ()=>{
+                const target = item.getAttribute('data-screen');
+                if(target) showScreen(target);
+            });
+        });
+        // practice button demo
+        document.getElementById('startPracticeBtn')?.addEventListener('click', ()=>{
+            alert('▶️ starting mini lesson (demo)');
+        });
+        // modal links
+        const modal = document.getElementById('infoModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        function showModal(title, text) { modalTitle.innerText = title; modalBody.innerText = text; modal.classList.add('active'); }
+        document.getElementById('privacyLink').addEventListener('click', (e)=>{ e.preventDefault(); showModal('Privacy Policy','We respect your data. No tracking, no selling. Simple.'); });
+        document.getElementById('termsLink').addEventListener('click', (e)=>{ e.preventDefault(); showModal('Terms of Service','Use FlashLearn for personal learning only. v1.0'); });
+        document.getElementById('closeModal').addEventListener('click', ()=>{ modal.classList.remove('active'); });
+        // theme toggle inside settings
+        const themeToggle = document.getElementById('themeToggle');
+        if(themeToggle) {
+            themeToggle.addEventListener('change', (e)=>{
+                document.body.classList.toggle('dark', e.target.checked);
+                // adjust slider pos
+                const slider = e.target.nextElementSibling;
+                if(e.target.checked) slider.style.transform = 'translateX(20px)';
+                else slider.style.transform = 'translateX(0)';
+            });
+        }
+        // screenshot shift+W
+        document.addEventListener('keydown', (e) => {
+            if(e.shiftKey && e.key === 'W') {
+                const phone = document.getElementById('phoneContainer');
+                const isDark = document.body.classList.contains('dark');
+                // In real environment would use html2canvas; but demo: generate dummy png by message
+                // We'll simulate sequential naming based on count
+                if(!window.snapCounter) window.snapCounter = 1;
+                let name = isDark ? '6.png' : (window.snapCounter+'.png');
+                alert(`📸 screenshot saved as ${name} (simulated – real export needs html2canvas)`);
+                if(!isDark) { window.snapCounter = (window.snapCounter % 5) + 1; }
+                // dark always 6, light cycle 1-5
+            }
+        });
+        // prefill active class
+        showScreen('onboarding');
+        // inline style slider initial
+        if(themeToggle && !document.body.classList.contains('dark')) {
+            const slider = themeToggle.nextElementSibling;
+            if(slider) slider.style.transform = 'translateX(0)';
+        }
+    })();
+</script>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,734 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private shooting club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0b0b;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 400;
+            color: #e0e0e0;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* custom crosshair cursor */
+        * {
+            cursor: crosshair;
+        }
+
+        /* fixed navigation — compact & military */
+        .fixed-nav {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            border-radius: 60px;
+            padding: 8px 24px;
+            z-index: 999;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.8);
+            transition: all 0.3s ease;
+        }
+
+        .fixed-nav ul {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .fixed-nav a {
+            text-decoration: none;
+            color: #f0f0f0;
+            font-weight: 500;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid transparent;
+            transition: 0.2s;
+            padding: 4px 0;
+        }
+
+        .fixed-nav a:hover {
+            color: #ffd966;
+            border-bottom-color: #ffd966;
+        }
+
+        .nav-club {
+            font-weight: 700;
+            color: #ffd966;
+            font-size: 1rem;
+            border-right: 1px solid #333;
+            padding-right: 18px;
+            margin-right: 6px;
+        }
+
+        /* sections base */
+        section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0 8%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* reveal on scroll (simple intersection observer) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* header specific — no bg image, pure typography / canvas animation */
+        .header {
+            background: #050505;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        #canvas-trigger {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            max-width: 900px;
+        }
+
+        .pre-title {
+            font-size: 1.2rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: #ffd966;
+            border-left: 4px solid #ffd966;
+            padding-left: 18px;
+            margin-bottom: 20px;
+        }
+
+        .main-title {
+            font-size: clamp(3.5rem, 12vw, 7rem);
+            font-weight: 800;
+            line-height: 1;
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .main-title span {
+            color: #ffd966;
+            display: inline-block;
+            border-bottom: 3px solid #ffd966;
+            padding-bottom: 6px;
+        }
+
+        .header-desc {
+            font-size: 1.4rem;
+            margin: 30px 0 40px;
+            max-width: 600px;
+            opacity: 0.85;
+        }
+
+        .crosshair-btn {
+            background: transparent;
+            border: 2px solid #ffd966;
+            color: #ffd966;
+            padding: 18px 48px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: 0.25s;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .crosshair-btn:hover {
+            background: #ffd966;
+            color: #0b0b0b;
+            box-shadow: 0 0 30px #ffd96677;
+        }
+
+        /* disciplines cards */
+        .dark-section {
+            background: #0f0f0f;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 60px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #ffd966;
+            display: inline-block;
+            padding-bottom: 12px;
+            letter-spacing: 2px;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            width: 100%;
+        }
+
+        .discipline-card {
+            background: #1b1b1b;
+            border: 1px solid #2c2c2c;
+            padding: 40px 28px;
+            transition: all 0.25s ease;
+            position: relative;
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.8);
+        }
+
+        .discipline-card:hover {
+            transform: translateY(-10px);
+            border-color: #ffd966;
+            box-shadow: 0 20px 30px -5px #ffd96622;
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            color: #ffd966;
+            margin-bottom: 20px;
+        }
+
+        .discipline-card h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .discipline-card p {
+            color: #aaa;
+            font-size: 1.1rem;
+        }
+
+        .card-metric {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffd966;
+            border-top: 1px dashed #333;
+            padding-top: 15px;
+        }
+
+        /* trainers */
+        .trainers-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            width: 100%;
+        }
+
+        .trainer-item {
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            padding: 30px;
+            border: 1px solid #2a2a2a;
+            transition: 0.3s;
+        }
+
+        .trainer-item:hover {
+            border-color: #ffd966;
+        }
+
+        .trainer-icon {
+            font-size: 3.8rem;
+            color: #ffd966;
+            opacity: 0.9;
+        }
+
+        .trainer-info h4 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .trainer-info p {
+            color: #bbb;
+            font-size: 1rem;
+            letter-spacing: 1px;
+        }
+
+        .stat-highlight {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffd966;
+        }
+
+        /* stats / hit probability */
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            flex: 1;
+            min-width: 180px;
+            background: #131313;
+            padding: 40px 20px;
+            text-align: center;
+            border: 1px solid #2d2d2d;
+        }
+
+        .stat-number {
+            font-size: 4.5rem;
+            font-weight: 800;
+            color: #ffd966;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+        }
+
+        /* packages / pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            width: 100%;
+        }
+
+        .package-card {
+            background: #111;
+            border: 1px solid #333;
+            padding: 40px;
+            transition: 0.3s;
+            text-align: left;
+        }
+
+        .package-card:hover {
+            border-color: #ffd966;
+            transform: scale(1.02);
+        }
+
+        .package-card h3 {
+            font-size: 2.4rem;
+            font-weight: 600;
+        }
+
+        .package-price {
+            font-size: 3rem;
+            color: #ffd966;
+            font-weight: 800;
+            margin: 20px 0;
+        }
+
+        .package-features {
+            list-style: none;
+            margin: 20px 0 30px;
+        }
+
+        .package-features li {
+            padding: 8px 0;
+            border-bottom: 1px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .package-features i {
+            color: #ffd966;
+            width: 20px;
+        }
+
+        .package-link {
+            color: #ffd966;
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 2px;
+            border-bottom: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        .package-link:hover {
+            border-bottom-color: #ffd966;
+        }
+
+        /* footer */
+        .footer {
+            background: #030303;
+            min-height: 30vh;
+            display: flex;
+            align-items: center;
+            border-top: 1px solid #2c2c2c;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            color: #888;
+        }
+
+        .footer-logo {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ffd966;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 40px;
+        }
+
+        .footer-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 1.1rem;
+        }
+
+        .footer-links a:hover {
+            color: #ffd966;
+        }
+
+        /* helper */
+        .container {
+            width: 100%;
+        }
+
+        i {
+            color: #ffd966;
+        }
+
+        .small-meta {
+            color: #777;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- fixed nav (compact) -->
+    <div class="fixed-nav">
+        <ul>
+            <li class="nav-club"><i class="fas fa-crosshairs"></i>  OBSIDIAN</li>
+            <li><a href="#home">home</a></li>
+            <li><a href="#disciplines">disciplines</a></li>
+            <li><a href="#trainers">trainers</a></li>
+            <li><a href="#stats">stats</a></li>
+            <li><a href="#packages">packages</a></li>
+        </ul>
+    </div>
+
+    <!-- header / HERO (block #1) -->
+    <section class="header" id="home">
+        <canvas id="canvas-trigger"></canvas>
+        <div class="header-content reveal">
+            <div class="pre-title"><i class="fas fa-skull"></i>   PRECISION · POWER · STEALTH</div>
+            <h1 class="main-title"><span>OBSIDIAN</span><br>shooting club</h1>
+            <p class="header-desc">Where accuracy meets instinct. Elite tactical training & members-only range.</p>
+            <a href="#packages" class="crosshair-btn">⟐ join the mission ⟐</a>
+        </div>
+    </section>
+
+    <!-- disciplines (block #2) -->
+    <section class="dark-section" id="disciplines">
+        <div class="container">
+            <h2 class="section-title reveal">⟐ disciplines ⟐</h2>
+            <div class="cards-grid">
+                <div class="discipline-card reveal">
+                    <i class="fas fa-bullseye card-icon"></i>
+                    <h3>precision rifle</h3>
+                    <p>800m+ ranges · wind call · ballistic data. sub‑moa mastery.</p>
+                    <div class="card-metric">max 1.2 km</div>
+                </div>
+                <div class="discipline-card reveal">
+                    <i class="fas fa-gun card-icon"></i>
+                    <h3>tactical pistol</h3>
+                    <p>close quarters · speed draws · combat accuracy. competitive edge.</p>
+                    <div class="card-metric">0.8s draw</div>
+                </div>
+                <div class="discipline-card reveal">
+                    <i class="fas fa-arrow-up-from-bracket card-icon"></i>
+                    <h3>dynamic shotgun</h3>
+                    <p>clays · tactical breaching · multi-target transition.</p>
+                    <div class="card-metric">24/7 range</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- trainers (block #3) -->
+    <section class="dark-section" id="trainers">
+        <div class="container">
+            <h2 class="section-title reveal">⟐ master trainers ⟐</h2>
+            <div class="trainers-grid">
+                <div class="trainer-item reveal">
+                    <i class="fas fa-user-ninja trainer-icon"></i>
+                    <div class="trainer-info">
+                        <h4>Victor Cross</h4>
+                        <p class="small-meta">ex‑force recon / 12 yrs</p>
+                        <div class="stat-highlight">189 <span style="font-size: 1rem;">precision kills</span></div>
+                    </div>
+                </div>
+                <div class="trainer-item reveal">
+                    <i class="fas fa-user-shield trainer-icon"></i>
+                    <div class="trainer-info">
+                        <h4>Nova Kane</h4>
+                        <p class="small-meta">world champ · dynamic pistol</p>
+                        <div class="stat-highlight">9× <span style="font-size: 1rem;">gold medal</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- stats hit probability (block #4) -->
+    <section class="dark-section" id="stats">
+        <div class="container">
+            <h2 class="section-title reveal">⟐ hit probability ⟐</h2>
+            <div class="stats-container">
+                <div class="stat-item reveal">
+                    <div class="stat-number" data-target="98">0</div>
+                    <div class="stat-label">hit rate (top tier)</div>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="stat-number" data-target="24">0</div>
+                    <div class="stat-label">elite trainers</div>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="stat-number" data-target="1500">0</div>
+                    <div class="stat-label">members</div>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="stat-number" data-target="7">0</div>
+                    <div class="stat-label">indoor ranges</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- packages (block #5) -->
+    <section class="dark-section" id="packages">
+        <div class="container">
+            <h2 class="section-title reveal">⟐ membership ⟐</h2>
+            <div class="pricing-grid">
+                <div class="package-card reveal">
+                    <h3>edge</h3>
+                    <div class="package-price">$390<span style="font-size:1.2rem;">/mo</span></div>
+                    <ul class="package-features">
+                        <li><i class="fas fa-check"></i> 8 range days / month</li>
+                        <li><i class="fas fa-check"></i> basic coaching</li>
+                        <li><i class="fas fa-check"></i> equipment rental</li>
+                    </ul>
+                    <a href="#" class="package-link">enlist →</a>
+                </div>
+                <div class="package-card reveal">
+                    <h3>black dagger</h3>
+                    <div class="package-price">$790<span style="font-size:1.2rem;">/mo</span></div>
+                    <ul class="package-features">
+                        <li><i class="fas fa-check"></i> unlimited range access</li>
+                        <li><i class="fas fa-check"></i> private trainer</li>
+                        <li><i class="fas fa-check"></i> priority booking</li>
+                        <li><i class="fas fa-check"></i> guest passes</li>
+                    </ul>
+                    <a href="#" class="package-link">enlist →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer (block #6) -->
+    <footer class="footer" id="footer">
+        <div class="container footer-content">
+            <div class="footer-logo"><i class="fas fa-crosshairs"></i> OBSIDIAN</div>
+            <div class="footer-links">
+                <a href="#">range rules</a>
+                <a href="#">contact</a>
+                <a href="#">privacy</a>
+            </div>
+            <div>© 2026 — elite shooting club</div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // canvas header animation (crosshair / tactical grid)
+            const canvas = document.getElementById('canvas-trigger');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = document.getElementById('home').offsetHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // animated lines & crosshair grid
+            let time = 0;
+            function drawCanvas() {
+                if (!canvas || !ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                
+                // subtle dark grid
+                ctx.strokeStyle = '#ffd966';
+                ctx.lineWidth = 0.6;
+                ctx.globalAlpha = 0.25 + Math.sin(time) * 0.1;
+
+                const step = 60;
+                // vertical lines
+                for (let x = 0; x < width; x += step) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.strokeStyle = '#ffd966';
+                    ctx.stroke();
+                }
+                // horizontal lines
+                for (let y = 0; y < height; y += step) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+
+                // central crosshair (dynamic)
+                const cx = width / 2;
+                const cy = height / 2.5;
+                ctx.globalAlpha = 0.7;
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#ffd966';
+                // cross
+                ctx.beginPath();
+                ctx.moveTo(cx - 40, cy);
+                ctx.lineTo(cx - 15, cy);
+                ctx.moveTo(cx + 15, cy);
+                ctx.lineTo(cx + 40, cy);
+                ctx.moveTo(cx, cy - 40);
+                ctx.lineTo(cx, cy - 15);
+                ctx.moveTo(cx, cy + 15);
+                ctx.lineTo(cx, cy + 40);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
+                ctx.stroke();
+
+                // moving "range" dots
+                ctx.fillStyle = '#ffd966';
+                for (let i = 0; i < 8; i++) {
+                    let offsetX = Math.sin(time * 2 + i) * 30;
+                    let offsetY = Math.cos(time * 1.3 + i) * 30;
+                    ctx.beginPath();
+                    ctx.arc(cx + offsetX, cy + offsetY, 2, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+
+                time += 0.02;
+                requestAnimationFrame(drawCanvas);
+            }
+            drawCanvas();
+
+            // REVEAL ON SCROLL (intersection observer)
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    } 
+                    // (optional keep active)
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+            reveals.forEach(r => observer.observe(r));
+
+            // STATISTICS COUNTER (animated when #stats becomes active)
+            const statNumbers = document.querySelectorAll('.stat-number');
+            let counted = false;
+
+            function startCounters() {
+                if (counted) return;
+                const statsSection = document.getElementById('stats');
+                const rect = statsSection.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 100 && rect.bottom > 0) {
+                    counted = true;
+                    statNumbers.forEach(stat => {
+                        const target = parseInt(stat.getAttribute('data-target'), 10);
+                        let current = 0;
+                        const increment = target / 60; // smooth
+                        const updateCounter = () => {
+                            current += increment;
+                            if (current < target) {
+                                stat.innerText = Math.floor(current);
+                                requestAnimationFrame(updateCounter);
+                            } else {
+                                stat.innerText = target;
+                            }
+                        };
+                        updateCounter();
+                    });
+                }
+            }
+
+            window.addEventListener('scroll', function() {
+                if (!counted) startCounters();
+            });
+            // check on load
+            window.addEventListener('load', function() {
+                startCounters();
+            });
+
+            // hover effect on nav background (optional dynamic)
+            const nav = document.querySelector('.fixed-nav');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 20) {
+                    nav.style.background = 'rgba(0,0,0,0.95)';
+                    nav.style.borderColor = '#ffd96655';
+                } else {
+                    nav.style.background = 'rgba(10,10,10,0.85)';
+                    nav.style.borderColor = 'rgba(255,215,0,0.25)';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

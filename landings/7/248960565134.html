@@ -1,0 +1,712 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private shooting club</title>
+    <!-- Font & Icons (Font Awesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #0b0c10;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e5e9f0;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* inter via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* ===== UTILS / GLOW ===== */
+        .section-title {
+            font-size: 3.5rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            margin-bottom: 2.5rem;
+            border-left: 6px solid #d4af37;
+            padding-left: 2rem;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b7c0 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
+        }
+
+        /* ===== HEADER / NAV (fixed, transforms on scroll) ===== */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            background: transparent;
+            mix-blend-mode: exclusion;
+        }
+
+        .header.scrolled {
+            padding: 0.8rem 4rem;
+            background: rgba(10, 12, 18, 0.95);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+            mix-blend-mode: normal;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: #f0f3fa;
+            text-decoration: none;
+            border-right: 2px solid #d4af37;
+            padding-right: 1.5rem;
+        }
+        .logo i {
+            color: #d4af37;
+            margin-right: 0.5rem;
+            font-size: 2rem;
+            vertical-align: middle;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 3rem;
+        }
+        .nav-menu a {
+            color: #e5e9f0;
+            text-decoration: none;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1rem;
+            transition: 0.25s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav-menu a:hover {
+            border-bottom-color: #d4af37;
+            color: #ffffff;
+            text-shadow: 0 0 8px #d4af37;
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            height: 100vh;
+            min-height: 750px;
+            background: radial-gradient(ellipse at 70% 30%, #1f2833 0%, #0a0c12 90%);
+            display: flex;
+            align-items: center;
+            padding: 0 6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* animated crosshair overlay (js driven later) */
+        #crosshairCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.15;
+            z-index: 2;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            z-index: 10;
+            position: relative;
+        }
+        .hero-pre {
+            font-size: 1.2rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #d4af37;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+        }
+        .hero-title {
+            font-size: 6.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #ffffff, #c0c5ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-title span {
+            -webkit-text-fill-color: #d4af37;
+            color: #d4af37;
+            background: none;
+            text-shadow: 0 0 20px #d4af37;
+        }
+        .hero-desc {
+            font-size: 1.3rem;
+            max-width: 600px;
+            margin-bottom: 2.8rem;
+            color: #acb8c9;
+            border-left: 3px solid #d4af37;
+            padding-left: 2rem;
+        }
+        .btn {
+            background: transparent;
+            border: 2px solid #d4af37;
+            color: #d4af37;
+            padding: 1.2rem 3.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: 0.3s;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #d4af37;
+            color: #0b0c10;
+            box-shadow: 0 0 30px #d4af37;
+        }
+
+        /* ===== DISCIPLINES (CARDS) ===== */
+        .disciplines {
+            padding: 7rem 4rem;
+            background: #11151e;
+            position: relative;
+        }
+
+        .card-grid {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .discipline-card {
+            background: rgba(20, 25, 35, 0.8);
+            backdrop-filter: blur(3px);
+            border: 1px solid #2a2f3c;
+            padding: 3rem 2rem;
+            flex: 1 1 240px;
+            max-width: 280px;
+            transition: 0.35s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 25px -10px rgba(0,0,0,0.5);
+        }
+        .discipline-card:hover {
+            transform: translateY(-16px) scale(1.02);
+            border-color: #d4af37;
+            box-shadow: 0 0 40px rgba(212,175,55,0.3);
+        }
+        .discipline-card i {
+            font-size: 3.5rem;
+            color: #d4af37;
+            margin-bottom: 1.5rem;
+        }
+        .discipline-card h3 {
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+        }
+        .discipline-card p {
+            color: #8d99ae;
+        }
+        .card-hover-target {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 0%, #d4af3720, transparent 70%);
+            opacity: 0;
+            transition: 0.3s;
+            pointer-events: none;
+        }
+        .discipline-card:hover .card-hover-target {
+            opacity: 1;
+        }
+
+        /* ===== TRAINERS ===== */
+        .trainers {
+            padding: 7rem 4rem;
+            background: #0e121b;
+        }
+        .trainer-list {
+            display: flex;
+            gap: 3rem;
+            justify-content: center;
+        }
+        .trainer-item {
+            flex: 0 1 300px;
+            border: 1px solid #2b3442;
+            padding: 2.5rem 2rem;
+            transition: 0.2s;
+            background: #111722;
+            position: relative;
+        }
+        .trainer-item:hover {
+            border-color: #d4af37;
+        }
+        .trainer-item .quote-icon {
+            color: #d4af37;
+            font-size: 3rem;
+            opacity: 0.25;
+            position: absolute;
+            bottom: 1rem; right: 1.5rem;
+        }
+        .trainer-item h4 {
+            font-size: 2rem;
+            font-weight: 400;
+            border-bottom: 1px solid #d4af37;
+            display: inline-block;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .trainer-item .role {
+            color: #d4af37;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 0.9rem;
+            margin-bottom: 1.8rem;
+        }
+        .trainer-item p {
+            color: #b0b9c9;
+        }
+
+        /* ===== STATS / HITS COUNTER ===== */
+        .stats {
+            padding: 6rem 4rem;
+            background: #0a0d14;
+            background-image: radial-gradient(circle at 20% 40%, #1f2833 0%, transparent 40%);
+        }
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        .stat-item {
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 5.5rem;
+            font-weight: 300;
+            color: #d4af37;
+            line-height: 1.2;
+            text-shadow: 0 0 25px #d4af37;
+            letter-spacing: 4px;
+        }
+        .stat-label {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #a5b2c9;
+        }
+        .stat-label i {
+            margin-right: 0.5rem;
+            color: #d4af37;
+        }
+
+        /* ===== PACKAGES / PRICING ===== */
+        .packages {
+            padding: 7rem 4rem;
+            background: #111721;
+        }
+        .package-cards {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+        }
+        .package {
+            background: #1c232f;
+            padding: 3rem 2rem;
+            flex: 1 1 260px;
+            border-top: 5px solid #d4af37;
+            transition: 0.3s;
+            position: relative;
+        }
+        .package:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px -10px #00000080, 0 0 0 2px #d4af37 inset;
+        }
+        .package .price {
+            font-size: 3rem;
+            color: #d4af37;
+            font-weight: 300;
+            margin: 1rem 0;
+        }
+        .package ul {
+            list-style: none;
+            margin: 2rem 0;
+        }
+        .package li {
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #3a4355;
+        }
+        .package li i {
+            color: #d4af37;
+            margin-right: 0.8rem;
+        }
+
+        /* ===== CTA / FOOTER ===== */
+        .footer {
+            background: #05070a;
+            padding: 4rem 4rem 2.5rem;
+            border-top: 1px solid #2b313e;
+        }
+        .footer-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+        }
+        .footer-logo {
+            font-size: 2rem;
+            letter-spacing: 6px;
+        }
+        .footer-logo i {
+            color: #d4af37;
+        }
+        .footer-links a {
+            color: #ccc;
+            margin-left: 3rem;
+            text-decoration: none;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+        .footer-links a:hover {
+            color: #d4af37;
+        }
+        .copyright {
+            text-align: center;
+            color: #5b687f;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+        }
+
+        /* ===== REVEAL ON SCROLL (simple intersection) ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <header class="header" id="mainHeader">
+        <div class="logo"><i class="fas fa-crosshairs"></i> OBSIDIAN</div>
+        <nav class="nav-menu">
+            <a href="#disciplines">Disciplines</a>
+            <a href="#trainers">Trainers</a>
+            <a href="#stats">Precision</a>
+            <a href="#packages">Membership</a>
+        </nav>
+    </header>
+
+    <!-- HERO with canvas animation (crosshair) -->
+    <section class="hero">
+        <canvas id="crosshairCanvas"></canvas>
+        <div class="hero-content">
+            <div class="hero-pre">— precision shooting club —</div>
+            <h1 class="hero-title">SHARPEN <span>YOUR EDGE</span></h1>
+            <p class="hero-desc">Beyond marksmanship. Elite tactical training, private ranges, and a brotherhood of precision.</p>
+            <a href="#packages" class="btn">Join the club</a>
+        </div>
+    </section>
+
+    <!-- disciplines -->
+    <section id="disciplines" class="disciplines">
+        <h2 class="section-title reveal">DISCIPLINES</h2>
+        <div class="card-grid">
+            <div class="discipline-card reveal">
+                <i class="fas fa-bullseye"></i>
+                <h3>PRECISION RIFLE</h3>
+                <p>1000m ranges · ballistic data · wind reading</p>
+                <div class="card-hover-target"></div>
+            </div>
+            <div class="discipline-card reveal">
+                <i class="fas fa-gun"></i>
+                <h3>PISTOL DYNAMICS</h3>
+                <p>draw & fire · competition drills · speed</p>
+                <div class="card-hover-target"></div>
+            </div>
+            <div class="discipline-card reveal">
+                <i class="fas fa-shield-halved"></i>
+                <h3>TACTICAL</h3>
+                <p>close quarters · team tactics · stress fire</p>
+                <div class="card-hover-target"></div>
+            </div>
+            <div class="discipline-card reveal">
+                <i class="fas fa-bow-arrow"></i>
+                <h3>LONGBOW</h3>
+                <p>traditional & modern · instinctive aim</p>
+                <div class="card-hover-target"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- trainers -->
+    <section id="trainers" class="trainers">
+        <h2 class="section-title reveal">INSTRUCTORS</h2>
+        <div class="trainer-list">
+            <div class="trainer-item reveal">
+                <h4>V. CROSS</h4>
+                <div class="role">ex‑force recon</div>
+                <p>22 years operational. Precision rifle & stress inoculation.</p>
+                <i class="fas fa-quote-right quote-icon"></i>
+            </div>
+            <div class="trainer-item reveal">
+                <h4>J. STEELE</h4>
+                <div class="role">uspsa grand master</div>
+                <p>12x national champion. pistol & action shooting.</p>
+                <i class="fas fa-quote-right quote-icon"></i>
+            </div>
+            <div class="trainer-item reveal">
+                <h4>M. HAWK</h4>
+                <div class="role">former olympic biathlete</div>
+                <p>precision under pressure. breathing & heart control.</p>
+                <i class="fas fa-quote-right quote-icon"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- stats block with counters (animated via js) -->
+    <section id="stats" class="stats">
+        <h2 class="section-title reveal">HIT STATISTICS</h2>
+        <div class="stats-grid">
+            <div class="stat-item reveal">
+                <div class="stat-number" id="stat1" data-target="24700">0</div>
+                <div class="stat-label"><i class="fas fa-bolt"></i> ROUNDS / MONTH</div>
+            </div>
+            <div class="stat-item reveal">
+                <div class="stat-number" id="stat2" data-target="98.6">0.0</div>
+                <div class="stat-label"><i class="fas fa-bullseye"></i> ACCURACY RATE (%)</div>
+            </div>
+            <div class="stat-item reveal">
+                <div class="stat-number" id="stat3" data-target="15">0</div>
+                <div class="stat-label"><i class="fas fa-trophy"></i> NATIONAL TITLES</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- packages -->
+    <section id="packages" class="packages">
+        <h2 class="section-title reveal">MEMBERSHIP</h2>
+        <div class="package-cards">
+            <div class="package reveal">
+                <h3>MARKSMAN</h3>
+                <div class="price">$350 <span style="font-size:1rem;">/ mo</span></div>
+                <ul>
+                    <li><i class="fas fa-check"></i> 8 range days</li>
+                    <li><i class="fas fa-check"></i> Basic instruction</li>
+                    <li><i class="fas fa-check"></i> Locker & cleaning</li>
+                </ul>
+                <a href="#" class="btn" style="padding:0.8rem 2rem;">choose</a>
+            </div>
+            <div class="package reveal">
+                <h3>TACTICAL</h3>
+                <div class="price">$620 <span style="font-size:1rem;">/ mo</span></div>
+                <ul>
+                    <li><i class="fas fa-check"></i> Unlimited range access</li>
+                    <li><i class="fas fa-check"></i> 4 private sessions</li>
+                    <li><i class="fas fa-check"></i> Guest passes (2)</li>
+                </ul>
+                <a href="#" class="btn" style="padding:0.8rem 2rem;">choose</a>
+            </div>
+            <div class="package reveal">
+                <h3>LEGEND</h3>
+                <div class="price">$1200 <span style="font-size:1rem;">/ mo</span></div>
+                <ul>
+                    <li><i class="fas fa-check"></i> Unlimited +1 guest</li>
+                    <li><i class="fas fa-check"></i> Armorer service</li>
+                    <li><i class="fas fa-check"></i> International trips</li>
+                </ul>
+                <a href="#" class="btn" style="padding:0.8rem 2rem;">choose</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer -->
+    <footer class="footer">
+        <div class="footer-top">
+            <span class="footer-logo"><i class="fas fa-crosshairs"></i> OBSIDIAN</span>
+            <div class="footer-links">
+                <a href="#disciplines">Disciplines</a>
+                <a href="#trainers">Trainers</a>
+                <a href="#stats">Stats</a>
+                <a href="#">Range rules</a>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>© 2025 OBSIDIAN PRIVATE SHOOTING CLUB — ALL RIGHTS RESERVED</p>
+            <p style="margin-top:0.5rem;"><i class="fas fa-location-dot"></i> 54 Helix Ave, Nevada · by appointment only</p>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // ===== HEADER SCROLL ANIMATION =====
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 80) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // ===== CROSSHAIR CANVAS ANIMATION =====
+            const canvas = document.getElementById('crosshairCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // crosshair lines that follow mouse subtly
+            let mouseX = width/2, mouseY = height/2;
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            function drawCrosshair() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.strokeStyle = '#d4af37';
+                ctx.lineWidth = 1.2;
+                ctx.globalAlpha = 0.4;
+
+                // fixed grid lines
+                ctx.beginPath();
+                for (let i = 0; i < width; i += 60) {
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, height);
+                }
+                for (let i = 0; i < height; i += 60) {
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(width, i);
+                }
+                ctx.strokeStyle = '#d4af37';
+                ctx.globalAlpha = 0.1;
+                ctx.stroke();
+
+                // dynamic crosshair at mouse
+                ctx.beginPath();
+                ctx.globalAlpha = 0.7;
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#d4af37';
+                const x = mouseX, y = mouseY;
+                ctx.moveTo(x - 40, y);
+                ctx.lineTo(x - 15, y);
+                ctx.moveTo(x + 15, y);
+                ctx.lineTo(x + 40, y);
+                ctx.moveTo(x, y - 40);
+                ctx.lineTo(x, y - 15);
+                ctx.moveTo(x, y + 15);
+                ctx.lineTo(x, y + 40);
+                ctx.stroke();
+
+                // outer circle
+                ctx.beginPath();
+                ctx.arc(x, y, 25, 0, 2 * Math.PI);
+                ctx.strokeStyle = '#d4af37';
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                requestAnimationFrame(drawCrosshair);
+            }
+            drawCrosshair();
+
+            // ===== REVEAL ON SCROLL (Intersection Observer) =====
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    } else {
+                        // optional remove to replay? keep active to stay visible
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px' });
+            reveals.forEach(r => observer.observe(r));
+
+            // ===== STATS COUNTER ANIMATION (when stats section appears) =====
+            const statsSection = document.getElementById('stats');
+            const stat1 = document.getElementById('stat1');
+            const stat2 = document.getElementById('stat2');
+            const stat3 = document.getElementById('stat3');
+            let animated = false;
+
+            function animateNumber(el, target, isFloat = false) {
+                let current = 0;
+                const increment = target / 70; // smooth
+                const update = () => {
+                    if (!isFloat) {
+                        current = Math.min(current + increment, target);
+                        el.innerText = Math.floor(current).toLocaleString();
+                    } else {
+                        current = Math.min(current + increment, target);
+                        el.innerText = current.toFixed(1);
+                    }
+                    if (current < target) {
+                        requestAnimationFrame(update);
+                    } else {
+                        el.innerText = isFloat ? target.toFixed(1) : Math.floor(target).toLocaleString();
+                    }
+                };
+                update();
+            }
+
+            const statsObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !animated) {
+                        animated = true;
+                        const target1 = parseFloat(stat1.getAttribute('data-target'));
+                        const target2 = parseFloat(stat2.getAttribute('data-target'));
+                        const target3 = parseFloat(stat3.getAttribute('data-target'));
+                        animateNumber(stat1, target1, false);
+                        animateNumber(stat2, target2, true);
+                        animateNumber(stat3, target3, false);
+                    }
+                });
+            }, { threshold: 0.5 });
+            statsObserver.observe(statsSection);
+
+            // minor hover effect on cards (already in css)
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

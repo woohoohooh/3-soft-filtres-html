@@ -1,0 +1,594 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORION · private observatory</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #03050a;
+            color: #e3e9f2;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            font-weight: 300;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter google font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,200;14..32,300;14..32,500;14..32,600&display=swap');
+
+        /* custom glow & glass */
+        .glass-panel {
+            background: rgba(8, 15, 26, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(88, 130, 193, 0.15);
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(70, 130, 200, 0.1) inset;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 12px rgba(0, 180, 255, 0.5);
+        }
+
+        /* fixed navigation – becomes compact on scroll (js) */
+        #main-nav {
+            position: fixed;
+            top: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(2, 6, 16, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 191, 255, 0.2);
+            border-radius: 60px;
+            padding: 0.8rem 2rem;
+            z-index: 100;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px -10px #00000080, 0 0 30px rgba(0, 120, 255, 0.2);
+        }
+
+        #main-nav.compact {
+            top: 0.8rem;
+            padding: 0.4rem 1.8rem;
+            background: rgba(0, 5, 15, 0.9);
+            border-color: #3a6ea5;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #e0efff;
+            font-size: 1rem;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav-links a:hover {
+            color: white;
+            text-shadow: 0 0 8px cyan;
+            border-bottom-color: #6ab0ff;
+        }
+
+        /* headings */
+        h1, h2, h3 {
+            font-weight: 400;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-size: 3rem;
+            font-weight: 300;
+            border-left: 4px solid #2f6f9f;
+            padding-left: 1.5rem;
+            margin-bottom: 3rem;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+        }
+
+        .section {
+            min-height: 90vh;
+            padding: 6rem 2rem 4rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* hero specific */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+            padding-top: 5rem;
+        }
+
+        .hero h1 {
+            font-size: 5.5rem;
+            font-weight: 200;
+            letter-spacing: 14px;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            animation: flicker 4s infinite;
+        }
+
+        @keyframes flicker {
+            0% { text-shadow: 0 0 20px rgba(0, 180, 255, 0.3); }
+            25% { text-shadow: 0 0 30px rgba(0, 212, 255, 0.8), 0 0 8px white; }
+            30% { text-shadow: 0 0 20px #00a3ff; }
+            50% { text-shadow: 0 0 40px #0077ff, 0 0 10px #9cdbff; }
+            70% { text-shadow: 0 0 25px #0066cc; }
+            100% { text-shadow: 0 0 20px #0066aa; }
+        }
+
+        .hero .subtitle {
+            font-size: 1.4rem;
+            max-width: 700px;
+            margin: 2rem auto;
+            background: rgba(0, 15, 30, 0.5);
+            padding: 1rem 2rem;
+            border-radius: 60px;
+            backdrop-filter: blur(4px);
+            border: 1px solid #2b4f73;
+        }
+
+        /* countdown / timer */
+        .countdown-panel {
+            display: flex;
+            gap: 3rem;
+            justify-content: center;
+            margin: 3rem 0;
+            font-size: 2.5rem;
+            font-weight: 200;
+        }
+        .countdown-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+            background: #0a111fcc;
+            padding: 1.5rem 1rem;
+            border-radius: 40px;
+            border: 1px solid #2e5580;
+        }
+        .countdown-number {
+            font-size: 4rem;
+            font-weight: 200;
+            line-height: 1;
+            color: #b3e0ff;
+            text-shadow: 0 0 10px #3f9eff;
+        }
+        .countdown-label {
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #91b9da;
+        }
+
+        /* block grid */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .card {
+            background: rgba(8, 18, 32, 0.7);
+            backdrop-filter: blur(4px);
+            border: 1px solid #293d5a;
+            border-radius: 2.5rem;
+            padding: 2.5rem 1.8rem;
+            transition: all 0.2s;
+            box-shadow: 0 15px 25px -10px #000000;
+        }
+
+        .card:hover {
+            border-color: #5f9eff;
+            box-shadow: 0 0 35px #003cff33, 0 10px 30px black;
+            transform: translateY(-8px) scale(1.01);
+        }
+
+        .card i {
+            font-size: 3.2rem;
+            margin-bottom: 1.5rem;
+            color: #9acdff;
+            filter: drop-shadow(0 0 8px #0080ff);
+        }
+
+        .card h3 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            background: #0b1424b0;
+            border-radius: 70px;
+            padding: 3rem 2rem;
+            border: 1px solid #406e9e;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 200;
+            color: white;
+            text-shadow: 0 0 15px #57b5ff;
+        }
+        .stat-desc {
+            letter-spacing: 2px;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        /* telescope list */
+        .scope-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .scope-row {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            background: #0b1424b0;
+            padding: 1.5rem 2.5rem;
+            border-radius: 50px;
+            border: 1px solid #2a4e79;
+            transition: 0.3s;
+        }
+        .scope-row:hover {
+            background: #10233e;
+            border-color: #a0c6ff;
+            box-shadow: 0 0 30px #214e81;
+        }
+        .scope-icon {
+            font-size: 2.5rem;
+            width: 60px;
+            color: #9acdff;
+        }
+        .scope-content {
+            flex: 1;
+        }
+        .scope-title {
+            font-size: 1.8rem;
+            font-weight: 300;
+        }
+        .scope-detail {
+            font-size: 1rem;
+            color: #adccf0;
+        }
+
+        /* footer */
+        footer {
+            background: #020812;
+            border-top: 1px solid #17395c;
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #6786a6;
+        }
+
+        .footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* reveal on scroll handled by js */
+        .counter-highlight {
+            font-size: 2rem;
+            color: #c2dcff;
+        }
+
+        /* additional micro */
+        .constellation {
+            position: relative;
+        }
+        .constellation::after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #2980b9, transparent);
+            bottom: 0;
+            left: 0;
+        }
+
+        hr {
+            border: 0.5px solid #1a3455;
+            margin: 1rem 0;
+        }
+
+        /* no mobile adaptive — pure desktop */
+    </style>
+</head>
+<body>
+
+    <!-- fixed navigation (compact on scroll) -->
+    <nav id="main-nav">
+        <div class="nav-links">
+            <a href="#home">HOME</a>
+            <a href="#scopes">SCOPES</a>
+            <a href="#events">EVENTS</a>
+            <a href="#stats">DATA</a>
+            <a href="#membership">MEMBERS</a>
+        </div>
+    </nav>
+
+    <!-- HERO (block 1) + countdown timer -->
+    <section id="home" class="section hero">
+        <h1>ORION<br>OBSERVATORY</h1>
+        <div class="subtitle glass-panel">
+            <i class="fas fa-meteor" style="margin-right: 10px;"></i> PRIVATE ASTRONOMY CLUB · SINCE 1997
+        </div>
+        <!-- dynamic countdown (next stargazing) -->
+        <div class="countdown-panel" id="countdown">
+            <div class="countdown-item"><span class="countdown-number" id="days">00</span><span class="countdown-label">DAYS</span></div>
+            <div class="countdown-item"><span class="countdown-number" id="hours">00</span><span class="countdown-label">HRS</span></div>
+            <div class="countdown-item"><span class="countdown-number" id="minutes">00</span><span class="countdown-label">MINS</span></div>
+            <div class="countdown-item"><span class="countdown-number" id="seconds">00</span><span class="countdown-label">SECS</span></div>
+        </div>
+        <p style="max-width: 700px; margin-top: 2rem; color: #b0c9e8;"><i class="fas fa-chevron-down" style="opacity: 0.6;"></i> NEXT DEEP SKY EVENT <i class="fas fa-chevron-down" style="opacity: 0.6;"></i></p>
+    </section>
+
+    <!-- block 2: telescopes & equipment -->
+    <section id="scopes" class="section">
+        <h2>✦ RESIDENT SCOPES</h2>
+        <div class="scope-list">
+            <div class="scope-row">
+                <div class="scope-icon"><i class="fas fa-telescope"></i></div>
+                <div class="scope-content">
+                    <div class="scope-title">PlaneWave CDK 700</div>
+                    <div class="scope-detail">0.7m corrected dalekirkham · narrow-field imager</div>
+                </div>
+                <i class="fas fa-star" style="color: gold; text-shadow: 0 0 10px yellow;"></i>
+            </div>
+            <div class="scope-row">
+                <div class="scope-icon"><i class="fas fa-satellite"></i></div>
+                <div class="scope-content">
+                    <div class="scope-title">RCOS 16" Ritchey–Chrétien</div>
+                    <div class="scope-detail">f/9 · spectroscopy & exoplanet transit</div>
+                </div>
+                <i class="fas fa-moon" style="color: silver;"></i>
+            </div>
+            <div class="scope-row">
+                <div class="scope-icon"><i class="fas fa-globe"></i></div>
+                <div class="scope-content">
+                    <div class="scope-title">SolarMax III 90mm</div>
+                    <div class="scope-detail">H-alpha · chromosphere & prominences</div>
+                </div>
+                <i class="fas fa-sun" style="color: #ffb347;"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 3: events / observing programs (cards) -->
+    <section id="events" class="section">
+        <h2>✦ COSMIC EVENTS</h2>
+        <div class="grid-3">
+            <div class="card">
+                <i class="fas fa-saturn"></i>
+                <h3>PLANET NIGHTS</h3>
+                <p>Jupiter, Saturn, Mars opposition – high-res observing with live CCD. members only.</p>
+                <hr>
+                <span style="color: #88c0ff;">next: Apr 12 · 9pm</span>
+            </div>
+            <div class="card">
+                <i class="fas fa-cloud-moon"></i>
+                <h3>DEEP SKY MARATHON</h3>
+                <p>100 Messier objects in one night. 28" Dobsonian & image intensifiers.</p>
+                <hr>
+                <span style="color: #88c0ff;">may 4–5 · overnight</span>
+            </div>
+            <div class="card">
+                <i class="fas fa-sun"></i>
+                <h3>SOLAR MORNINGS</h3>
+                <p>White light & H-alpha sessions. Solar flares, granulation, prominences.</p>
+                <hr>
+                <span style="color: #88c0ff;">every sat 10am</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- block 4: stats / space data (animated counters) -->
+    <section id="stats" class="section">
+        <h2>✦ OBSERVING STATISTICS</h2>
+        <div class="stats-container">
+            <div class="stat-item">
+                <span class="stat-number counter" data-target="1842">0</span>
+                <div class="stat-desc">deep sky objects</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number counter" data-target="39">0</span>
+                <div class="stat-desc">research-grade nights</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number counter" data-target="127">0</span>
+                <div class="stat-desc">active members</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number counter" data-target="8">0</span>
+                <div class="stat-desc">telescopes</div>
+            </div>
+        </div>
+        <!-- extra micro detail -->
+        <p style="text-align: center; margin-top: 3rem; letter-spacing: 4px;"><i class="fas fa-circle" style="color: #2575b0; font-size: 0.7rem;"></i>  LIGHT POLLUTION: BORTLE 2  <i class="fas fa-circle" style="color: #2575b0; font-size: 0.7rem;"></i></p>
+    </section>
+
+    <!-- block 5: membership / levels -->
+    <section id="membership" class="section">
+        <h2>✦ MEMBERSHIP</h2>
+        <div class="grid-3">
+            <div class="card">
+                <i class="fas fa-user-astronaut"></i>
+                <h3>STARGAZER</h3>
+                <p>4 nights / year · open dome · beginner workshops</p>
+                <div style="font-size: 2.5rem; margin: 1rem 0; color: #d4ecff;">$1.2k</div>
+            </div>
+            <div class="card">
+                <i class="fas fa-galaxy"></i>
+                <h3>DEEP SKY</h3>
+                <p>unlimited visual · CCD data archive · 1 guest</p>
+                <div style="font-size: 2.5rem; margin: 1rem 0; color: #d4ecff;">$3.9k</div>
+            </div>
+            <div class="card">
+                <i class="fas fa-infinity"></i>
+                <h3>INTERSTELLAR</h3>
+                <p>remote observing · spectroscopy · 4 guests · events</p>
+                <div style="font-size: 2.5rem; margin: 1rem 0; color: #d4ecff;">$7.5k</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer (block 6/7 counted: nav & footer both extra) -->
+    <footer>
+        <div class="footer-inner">
+            <span>© ORION PRIVATE OBSERVATORY — ELITE DARK SKY PRESERVE</span>
+            <span>
+                <i class="fab fa-discord" style="margin: 0 10px;"></i>
+                <i class="fab fa-x-twitter" style="margin: 0 10px;"></i>
+                <i class="fas fa-envelope"></i>
+            </span>
+        </div>
+    </footer>
+
+    <!-- all JS: scroll effects, countdown, counters, compact nav -->
+    <script>
+        (function() {
+            // countdown timer: next new moon (example event)
+            function updateCountdown() {
+                const now = new Date();
+                // target: next visible event: say 10 days from now (keep dynamic)
+                const eventDate = new Date();
+                eventDate.setDate(now.getDate() + 8); // 8 days ahead
+                eventDate.setHours(20, 0, 0, 0); // 8pm
+
+                const diff = eventDate - now;
+                if (diff <= 0) {
+                    document.getElementById('days').innerText = '00';
+                    document.getElementById('hours').innerText = '00';
+                    document.getElementById('minutes').innerText = '00';
+                    document.getElementById('seconds').innerText = '00';
+                    return;
+                }
+                const days = Math.floor(diff / (1000*60*60*24));
+                const hours = Math.floor((diff % (86400000)) / (3600000));
+                const mins = Math.floor((diff % 3600000) / 60000);
+                const secs = Math.floor((diff % 60000) / 1000);
+
+                document.getElementById('days').innerText = days < 10 ? '0'+days : days;
+                document.getElementById('hours').innerText = hours < 10 ? '0'+hours : hours;
+                document.getElementById('minutes').innerText = mins < 10 ? '0'+mins : mins;
+                document.getElementById('seconds').innerText = secs < 10 ? '0'+secs : secs;
+            }
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+
+            // compact navigation on scroll
+            const nav = document.getElementById('main-nav');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 100) {
+                    nav.classList.add('compact');
+                } else {
+                    nav.classList.remove('compact');
+                }
+            });
+
+            // Intersection observer to reveal sections (fade + counters start)
+            const sections = document.querySelectorAll('.section');
+            const counters = document.querySelectorAll('.counter');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // if the section contains counters, start counting when visible
+                        if (entry.target.id === 'stats') {
+                            startCounters();
+                        }
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px' });
+
+            sections.forEach(sec => observer.observe(sec));
+
+            // counter animation (only once)
+            let countingDone = false;
+            function startCounters() {
+                if (countingDone) return;
+                countingDone = true;
+                counters.forEach(counter => {
+                    const updateCounter = () => {
+                        const target = +counter.getAttribute('data-target');
+                        const current = +counter.innerText;
+                        const increment = target / 100; // smooth
+                        if (current < target) {
+                            counter.innerText = Math.ceil(current + increment);
+                            setTimeout(updateCounter, 20);
+                        } else {
+                            counter.innerText = target;
+                        }
+                    };
+                    updateCounter();
+                });
+            }
+
+            // if stats already visible on load (rare) we start anyway
+            const statsSec = document.getElementById('stats');
+            if (statsSec && statsSec.getBoundingClientRect().top < window.innerHeight) {
+                startCounters();
+            }
+
+            // additional micro animation on hero flicker (already in css)
+        })();
+    </script>
+
+    <!-- ensure first section visible even without intersection (on load if visible) -->
+    <script>
+        window.addEventListener('load', function() {
+            document.getElementById('home').classList.add('visible');
+            // for counters if stats visible
+            const stats = document.getElementById('stats');
+            if (stats.getBoundingClientRect().top < window.innerHeight) {
+                if (!window.countingDone) {
+                    window.startCounters && window.startCounters();
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
+All done!
+```

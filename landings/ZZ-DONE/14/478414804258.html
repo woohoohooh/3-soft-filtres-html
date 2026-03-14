@@ -1,0 +1,681 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrimeLock · Security that moves with you</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #ffffff;
+            color: #1e1e2f;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll + anchor offset */
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 80px;
+        }
+
+        /* ---------- fixed smart header ---------- */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem 5%;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.02);
+        }
+
+        /* compact on scroll (js will toggle class) */
+        .header.compact {
+            padding: 0.8rem 5%;
+            background: rgba(255,255,255,0.97);
+            box-shadow: 0 8px 20px rgba(0,20,40,0.08);
+        }
+
+        .logo {
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #121212, #2b4b7c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .logo i {
+            background: none;
+            -webkit-text-fill-color: #2b4b7c;
+            margin-right: 6px;
+            font-size: 2rem;
+            vertical-align: middle;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2.8rem;
+        }
+        .nav a {
+            text-decoration: none;
+            font-weight: 500;
+            color: #1e2b3a;
+            font-size: 1.1rem;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav a:hover {
+            border-bottom-color: #2b4b7c;
+            color: #0f1a28;
+        }
+
+        /* ---------- blocks base ---------- */
+        section {
+            width: 100%;
+            padding: 6rem 5%;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* headlines */
+        h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        h2 i {
+            color: #2b4b7c;
+            font-size: 2.8rem;
+            margin-right: 12px;
+            vertical-align: middle;
+        }
+
+        .subhead {
+            font-size: 1.3rem;
+            color: #3e4f62;
+            max-width: 800px;
+            margin-bottom: 2.5rem;
+            font-weight: 400;
+        }
+
+        /* ---------- animation on appear (intersection) ---------- */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s cubic-bezier(0.15,0.85,0.35,1), transform 0.7s cubic-bezier(0.15,0.85,0.35,1);
+        }
+        .fade-up.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ---------- header animation (canvas) ---------- */
+        .hero {
+            margin-top: 90px; /* fixed header height */
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .hero .container {
+            position: relative;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            min-height: 75vh;
+        }
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            max-width: 900px;
+            background: linear-gradient(145deg, #0b1c2f, #203a5e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+        }
+        .hero p {
+            font-size: 1.5rem;
+            color: #2e405b;
+            max-width: 700px;
+            margin-bottom: 2.8rem;
+        }
+        .cta-btn {
+            background: #1e2f40;
+            color: white;
+            border: none;
+            padding: 1.1rem 3.2rem;
+            font-size: 1.35rem;
+            font-weight: 600;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.25s;
+            box-shadow: 0 20px 30px -10px rgba(25,45,70,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .cta-btn i {
+            margin-left: 10px;
+            transition: 0.2s;
+        }
+        .cta-btn:hover {
+            background: #2b4b7c;
+            transform: scale(1.02);
+            box-shadow: 0 28px 35px -12px #1f3a5f;
+        }
+        .cta-btn:hover i {
+            transform: translateX(6px);
+        }
+
+        /* ---------- icon cards (service) ---------- */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .service-card {
+            background: #f9fbfe;
+            border-radius: 40px;
+            padding: 2.8rem 1.8rem;
+            transition: all 0.25s ease;
+            border: 1px solid #eef2f7;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        }
+        .service-card:hover {
+            transform: translateY(-10px);
+            border-color: #cbd6e6;
+            box-shadow: 0 25px 35px -12px rgba(30,50,80,0.12);
+        }
+        .service-card i {
+            font-size: 3.2rem;
+            color: #2b4b7c;
+            margin-bottom: 1.5rem;
+        }
+        .service-card h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+        .service-card p {
+            font-size: 1.1rem;
+            color: #3a4b5e;
+        }
+
+        /* ----- spec cards with bigger icons ----- */
+        .feature-icon {
+            font-size: 2.8rem;
+            color: #1d3a5c;
+            margin-bottom: 1.2rem;
+        }
+
+        /* ---------- process steps (horizontal) ---------- */
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .step-item {
+            flex: 1;
+            min-width: 170px;
+            background: #f5f8ff;
+            padding: 2rem 1rem;
+            border-radius: 40px;
+            text-align: center;
+            border: 1px solid #e0e9f2;
+        }
+        .step-item .step-num {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #c6d6f0;
+            line-height: 1;
+        }
+        .step-item i {
+            font-size: 2.5rem;
+            color: #1d3a5c;
+            margin: 0.5rem 0;
+        }
+        .step-item h4 {
+            font-size: 1.6rem;
+            font-weight: 600;
+        }
+
+        /* ---------- testimonial / highlight ---------- */
+        .testimonial-grid {
+            display: flex;
+            gap: 2rem;
+        }
+        .testi-item {
+            background: #f2f6fd;
+            border-radius: 40px;
+            padding: 2.5rem;
+            flex: 1;
+        }
+        .testi-item i {
+            color: #a0b9da;
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+        }
+        .testi-item p {
+            font-size: 1.3rem;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+            color: #232f3e;
+        }
+        .testi-item h5 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #17212b;
+        }
+
+        /* ---------- CTA block (pre-footer) ---------- */
+        .cta-block {
+            background: #0b1b2f;
+            color: white;
+            border-radius: 60px;
+            padding: 4rem 4rem;
+        }
+        .cta-block h2 {
+            color: white;
+            -webkit-text-fill-color: white;
+            background: none;
+        }
+        .cta-block .cta-btn {
+            background: white;
+            color: #0b1b2f;
+            box-shadow: none;
+            margin-top: 1.5rem;
+        }
+        .cta-block .cta-btn:hover {
+            background: #eef3fc;
+        }
+
+        /* ---------- footer ---------- */
+        .footer {
+            background: #ffffff;
+            border-top: 1px solid #dde3ec;
+            padding: 2.5rem 5%;
+            font-size: 1.1rem;
+            color: #2a3a4e;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .footer i {
+            color: #2b4b7c;
+            margin: 0 0.5rem;
+        }
+
+        /* misc */
+        hr {
+            border: none;
+            border-top: 2px solid #eaeef5;
+            margin: 1rem 0;
+        }
+        .text-mid {
+            font-size: 1.25rem;
+        }
+
+        /* no mobile layout — but keeps readability */
+        @media (max-width: 1000px) {
+            .grid-3 { grid-template-columns: 1fr 1fr; }
+            .nav { gap: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- fixed header (js will add compact class) -->
+    <header class="header" id="mainHeader">
+        <div class="logo"><i class="fas fa-shield-hal"></i> PrimeLock</div>
+        <div class="nav">
+            <a href="#home">Home</a>
+            <a href="#services">Services</a>
+            <a href="#process">Process</a>
+            <a href="#why">Why us</a>
+            <a href="#contact">Contact</a>
+        </div>
+    </header>
+
+    <!-- BLOCK 1 – HERO with canvas animation (video surveillance theme) -->
+    <section class="hero" id="home">
+        <canvas class="hero-canvas" id="heroCanvas"></canvas>
+        <div class="container">
+            <h1>security that <br>moves with you</h1>
+            <p>Smart video surveillance · 24/7 monitoring · instant alerts</p>
+            <button class="cta-btn" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});">Free consultation <i class="fas fa-arrow-right"></i></button>
+        </div>
+    </section>
+
+    <!-- BLOCK 2 – core services (3 items) -->
+    <section class="fade-up" id="services">
+        <div class="container">
+            <h2><i class="fas fa-camera"></i> video protection suite</h2>
+            <div class="subhead">We design, install and maintain systems that actually see everything.</div>
+            <div class="grid-3">
+                <div class="service-card">
+                    <i class="fas fa-wifi"></i>
+                    <h3>wireless security</h3>
+                    <p>4G backup, encrypted stream, no wires – install in hours, not days.</p>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-brain"></i>
+                    <h3>AI detection</h3>
+                    <p>face / vehicle / anomaly recognition — false alarm rate below 2%.</p>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>cloud & local</h3>
+                    <p>dual recording with 90‑day retention. Access from anywhere.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3 – why people choose us (2 cols / but we keep 3 distinctive features) -->
+    <section class="fade-up" style="background: #fbfdff;">
+        <div class="container">
+            <h2><i class="fas fa-medal"></i> engineered for vigilance</h2>
+            <div class="grid-3">
+                <div class="service-card" style="background:white;">
+                    <i class="fas fa-satellite-dish feature-icon"></i>
+                    <h3>military-grade</h3>
+                    <p>encrypted end‑to‑end, no third‑party servers, full data ownership.</p>
+                </div>
+                <div class="service-card" style="background:white;">
+                    <i class="fas fa-bolt feature-icon"></i>
+                    <h3>instant alerts</h3>
+                    <p>push, SMS, or call within 3 seconds of any relevant event.</p>
+                </div>
+                <div class="service-card" style="background:white;">
+                    <i class="fas fa-clock feature-icon"></i>
+                    <h3>24/7 pro monitoring</h3>
+                    <p>real operators who verify & dispatch if you're unreachable.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4 – quick installation process (steps) -->
+    <section class="fade-up">
+        <div class="container">
+            <h2><i class="fas fa-gears"></i> done in 1 day</h2>
+            <div class="steps">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <i class="fas fa-magnifying-glass"></i>
+                    <h4>survey</h4>
+                    <p class="text-mid">free site check</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <i class="fas fa-pen-ruler"></i>
+                    <h4>design</h4>
+                    <p class="text-mid">custom blueprint</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <i class="fas fa-toolbox"></i>
+                    <h4>install</h4>
+                    <p class="text-mid">half‑day setup</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">4</div>
+                    <i class="fas fa-hand-peace"></i>
+                    <h4>enjoy</h4>
+                    <p class="text-mid">peace of mind</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5 – equipment showcase / brands / tech -->
+    <section class="fade-up" style="background: #f5f9ff;">
+        <div class="container">
+            <h2><i class="fas fa-microchip"></i> tech inside</h2>
+            <div class="grid-3">
+                <div class="service-card" style="background: white;">
+                    <i class="fas fa-video"></i>
+                    <h3>4K HDR</h3>
+                    <p>starlight sensors, color night vision, 120dB WDR.</p>
+                </div>
+                <div class="service-card" style="background: white;">
+                    <i class="fas fa-tower-broadcast"></i>
+                    <h3>LTE backup</h3>
+                    <p>automatic failover if internet drops.</p>
+                </div>
+                <div class="service-card" style="background: white;">
+                    <i class="fas fa-key"></i>
+                    <h3>end‑to‑end encrypted</h3>
+                    <p>AES‑256 & secure remote access.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 6 – testimonial / social proof -->
+    <section class="fade-up">
+        <div class="container">
+            <h2><i class="fas fa-star"></i> trusted by</h2>
+            <div class="testimonial-grid">
+                <div class="testi-item">
+                    <i class="fas fa-quote-right"></i>
+                    <p>“They secured our warehouse after two break‑ins. Zero incidents since. The AI alerts are spot on.”</p>
+                    <h5>— M. Chen, logistics</h5>
+                </div>
+                <div class="testi-item">
+                    <i class="fas fa-quote-right"></i>
+                    <p>“Installation was incredibly clean, and the app is actually usable. My family feels safer.”</p>
+                    <h5>— J. Kowalski, homeowner</h5>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 7 – strong differentiator (guarantee) -->
+    <section class="fade-up" style="background: #ffffff; border-top: 1px solid #ecf2f9;">
+        <div class="container">
+            <h2><i class="fas fa-shield-hal"></i> no‑risk guarantee</h2>
+            <div class="grid-3">
+                <div class="service-card">
+                    <i class="fas fa-calendar-check"></i>
+                    <h3>5 year warranty</h3>
+                    <p>on every camera & recorder.</p>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-rotate-left"></i>
+                    <h3>30‑day trial</h3>
+                    <p>full refund if not satisfied.</p>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-headset"></i>
+                    <h3>lifetime support</h3>
+                    <p>we don't disappear after install.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 8 – contact / quote (call to action) -->
+    <section class="fade-up" id="contact">
+        <div class="container cta-block">
+            <h2 style="color:white;"><i class="fas fa-paper-plane" style="color:white;"></i> secure your space today</h2>
+            <p class="subhead" style="color:#ccddef;">Free on‑site estimate · no obligations</p>
+            <button class="cta-btn" onclick="alert('demo: +1 (800) 555 0199 / hello@primelock.co')"><i class="fas fa-phone-alt"></i> call now</button>
+            <p style="margin-top:2rem; font-size:1.2rem;"><i class="fas fa-envelope"></i> hello@primelock.co  |  <i class="fas fa-map-pin"></i> 24/7 dispatch</p>
+        </div>
+    </section>
+
+    <!-- BLOCK 9 – footer (last block) -->
+    <footer class="footer">
+        <span><i class="far fa-copyright"></i> PrimeLock 2025 — eyes everywhere</span>
+        <span>
+            <i class="fab fa-x-twitter"></i>
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-linkedin"></i>
+        </span>
+    </footer>
+
+    <script>
+        (function() {
+            // 1) smart header compact on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // 2) intersection observer (reveal fade-up blocks)
+            const faders = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+            faders.forEach(f => observer.observe(f));
+
+            // 3) canvas animation (hero background – moving camera / radar like)
+            const canvas = document.getElementById('heroCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initCanvas() {
+                width = window.innerWidth;
+                height = document.querySelector('.hero').offsetHeight;
+                canvas.width = width;
+                canvas.height = height;
+
+                particles = [];
+                for (let i = 0; i < 45; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 3 + 1.5,
+                        speedX: (Math.random() - 0.5) * 0.5,
+                        speedY: (Math.random() - 0.5) * 0.3,
+                        opacity: Math.random() * 0.5 + 0.2,
+                    });
+                }
+            }
+
+            function drawCanvas() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+
+                // very subtle grid lines (radar feel)
+                ctx.strokeStyle = '#bdd0eb';
+                ctx.lineWidth = 0.8;
+                ctx.globalAlpha = 0.2;
+                for (let i = 0; i < width; i += 70) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, height);
+                    ctx.strokeStyle = '#2b4b7c';
+                    ctx.stroke();
+                }
+                for (let i = 0; i < height; i += 70) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(width, i);
+                    ctx.strokeStyle = '#2b4b7c';
+                    ctx.stroke();
+                }
+
+                // moving particles (like detection dots)
+                ctx.globalAlpha = 0.7;
+                for (let p of particles) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#345f9b';
+                    ctx.fill();
+                    // subtle ring
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius + 3, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#9bb9e0';
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+
+                    // move
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    // wrap
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+                }
+
+                // add occasional sweeping line (radar)
+                ctx.beginPath();
+                ctx.moveTo(width * 0.2, height * 0.7);
+                ctx.lineTo(width * 0.8, height * 0.3);
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.2;
+                ctx.globalAlpha = 0.15;
+                ctx.stroke();
+
+                requestAnimationFrame(drawCanvas);
+            }
+
+            window.addEventListener('resize', () => {
+                initCanvas();
+            });
+
+            initCanvas();
+            requestAnimationFrame(drawCanvas);
+        })();
+    </script>
+    <!-- one extra style for canvas sizing -->
+    <style>
+        .hero { position: relative; min-height: 80vh; }
+        .hero-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .hero .container { position: relative; z-index: 10; }
+    </style>
+</body>
+</html>
+```
+All done!

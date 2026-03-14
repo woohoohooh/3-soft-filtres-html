@@ -1,0 +1,563 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drift & Detailing · Extreme Driving School</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff;
+            color: #1e1e2f;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        h1, h2, h3, .logo, .big-text {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        /* ---- fixed smart header (shrinks on scroll) ---- */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 28px 48px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .header.scrolled {
+            padding: 12px 48px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 8px 28px rgba(0, 32, 64, 0.08);
+        }
+
+        .logo {
+            font-size: 2rem;
+            background: linear-gradient(145deg, #121212, #3a3a4a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            background: #0a0a18;
+            -webkit-text-fill-color: white;
+            background: #0f0f1c;
+            padding: 10px 12px;
+            border-radius: 40px;
+            font-size: 1.5rem;
+            color: white;
+            transition: transform 0.2s;
+        }
+
+        .nav {
+            display: flex;
+            gap: 44px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #1e1e2f;
+            position: relative;
+            padding: 6px 0;
+        }
+
+        .nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2.5px;
+            background: #121212;
+            transition: width 0.25s ease;
+        }
+
+        .nav a:hover::after {
+            width: 100%;
+        }
+
+        /* ---- smooth block styling ---- */
+        section {
+            scroll-margin-top: 100px;
+        }
+
+        .block {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 80px 48px;
+            background: white;
+            border-bottom: 1px solid #f0f2f5;
+            position: relative;
+        }
+
+        .block:last-of-type {
+            border-bottom: none;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* headline style */
+        h2 {
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            max-width: 900px;
+        }
+
+        .lead-text {
+            font-size: 1.6rem;
+            font-weight: 350;
+            max-width: 800px;
+            color: #2c2c3a;
+        }
+
+        /* ---- icon row utility ---- */
+        .icon-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 48px;
+            margin-top: 56px;
+        }
+
+        .icon-card {
+            flex: 1 1 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .icon-card i {
+            font-size: 3.2rem;
+            background: #f4f6fa;
+            padding: 20px;
+            border-radius: 30px;
+            color: #1e1e2f;
+            transition: all 0.2s;
+        }
+
+        .icon-card span {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .icon-card p {
+            font-size: 1.1rem;
+            opacity: 0.75;
+        }
+
+        /* reveal animation on scroll (simple intersection) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* staggered children */
+        .reveal-stagger > * {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            transition-delay: calc(0.1s * var(--i, 1));
+        }
+
+        .reveal-stagger.revealed > * {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* header animation (js canvas) */
+        #canvas-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .block-1 {
+            position: relative;
+            background: white;
+            isolation: isolate;
+        }
+
+        /* footer */
+        .footer {
+            background: #101016;
+            color: #d9d9e6;
+            padding: 60px 48px 30px;
+        }
+
+        .footer .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer a {
+            color: #bbb;
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin-left: 32px;
+        }
+
+        .footer small {
+            width: 100%;
+            margin-top: 48px;
+            text-align: center;
+            opacity: 0.6;
+        }
+
+        /* cta button */
+        .btn {
+            background: #1e1e2f;
+            color: white;
+            padding: 18px 44px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-block;
+            text-decoration: none;
+            margin-top: 32px;
+            box-shadow: 0 10px 25px -10px #1e1e2f;
+        }
+
+        .btn i {
+            margin-left: 8px;
+        }
+
+        .btn:hover {
+            background: #2e2e44;
+            transform: scale(1.02);
+        }
+
+        /* small */
+        @media (max-width: 1000px) {
+            h2 { font-size: 3rem; }
+            .header { padding: 20px 28px; }
+            .nav { gap: 24px; }
+        }
+
+        /* random subtle texture */
+        .dash-list {
+            list-style: none;
+            font-size: 1.3rem;
+            line-height: 2.2;
+        }
+        .dash-list i {
+            width: 32px;
+            color: #2b2b4b;
+        }
+
+        .border-glow {
+            border-left: 6px solid #1e1e2f;
+            padding-left: 24px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- fixed header (shrinking) -->
+    <header class="header" id="mainHeader">
+        <div class="logo">
+            <i class="fas fa-skull"></i> DRIFT/*42
+        </div>
+        <nav class="nav">
+            <a href="#block1">HOME</a>
+            <a href="#block2">EDGE</a>
+            <a href="#block3">MASTERY</a>
+            <a href="#block4">FLEET</a>
+            <a href="#block5">TACTICS</a>
+            <a href="#block6">PRICING</a>
+            <a href="#block7">CONTACT</a>
+        </nav>
+    </header>
+
+    <!-- BLOCK 1 - hero with canvas animation -->
+    <section class="block block-1" id="block1" style="position: relative;">
+        <canvas id="canvas-header"></canvas>
+        <div class="container" style="position: relative; z-index: 2;">
+            <div class="reveal revealed" style="max-width: 900px;">
+                <h2 style="font-size: 5rem; line-height: 1;">UNLEASH<br>THE CHAOS<br><span style="font-size: 3rem; font-weight: 300;">— then control it.</span></h2>
+                <p class="lead-text" style="max-width: 700px;">Extreme driving school • skid control • drift mastery • racecraft. Real skills for the fearless.</p>
+                <a href="#block3" class="btn"><i class="fa-regular fa-compass"></i> EXPLORE PROGRAMS</a>
+            </div>
+            <div class="icon-grid" style="margin-top: 80px;">
+                <div class="icon-card"><i class="fa-solid fa-car-side"></i><span>DRIFT</span><p>RWD, AWD, clutch kick</p></div>
+                <div class="icon-card"><i class="fa-solid fa-gauge-high"></i><span>TRACTION</span><p>threshold braking, car control</p></div>
+                <div class="icon-card"><i class="fa-solid fa-flag-checkered"></i><span>RACECRAFT</span><p>lines, apex, consistency</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 2 - what makes us different (icon cards) -->
+    <section class="block" id="block2">
+        <div class="container reveal">
+            <h2>NO BORING<br>PARKING LOT.</h2>
+            <p class="lead-text">Full-size track, hydraulic skid pads, professional stunt drivers. Learn at the edge.</p>
+            <div class="icon-grid" style="--i:1;">
+                <div class="icon-card"><i class="fa-regular fa-snowflake"></i><span>SKID PAN</span><p>200ft diameter • aquaplaning simulation</p></div>
+                <div class="icon-card"><i class="fa-solid fa-chart-line"></i><span>DATA LAP</span><p>telemetry & video review</p></div>
+                <div class="icon-card"><i class="fa-solid fa-shield-halved"></i><span>SAFETY</span><p>full roll cage cars, hans device</p></div>
+                <div class="icon-card"><i class="fa-regular fa-clock"></i><span>FLEX</span><p>private 1:1 or group sessions</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3 - mastery levels (stagger list) -->
+    <section class="block" id="block3">
+        <div class="container">
+            <h2 class="reveal">MASTERY PATH</h2>
+            <div class="reveal-stagger icon-grid" style="flex-direction: column; gap: 20px; max-width: 700px;">
+                <div style="--i:1; display: flex; gap: 20px; align-items: center;"><i class="fa-solid fa-1" style="font-size: 2.8rem; min-width: 60px;"></i> <span style="font-size: 2rem;">BASIC CAR CONTROL</span></div>
+                <div style="--i:2; display: flex; gap: 20px; align-items: center;"><i class="fa-solid fa-2" style="font-size: 2.8rem; min-width: 60px;"></i> <span style="font-size: 2rem;">WEIGHT TRANSFER & TRAIL BRAKING</span></div>
+                <div style="--i:3; display: flex; gap: 20px; align-items: center;"><i class="fa-solid fa-3" style="font-size: 2.8rem; min-width: 60px;"></i> <span style="font-size: 2rem;">POWER OVER / FEINT DRIFT</span></div>
+                <div style="--i:4; display: flex; gap: 20px; align-items: center;"><i class="fa-solid fa-4" style="font-size: 2.8rem; min-width: 60px;"></i> <span style="font-size: 2rem;">ADVANCED TRACK DRIFT</span></div>
+            </div>
+            <p class="lead-text" style="margin-top: 48px;"><i class="fa-regular fa-circle-check" style="color: #1e1e2f;"></i> Every level includes one free test day</p>
+        </div>
+    </section>
+
+    <!-- BLOCK 4 - fleet (icon highligt) -->
+    <section class="block" id="block4">
+        <div class="container reveal">
+            <h2>OUR WEAPONS</h2>
+            <div style="display: flex; gap: 64px; flex-wrap: wrap; margin: 40px 0;">
+                <div><i class="fa-solid fa-car" style="font-size: 4rem;"></i><br><span style="font-size: 1.8rem;">Nissan 370Z</span><p>manual, welded diff</p></div>
+                <div><i class="fa-solid fa-truck" style="font-size: 4rem;"></i><br><span style="font-size: 1.8rem;">BMW M3 E46</span><p>track tool</p></div>
+                <div><i class="fa-solid fa-gauge" style="font-size: 4rem;"></i><br><span style="font-size: 1.8rem;">Toyota GR86</span><p>lightweight</p></div>
+                <div><i class="fa-solid fa-bolt" style="font-size: 4rem;"></i><br><span style="font-size: 1.8rem;">Formula Drift spec</span><p>passenger rides</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5 - tactics (alternating visual) -->
+    <section class="block" id="block5">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px;">
+                <div class="reveal">
+                    <h2 style="font-size: 3rem;">EYES ON<br>THE HORIZON</h2>
+                    <ul class="dash-list">
+                        <li><i class="fa-regular fa-hand-peace"></i> Scandinavian flick</li>
+                        <li><i class="fa-regular fa-hand-peace"></i> Left-foot braking</li>
+                        <li><i class="fa-regular fa-hand-peace"></i> Heel & toe</li>
+                        <li><i class="fa-regular fa-hand-peace"></i> Pendulum turn</li>
+                    </ul>
+                </div>
+                <div class="reveal" style="background: #f4f6fc; border-radius: 60px; padding: 40px;">
+                    <i class="fa-solid fa-arrow-trend-up" style="font-size: 4rem; opacity: 0.4;"></i>
+                    <p style="font-size: 1.8rem; font-weight: 300;">"car control is freedom"</p>
+                    <p style="font-size: 1rem;">— every session includes 1hr theory</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 6 - pricing (simple) -->
+    <section class="block" id="block6">
+        <div class="container reveal">
+            <h2>FLAT RATES</h2>
+            <div style="display: flex; gap: 32px; flex-wrap: wrap;">
+                <div style="border: 2px solid #eee; border-radius: 40px; padding: 40px; flex: 1;">
+                    <i class="fa-regular fa-star"></i>
+                    <p style="font-size: 2.5rem; margin: 20px 0;">€290</p>
+                    <span>half day (4h) · basic</span>
+                </div>
+                <div style="background: #0e0e1a; color: white; border-radius: 40px; padding: 40px; flex: 1;">
+                    <i class="fa-regular fa-gem"></i>
+                    <p style="font-size: 2.5rem; margin: 20px 0;">€590</p>
+                    <span>full day (8h) · pro + video</span>
+                </div>
+                <div style="border: 2px solid #eee; border-radius: 40px; padding: 40px; flex: 1;">
+                    <i class="fa-regular fa-clock"></i>
+                    <p style="font-size: 2.5rem; margin: 20px 0;">€990</p>
+                    <span>two days · advanced license</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 7 - contact / booking -->
+    <section class="block" id="block7">
+        <div class="container reveal">
+            <h2>READY TO<br>LOSE GRIP?</h2>
+            <p class="lead-text" style="margin-bottom: 32px;">Call or send a pigeon — we reply within 2h.</p>
+            <div style="font-size: 2.2rem; display: flex; gap: 32px; align-items: center;">
+                <i class="fa-brands fa-whatsapp"></i> +49 176 123 88 99
+                <span style="width: 2px; height: 50px; background: #ccc;"></span>
+                <i class="fa-regular fa-envelope"></i> drift@edge42.com
+            </div>
+            <div style="margin-top: 56px;">
+                <span style="background: #eaeef5; padding: 12px 28px; border-radius: 60px;">next drift experience: saturday 08:00</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="logo" style="color: white; -webkit-text-fill-color: white;"><i class="fas fa-skull" style="background: #2b2b44;"></i> DRIFT/*42</div>
+            <div>
+                <a href="#block1">home</a>
+                <a href="#block2">philosophy</a>
+                <a href="#">imprint</a>
+            </div>
+            <small>© 2025 — extreme driving school · built for the brave</small>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // ----- shrink header on scroll -----
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // ----- reveal on scroll (intersection) -----
+            const reveals = document.querySelectorAll('.reveal, .reveal-stagger');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        // optional: keep visible after reveal
+                    } else {
+                        // remove class if you want to hide again (optional)
+                        // entry.target.classList.remove('revealed');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+            reveals.forEach(r => observer.observe(r));
+
+            // ----- canvas animation (block1 background) -----
+            const canvas = document.getElementById('canvas-header');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let particles = [];
+
+                function initCanvas() {
+                    width = canvas.parentElement.offsetWidth;
+                    height = canvas.parentElement.offsetHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                    particles = [];
+                    const particleCount = 45;
+                    for (let i = 0; i < particleCount; i++) {
+                        particles.push({
+                            x: Math.random() * width,
+                            y: Math.random() * height,
+                            vx: (Math.random() - 0.5) * 0.7,
+                            vy: (Math.random() - 0.5) * 0.7,
+                            radius: Math.random() * 3 + 1.5,
+                        });
+                    }
+                }
+
+                function drawParticles() {
+                    if (!ctx) return;
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.fillStyle = '#1e1e2f';
+                    for (let p of particles) {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#10101c';
+                        ctx.globalAlpha = 0.25 + Math.random() * 0.15;
+                        ctx.fill();
+                        // occasional line
+                        ctx.globalAlpha = 0.08;
+                        ctx.strokeStyle = '#2b2b4f';
+                        ctx.lineWidth = 1;
+                        for (let other of particles) {
+                            if (p === other) continue;
+                            const dx = p.x - other.x;
+                            const dy = p.y - other.y;
+                            const dist = Math.hypot(dx, dy);
+                            if (dist < 110) {
+                                ctx.beginPath();
+                                ctx.moveTo(p.x, p.y);
+                                ctx.lineTo(other.x, other.y);
+                                ctx.strokeStyle = '#2b2b4f';
+                                ctx.globalAlpha = 0.06;
+                                ctx.stroke();
+                            }
+                        }
+                    }
+
+                    // move
+                    for (let p of particles) {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        if (p.x < 0 || p.x > width) p.vx *= -1;
+                        if (p.y < 0 || p.y > height) p.vy *= -1;
+                    }
+                    requestAnimationFrame(drawParticles);
+                }
+
+                window.addEventListener('resize', () => {
+                    initCanvas();
+                });
+                initCanvas();
+                drawParticles();
+            }
+
+            // ----- small stagger set for children (additional) -----
+            // already handled by .reveal-stagger class
+        })();
+    </script>
+
+    <!-- ensure that all blocks have ids for anchor menu -->
+    <div style="display: none;">navigation anchors fixed</div>
+</body>
+</html>
+```
+All done!

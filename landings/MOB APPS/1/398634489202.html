@@ -1,0 +1,524 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math brain trainer · prototype</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a1e2b;
+            padding: 12px;
+        }
+        /* phone container */
+        .phone {
+            width: 360px;
+            height: 780px;
+            background: var(--bg-primary);
+            border-radius: 48px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4), 0 0 0 8px #2d313e;
+            position: relative;
+            transition: background 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        /* screen wrapper – everything inside */
+        .app-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-light) var(--card-bg);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        .app-screen::-webkit-scrollbar {
+            width: 4px;
+        }
+        .app-screen::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 20px;
+        }
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px 8px;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: var(--text-primary);
+        }
+        .profile-icon {
+            cursor: pointer;
+            padding: 8px 4px;
+            transition: opacity 0.1s;
+        }
+        .profile-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--text-secondary);
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        /* main content flex */
+        .content {
+            flex: 1;
+            padding: 8px 20px 12px;
+        }
+        /* bottom nav */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 16px 10px;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-light);
+            backdrop-filter: blur(4px);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            padding: 6px 12px 4px;
+            border-radius: 30px;
+            background: transparent;
+            flex: 1;
+            max-width: 70px;
+        }
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: all 0.15s;
+        }
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+            margin-top: 2px;
+            transition: all 0.15s;
+        }
+        /* active tab */
+        .nav-item.active {
+            background: rgba(37, 99, 235, 0.12);
+        }
+        .nav-item.active svg {
+            stroke: #2563EB;
+            transform: scale(1.15);
+            stroke-width: 2.2;
+        }
+        .nav-item.active span {
+            color: #2563EB;
+            font-weight: 600;
+        }
+        .nav-item.inactive svg {
+            stroke: #94A3B8;
+        }
+        .nav-item.inactive span {
+            color: #94A3B8;
+        }
+        /* light / dark variables */
+        :root {
+            --bg-primary: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent: #38BDF8;
+            --border-light: #E2E8F0;
+            --progress-bg: #E2E8F0;
+        }
+        .dark-mode {
+            --bg-primary: #0F172A;
+            --card-bg: #1E293B;
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --accent: #38BDF8;
+            --border-light: #334155;
+            --progress-bg: #334155;
+        }
+        /* cards & elements */
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 18px 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            margin-bottom: 16px;
+            border: 1px solid var(--border-light);
+        }
+        .lesson-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 14px 0;
+        }
+        .progress-bar {
+            height: 8px;
+            background: var(--progress-bg);
+            border-radius: 100px;
+            flex: 1;
+        }
+        .progress-fill {
+            width: 60%;
+            height: 100%;
+            background: var(--primary);
+            border-radius: 100px;
+        }
+        .badge {
+            background: var(--accent);
+            color: #0F172A;
+            padding: 4px 8px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .stat-item {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            padding: 14px;
+            text-align: center;
+        }
+        button {
+            background: var(--primary);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 16px 20px;
+            border-radius: 40px;
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.1s;
+            box-shadow: 0 8px 16px -6px rgba(37,99,235,0.3);
+        }
+        button.secondary {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            box-shadow: none;
+        }
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 32px;
+            width: 280px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+        .link-row {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin: 24px 0 8px;
+            font-size: 14px;
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .icon-row svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--primary);
+            stroke-width: 1.8;
+            margin: 0 6px;
+        }
+        /* chart simulation */
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            height: 120px;
+            margin: 16px 0;
+        }
+        .bar {
+            width: 22%;
+            background: linear-gradient(to top, var(--primary), var(--accent));
+            border-radius: 12px 12px 4px 4px;
+            height: calc(70% * var(--h));
+            transition: height 0.3s;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .justify-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mt-4 { margin-top: 16px; }
+    </style>
+</head>
+<body>
+<div class="phone" id="phoneContainer">
+    <div class="app-screen" id="appScreen">
+        <!-- dynamic header -->
+        <div class="header" id="appHeader">
+            <h1 id="headerTitle">Onboarding</h1>
+            <div class="profile-icon" id="profileBtn">
+                <svg viewBox="0 0 24 24"><path d="M4 20c1.5-3 5-4 8-4s6.5 1 8 4M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/></svg>
+            </div>
+        </div>
+        <!-- content views -->
+        <div id="viewContainer" class="content"></div>
+        <!-- bottom nav -->
+        <div class="bottom-nav" id="bottomNav">
+            <div class="nav-item active" data-tab="home"><svg viewBox="0 0 24 24"><path d="M3 10l9-7 9 7v11h-7v-7h-4v7H3V10z"/></svg><span>Home</span></div>
+            <div class="nav-item inactive" data-tab="learn"><svg viewBox="0 0 24 24"><path d="M12 6v7m0 0v5m0-5h5m-5 0H7"/><circle cx="12" cy="12" r="9"/></svg><span>Learn</span></div>
+            <div class="nav-item inactive" data-tab="progress"><svg viewBox="0 0 24 24"><path d="M21 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M21 3l-9 9"/></svg><span>Progress</span></div>
+            <div class="nav-item inactive" data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a2 2 0 0 0 .4-2.2l-.9-1.8a2 2 0 0 1 0-2l.9-1.8a2 2 0 0 0-.4-2.2l-1.5-1.5a2 2 0 0 0-2.2-.4l-1.8.9a2 2 0 0 1-2 0l-1.8-.9a2 2 0 0 0-2.2.4L6.1 5.8a2 2 0 0 0-.4 2.2l.9 1.8a2 2 0 0 1 0 2l-.9 1.8a2 2 0 0 0 .4 2.2l1.5 1.5a2 2 0 0 0 2.2.4l1.8-.9a2 2 0 0 1 2 0l1.8.9a2 2 0 0 0 2.2-.4l1.5-1.5z"/></svg><span>Settings</span></div>
+        </div>
+    </div>
+</div>
+<!-- modal container -->
+<div id="modalLayer" class="modal hidden"></div>
+<script>
+(function(){
+    // ----- THEME & ICONS (inline SVG system) -----
+    const root = document.documentElement;
+    const lightVars = { '--bg-primary': '#F8FAFC', '--card-bg': '#FFFFFF', '--text-primary': '#0F172A', '--text-secondary':'#334155','--primary':'#2563EB','--primary-dark':'#1E40AF','--accent':'#38BDF8','--border-light':'#E2E8F0','--progress-bg':'#E2E8F0' };
+    const darkVars = { '--bg-primary': '#0F172A', '--card-bg': '#1E293B', '--text-primary': '#E2E8F0', '--text-secondary':'#94A3B8','--primary':'#3B82F6','--primary-dark':'#2563EB','--accent':'#38BDF8','--border-light':'#334155','--progress-bg':'#334155' };
+    let darkMode = false;
+
+    // ----- view state -----
+    let currentView = 'onboarding'; // onboarding, home, learn, progress, settings
+    const views = ['onboarding','home','learn','progress','settings'];
+    const viewContainer = document.getElementById('viewContainer');
+    const headerTitle = document.getElementById('headerTitle');
+    const navItems = document.querySelectorAll('.nav-item');
+    const profileBtn = document.getElementById('profileBtn');
+    const modalLayer = document.getElementById('modalLayer');
+
+    // ----- helper: set active tab (except onboarding) -----
+    function setActiveTab(tabId) {
+        navItems.forEach(item => {
+            const tab = item.dataset.tab;
+            if (tab === tabId) {
+                item.classList.remove('inactive');
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+                item.classList.add('inactive');
+            }
+        });
+    }
+
+    // ----- render screen -----
+    function renderView(view) {
+        if (view === 'onboarding') {
+            headerTitle.innerText = 'Math Brain';
+            viewContainer.innerHTML = `
+                <div class="card" style="text-align:center; padding:32px 16px;">
+                    <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+                    <h2 style="font-size:34px; margin:8px 0 4px;">Mathrix</h2>
+                    <p style="font-size:18px; font-weight:300;">train your brain daily</p>
+                    <p style="margin:20px 0; color:var(--text-secondary);">Become faster with mental math. Bite-sized exercises & brain games.</p>
+                    <button id="getStartedBtn">Get Started →</button>
+                    <div class="link-row">
+                        <span id="privacyLink">Privacy Policy</span>
+                        <span id="termsLink">Terms of Service</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('getStartedBtn')?.addEventListener('click', ()=>{
+                navigateTo('home');
+            });
+            document.getElementById('privacyLink')?.addEventListener('click', ()=> showModal('Privacy Policy','We value your privacy. No data leaves your device.'));
+            document.getElementById('termsLink')?.addEventListener('click', ()=> showModal('Terms of Service','Educational fair use. By using you agree to brain training.'));
+        }
+        if (view === 'home') {
+            headerTitle.innerText = 'Home';
+            viewContainer.innerHTML = `
+                <div class="card">
+                    <div class="justify-between"><span class="badge">⚡ daily streak 7</span><span>🔥 120 xp</span></div>
+                    <h3 style="margin:12px 0 4px;">Welcome back, Alex</h3>
+                    <p style="color:var(--text-secondary);">continue where you left</p>
+                    <div class="lesson-row"><svg width="24" height="24" viewBox="0 0 24 24" stroke="var(--primary)"><path d="M12 2v20M22 12H2"/></svg><span>Brain warmup · level 4</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:75%"></div></div>
+                    <button class="secondary" style="margin-top:16px;" id="resumePractice">Resume practice</button>
+                </div>
+                <div class="card">
+                    <h4>Today’s missions</h4>
+                    <div class="lesson-row"><svg width="22" height="22" viewBox="0 0 24 24" stroke="var(--primary)"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg> <span>Speed drills</span><span style="margin-left:auto;">5 min</span></div>
+                    <div class="lesson-row"><svg width="22" height="22" viewBox="0 0 24 24" stroke="var(--primary)"><path d="M4 4v16h16"/><path d="M8 16l4-4 4 4"/></svg> <span>Graph challenge</span><span style="margin-left:auto;">8 min</span></div>
+                </div>
+                <div class="card" style="display:flex; gap:20px;">
+                    <div><svg width="32" height="32" viewBox="0 0 24 24" stroke="var(--primary)"><path d="M12 2v4M12 22v-4M4 12H2M8 12H6M18 12h-2M22 12h-2"/><circle cx="12" cy="12" r="4"/></svg><p>logic</p></div>
+                    <div><svg width="32" height="32" viewBox="0 0 24 24" stroke="var(--primary)"><path d="M21 16v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2"/><path d="M7 10l3-3 3 3 4-4"/></svg><p>streak</p></div>
+                </div>
+            `;
+            document.getElementById('resumePractice')?.addEventListener('click', ()=> navigateTo('learn'));
+        }
+        if (view === 'learn') {
+            headerTitle.innerText = 'Learn';
+            viewContainer.innerHTML = `
+                <div class="card"><h3>Pick your exercise</h3>
+                    <div class="lesson-row"><svg width="24" height="24" viewBox="0 0 24 24" stroke="var(--primary)"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg><div><b>Multiplication master</b><p>× / ÷ · 10 puzzles</p></div></div>
+                    <div class="lesson-row"><svg width="24" height="24" viewBox="0 0 24 24" stroke="var(--primary)"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><div><b>Fast fractions</b><p>➕ compare · 8 min</p></div></div>
+                    <button id="startLesson">Start lesson →</button>
+                </div>
+                <div class="card">
+                    <span class="badge">popular</span><p>🔥 Equations in 5 sec</p>
+                    <div class="progress-bar mt-4"><div class="progress-fill" style="width:30%"></div></div>
+                </div>
+            `;
+            document.getElementById('startLesson')?.addEventListener('click', ()=>{ alert('Launching interactive lesson (simulated)'); });
+        }
+        if (view === 'progress') {
+            headerTitle.innerText = 'Progress';
+            viewContainer.innerHTML = `
+                <div class="card">
+                    <h4>Weekly activity</h4>
+                    <div class="chart-bars">
+                        <div class="bar" style="--h:0.8"></div><div class="bar" style="--h:0.5"></div><div class="bar" style="--h:1"></div><div class="bar" style="--h:0.7"></div>
+                    </div>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-item"><big style="font-size:28px;">3,240</big><br>problems solved</div>
+                    <div class="stat-item"><big style="font-size:28px;">12</big><br>day streak</div>
+                </div>
+                <div class="card"><span>⭐ Achievements: 4/8</span><div class="progress-bar"><div class="progress-fill" style="width:50%"></div></div></div>
+            `;
+        }
+        if (view === 'settings') {
+            headerTitle.innerText = 'Settings';
+            viewContainer.innerHTML = `
+                <div class="card">
+                    <div class="justify-between"><span>🌙 Dark theme</span><label><input type="checkbox" id="darkToggle" ${darkMode ? 'checked' : ''}></label></div>
+                    <div style="margin:16px 0 8px;">🔔 Notifications</div>
+                    <div>🎯 Sound effects</div>
+                </div>
+                <div class="card">
+                    <p>Profile: Alex M.</p>
+                    <p style="color:var(--text-secondary);">member since 2026</p>
+                </div>
+                <button id="resetOnboarding" class="secondary">Show onboarding</button>
+            `;
+            document.getElementById('darkToggle')?.addEventListener('change', (e)=>{
+                darkMode = e.target.checked;
+                if (darkMode) { Object.entries(darkVars).forEach(([k,v])=> root.style.setProperty(k,v)); } 
+                else { Object.entries(lightVars).forEach(([k,v])=> root.style.setProperty(k,v)); }
+            });
+            document.getElementById('resetOnboarding')?.addEventListener('click', ()=> navigateTo('onboarding'));
+        }
+    }
+
+    // ----- navigation -----
+    function navigateTo(viewName) {
+        if (!views.includes(viewName)) return;
+        currentView = viewName;
+        if (viewName === 'onboarding') {
+            // hide bottom nav & profile maybe? we keep header profile always visible
+            document.getElementById('bottomNav').style.display = 'none';
+        } else {
+            document.getElementById('bottomNav').style.display = 'flex';
+            setActiveTab(viewName === 'settings' ? 'settings' : (viewName==='home'?'home':viewName==='learn'?'learn':'progress'));
+        }
+        renderView(viewName);
+    }
+
+    // ----- modal -----
+    function showModal(title, msg) {
+        modalLayer.innerHTML = `<div class="modal-content"><h3>${title}</h3><p style="margin:16px 0;">${msg}</p><button id="closeModalBtn">OK</button></div>`;
+        modalLayer.classList.remove('hidden');
+        document.getElementById('closeModalBtn')?.addEventListener('click', ()=>{ modalLayer.classList.add('hidden'); });
+    }
+
+    // ----- event listeners bottom nav -----
+    navItems.forEach(item => {
+        item.addEventListener('click', (e)=>{
+            const tab = item.dataset.tab;
+            if (tab === 'home') navigateTo('home');
+            else if (tab === 'learn') navigateTo('learn');
+            else if (tab === 'progress') navigateTo('progress');
+            else if (tab === 'settings') navigateTo('settings');
+        });
+    });
+
+    // profile btn -> settings
+    profileBtn.addEventListener('click', ()=>{
+        if (currentView !== 'onboarding') navigateTo('settings');
+        else { navigateTo('settings'); } // onboarding -> settings possible
+    });
+
+    // ---------- SCREENSHOT capture shift+W ----------
+    let screenshotCounter = 1;
+    window.addEventListener('keydown', (e)=>{
+        if (e.shiftKey && e.key === 'W') {
+            e.preventDefault();
+            const phone = document.getElementById('phoneContainer');
+            html2canvas?.(phone, { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                const isDark = darkMode;
+                let filename = isDark ? '6.png' : (screenshotCounter + '.png');
+                if (!isDark && screenshotCounter <=5) { link.download = screenshotCounter+'.png'; screenshotCounter = (screenshotCounter%5)+1; }
+                else if (isDark) link.download = '6.png';
+                else link.download = '1.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(()=> alert('html2canvas not loaded – using fallback'));
+        }
+    });
+
+    // --- fake html2canvas if missing ---
+    if (typeof html2canvas === 'undefined') {
+        window.html2canvas = (el) => { return new Promise((res)=> { console.warn('screenshot simulation'); res({ toDataURL: ()=>'#' }); }); };
+    }
+
+    // init onboarding
+    navigateTo('onboarding');
+
+    // light mode by default
+    Object.entries(lightVars).forEach(([k,v])=> root.style.setProperty(k,v));
+    // add html2canvas script from cdn
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.onload = ()=>{};
+    document.head.appendChild(script);
+})();
+</script>
+</body>
+</html>
+All done!
+```

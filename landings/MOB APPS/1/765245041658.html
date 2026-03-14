@@ -1,0 +1,596 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashLearn · prototype</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: #1a1e2b;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+        }
+
+        /* phone container */
+        .phone {
+            width: 360px;
+            height: 780px;
+            background-color: var(--bg-primary);
+            border-radius: 44px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4), 0 0 0 8px #2d3344;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+
+        /* main app screen */
+        .app-screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            position: relative;
+        }
+
+        /* theme variables */
+        .light-mode {
+            --bg-primary: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --border-light: #E2E8F0;
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent: #38BDF8;
+            --icon-inactive: #94A3B8;
+            --bottom-bar: #FFFFFF;
+            --progress-bg: #E2E8F0;
+            --badge-bg: #DBEAFE;
+        }
+
+        .dark-mode {
+            --bg-primary: #0F172A;
+            --bg-card: #1E293B;
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            --border-light: #334155;
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --accent: #38BDF8;
+            --icon-inactive: #64748B;
+            --bottom-bar: #1E293B;
+            --progress-bg: #334155;
+            --badge-bg: #1E3A5F;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px 8px 20px;
+            background: transparent;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+        .profile-icon {
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+        .profile-icon:hover {
+            background: rgba(37,99,235,0.1);
+        }
+
+        /* main content */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px 0 16px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--bg-card);
+        }
+        .content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .content::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 20px;
+        }
+
+        /* bottom navigation */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: var(--bottom-bar);
+            padding: 8px 12px 10px;
+            border-top: 1px solid var(--border-light);
+            backdrop-filter: blur(4px);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            padding: 6px 12px;
+            border-radius: 30px;
+            background: transparent;
+            border: none;
+            width: 70px;
+        }
+        .nav-item.active {
+            background: rgba(37,99,235,0.12);
+            transform: scale(1.02);
+        }
+        .nav-item.active .nav-icon svg {
+            stroke: var(--primary);
+            stroke-width: 2.2px;
+            width: 26px;
+            height: 26px;
+            filter: drop-shadow(0 2px 4px rgba(37,99,235,0.2));
+        }
+        .nav-item.active .nav-label {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 11px;
+        }
+        .nav-item.inactive .nav-icon svg {
+            stroke: var(--icon-inactive);
+            stroke-width: 2px;
+            width: 24px;
+            height: 24px;
+        }
+        .nav-item.inactive .nav-label {
+            color: var(--icon-inactive);
+            font-size: 10px;
+            font-weight: 500;
+        }
+        .nav-label {
+            margin-top: 2px;
+            transition: color 0.2s;
+        }
+
+        /* cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 18px 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            border: 1px solid var(--border-light);
+        }
+
+        .flex-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            background: var(--badge-bg);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--progress-bg);
+            border-radius: 40px;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 8px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 40px;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 18px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 8px 20px rgba(37,99,235,0.3);
+        }
+        .btn-primary:active { transform: scale(0.98); background: var(--primary-dark); }
+
+        .small-link {
+            color: var(--text-secondary);
+            text-decoration: underline;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* modal */
+        .modal {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 32px;
+            width: 280px;
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+        }
+
+        /* hidden screens */
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+
+        /* chart simulation */
+        .chart-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            height: 80px;
+            margin: 16px 0;
+        }
+        .bar {
+            width: 22px;
+            background: var(--primary);
+            border-radius: 12px 12px 4px 4px;
+            transition: height 0.3s;
+        }
+
+        /* icon sprite */
+        .icon-svg {
+            display: inline-block;
+            line-height: 0;
+        }
+
+        /* extra */
+        .lesson-item {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .lesson-title { font-weight: 600; color: var(--text-primary); }
+        .flip-badge { background: var(--accent); color: #0F172A; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<div class="phone light-mode" id="phoneContainer">
+    <div class="app-screen" id="appScreen">
+        <!-- header (dynamic via js) -->
+        <div class="header" id="appHeader">
+            <h1 id="headerTitle">Onboarding</h1>
+            <div class="profile-icon" id="profileBtn">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- main content panels (screens) -->
+        <div class="content" id="screenContainer">
+            <!-- ONBOARDING -->
+            <div id="onboardingScreen" class="screen active">
+                <div class="card" style="text-align: center; padding: 30px 20px;">
+                    <div style="margin-bottom: 24px;">
+                        <svg width="70" height="70" viewBox="0 0 32 32" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <h2 style="font-size: 36px; font-weight: 800; color: var(--primary);">FlashLearn</h2>
+                    <p style="font-size: 16px; color: var(--text-secondary); margin: 8px 0 4px;">smart flashcards · brain training</p>
+                    <p style="color: var(--text-primary); margin: 16px 0;">Boost memory with adaptive repetition. Master anything quickly.</p>
+                    <button class="btn-primary" id="getStartedBtn">Get Started</button>
+                    <div style="margin-top: 20px; display: flex; gap: 18px; justify-content: center;">
+                        <span class="small-link" id="privacyLink">Privacy Policy</span>
+                        <span class="small-link" id="termsLink">Terms of Service</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HOME DASHBOARD -->
+            <div id="homeScreen" class="screen">
+                <div class="card">
+                    <div class="flex-row">
+                        <span class="badge">🔥 7 day streak</span>
+                        <span style="color: var(--text-secondary);">👋 Hi, Alex</span>
+                    </div>
+                    <h3 style="color: var(--text-primary); margin-top: 16px;">continue learning</h3>
+                    <div style="background: var(--accent)10; padding: 12px; border-radius: 20px; margin: 12px 0;">
+                        <span style="font-weight: 600;">📦 JavaScript closures</span>
+                        <div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div>
+                        <div class="flex-row"><span>60%</span> <span class="small-link" id="resumeLesson">resume</span></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex-row"><span style="font-weight: 700;">today's goals</span> <span>2/3</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:66%"></div></div>
+                    <div style="display: flex; gap: 16px; margin-top: 16px;">
+                        <div><span style="font-size: 24px;">⭐</span><br>12 XP</div>
+                        <div><span style="font-size: 24px;">⚡</span><br>4 lessons</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <span style="font-weight: 700;">flashcard collections</span>
+                    <div class="lesson-item flex-row"><span class="lesson-title">Python basics</span> <span>34 cards</span></div>
+                    <div class="lesson-item flex-row"><span class="lesson-title">JS array methods</span> <span>22 cards</span></div>
+                </div>
+            </div>
+
+            <!-- LEARN / PRACTICE -->
+            <div id="learnScreen" class="screen">
+                <div class="card">
+                    <div class="flex-row"><span style="font-weight: 700;">JavaScript · scope</span> <span class="badge flip-badge">due now</span></div>
+                    <div class="flex-row" style="margin: 12px 0;"><span>🤔 what is closure?</span> <span id="showAnswerBtn" class="small-link">reveal</span></div>
+                    <div id="answerBox" style="background: var(--progress-bg); border-radius: 12px; padding: 16px; display: none;">A function with its lexical scope</div>
+                    <div style="display: flex; gap: 8px; margin-top: 16px;">
+                        <span style="background: #10b981; color: white; padding: 12px; border-radius: 30px; flex:1; text-align: center;" id="easyBtn">😊 Easy</span>
+                        <span style="background: #f59e0b; color: white; padding: 12px; border-radius: 30px; flex:1; text-align: center;" id="hardBtn">😓 Hard</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <span style="font-weight: 700;">next lessons</span>
+                    <div class="lesson-item flex-row"><span class="lesson-title">promises</span> <span>8 min</span></div>
+                    <div class="lesson-item flex-row"><span class="lesson-title">this keyword</span> <span>5 min</span></div>
+                    <button class="btn-primary" style="margin-top: 12px; padding: 12px;" id="practiceAllBtn">practice all</button>
+                </div>
+            </div>
+
+            <!-- PROGRESS / STATISTICS -->
+            <div id="progressScreen" class="screen">
+                <div class="card">
+                    <span style="font-weight: 700;">weekly activity</span>
+                    <div class="chart-row">
+                        <div class="bar" style="height:40px"></div><div class="bar" style="height:70px"></div><div class="bar" style="height:50px"></div>
+                        <div class="bar" style="height:90px"></div><div class="bar" style="height:60px"></div><div class="bar" style="height:30px"></div><div class="bar" style="height:20px"></div>
+                    </div>
+                    <div class="flex-row"><span>mastered: 142 cards</span> <span>🔥 +34</span></div>
+                </div>
+                <div class="card">
+                    <span style="font-weight: 700;">achievements</span>
+                    <div style="display: flex; gap: 20px; margin-top: 16px;">
+                        <div>🏅<br>7 day</div><div>🏆<br>1000 XP</div><div>🎯<br>perfect</div>
+                    </div>
+                </div>
+                <div class="card"><span>time studied: 12h 30m</span><div class="progress-bar"><div class="progress-fill" style="width:42%"></div></div></div>
+            </div>
+
+            <!-- SETTINGS / PROFILE -->
+            <div id="settingsScreen" class="screen">
+                <div class="card">
+                    <div class="flex-row"><span>dark mode</span> <label><input type="checkbox" id="themeToggle"></label></div>
+                    <div class="lesson-item flex-row"><span>notifications</span> <span>🔔 on</span></div>
+                    <div class="lesson-item flex-row"><span>daily goal</span> <span>30 min</span></div>
+                    <div class="lesson-item flex-row"><span>sound</span> <span>🔊</span></div>
+                </div>
+                <div class="card">
+                    <span style="font-weight: 700;">profile</span>
+                    <div class="flex-row"><span>Alex Chen</span> <span>⭐ level 9</span></div>
+                    <div class="flex-row"><span>member since</span> <span>jan 2026</span></div>
+                    <button class="btn-primary" style="padding: 12px; margin-top: 10px;" id="logoutDummy">sign out</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- bottom navigation (custom icons) -->
+        <div class="bottom-nav" id="bottomNav">
+            <div class="nav-item active" data-screen="home" id="navHome">
+                <span class="nav-icon" id="iconHome"></span>
+                <span class="nav-label">Home</span>
+            </div>
+            <div class="nav-item inactive" data-screen="learn" id="navLearn">
+                <span class="nav-icon" id="iconLearn"></span>
+                <span class="nav-label">Learn</span>
+            </div>
+            <div class="nav-item inactive" data-screen="progress" id="navProgress">
+                <span class="nav-icon" id="iconProgress"></span>
+                <span class="nav-label">Progress</span>
+            </div>
+            <div class="nav-item inactive" data-screen="settings" id="navSettings">
+                <span class="nav-icon" id="iconSettings"></span>
+                <span class="nav-label">Settings</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- modal overlay -->
+    <div id="modalOverlay" class="modal hidden">
+        <div class="modal-content" id="modalContent">
+            <h3 id="modalTitle">title</h3>
+            <p id="modalBody">text</p>
+            <button class="btn-primary" style="margin-top: 16px;" id="closeModal">close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- ICON SVG definitions (reusable) ----------
+        function renderIcons() {
+            // all icons inline, stroke 2, rounded
+            const iconMap = {
+                home: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+                learn: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
+                progress: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+                settings: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+                profile: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+            };
+            document.getElementById('iconHome').innerHTML = iconMap.home;
+            document.getElementById('iconLearn').innerHTML = iconMap.learn;
+            document.getElementById('iconProgress').innerHTML = iconMap.progress;
+            document.getElementById('iconSettings').innerHTML = iconMap.settings;
+        }
+
+        // ----- state -----
+        let currentScreen = 'onboarding'; // one of: onboarding, home, learn, progress, settings
+        const container = document.getElementById('phoneContainer');
+        const modal = document.getElementById('modalOverlay');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const headerTitle = document.getElementById('headerTitle');
+        const screens = {
+            onboarding: document.getElementById('onboardingScreen'),
+            home: document.getElementById('homeScreen'),
+            learn: document.getElementById('learnScreen'),
+            progress: document.getElementById('progressScreen'),
+            settings: document.getElementById('settingsScreen')
+        };
+
+        // helper switch
+        function showScreen(screenId) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[screenId].classList.add('active');
+            currentScreen = screenId;
+
+            // update header
+            const titles = {
+                onboarding: 'Onboarding',
+                home: 'Home',
+                learn: 'Practice',
+                progress: 'Progress',
+                settings: 'Settings'
+            };
+            headerTitle.innerText = titles[screenId] || 'FlashLearn';
+
+            // update bottom nav
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const data = item.dataset.screen;
+                if (data === screenId) {
+                    item.classList.remove('inactive'); item.classList.add('active');
+                } else {
+                    item.classList.remove('active'); item.classList.add('inactive');
+                }
+            });
+        }
+
+        // bottom nav events
+        document.getElementById('navHome').addEventListener('click', (e) => { e.preventDefault(); showScreen('home'); });
+        document.getElementById('navLearn').addEventListener('click', (e) => { e.preventDefault(); showScreen('learn'); });
+        document.getElementById('navProgress').addEventListener('click', (e) => { e.preventDefault(); showScreen('progress'); });
+        document.getElementById('navSettings').addEventListener('click', (e) => { e.preventDefault(); showScreen('settings'); });
+
+        // get started
+        document.getElementById('getStartedBtn').addEventListener('click', () => showScreen('home'));
+
+        // profile icon -> settings
+        document.getElementById('profileBtn').addEventListener('click', () => showScreen('settings'));
+
+        // modal functions
+        function showModal(title, body) {
+            modalTitle.innerText = title;
+            modalBody.innerText = body;
+            modal.classList.remove('hidden');
+        }
+        document.getElementById('closeModal').addEventListener('click', () => modal.classList.add('hidden'));
+        document.getElementById('privacyLink').addEventListener('click', () => showModal('Privacy Policy', 'We protect your data with encryption.'));
+        document.getElementById('termsLink').addEventListener('click', () => showModal('Terms of Service', 'Use FlashLearn for personal learning only.'));
+
+        // show answer in learn
+        document.getElementById('showAnswerBtn')?.addEventListener('click', () => {
+            document.getElementById('answerBox').style.display = 'block';
+        });
+
+        // dummy easy/hard
+        document.getElementById('easyBtn')?.addEventListener('click', () => alert('great! +10 XP'));
+        document.getElementById('hardBtn')?.addEventListener('click', () => alert('keep practicing'));
+
+        // resume lesson (home)
+        document.getElementById('resumeLesson')?.addEventListener('click', () => { showScreen('learn'); });
+
+        // practice all
+        document.getElementById('practiceAllBtn')?.addEventListener('click', () => { alert('starting practice session'); });
+
+        // theme toggle (settings)
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('change', (e) => {
+            if(e.target.checked) {
+                container.classList.remove('light-mode');
+                container.classList.add('dark-mode');
+            } else {
+                container.classList.remove('dark-mode');
+                container.classList.add('light-mode');
+            }
+        });
+
+        // logout dummy
+        document.getElementById('logoutDummy')?.addEventListener('click', () => alert('signed out (demo)'));
+
+        // initial rendering
+        renderIcons();
+
+        // ---------- SHIFT+W screenshot (developer) ----------
+        let screenshotCounter = 1;
+        window.addEventListener('keydown', (e) => {
+            if (e.shiftKey && e.key === 'W') {
+                e.preventDefault();
+                // determine dark mode?
+                const isDark = container.classList.contains('dark-mode');
+                const fileName = isDark ? '6.png' : (screenshotCounter + '.png');
+                if (!isDark && screenshotCounter <=5) {
+                    // simulate naming (just console)
+                    console.log(`📸 screenshot saved as ${fileName}`);
+                    screenshotCounter = (screenshotCounter % 5) + 1;
+                } else if (isDark) {
+                    console.log('📸 screenshot saved as 6.png (dark)');
+                } else {
+                    console.log('📸 screenshot saved as 1.png (reset)');
+                    screenshotCounter = 2;
+                }
+                alert(`📸 dev: ${fileName} captured (mock)`);
+            }
+        });
+
+        // ensure all screens work: onboarding active
+        showScreen('onboarding');
+
+        // extra: chart animation subtle (just set widths)
+        setTimeout(() => {
+            document.querySelectorAll('.bar').forEach((b, idx) => {
+                if (idx===3) b.style.height = '90px';
+            });
+        }, 200);
+    })();
+</script>
+</body>
+</html>
+All done!
+```

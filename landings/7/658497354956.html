@@ -1,0 +1,707 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obsidian · private astronomy club</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #03050a;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-weight: 300;
+      color: #e0e6f0;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* inter google font via fallback */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,200;14..32,300;14..32,400;14..32,500;14..32,600&display=swap');
+
+    /* custom glow & animations */
+    .glow {
+      text-shadow: 0 0 12px rgba(120, 180, 255, 0.6);
+    }
+
+    .glass-panel {
+      backdrop-filter: blur(8px);
+      background: rgba(8, 15, 30, 0.5);
+      border: 1px solid rgba(80, 140, 255, 0.25);
+      border-radius: 2rem;
+      box-shadow: 0 20px 40px -20px #000000cc, 0 0 0 1px rgba(70, 130, 255, 0.1) inset;
+    }
+
+    /* fixed header style (compact on scroll) */
+    .site-header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      transition: all 0.3s ease;
+      padding: 1.8rem 3rem;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      mix-blend-mode: exclusion;
+    }
+
+    .site-header.compact {
+      padding: 0.8rem 3rem;
+      background: rgba(2, 6, 16, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(70, 130, 255, 0.25);
+      mix-blend-mode: normal;
+    }
+
+    .logo {
+      font-size: 1.9rem;
+      font-weight: 300;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: white;
+    }
+
+    .logo span {
+      font-weight: 600;
+      color: #9bc0ff;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 3rem;
+      font-size: 1rem;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #ddd;
+      transition: 0.2s;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 4px;
+    }
+
+    .nav-links a:hover {
+      color: white;
+      border-bottom-color: #6a9eff;
+      text-shadow: 0 0 8px #3970ff;
+    }
+
+    /* hero section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      background: radial-gradient(ellipse at 50% 30%, #13223f, #010101 80%);
+      border-bottom: 1px solid #1f3460;
+    }
+
+    .hero-content {
+      max-width: 1000px;
+      padding: 0 2rem;
+    }
+
+    .hero-sub {
+      font-size: 1.3rem;
+      letter-spacing: 6px;
+      word-spacing: 12px;
+      color: #b0ceff;
+      margin-bottom: 1rem;
+      animation: fadeGlow 3s infinite alternate;
+    }
+
+    @keyframes fadeGlow {
+      0% { opacity: 0.7; text-shadow: 0 0 5px #345baf; }
+      100% { opacity: 1; text-shadow: 0 0 20px #7faaff, 0 0 30px #3f68c0; }
+    }
+
+    .hero h1 {
+      font-size: 5.8rem;
+      font-weight: 300;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      color: #ffffff;
+    }
+
+    .hero h1 strong {
+      font-weight: 600;
+      background: linear-gradient(145deg, #fff, #b2d3ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.3rem;
+      max-width: 700px;
+      margin: 0 auto 2.5rem;
+      color: #b9cfef;
+    }
+
+    .btn {
+      background: transparent;
+      border: 2px solid #517dca;
+      color: white;
+      padding: 1rem 3rem;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 500;
+      letter-spacing: 2px;
+      transition: 0.3s;
+      display: inline-block;
+      backdrop-filter: blur(5px);
+    }
+
+    .btn:hover {
+      background: #1f3f7a;
+      border-color: #99bcff;
+      box-shadow: 0 0 30px #2e56a0;
+      transform: scale(1.05);
+    }
+
+    /* starfield canvas (hero + bg) */
+    #starCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* section general */
+    section {
+      position: relative;
+      z-index: 5;
+      padding: 6rem 3rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      border-bottom: 1px solid rgba(60, 100, 200, 0.2);
+    }
+
+    .section-title {
+      font-size: 3.2rem;
+      font-weight: 300;
+      letter-spacing: -0.5px;
+      margin-bottom: 4rem;
+      border-left: 6px solid #3f6edb;
+      padding-left: 2rem;
+    }
+
+    .section-title span {
+      font-weight: 600;
+      color: #9ab9ff;
+    }
+
+    /* telescopes block (cards) */
+    .telescope-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5rem;
+    }
+
+    .telescope-card {
+      background: rgba(10, 18, 40, 0.7);
+      backdrop-filter: blur(5px);
+      border: 1px solid #2c3f75;
+      border-radius: 2.5rem;
+      padding: 2.5rem 2rem;
+      transition: all 0.2s ease-out;
+      box-shadow: 0 30px 30px -25px #000;
+    }
+
+    .telescope-card:hover {
+      border-color: #7baeff;
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 0 40px #1f3380;
+    }
+
+    .telescope-card i {
+      font-size: 3.5rem;
+      color: #bbd6ff;
+      margin-bottom: 1.5rem;
+      filter: drop-shadow(0 0 10px #3e70d4);
+    }
+
+    .telescope-card h3 {
+      font-size: 2rem;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+    }
+
+    .telescope-card p {
+      font-size: 1rem;
+      opacity: 0.8;
+    }
+
+    /* events / наблюдения (star block) */
+    .events-row {
+      display: flex;
+      gap: 3rem;
+      background: rgba(0, 5, 20, 0.6);
+      border-radius: 3rem;
+      padding: 3rem;
+      border: 1px dashed #3b5590;
+    }
+
+    .event-item {
+      flex: 1;
+    }
+
+    .event-item .date {
+      font-size: 1.4rem;
+      color: #7a9ef0;
+      margin-bottom: 0.5rem;
+    }
+
+    .event-item h4 {
+      font-size: 2rem;
+      font-weight: 400;
+      margin-bottom: 1rem;
+    }
+
+    .event-item i {
+      font-size: 2rem;
+      margin-right: 1rem;
+      color: #dbb42c;
+    }
+
+    /* stats (космическая статистика) */
+    .stats-grid {
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+      background: rgba(0, 10, 30, 0.6);
+      border-radius: 4rem;
+      padding: 4rem 2rem;
+      border: 1px solid #2e4f88;
+    }
+
+    .stat-item {
+      flex: 1;
+    }
+
+    .stat-number {
+      font-size: 4rem;
+      font-weight: 600;
+      color: #bdd2ff;
+      text-shadow: 0 0 25px #1f66ff;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* membership / членство */
+    .membership-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+    }
+
+    .member-tier {
+      background: rgba(22, 30, 55, 0.9);
+      border-radius: 2.5rem;
+      padding: 3rem;
+      border: 1px solid #384d86;
+      backdrop-filter: blur(4px);
+    }
+
+    .member-tier h3 {
+      font-size: 2.2rem;
+      font-weight: 400;
+      margin-bottom: 1rem;
+    }
+
+    .price {
+      font-size: 3rem;
+      font-weight: 200;
+      color: #ffecbb;
+      margin: 1.5rem 0;
+    }
+
+    .member-tier ul {
+      list-style: none;
+    }
+
+    .member-tier li {
+      font-size: 1.2rem;
+      margin: 1rem 0;
+      border-bottom: 1px dashed #3b4870;
+      padding-bottom: 0.7rem;
+    }
+
+    .member-tier li i {
+      color: #ffd966;
+      width: 2rem;
+    }
+
+    /* footer */
+    .site-footer {
+      background: #02040c;
+      border-top: 1px solid #1f3060;
+      padding: 4rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.1rem;
+      color: #9aaec9;
+    }
+
+    .footer-links i {
+      font-size: 1.8rem;
+      margin-left: 2rem;
+      color: #667eb3;
+      transition: 0.2s;
+    }
+
+    .footer-links i:hover {
+      color: #dbe6ff;
+      text-shadow: 0 0 15px white;
+    }
+
+    /* scroll reveal (simple fade) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.8s ease;
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* misc */
+    .signature-line {
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #5070dd, transparent);
+      margin: 2rem 0;
+    }
+
+    .small-note {
+      font-size: 1rem;
+      color: #99b0dd;
+    }
+
+    /* adapt pc only (wide) */
+    @media (max-width: 1100px) {
+      .telescope-grid { grid-template-columns: repeat(2, 1fr); }
+      .hero h1 { font-size: 4.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- fixed header (js toggles compact) -->
+  <header class="site-header" id="mainHeader">
+    <div class="logo"><span>✦</span> OBSIDIAN</div>
+    <div class="nav-links">
+      <a href="#telescopes">optics</a>
+      <a href="#events">events</a>
+      <a href="#stats">data</a>
+      <a href="#membership">join</a>
+    </div>
+  </header>
+
+  <!-- canvas star animation -->
+  <canvas id="starCanvas"></canvas>
+
+  <!-- hero block -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <div class="hero-sub">PRIVATE ASTRONOMY CLUB</div>
+      <h1>observe the <strong>universe</strong><br> beyond the light</h1>
+      <p>Exclusive access to premium domes · remote mountains · celestial events</p>
+      <a href="#membership" class="btn">reserve your seat</a>
+    </div>
+  </section>
+
+  <!-- 5 content blocks as required + header/footer = 7 total (header, hero, 5 blocks, footer) -->
+
+  <!-- block 1: telescopes -->
+  <section class="reveal" id="telescopes">
+    <h2 class="section-title"><span>✦</span> optical arsenal</h2>
+    <div class="telescope-grid">
+      <div class="telescope-card">
+        <i class="fa-solid fa-telescope"></i>
+        <h3>PlaneWave CDK 700</h3>
+        <p>27" corrected dalekirkham · observatory grade, adaptive optics</p>
+      </div>
+      <div class="telescope-card">
+        <i class="fa-solid fa-meteor"></i>
+        <h3>RCOS 20"</h3>
+        <p>Ritchey‑Chrétien · narrow-field · for deep space reconnaissance</p>
+      </div>
+      <div class="telescope-card">
+        <i class="fa-solid fa-sun"></i>
+        <h3>LUNT 152mm</h3>
+        <p>hydrogen‑alpha solar · chromosphere details & prominences</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 2: night events (astronomical) -->
+  <section class="reveal" id="events">
+    <h2 class="section-title"><span>🌑</span> celestial calendar</h2>
+    <div class="events-row">
+      <div class="event-item">
+        <div class="date">june 21 · 23:30</div>
+        <h4><i class="fa-regular fa-moon"></i> solstice alignment</h4>
+        <p class="small-note">stonehenge resonance · private livestream + champagne</p>
+      </div>
+      <div class="event-item">
+        <div class="date">july 13 · 02:15</div>
+        <h4><i class="fa-regular fa-star"></i> perseids peak</h4>
+        <p class="small-note">high-altitude dome · 100+ meteors / hour</p>
+      </div>
+      <div class="event-item">
+        <div class="date">aug 27 · 20:00</div>
+        <h4><i class="fa-solid fa-planet-ringed"></i> saturn opposition</h4>
+        <p class="small-note">rings at maximum tilt · 16" refractor</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 3: space stats (glowing numbers) -->
+  <section class="reveal" id="stats">
+    <h2 class="section-title"><span>⏤</span> cosmic data</h2>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-number" id="stat1">0</div>
+        <div class="stat-label">deep‑sky objects</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="stat2">0</div>
+        <div class="stat-label">clear nights / year</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="stat3">0</div>
+        <div class="stat-label">members</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 4: membership tiers -->
+  <section class="reveal" id="membership">
+    <h2 class="section-title"><span>⎯</span> join the club</h2>
+    <div class="membership-cards">
+      <div class="member-tier">
+        <h3>OBSERVER</h3>
+        <div class="price">$2.4k <span style="font-size: 1.2rem;">/ year</span></div>
+        <ul>
+          <li><i class="fa-regular fa-calendar-check"></i> 6 night sessions</li>
+          <li><i class="fa-solid fa-chart-line"></i> basic astro lab</li>
+          <li><i class="fa-regular fa-eye"></i> 16" telescope access</li>
+        </ul>
+      </div>
+      <div class="member-tier">
+        <h3>VOYAGER</h3>
+        <div class="price">$6.9k <span style="font-size:1.2rem;">/ year</span></div>
+        <ul>
+          <li><i class="fa-regular fa-star"></i> unlimited private nights</li>
+          <li><i class="fa-solid卫星"></i> all telescopes priority</li>
+          <li><i class="fa-solid fa-camera"></i> astrophotography rig</li>
+          <li><i class="fa-solid fa-champagne-glasses"></i> VIP events</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 5: testimonial / quote from member (as extra, but fits "maybe extra block") -->
+  <section class="reveal" style="text-align: center; border-bottom: none;">
+    <div class="glass-panel" style="padding: 4rem; max-width: 900px; margin: 0 auto;">
+      <i class="fa-solid fa-quote-right" style="font-size: 3rem; opacity: 0.5; margin-bottom: 2rem;"></i>
+      <h3 style="font-size: 2.4rem; font-weight: 300;">“the most profound night of my life. you forget the sky is alive.”</h3>
+      <p style="margin-top: 2rem;">— J. Holden, voyager member since 2023</p>
+    </div>
+  </section>
+
+  <!-- footer -->
+  <footer class="site-footer">
+    <div>© OBSIDIAN PRIVATE CLUB · all星空 rights reserved</div>
+    <div class="footer-links">
+      <i class="fa-brands fa-x-twitter"></i>
+      <i class="fa-brands fa-instagram"></i>
+      <i class="fa-regular fa-envelope"></i>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // ===== fixed header compact on scroll =====
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 80) {
+          header.classList.add('compact');
+        } else {
+          header.classList.remove('compact');
+        }
+      });
+
+      // ===== starfield animation =====
+      const canvas = document.getElementById('starCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let stars = [];
+
+      function initStars() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        stars = [];
+        for (let i = 0; i < 200; i++) {
+          stars.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            r: Math.random() * 2.2 + 0.8,
+            speed: Math.random() * 0.07 + 0.02,
+            glow: Math.random() * 0.7 + 0.3,
+          });
+        }
+      }
+
+      function drawStars() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#ffffff';
+        for (let s of stars) {
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 240, 200, ${s.glow})`;
+          ctx.shadowColor = '#aac9ff';
+          ctx.shadowBlur = 12 * s.glow;
+          ctx.fill();
+        }
+        // reset shadow
+        ctx.shadowBlur = 0;
+      }
+
+      function moveStars() {
+        for (let s of stars) {
+          s.y += s.speed * 0.5; // very slow drift
+          if (s.y > height) {
+            s.y = 0;
+            s.x = Math.random() * width;
+          }
+        }
+      }
+
+      function animate() {
+        moveStars();
+        drawStars();
+        requestAnimationFrame(animate);
+      }
+
+      window.addEventListener('resize', () => {
+        initStars();
+      });
+
+      initStars();
+      animate();
+
+      // ===== scroll reveal (simple intersection) =====
+      const reveals = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -20px 0px' });
+      reveals.forEach(el => observer.observe(el));
+
+      // ===== counter stats (animated on view) =====
+      const statNumbers = {
+        stat1: { element: document.getElementById('stat1'), target: 843, current: 0 },
+        stat2: { element: document.getElementById('stat2'), target: 276, current: 0 },
+        stat3: { element: document.getElementById('stat3'), target: 189, current: 0 }
+      };
+
+      const statsSection = document.getElementById('stats');
+      let counted = false;
+
+      function updateStatDisplay() {
+        for (let key in statNumbers) {
+          statNumbers[key].element.innerText = statNumbers[key].current;
+        }
+      }
+
+      function animateNumbers() {
+        if (counted) return;
+        const steps = 60;
+        const stepTime = 20; // ms
+        let step = 0;
+        const interval = setInterval(() => {
+          step++;
+          let allFinished = true;
+          for (let key in statNumbers) {
+            let obj = statNumbers[key];
+            if (obj.current < obj.target) {
+              allFinished = false;
+              let inc = Math.ceil(obj.target / steps);
+              obj.current = Math.min(obj.current + inc, obj.target);
+            }
+          }
+          updateStatDisplay();
+          if (step >= steps || allFinished) {
+            for (let key in statNumbers) {
+              statNumbers[key].current = statNumbers[key].target;
+            }
+            updateStatDisplay();
+            clearInterval(interval);
+            counted = true;
+          }
+        }, stepTime);
+      }
+
+      const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !counted) {
+            animateNumbers();
+          }
+        });
+      }, { threshold: 0.4 });
+      statsObserver.observe(statsSection);
+
+      // set initial zero
+      updateStatDisplay();
+    })();
+  </script>
+  <!-- ensure canvas behind everything -->
+  <style>
+    #starCanvas { position: fixed; top: 0; left: 0; z-index: 0; }
+    section, header, footer { position: relative; z-index: 5; background: transparent; }
+    body { background: #03050a; }
+    .hero { background: transparent; }
+    .site-footer { background: rgba(2, 4, 12, 0.95); backdrop-filter: blur(5px); }
+  </style>
+</body>
+</html>
+All done!
+```

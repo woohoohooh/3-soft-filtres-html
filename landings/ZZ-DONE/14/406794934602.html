@@ -1,0 +1,491 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>zoom · diagnostic | instant drive analysis</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #ffffff;
+      color: #1e1e2f;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll + reveal */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* header fixed + compact on scroll */
+    .site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.03);
+      z-index: 999;
+      transition: all 0.3s cubic-bezier(0.25,0.1,0.15,1.2);
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .site-header.compact {
+      padding: 0.65rem 2rem;
+      background: rgba(255,255,255,0.98);
+      box-shadow: 0 10px 40px -10px rgba(0,20,40,0.15);
+    }
+
+    .header-inner {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(145deg, #0b1c33, #203a5c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo i {
+      background: none;
+      -webkit-text-fill-color: #1e3a6b;
+      margin-right: 6px;
+      font-size: 2rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      font-weight: 500;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: #1e2b3a;
+      font-size: 1.1rem;
+      position: relative;
+      transition: 0.2s;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      width: 0%;
+      height: 2.5px;
+      background: #2f5e9c;
+      transition: 0.25s;
+    }
+    .nav-links a:hover {
+      color: #0f2b4f;
+    }
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    /* blocks general */
+    .block {
+      min-height: 90vh;
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 6rem 2rem 4rem 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.15, 0.9, 0.25, 1);
+    }
+    .block.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .block-header {
+      padding-top: 2rem;
+    }
+    .block-footer {
+      min-height: 40vh;
+      justify-content: flex-start;
+    }
+
+    h2 {
+      font-size: 3.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 1.8rem;
+    }
+    h2 i {
+      color: #2b4f7c;
+      margin-right: 12px;
+      font-size: 2.8rem;
+    }
+
+    .grid-2col, .features-grid, .price-grid, .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2.5rem;
+      margin-top: 2rem;
+    }
+
+    .features-grid {
+      grid-template-columns: repeat(4,1fr);
+    }
+    .price-grid {
+      grid-template-columns: repeat(3,1fr);
+    }
+
+    .card {
+      background: #f8fafd;
+      padding: 2.2rem 1.8rem;
+      border-radius: 32px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+      transition: all 0.25s;
+      border: 1px solid rgba(0,30,60,0.03);
+    }
+    .card:hover {
+      background: #ffffff;
+      box-shadow: 0 25px 40px -20px rgba(0,45,80,0.2);
+      border-color: rgba(55,95,145,0.1);
+    }
+    .card i {
+      font-size: 2.6rem;
+      color: #1d4d8c;
+      margin-bottom: 1.5rem;
+    }
+    .card h3 {
+      font-size: 1.9rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+    }
+    .card p {
+      font-size: 1.18rem;
+      color: #2f3f52;
+    }
+
+    /* specific animation block 2 (header wave) */
+    .hero-sub {
+      font-size: 1.5rem;
+      color: #2b4f7c;
+      background: #ecf2fa;
+      display: inline-block;
+      padding: 0.3rem 1.8rem;
+      border-radius: 60px;
+      margin-bottom: 1.5rem;
+    }
+
+    .js-header-animation {
+      background: #eef4fc;
+      border-radius: 40px;
+      padding: 1.8rem 2.2rem;
+      margin: 1.8rem 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 2rem;
+      justify-content: space-between;
+      border: 1px solid #dae6f5;
+    }
+    .diagnostic-live {
+      display: flex;
+      gap: 2.2rem;
+      font-weight: 500;
+      flex-wrap: wrap;
+    }
+    .diag-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.3rem;
+    }
+    .diag-item i {
+      color: #1f4973;
+      font-size: 2rem;
+    }
+    .pulse-dot {
+      width: 14px;
+      height: 14px;
+      background: #2870b0;
+      border-radius: 50%;
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(40,112,176, 0.6); }
+      70% { box-shadow: 0 0 0 15px rgba(40,112,176, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(40,112,176, 0); }
+    }
+
+    .big-cta {
+      background: #091c32;
+      color: white;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1.4rem;
+      border-radius: 50px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .big-cta i {
+      margin-left: 10px;
+    }
+    .big-cta:hover {
+      background: #153e64;
+      transform: scale(1.02);
+    }
+
+    /* footer */
+    .block-footer .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1.5fr;
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    .footer-logo {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #0c2947;
+    }
+    .copy {
+      margin-top: 4rem;
+      color: #5b6f84;
+      font-size: 1rem;
+    }
+
+    /* responsive (pc only fine) */
+    @media (max-width: 1100px) {
+      .features-grid { grid-template-columns: repeat(2,1fr); }
+    }
+
+    /* hover effect block intersection */
+    .stat-highlight {
+      font-size: 4rem;
+      font-weight: 800;
+      color: #15355e;
+    }
+    small { font-size: 1.3rem; }
+  </style>
+</head>
+<body>
+
+<header class="site-header" id="mainHeader">
+  <div class="header-inner">
+    <div class="logo"><i class="fas fa-car-burst"></i> zoom·diagnostic</div>
+    <div class="nav-links">
+      <a href="#home">home</a>
+      <a href="#tech">tech</a>
+      <a href="#performance">perf</a>
+      <a href="#plans">plans</a>
+      <a href="#contact">contact</a>
+    </div>
+  </div>
+</header>
+
+<!-- BLOCK 1: HERO (home) -->
+<section class="block block-header" id="home">
+  <div class="hero-sub"><i class="fas fa-bolt"></i> instant mobile diagnostic</div>
+  <h2 style="max-width: 900px;"><i class="fas fa-microchip"></i> on‑spot vehicle<br>health & performance</h2>
+  <div class="js-header-animation" id="liveAnimationBox">
+    <div class="diagnostic-live">
+      <span class="diag-item"><i class="fas fa-bluetooth-b"></i> bluetooth 5.3</span>
+      <span class="diag-item"><i class="fas fa-wave-square"></i> can‑bus stream</span>
+      <span class="diag-item"><i class="fas fa-cloud-upload-alt"></i> cloud ai</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="pulse-dot"></span>
+      <span style="font-weight: 500; font-size: 1.2rem;">live · 12 vehicles</span>
+    </div>
+  </div>
+  <div style="display: flex; gap: 2rem; margin: 2.5rem 0 1rem;">
+    <div><span class="stat-highlight">2.4k</span> <small>daily diag</small></div>
+    <div><span class="stat-highlight">13k</span> <small>engines scanned</small></div>
+  </div>
+  <button class="big-cta">book mobile expert <i class="fas fa-arrow-right"></i></button>
+</section>
+
+<!-- BLOCK 2: how it works / tech -->
+<section class="block" id="tech">
+  <h2><i class="fas fa-cogs"></i> one plug. full report</h2>
+  <div class="grid-2col">
+    <div class="card"><i class="fas fa-tachometer-alt"></i><h3>real‑time</h3><p>DTC scan, live sensors, freeze frame — delivered to your phone in 30 sec.</p></div>
+    <div class="card"><i class="fas fa-map-marked-alt"></i><h3>mobile lab</h3><p>we drive to you. anywhere in city. diagnostic without you leaving.</p></div>
+    <div class="card"><i class="fas fa-history"></i><h3>history trend</h3><p>compare with previous visits, predict failures before they happen.</p></div>
+    <div class="card"><i class="fas fa-check-double"></i><h3>clear code</h3><p>reset MIL, verify repair with instant pass/fail readiness.</p></div>
+  </div>
+</section>
+
+<!-- BLOCK 3: performance features (with icon animation on scroll) -->
+<section class="block" id="performance">
+  <h2><i class="fas fa-gem"></i> precision metrics</h2>
+  <div class="features-grid">
+    <div class="card"><i class="fas fa-oil-can"></i><h3>oil & fuel</h3><p>fuel trim, rail pressure, injector balance</p></div>
+    <div class="card"><i class="fas fa-bolt"></i><h3>ignition</h3><p>misfire counter, knock retard per cylinder</p></div>
+    <div class="card"><i class="fas fa-thermometer-half"></i><h3>thermal map</h3><p>ECT, IAT, EGT, transmission temp</p></div>
+    <div class="card"><i class="fas fa-battery-full"></i><h3>hybrid/ev</h3><p>battery soc, cell voltages, isolation test</p></div>
+  </div>
+  <div style="margin-top: 4rem; background: #f3f7fd; padding: 2rem; border-radius: 50px;">
+    <span style="font-size: 2rem; font-weight: 600;">95%</span> <span style="font-size: 1.4rem;">accuracy in predictive alerts</span>
+  </div>
+</section>
+
+<!-- BLOCK 4: why us / comparison -->
+<section class="block">
+  <h2><i class="fas fa-medal"></i> no dealer? no problem</h2>
+  <div style="display: flex; gap: 4rem; flex-wrap: wrap;">
+    <div style="flex:1; min-width: 240px;"><i class="fas fa-clock" style="font-size: 3rem;"></i><h3 style="font-size: 2rem; margin: 1rem 0 0.5rem;">under 20min</h3><p>full vehicle check while you wait</p></div>
+    <div style="flex:1;"><i class="fas fa-shield-alt" style="font-size: 3rem;"></i><h3 style="font-size: 2rem; margin: 1rem 0 0.5rem;">verified data</h3><p>same as OEM tools + AI interpretation</p></div>
+    <div style="flex:1;"><i class="fas fa-file-invoice" style="font-size: 3rem;"></i><h3 style="font-size: 2rem; margin: 1rem 0 0.5rem;">digital report</h3><p>PDF with live graphs & maintenance schedule</p></div>
+  </div>
+</section>
+
+<!-- BLOCK 5: pricing (simple) -->
+<section class="block" id="plans">
+  <h2><i class="fas fa-tags"></i> one‑shot / subscription</h2>
+  <div class="price-grid">
+    <div class="card"><i class="fas fa-car-side"></i><h3>single diag</h3><p>€49 – full scan + report + clear</p></div>
+    <div class="card"><i class="fas fa-calendar-check"></i><h3>annual check</h3><p>€199 / 4 visits + priority 1h slot</p></div>
+    <div class="card"><i class="fas fa-fleet"></i><h3>fleet (5+)</h3><p>€29 / vehicle · bulk discount</p></div>
+  </div>
+</section>
+
+<!-- BLOCK 6: steps / how to order -->
+<section class="block">
+  <h2><i class="fas fa-mobile-alt"></i> three taps → diagnostic</h2>
+  <div class="steps-grid" style="grid-template-columns: repeat(3,1fr);">
+    <div class="card"><i class="fas fa-map-pin"></i><h3>1. pin</h3><p>drop your location, share car model</p></div>
+    <div class="card"><i class="fas fa-wrench"></i><h3>2. we arrive</h3><p>technician with pro scanner within 45min</p></div>
+    <div class="card"><i class="fas fa-file-pdf"></i><h3>3. get report</h3><p>pay online, receive detailed analysis</p></div>
+  </div>
+</section>
+
+<!-- BLOCK 7: testimonials / social proof -->
+<section class="block">
+  <h2><i class="fas fa-star"></i> 400+ 5‑star reviews</h2>
+  <div style="display: flex; gap: 2rem;">
+    <div class="card" style="flex:1;"><i class="fas fa-quote-right"></i><p style="font-size:1.4rem; margin:20px 0">“found intermittent misfire that dealer missed. saved me €900.”</p><span>— a. kozlov, bmw f30</span></div>
+    <div class="card" style="flex:1;"><i class="fas fa-quote-right"></i><p style="font-size:1.4rem; margin:20px 0">“20 minutes – full hybrid battery report. insane.”</p><span>— l. müller, toyota prius</span></div>
+  </div>
+</section>
+
+<!-- BLOCK 8: contact / support -->
+<section class="block" id="contact">
+  <h2><i class="fas fa-headset"></i> 24/7 engineer chat</h2>
+  <div style="display: flex; gap: 4rem; background: #f3f7fd; border-radius: 60px; padding: 2.5rem;">
+    <div><i class="fas fa-phone-alt" style="font-size: 3rem;"></i><div style="font-size: 2rem; font-weight: 600;">+31 20 765 4321</div></div>
+    <div><i class="fas fa-envelope" style="font-size: 3rem;"></i><div style="font-size: 2rem; font-weight: 600;">go@zoomdiag.tech</div></div>
+  </div>
+</section>
+
+<!-- BLOCK 9: footer -->
+<section class="block block-footer">
+  <div class="footer-grid">
+    <div><span class="footer-logo"><i class="fas fa-microchip"></i> zoom·diag</span><br>© 2025 — automotive intelligence</div>
+    <div><strong>services</strong><br>diagnostic<br>mobile repair prep<br>fleet health</div>
+    <div><strong>legal</strong><br>privacy<br>terms<br>cookies</div>
+    <div><strong>social</strong><br><i class="fab fa-instagram"></i> <i class="fab fa-x-twitter"></i> <i class="fab fa-linkedin"></i> zoom.diag</div>
+  </div>
+  <div class="copy">All done! · on‑spot vehicle diagnostic since 2023</div>
+</section>
+
+<script>
+  (function() {
+    // HEADER COMPACT ON SCROLL
+    const header = document.getElementById('mainHeader');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 30) {
+        header.classList.add('compact');
+      } else {
+        header.classList.remove('compact');
+      }
+    });
+
+    // REVEAL ANIMATION ON SCROLL (blocks fade + slide)
+    const blocks = document.querySelectorAll('.block');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+        } else {
+          // optional: remove class if you want re-animate, but better keep revealed
+          // we keep visible after first appear
+        }
+      });
+    }, { threshold: 0.2, rootMargin: '0px 0px -10px 0px' });
+
+    blocks.forEach(block => observer.observe(block));
+
+    // additional micro‑animation inside header block (live animation update via interval)
+    const liveBox = document.getElementById('liveAnimationBox');
+    if (liveBox) {
+      setInterval(() => {
+        const pulse = liveBox.querySelector('.pulse-dot');
+        if (pulse) {
+          pulse.style.animation = 'none';
+          pulse.offsetHeight; // reflow
+          pulse.style.animation = 'pulse 1.6s infinite';
+        }
+        // optional change number
+        const diagItems = liveBox.querySelectorAll('.diag-item');
+        if (diagItems.length > 0) {
+          // subtle change : can modify icon color or text
+          // just to show dynamic feel
+        }
+      }, 3000);
+    }
+
+    // additional hover effect on stats or cards no needed
+
+    // fake "live vehicles" update (fun)
+    const pulseSpan = document.querySelector('.pulse-dot + span');
+    if (pulseSpan) {
+      setInterval(() => {
+        const vehicles = Math.floor(Math.random() * (18 - 9 + 1) + 9);
+        pulseSpan.innerText = `live · ${vehicles} vehicles`;
+      }, 5800);
+    }
+
+    // header hide on scroll? no we keep compact only.
+
+    // active menu highlight (simple)
+    const sections = document.querySelectorAll('.block');
+    const navLinks = document.querySelectorAll('.nav-links a');
+
+    function changeLinkActive() {
+      let index = sections.length;
+      while (--index && window.scrollY + 120 < sections[index].offsetTop) {}
+      navLinks.forEach((link) => link.style.color = '#1e2b3a');
+      if (index >= 0 && navLinks[index]) {
+        navLinks[index].style.color = '#0f2b4f';
+        navLinks[index].style.fontWeight = '600';
+      }
+    }
+    changeLinkActive();
+    window.addEventListener('scroll', changeLinkActive);
+  })();
+</script>
+
+<!-- simple explicit "All done!" line in the bottom -->
+<div style="height:0; overflow:hidden;">All done!</div>
+</body>
+</html>
+```

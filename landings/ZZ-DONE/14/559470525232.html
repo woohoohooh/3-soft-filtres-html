@@ -1,0 +1,534 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>edge · guard | reactive perimeter</title>
+  <!-- minimal icons: feather / lucide style (pure CSS) -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #ffffff;
+      font-family: system-ui, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.4;
+      color: #111;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* fixed dynamic header */
+    .header-fixed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(255,255,255,0.86);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 8px 20px -8px rgba(0,0,0,0.05);
+      padding: 0.9rem 2rem;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .header-fixed.scrolled {
+      padding: 0.5rem 2rem;
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 12px 28px -10px rgba(0,0,0,0.08);
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.9rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(130deg, #121212, #3a3a3a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo span { 
+      background: linear-gradient(130deg, #0f2b3d, #2b5e7a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; 
+      font-weight: 800;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      font-weight: 500;
+      font-size: 1.1rem;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: #1e1e1e;
+      padding-bottom: 4px;
+      border-bottom: 2px solid transparent;
+      transition: 0.2s;
+    }
+    .nav-links a:hover {
+      border-bottom-color: #111;
+    }
+
+    /* main blocks wrapper */
+    .blocks-container {
+      margin-top: 82px; /* header space */
+    }
+
+    section {
+      scroll-margin-top: 90px;
+    }
+
+    /* generic block */
+    .block {
+      padding: 5rem 2rem;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .block--white {
+      background: #fff;
+    }
+    .block--light {
+      background: #f9fafc;
+    }
+
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .desc {
+      font-size: 1.4rem;
+      color: #2e2e2e;
+      max-width: 780px;
+      font-weight: 380;
+    }
+
+    /* animated grid / entrance */
+    .grid-3, .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.2rem;
+      margin-top: 2.8rem;
+    }
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .card {
+      background: white;
+      padding: 2.2rem 1.8rem;
+      border-radius: 32px;
+      box-shadow: 0 20px 35px -15px rgba(0,0,0,0.02);
+      border: 1px solid #f0f0f0;
+      transition: transform 0.25s ease, box-shadow 0.4s;
+    }
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 32px 45px -18px rgba(0,20,30,0.12);
+    }
+
+    .icon-lg {
+      font-size: 2.8rem;
+      margin-bottom: 1.4rem;
+      display: inline-block;
+      background: #f2f5f7;
+      width: 65px;
+      height: 65px;
+      line-height: 68px;
+      text-align: center;
+      border-radius: 18px;
+      color: #1d3b4c;
+    }
+
+    /* unique scroll animation (fade + micro transform) */
+    .js-scroll {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.7s cubic-bezier(0.15,0.9,0.25,1), transform 0.7s cubic-bbezier(0.15,0.9,0.25,1);
+    }
+    .js-scroll.scrolled-animate {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* header animation (wave dots) */
+    #headerCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+      opacity: 0.2;
+      border-radius: inherit;
+    }
+
+    .header-fixed .logo, .header-fixed .nav-links {
+      position: relative;
+      z-index: 3;
+    }
+
+    .header-fixed {
+      position: relative; /* for canvas absolute */
+    }
+
+    /* buttons */
+    .btn {
+      display: inline-block;
+      background: #1c2f3b;
+      color: white;
+      font-weight: 600;
+      padding: 1rem 2.8rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-size: 1.3rem;
+      border: 1px solid transparent;
+      transition: all 0.3s;
+      box-shadow: 0 10px 22px -12px #1c2f3b70;
+      margin-top: 1.8rem;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 2px solid #1c2f3b;
+      color: #1c2f3b;
+      box-shadow: none;
+    }
+    .btn-outline:hover {
+      background: #1c2f3b;
+      color: white;
+    }
+
+    /* footer */
+    .footer {
+      background: #121212;
+      color: #ddd;
+      padding: 3rem 2rem;
+      text-align: center;
+      font-size: 1.2rem;
+      border-top: 2px solid #2a2a2a;
+    }
+
+    /* custom micro icons (using pseudo + content) */
+    .ico-pest:before { content: "🕷️"; } 
+    .ico-shield:before { content: "🛡️"; } 
+    .ico-spray:before { content: "🧴"; } 
+    .ico-clock:before { content: "⏱️"; } 
+    .ico-check:before { content: "✓"; font-weight: 700; margin-right: 8px; } 
+    .ico-phone:before { content: "📞"; } 
+
+    ul {
+      list-style: none;
+    }
+    li {
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+    }
+
+    /* responsiveness (pc only) */
+    @media (max-width: 1100px) {
+      .block { padding: 4rem 1.5rem; }
+      h2 { font-size: 2.8rem; }
+    }
+
+    /* random theme selected: ** LANDING FOR PEST CONTROL ** (дезинсекция) */
+    /* all content accordingly */
+  </style>
+</head>
+<body>
+
+<!-- fixed header with canvas animation (js animated) -->
+<header class="header-fixed" id="mainHeader">
+  <canvas id="headerCanvas"></canvas>
+  <div class="logo"><span>edge</span>guard</div>
+  <div class="nav-links">
+    <a href="#home">home</a>
+    <a href="#services">services</a>
+    <a href="#process">process</a>
+    <a href="#why">why us</a>
+    <a href="#contact">contact</a>
+  </div>
+</header>
+
+<div class="blocks-container">
+
+  <!-- BLOCK 1: HERO / HOME -->
+  <section id="home" class="block block--white js-scroll">
+    <h2 style="font-size: 4.2rem; max-width: 900px;">silent intruders?<br>immediate <span style="background: #111; color: white; padding: 0 1.2rem; display: inline-block;">elimination.</span></h2>
+    <p class="desc">24/7 reactive pest control — industrial grade, pet friendly, and invisible after treatment. human-safe, nature-smart.</p>
+    <a href="#contact" class="btn">request intervention</a>
+    <div style="margin-top: 3rem; display: flex; gap: 1.8rem; flex-wrap: wrap;">
+      <span style="display: flex; align-items: center; gap: 10px; font-size: 1.3rem;"><span style="font-size: 2rem;">🕷️</span> spiders & insects</span>
+      <span style="display: flex; align-items: center; gap: 10px; font-size: 1.3rem;"><span style="font-size: 2rem;">🐀</span> rodents</span>
+      <span style="display: flex; align-items: center; gap: 10px; font-size: 1.3rem;"><span style="font-size: 2rem;">🦟</span> mosquitoes</span>
+    </div>
+  </section>
+
+  <!-- BLOCK 2: stats / quick facts -->
+  <section class="block block--light js-scroll">
+    <div class="grid-3">
+      <div class="card"><span class="icon-lg">⚡</span><h3 style="font-size: 2.2rem;">15 min</h3><p style="font-size: 1.3rem;">average response<br>to first assessment</p></div>
+      <div class="card"><span class="icon-lg">🧪</span><h3 style="font-size: 2.2rem;">eco</h3><p style="font-size: 1.3rem;">all biocides are<br>EU certified & green</p></div>
+      <div class="card"><span class="icon-lg">🏆</span><h3 style="font-size: 2.2rem;">+800</h3><p style="font-size: 1.3rem;">commercial clients<br>trust our perimeter</p></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 3: services / detailed (grid with icons) -->
+  <section id="services" class="block block--white js-scroll">
+    <h2>core defense.</h2>
+    <div class="grid-3">
+      <div class="card">
+        <span class="icon-lg">🕷️</span>
+        <h3 style="font-size: 2rem;">general disinsection</h3>
+        <p style="font-size: 1.2rem; margin-top: 1rem;">cockroaches, ants, silverfish – residual barrier or ultra‑low volume mist.</p>
+      </div>
+      <div class="card">
+        <span class="icon-lg">🐀</span>
+        <h3 style="font-size: 2rem;">rodent proofing</h3>
+        <p style="font-size: 1.2rem; margin-top: 1rem;">exclusion + tamper‑resistant stations, no poison scatter.</p>
+      </div>
+      <div class="card">
+        <span class="icon-lg">🦟</span>
+        <h3 style="font-size: 2rem;">vector control</h3>
+        <p style="font-size: 1.2rem; margin-top: 1rem;">larvicide & adulticide for mosquitoes, ticks, fleas – yard & perimeter.</p>
+      </div>
+      <div class="card">
+        <span class="icon-lg">🪲</span>
+        <h3 style="font-size: 2rem;">wood borers</h3>
+        <p style="font-size: 1.2rem; margin-top: 1rem;">termites, carpenter ants – deep injection & bait systems.</p>
+      </div>
+      <div class="card">
+        <span class="icon-lg">🧴</span>
+        <h3 style="font-size: 2rem;">bedbug heat</h3>
+        <p style="font-size: 1.2rem; margin-top: 1rem;">steam & whole‑room heat treatment, no preparation stress.</p>
+      </div>
+      <div class="card">
+        <span class="icon-lg">📋</span>
+        <h3 style="font-size: 2rem;">inspection & audit</h3>
+        <p style="font-size: 1.2rem; margin-top: 1rem;">detailed report with thermal imaging, moisture mapping.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 4: process / 3 steps -->
+  <section id="process" class="block block--light js-scroll">
+    <h2>simple protocol.</h2>
+    <div class="grid-3" style="margin-bottom: 2rem;">
+      <div class="card"><span class="icon-lg">🔎</span><h3 style="font-size: 2rem;">1. diagnose</h3><p style="font-size: 1.2rem;">free site inspection, identify hotspots, pest type & entry points.</p></div>
+      <div class="card"><span class="icon-lg">⚙️</span><h3 style="font-size: 2rem;">2. treat</h3><p style="font-size: 1.2rem;">targeted application – gels, baits, or ULV; takes 30–60min.</p></div>
+      <div class="card"><span class="icon-lg">🔄</span><h3 style="font-size: 2rem;">3. monitor</h3><p style="font-size: 1.2rem;">follow‑up visit after 7 days, plus digital reporting.</p></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 5: why choose us (bullet list + visual) -->
+  <section id="why" class="block block--white js-scroll">
+    <div class="grid-2">
+      <div>
+        <h2>zero compromise.</h2>
+        <ul style="margin-top: 2.2rem;">
+          <li><span class="ico-check"></span> <span style="font-weight: 500;">same‑day service — often within 2h</span></li>
+          <li><span class="ico-check"></span> <span style="font-weight: 500;">biocides class‑A & low‑odor</span></li>
+          <li><span class="ico-check"></span> <span style="font-weight: 500;">certified entotechnicians (BPC level 3)</span></li>
+          <li><span class="ico-check"></span> <span style="font-weight: 500;">warranty 6 months on structural treatments</span></li>
+          <li><span class="ico-check"></span> <span style="font-weight: 500;">digital service log & recommendations</span></li>
+        </ul>
+      </div>
+      <div class="card" style="background: #eef2f5; display: flex; flex-direction: column; justify-content: center; font-size: 2rem; font-weight: 600; color: #1e3c4f;">
+        <span style="font-size: 3rem;">🛡️</span> 
+        <span style="font-size: 1.8rem; margin-top: 1rem;">insider knowledge: we used to work for regulatory body</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 6: testimonials (fake social proof) -->
+  <section class="block block--light js-scroll">
+    <h2>real surroundings.</h2>
+    <div class="grid-3">
+      <div class="card"><span style="font-size: 3rem; display: block;">⭐⭐⭐⭐⭐</span><p style="font-size: 1.25rem;">“restaurant full of fruit flies — edgeguard solved it overnight. no closure needed.”</p><p style="margin-top: 1rem; font-weight: 600;">– le petit bistro</p></div>
+      <div class="card"><span style="font-size: 3rem; display: block;">⭐⭐⭐⭐⭐</span><p style="font-size: 1.25rem;">“warehouse rodent pressure: they installed stations and sealed holes in one visit.”</p><p style="margin-top: 1rem; font-weight: 600;">– metro logistik</p></div>
+      <div class="card"><span style="font-size: 3rem; display: block;">⭐⭐⭐⭐⭐</span><p style="font-size: 1.25rem;">“bedbug heat treatment was smooth, no chemicals, no smell. truly modern.”</p><p style="margin-top: 1rem; font-weight: 600;">– oak residences</p></div>
+    </div>
+  </section>
+
+  <!-- BLOCK 7: service area / promise -->
+  <section class="block block--white js-scroll">
+    <h2>cover zone.</h2>
+    <p class="desc" style="margin-bottom: 2.2rem;">entire metropolitan + 30km radius. emergency calls 24/7.</p>
+    <div style="background: #eef4f8; padding: 3rem; border-radius: 48px; display: flex; flex-wrap: wrap; gap: 2.5rem; align-items: center; justify-content: space-around;">
+      <span style="font-size: 1.6rem;">📍 downtown <strong>~20min</strong></span>
+      <span style="font-size: 1.6rem;">📍 north district <strong>~35min</strong></span>
+      <span style="font-size: 1.6rem;">📍 east suburbs <strong>~40min</strong></span>
+      <span style="font-size: 1.6rem;">📍 west side <strong>~25min</strong></span>
+    </div>
+  </section>
+
+  <!-- BLOCK 8: contact / form-ish call to action -->
+  <section id="contact" class="block block--light js-scroll" style="text-align: center;">
+    <h2>ready to secure?</h2>
+    <div style="max-width: 700px; margin: 0 auto;">
+      <p style="font-size: 1.6rem; margin-bottom: 2rem;">call or request — we respond within 30min</p>
+      <div style="display: flex; flex-direction: column; gap: 1.4rem; align-items: center;">
+        <div style="font-size: 3rem; background: #fff; padding: 1rem 3rem; border-radius: 60px; border: 1px solid #ccc; display: inline-block;">📞 +41 22 800 99 11</div>
+        <a href="#" class="btn btn-outline" style="margin-top: 1rem;">send message →</a>
+        <p style="font-size: 1.2rem; margin-top: 2rem;">💬 live chat during office hours (08–22)</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- FOOTER - block 9 -->
+<footer class="footer">
+  <div style="max-width: 1000px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 2.5rem; text-align: left;">
+    <div><span class="logo" style="font-size: 2rem;">⛑️ edgeguard</span><br>© 2025 — physical intrusion control</div>
+    <div><span style="font-weight: 700;">licenses</span><br>BPCA member<br>ISO 9001:2024</div>
+    <div><span style="font-weight: 700;">privacy & terms</span><br>data safe / cookie free</div>
+  </div>
+  <div style="margin-top: 2.5rem; opacity: 0.6;">All done!</div>
+</footer>
+
+<!-- javascript: header shrink + scroll reveal + canvas animation -->
+<script>
+  (function() {
+    // header shrink on scroll
+    const header = document.getElementById('mainHeader');
+    window.addEventListener('scroll', function() {
+      if (window.scrollY > 15) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    });
+
+    // scroll reveal (js-scroll)
+    const scrollElements = document.querySelectorAll('.js-scroll');
+    const elementInView = (el, offset = 100) => {
+      const rect = el.getBoundingClientRect();
+      return (rect.top <= (window.innerHeight - offset));
+    };
+    const handleScrollAnimation = () => {
+      scrollElements.forEach(el => {
+        if (elementInView(el, 130)) {
+          el.classList.add('scrolled-animate');
+        } else {
+          // optional: remove if you want re-animate, but we keep it stable after first appear
+          // el.classList.remove('scrolled-animate'); // comment to make permanent
+        }
+      });
+    };
+    window.addEventListener('load', () => {
+      setTimeout(handleScrollAnimation, 100);
+    });
+    window.addEventListener('scroll', () => {
+      requestAnimationFrame(handleScrollAnimation);
+    });
+
+    // canvas header animation (particle wave)
+    const canvas = document.getElementById('headerCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+
+    function initParticles() {
+      width = header.offsetWidth;
+      height = header.offsetHeight;
+      canvas.width = width;
+      canvas.height = height;
+      
+      const count = 30;
+      particles = [];
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          radius: Math.random() * 1.8 + 0.5,
+          speedX: (Math.random() - 0.5) * 0.25,
+          speedY: (Math.random() - 0.5) * 0.2,
+        });
+      }
+    }
+
+    function drawParticles() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#2b5e7a';
+      for (let p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // faint lines between close particles
+      ctx.strokeStyle = '#2b5e7a20';
+      ctx.lineWidth = 0.8;
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 70) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(43, 94, 122, ${0.2 - dist/350})`;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function updateParticles() {
+      for (let p of particles) {
+        p.x += p.speedX;
+        p.y += p.speedY;
+        // wrap around edges softly
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+      }
+      drawParticles();
+      requestAnimationFrame(updateParticles);
+    }
+
+    window.addEventListener('resize', () => {
+      initParticles();
+    });
+
+    initParticles();
+    updateParticles();
+  })();
+</script>
+
+<!-- small extra style for anchor offset -->
+<style>
+  html {
+    scroll-padding-top: 90px;
+  }
+  /* make sure blocks have enough spacing */
+  .block:last-of-type {
+    margin-bottom: 0;
+  }
+  .footer div:last-child {
+    All done!
+  }
+</style>
+</body>
+</html>
+```
+All done!

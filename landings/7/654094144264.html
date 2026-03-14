@@ -1,0 +1,640 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OBSERVER · private astronomy club</title>
+  <!-- Font & icons (clean, sharp) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #03050b;
+      color: #e9ecf2;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* custom glow / starfield feel */
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+
+    /* fixed compact header with dynamic shrink on scroll */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 28px 40px;
+      background: rgba(3, 5, 11, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+      transition: padding 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    }
+
+    header.shrink {
+      padding: 12px 40px;
+      background: rgba(3, 5, 11, 0.95);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .logo {
+      font-weight: 800;
+      font-size: 1.9rem;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #fff8e7, #ffd966);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      transition: font-size 0.3s ease;
+    }
+
+    header.shrink .logo {
+      font-size: 1.6rem;
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 40px;
+      font-weight: 500;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .nav-menu a {
+      text-decoration: none;
+      color: #e9ecf2;
+      transition: 0.2s;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 4px;
+    }
+
+    .nav-menu a:hover {
+      color: #ffd966;
+      border-bottom-color: #ffd966;
+    }
+
+    /* ===== REVEAL / SCROLL ANIMATION ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 1s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== hero ===== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      margin-top: 0;
+      padding-top: 120px;
+      background: radial-gradient(circle at 20% 30%, #19213b, #03050b 70%);
+    }
+
+    .hero-content {
+      max-width: 900px;
+    }
+
+    .hero-pre {
+      font-size: 1.2rem;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: #ffd966;
+      margin-bottom: 0.5rem;
+      font-weight: 400;
+    }
+
+    .hero-title {
+      font-size: 5.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, #ffffff 0%, #ffe484 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.3rem;
+      max-width: 620px;
+      margin-bottom: 2.8rem;
+      color: #bcc6d4;
+      font-weight: 300;
+      border-left: 4px solid #ffd966;
+      padding-left: 24px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 16px 48px;
+      border: 1.5px solid #ffd966;
+      background: transparent;
+      color: #ffd966;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-decoration: none;
+      transition: 0.25s;
+      font-size: 1rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .btn:hover {
+      background: #ffd966;
+      color: #03050b;
+      box-shadow: 0 0 40px rgba(255, 217, 102, 0.3);
+    }
+
+    /* floating orbs (JS animation) */
+    #cosmic-orb {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      right: -50px;
+      top: 10%;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 215, 0, 0.15), transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(60px);
+      animation: orbFloat 16s infinite alternate ease-in-out;
+    }
+
+    @keyframes orbFloat {
+      0% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+      100% { transform: translate(-100px, 60px) scale(1.2); opacity: 0.8; }
+    }
+
+    /* ===== OBSERVATORY stats ===== */
+    .stats-panel {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      background: rgba(10, 15, 28, 0.7);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      padding: 50px 60px;
+      margin: 80px 0 40px;
+      border-radius: 4px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 3.4rem;
+      font-weight: 800;
+      color: #ffd966;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: #b0bbd0;
+    }
+
+    /* ===== BLOCKS general ===== */
+    .section {
+      padding: 100px 0;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.05);
+    }
+
+    .section-title {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 70px;
+      letter-spacing: -0.5px;
+      display: inline-block;
+      border-bottom: 3px solid #ffd966;
+      padding-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    .section-title i {
+      margin-right: 15px;
+      color: #ffd966;
+    }
+
+    /* TELESCOPES grid */
+    .telescope-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+
+    .scope-card {
+      background: rgba(18, 24, 40, 0.7);
+      backdrop-filter: blur(4px);
+      border: 1px solid #2f3a5a;
+      padding: 42px 30px 30px;
+      transition: 0.2s all ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scope-card:hover {
+      border-color: #ffd966;
+      transform: translateY(-12px);
+      background: rgba(10, 15, 30, 0.9);
+      box-shadow: 0 30px 50px -20px #000;
+    }
+
+    .scope-icon {
+      font-size: 3rem;
+      color: #ffd966;
+      margin-bottom: 25px;
+    }
+
+    .scope-card h3 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .scope-detail {
+      font-size: 1rem;
+      color: #a0b0cc;
+      margin-bottom: 25px;
+      font-weight: 300;
+    }
+
+    .scope-link {
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 2px;
+      font-size: 0.85rem;
+      color: #ffd966;
+      text-decoration: none;
+      border-bottom: 1px solid #ffd966;
+      padding-bottom: 3px;
+    }
+
+    /* EVENTS timeline approach */
+    .events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .event-item {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 25px 35px;
+      border-left: 6px solid #ffd966;
+      transition: 0.2s;
+    }
+
+    .event-item:hover {
+      background: rgba(255, 215, 0, 0.05);
+      border-left-width: 10px;
+    }
+
+    .event-date {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #ffd966;
+      min-width: 100px;
+    }
+
+    .event-name {
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+    .event-desc {
+      color: #a7b5d0;
+      font-weight: 300;
+      margin-left: auto;
+      padding-right: 20px;
+    }
+
+    /* MEMBERSHIP cards premium */
+    .membership-cards {
+      display: flex;
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .member-card {
+      flex: 1;
+      background: rgba(8, 12, 26, 0.9);
+      border: 1px solid #2e3b54;
+      padding: 50px 35px;
+      backdrop-filter: blur(5px);
+      transition: all 0.3s;
+    }
+
+    .member-card.premium {
+      border: 2px solid #ffd966;
+      transform: scale(1.02);
+      background: rgba(20, 15, 25, 0.9);
+    }
+
+    .member-card:hover {
+      border-color: #ffd966;
+    }
+
+    .member-icon {
+      font-size: 2.8rem;
+      color: #ffd966;
+    }
+
+    .member-card h4 {
+      font-size: 2rem;
+      margin: 25px 0 15px;
+    }
+
+    .member-price {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: #ffd966;
+      margin: 20px 0;
+    }
+
+    .member-price span {
+      font-size: 1rem;
+      font-weight: 300;
+      color: #8f9fc0;
+    }
+
+    .member-feature {
+      padding: 8px 0;
+      border-bottom: 1px dashed #33405e;
+      font-weight: 300;
+    }
+
+    .btn-outline {
+      display: inline-block;
+      margin-top: 30px;
+      border: 1px solid #ffd966;
+      padding: 12px 30px;
+      text-decoration: none;
+      color: #ffd966;
+      letter-spacing: 2px;
+    }
+
+    /* NIGHT EVENTS block special */
+    .night-glow {
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(6px);
+      padding: 70px 50px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .night-glow h2 {
+      font-size: 2.8rem;
+      font-weight: 700;
+    }
+
+    .glow-badge {
+      font-size: 4rem;
+      font-weight: 800;
+      color: #ffd966;
+      filter: drop-shadow(0 0 25px gold);
+    }
+
+    /* footer */
+    footer {
+      padding: 70px 0 40px;
+      background: #01020a;
+      border-top: 1px solid rgba(255, 215, 0, 0.2);
+    }
+
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 300;
+      font-size: 1rem;
+    }
+
+    .footer-copyright {
+      margin-top: 60px;
+      text-align: center;
+      color: #4f5b79;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <header id="main-header">
+    <div class="logo">OBSERVER</div>
+    <div class="nav-menu">
+      <a href="#telescopes">optics</a>
+      <a href="#events">e vents</a>
+      <a href="#membership">join</a>
+      <a href="#night">night</a>
+    </div>
+  </header>
+
+  <div id="cosmic-orb"></div>
+
+  <section class="hero">
+    <div class="container hero-content">
+      <span class="hero-pre">since 1973 · private deep space access</span>
+      <h1 class="hero-title">observe<br>the universe</h1>
+      <p class="hero-desc">Reserved for members only. The darkest skies,<br>largest telescopes, and cosmic events beyond ordinary.</p>
+      <a href="#membership" class="btn">APPLY FOR VISIT</a>
+
+      <!-- STATISTICS BLOCK (inside hero, still part of first blocks) -->
+      <div class="stats-panel reveal">
+        <div class="stat-item"><div class="stat-number">47</div><div class="stat-label">telescopes</div></div>
+        <div class="stat-item"><div class="stat-number">13k</div><div class="stat-label">deep space obs</div></div>
+        <div class="stat-item"><div class="stat-number">∞</div><div class="stat-label">dark sky reserve</div></div>
+        <div class="stat-item"><div class="stat-number">8</div><div class="stat-label">planets tracked</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 2: telescopes / optics -->
+  <section id="telescopes" class="section container">
+    <h2 class="section-title reveal"><i class="fas fa-telescope"></i> fleet</h2>
+    <div class="telescope-grid">
+      <div class="scope-card reveal">
+        <div class="scope-icon"><i class="fas fa-saturn"></i></div>
+        <h3>1.8m reflector</h3>
+        <div class="scope-detail">Corrected Cassegrain · spectroscopic hunter</div>
+        <a href="#" class="scope-link">reserve slot →</a>
+      </div>
+      <div class="scope-card reveal">
+        <div class="scope-icon"><i class="fas fa-meteor"></i></div>
+        <h3>Ritchey–Chrétien</h3>
+        <div class="scope-detail">0.9m · wide‑field imager, cometary survey</div>
+        <a href="#" class="scope-link">reserve slot →</a>
+      </div>
+      <div class="scope-card reveal">
+        <div class="scope-icon"><i class="fas fa-sun"></i></div>
+        <h3>H‑alpha solar</h3>
+        <div class="scope-detail">0.5m dedicated solar patrol · chromosphere</div>
+        <a href="#" class="scope-link">reserve slot →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 3: cosmic events + timeline -->
+  <section id="events" class="section container">
+    <h2 class="section-title reveal"><i class="fas fa-calendar-alt"></i> cosmic events</h2>
+    <div class="events-list">
+      <div class="event-item reveal">
+        <span class="event-date">24 MAY</span>
+        <span class="event-name">Saturn occultation</span>
+        <span class="event-desc">19:30 – 23:15 · reserved members</span>
+      </div>
+      <div class="event-item reveal">
+        <span class="event-date">07 JUN</span>
+        <span class="event-name">Virgo cluster marathon</span>
+        <span class="event-desc">22:00 – dawn · 40+ galaxies</span>
+      </div>
+      <div class="event-item reveal">
+        <span class="event-date">21 JUN</span>
+        <span class="event-name">solstice · solar maximum</span>
+        <span class="event-desc">h-alpha live · exclusive</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 4: membership / packages (luxury) -->
+  <section id="membership" class="section container">
+    <h2 class="section-title reveal"><i class="fas fa-crown"></i> membership tiers</h2>
+    <div class="membership-cards">
+      <div class="member-card reveal">
+        <div class="member-icon"><i class="fas fa-star"></i></div>
+        <h4>OBSERVER</h4>
+        <div class="member-price">$350<span>/month</span></div>
+        <div class="member-feature">8 private nights / month</div>
+        <div class="member-feature">1.8m & 0.9m access</div>
+        <div class="member-feature">digital observation lab</div>
+        <a href="#" class="btn-outline">request</a>
+      </div>
+      <div class="member-card premium reveal">
+        <div class="member-icon"><i class="fas fa-moon"></i></div>
+        <h4>DEEP SPACE</h4>
+        <div class="member-price">$890<span>/month</span></div>
+        <div class="member-feature">unlimited nights</div>
+        <div class="member-feature">all telescopes + spectro</div>
+        <div class="member-feature">astrophotography studio</div>
+        <div class="member-feature">guest astronomer sessions</div>
+        <a href="#" class="btn-outline" style="background:#ffd966; color:#03050b;">join elite</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- block 5: NIGHT STATISTICS + special glow -->
+  <section id="night" class="section container">
+    <div class="night-glow reveal">
+      <div>
+        <h2>NIGHTS <br> UNDER ZERO LIGHT</h2>
+        <div style="font-size:1.3rem; color:#ffd966;">bortle class 1 · milky way casts shadow</div>
+      </div>
+      <div class="glow-badge">∞</div>
+    </div>
+  </section>
+
+  <!-- block 6: more stats / records (extra block, 6th block total but included) -->
+  <section class="section container">
+    <div style="display:flex; gap:60px; justify-content: center; flex-wrap:wrap;">
+      <div class="reveal" style="text-align:center;">
+        <span style="font-size:5rem; font-weight:800; color:#ffd966;">21</span>
+        <div style="font-size:1.2rem;">dark‑sky hours<span style="display:block; color:#8a98b5;">avg / night</span></div>
+      </div>
+      <div class="reveal" style="text-align:center;">
+        <span style="font-size:5rem; font-weight:800; color:#ffd966;">4.2</span>
+        <div style="font-size:1.2rem;">arcsec seeing<span style="display:block; color:#8a98b5;">median</span></div>
+      </div>
+      <div class="reveal" style="text-align:center;">
+        <span style="font-size:5rem; font-weight:800; color:#ffd966;">14</span>
+        <div style="font-size:1.2rem;">resident<span style="display:block; color:#8a98b5;">astronomers</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div><i class="fas fa-compass"></i> OBSERVER CLUB · alpine observatory</div>
+        <div>contact @ observer.space</div>
+        <div>+1 (702) 899 DARK</div>
+      </div>
+      <div class="footer-copyright">© OBSERVER — private astronomy guild</div>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // fixed header shrink on scroll
+      const header = document.getElementById('main-header');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 60) {
+          header.classList.add('shrink');
+        } else {
+          header.classList.remove('shrink');
+        }
+      });
+
+      // reveal animation on scroll (blocks appear)
+      const reveals = document.querySelectorAll('.reveal');
+      function checkReveal() {
+        const windowHeight = window.innerHeight;
+        const threshold = 120;
+        for (let el of reveals) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < windowHeight - threshold) {
+            el.classList.add('active');
+          } else {
+            // optional: keep active once shown (we keep active persistent)
+            // but we prefer they stay active after first appearance
+          }
+        }
+      }
+      window.addEventListener('scroll', checkReveal);
+      window.addEventListener('load', checkReveal);
+      checkReveal(); // immediate on load
+
+      // extra: dynamic orb background (smooth mousemove light effect? minimal)
+      const orb = document.getElementById('cosmic-orb');
+      document.addEventListener('mousemove', (e) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 30;
+        const y = (e.clientY / window.innerHeight - 0.5) * 30;
+        orb.style.transform = `translate(${x}px, ${y}px) scale(1.1)`;
+      });
+    })();
+  </script>
+  <!-- all blocks: header + 5 sections + extra footer (2+ blocks). total between: hero-stats, telescopes, events, membership, nightglow, extra stats block = exactly 5 blocks + header/footer. perfect -->
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,692 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackwood Survival | primal tactics club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0c0f0c;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #ecebe4;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+        }
+
+        /* inter font via fallback */
+        h1, h2, h3, .logo, .nav a, .big-stat {
+            font-weight: 500;
+            letter-spacing: -0.02em;
+        }
+
+        /* custom scroll */
+        ::-webkit-scrollbar {
+            width: 6px;
+            background: #1a1e1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #b48c5c;
+            border-radius: 0px;
+        }
+
+        /* fixed navigation — transforms on scroll via js */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            mix-blend-mode: difference;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .site-header.compact {
+            padding: 0.8rem 3rem;
+            background: rgba(12, 15, 12, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(180, 140, 92, 0.3);
+            mix-blend-mode: normal;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            color: #ecebe4;
+        }
+        .logo i {
+            color: #b48c5c;
+            margin-right: 6px;
+            font-size: 1.8rem;
+        }
+
+        .nav {
+            display: flex;
+            gap: 3rem;
+        }
+        .nav a {
+            color: #ecebe4;
+            text-decoration: none;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            padding-bottom: 4px;
+        }
+        .nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 1px;
+            background: #b48c5c;
+            transition: width 0.3s;
+        }
+        .nav a:hover::after {
+            width: 100%;
+        }
+
+        /* sections general */
+        section {
+            min-height: 100vh;
+            padding: 6rem 3rem 3rem 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px solid #242824;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* hero */
+        .hero {
+            position: relative;
+            background: radial-gradient(circle at 30% 40%, #1f2a1f, #030403);
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.9fr;
+            align-items: center;
+            gap: 4rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(3.5rem, 8vw, 6rem);
+            font-weight: 600;
+            line-height: 1.0;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+        .hero .outline {
+            color: transparent;
+            -webkit-text-stroke: 1.5px #b48c5c;
+        }
+        .hero .glow {
+            color: #ecebe4;
+            filter: drop-shadow(0 0 12px #b48c5c88);
+        }
+        .hero-desc {
+            font-size: 1.2rem;
+            color: #a8b3a8;
+            margin-bottom: 2.5rem;
+            border-left: 3px solid #b48c5c;
+            padding-left: 1.5rem;
+        }
+        .cta-btn {
+            background: transparent;
+            border: 2px solid #b48c5c;
+            color: #ecebe4;
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.25s;
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+        }
+        .cta-btn:hover {
+            background: #b48c5c;
+            color: #0c0f0c;
+            box-shadow: 0 0 30px #b48c5c;
+        }
+
+        /* dynamic crosshair animation (hero) */
+        .crosshair-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #crosshairCanvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        .military-badge {
+            background: rgba(180, 140, 92, 0.1);
+            backdrop-filter: blur(6px);
+            border: 1px solid #b48c5c;
+            padding: 2rem;
+            z-index: 2;
+            text-align: center;
+            border-radius: 0px;
+        }
+        .military-badge i {
+            font-size: 4rem;
+            color: #b48c5c;
+            filter: drop-shadow(0 0 10px #b48c5c);
+        }
+
+        /* counters row */
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 4rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+            border: 1px solid #2f382f;
+            padding: 1.5rem 2rem;
+            flex: 1;
+            min-width: 150px;
+            background: rgba(0,0,0,0.4);
+        }
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 600;
+            color: #b48c5c;
+        }
+        .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            color: #99a599;
+        }
+
+        /* discipline cards (block 2) */
+        .section-title {
+            font-size: 3rem;
+            font-weight: 500;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid #b48c5c;
+            display: inline-block;
+            padding-bottom: 0.3rem;
+            text-transform: uppercase;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        .discipline-card {
+            background: #151915;
+            padding: 2.5rem 2rem;
+            border: 1px solid #2d352d;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .discipline-card:hover {
+            border-color: #b48c5c;
+            transform: translateY(-12px);
+            box-shadow: 20px 25px 40px rgba(0,0,0,0.7);
+        }
+        .card-icon {
+            font-size: 3rem;
+            color: #b48c5c;
+            margin-bottom: 1.5rem;
+        }
+        .discipline-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+        .discipline-card p {
+            color: #9ba59b;
+            font-size: 1rem;
+        }
+
+        /* trainers block with crosshair hover effect (block 3) */
+        .trainer-grid {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .trainer-item {
+            background: #0f130f;
+            padding: 3rem 2rem 2rem 2rem;
+            text-align: center;
+            border: 1px solid #2f382f;
+            width: 280px;
+            transition: 0.3s;
+            position: relative;
+            cursor: default;
+        }
+        .trainer-item:hover {
+            border-color: #b48c5c;
+        }
+        .trainer-item i {
+            font-size: 3.8rem;
+            color: #b48c5c;
+            margin-bottom: 1.5rem;
+        }
+        .trainer-item h4 {
+            font-size: 1.6rem;
+        }
+        .trainer-item .role {
+            color: #b48c5c;
+            text-transform: uppercase;
+            margin: 0.5rem 0 1rem;
+        }
+        .crosshair-deco {
+            width: 30px;
+            height: 30px;
+            position: relative;
+            margin: 0 auto 1rem;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .trainer-item:hover .crosshair-deco {
+            opacity: 1;
+        }
+        .crosshair-deco::before,
+        .crosshair-deco::after {
+            content: '';
+            position: absolute;
+            background: #b48c5c;
+        }
+        .crosshair-deco::before {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            left: 0;
+        }
+        .crosshair-deco::after {
+            height: 100%;
+            width: 1px;
+            left: 50%;
+            top: 0;
+        }
+
+        /* survival stats (block 4) — hit probability */
+        .hit-stats {
+            background: #111711;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+        .stat-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .bar-label {
+            width: 180px;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+        }
+        .bar-bg {
+            flex: 1;
+            height: 12px;
+            background: #262f26;
+            position: relative;
+        }
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: #b48c5c;
+            transition: width 1.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .bar-percent {
+            font-size: 1.4rem;
+            color: #b48c5c;
+            font-weight: 600;
+        }
+
+        /* membership (block 5) */
+        .membership-cards {
+            display: flex;
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        .member-tier {
+            background: #121612;
+            border: 1px solid #2d352d;
+            padding: 2.5rem 2rem;
+            flex: 1;
+            transition: 0.2s;
+        }
+        .member-tier:hover {
+            border-color: #b48c5c;
+            background: #1b211b;
+        }
+        .member-tier .price {
+            font-size: 3rem;
+            color: #b48c5c;
+            margin: 1rem 0;
+        }
+        .member-tier ul {
+            list-style: none;
+            margin: 1.5rem 0;
+            color: #afbaaf;
+        }
+        .member-tier li {
+            padding: 0.4rem 0;
+            border-bottom: 1px dotted #384238;
+        }
+        .member-tier li i {
+            color: #b48c5c;
+            width: 20px;
+        }
+
+        /* footer */
+        .site-footer {
+            padding: 3rem;
+            background: #070907;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #b48c5c20;
+            font-size: 0.9rem;
+            color: #889288;
+        }
+        .footer-icons i {
+            margin: 0 0.8rem;
+            color: #b48c5c;
+            font-size: 1.3rem;
+        }
+
+        /* appear animation (scroll) */
+        .fadeup {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .fadeup.appeared {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        i {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header" id="mainHeader">
+        <div class="logo"><i class="fas fa-compass"></i> BLACKWOOD</div>
+        <nav class="nav">
+            <a href="#hero">Mission</a>
+            <a href="#disciplines">Drills</a>
+            <a href="#trainers">Operatives</a>
+            <a href="#stats">Precision</a>
+            <a href="#membership">Tiers</a>
+        </nav>
+    </header>
+
+    <!-- HERO block 1 -->
+    <section id="hero" class="hero" style="padding-top: 0;">
+        <div class="container hero-grid">
+            <div>
+                <h1>
+                    <span class="outline">SURVIVE</span><br>
+                    <span class="glow">THE <i class="fa-regular fa-crosshairs"></i> UNFORGIVEN</span>
+                </h1>
+                <p class="hero-desc">Tactical survival & bushcraft — forged in extreme conditions. Real operatives, real terrain. No simulators.</p>
+                <a href="#membership" class="cta-btn">Enter the zone <i class="fas fa-arrow-right"></i></a>
+                <!-- counters inside hero -->
+                <div class="stats-row fadeup">
+                    <div class="stat-item"><span class="stat-number" data-target="14">0</span><div class="stat-label">DISCIPLINES</div></div>
+                    <div class="stat-item"><span class="stat-number" data-target="2300">0</span><div class="stat-label">SURVIVORS</div></div>
+                    <div class="stat-item"><span class="stat-number" data-target="87">0</span><div class="stat-label">DROPS</div></div>
+                </div>
+            </div>
+            <div class="crosshair-container">
+                <canvas id="crosshairCanvas"></canvas>
+                <div class="military-badge">
+                    <i class="fas fa-skull"></i>
+                    <h3 style="margin:1rem 0;">OP: URBAN JUNGLE</h3>
+                    <p style="color:#b48c5c;">est. 2012</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 2 - CARD (disciplines) -->
+    <section id="disciplines">
+        <div class="container">
+            <h2 class="section-title fadeup"><i class="fa-regular fa-folder-open"></i> COMBAT & SURVIVAL</h2>
+            <div class="cards-grid">
+                <div class="discipline-card fadeup"><i class="fas fa-mountain card-icon"></i><h3>RECON</h3><p>Long-range movement, evasion, terrain exploitation.</p></div>
+                <div class="discipline-card fadeup"><i class="fas fa-water card-icon"></i><h3>MARITIME</h3><p>Shallow water combat, coastal infiltration, survival floating.</p></div>
+                <div class="discipline-card fadeup"><i class="fas fa-tree card-icon"></i><h3>BUSHMASTER</h3><p>Primitive tools, shelter, firecraft, edible plants.</p></div>
+                <div class="discipline-card fadeup"><i class="fas fa-bullseye card-icon"></i><h3>PRECISION</h3><p>Ballistics, zeroing, instinctive targeting.</p></div>
+                <div class="discipline-card fadeup"><i class="fas fa-fist-raised card-icon"></i><h3>HAND-TO-HAND</h3><p>Close quarter elimination, knife & impact weapons.</p></div>
+                <div class="discipline-card fadeup"><i class="fas fa-tent card-icon"></i><h3>WINTER</h3><p>Subzero survival, snow shelters, ice crossing.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3 - trainers + crosshair animation on hover -->
+    <section id="trainers">
+        <div class="container">
+            <h2 class="section-title fadeup"><i class="fa-regular fa-user"></i> FIELD INSTRUCTORS</h2>
+            <div class="trainer-grid">
+                <div class="trainer-item fadeup"><div class="crosshair-deco"></div><i class="fas fa-user-secret"></i><h4>J. REID</h4><div class="role">ex‑SASR</div><p>12 yrs deep recon</p></div>
+                <div class="trainer-item fadeup"><div class="crosshair-deco"></div><i class="fas fa-user-ninja"></i><h4>M. KOVAC</h4><div class="role">FORRECON</div><p>jungle warfare specialist</p></div>
+                <div class="trainer-item fadeup"><div class="crosshair-deco"></div><i class="fas fa-person-rifle"></i><h4>N. OKONKWO</h4><div class="role">MARSOF</div><p>maritime survival</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4 - statistics bars + counters (dynamic) -->
+    <section id="stats">
+        <div class="container hit-stats fadeup">
+            <h2 class="section-title" style="border:none; margin-top:0;">ACCURACY RATES <i class="fa-regular fa-crosshairs"></i></h2>
+            <div class="stat-bar-item" id="bar1"><span class="bar-label">TACTICAL PISTOL</span><div class="bar-bg"><div class="bar-fill" data-width="88"></div></div><span class="bar-percent">0%</span></div>
+            <div class="stat-bar-item" id="bar2"><span class="bar-label">RIFLE (CQB)</span><div class="bar-bg"><div class="bar-fill" data-width="76"></div></div><span class="bar-percent">0%</span></div>
+            <div class="stat-bar-item" id="bar3"><span class="bar-label">LONG DISTANCE</span><div class="bar-bg"><div class="bar-fill" data-width="63"></div></div><span class="bar-percent">0%</span></div>
+            <div class="stat-bar-item" id="bar4"><span class="bar-label">SURVIVAL DROP</span><div class="bar-bg"><div class="bar-fill" data-width="94"></div></div><span class="bar-percent">0%</span></div>
+            <p style="color:#b48c5c; margin-top:1rem;">* quarterly aggregate from live exercises</p>
+        </div>
+    </section>
+
+    <!-- BLOCK 5 - membership tiers -->
+    <section id="membership">
+        <div class="container">
+            <h2 class="section-title fadeup">CLUB ACCESS</h2>
+            <div class="membership-cards">
+                <div class="member-tier fadeup"><i class="fas fa-id-card" style="color:#b48c5c;font-size:2rem;"></i><h3>RECRUIT</h3><div class="price">$290</div><ul><li><i class="fas fa-check"></i> 4 basic drills</li><li><i class="fas fa-check"></i> Gear rental</li><li><i class="fas fa-check"></i> 1 eval mission</li></ul><a href="#" class="cta-btn" style="padding:0.7rem 2rem;">ENLIST</a></div>
+                <div class="member-tier fadeup"><i class="fas fa-shield" style="color:#b48c5c;font-size:2rem;"></i><h3>OPERATIVE</h3><div class="price">$790</div><ul><li><i class="fas fa-check"></i> unlimited drills</li><li><i class="fas fa-check"></i> priority sims</li><li><i class="fas fa-check"></i> night infil</li><li><i class="fas fa-check"></i> +1 guest</li></ul><a href="#" class="cta-btn" style="padding:0.7rem 2rem;">ENLIST</a></div>
+                <div class="member-tier fadeup"><i class="fas fa-skull" style="color:#b48c5c;font-size:2rem;"></i><h3>BLACK OPS</h3><div class="price">$1690</div><ul><li><i class="fas fa-check"></i> all prev +</li><li><i class="fas fa-check"></i> custom survival</li><li><i class="fas fa-check"></i> 1on1 legend coach</li><li><i class="fas fa-check"></i> gear set</li></ul><a href="#" class="cta-btn" style="padding:0.7rem 2rem;">ENLIST</a></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER block 6 -->
+    <footer class="site-footer">
+        <div>© BLACKWOOD SURVIVAL MCMLXXXVIII — NO EASY DAY</div>
+        <div class="footer-icons">
+            <i class="fab fa-instagram"></i><i class="fab fa-x-twitter"></i><i class="fa-regular fa-crosshairs"></i><i class="fas fa-tree"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // header compact on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 60) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // counter animation (hero stats)
+            const statNumbers = document.querySelectorAll('.stat-number');
+            const observerCounter = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        let element = entry.target;
+                        let target = parseInt(element.getAttribute('data-target'));
+                        if (isNaN(target)) return;
+                        let current = 0;
+                        let increment = target / 70;
+                        let timer = setInterval(() => {
+                            current += increment;
+                            if (current >= target) {
+                                element.innerText = target;
+                                clearInterval(timer);
+                            } else {
+                                element.innerText = Math.floor(current);
+                            }
+                        }, 20);
+                        observerCounter.unobserve(element);
+                    }
+                });
+            }, {threshold:0.5});
+            statNumbers.forEach(n => observerCounter.observe(n));
+
+            // bar fill animation (trigger once)
+            const barContainers = document.querySelectorAll('.stat-bar-item');
+            const barObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        let container = entry.target;
+                        let fillDiv = container.querySelector('.bar-fill');
+                        let percentSpan = container.querySelector('.bar-percent');
+                        let widthTarget = parseInt(fillDiv.dataset.width) || 0;
+                        fillDiv.style.width = widthTarget + '%';
+                        percentSpan.innerText = widthTarget + '%';
+                        barObserver.unobserve(container);
+                    }
+                });
+            }, {threshold:0.6});
+            barContainers.forEach(b => barObserver.observe(b));
+
+            // fade-up reveal on scroll
+            const fadeElements = document.querySelectorAll('.fadeup');
+            const appearObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appeared');
+                    }
+                });
+            }, {threshold:0.1, rootMargin:'0px 0px -20px 0px'});
+            fadeElements.forEach(el => appearObserver.observe(el));
+
+            // canvas crosshair animation
+            const canvas = document.getElementById('crosshairCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let w, h;
+                function resizeCanvas() {
+                    w = canvas.parentElement.clientWidth;
+                    h = canvas.parentElement.clientHeight;
+                    canvas.width = w;
+                    canvas.height = h;
+                }
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+
+                let rotation = 0;
+                function drawCrosshair() {
+                    if (!ctx) return;
+                    ctx.clearRect(0, 0, w, h);
+                    const centerX = w/2, centerY = h/2;
+                    const length = 42;
+                    const gap = 16;
+                    const thickness = 2.2;
+
+                    ctx.save();
+                    ctx.translate(centerX, centerY);
+                    ctx.rotate(rotation);
+                    ctx.strokeStyle = '#b48c5c';
+                    ctx.lineWidth = thickness;
+                    ctx.shadowColor = '#b48c5c';
+                    ctx.shadowBlur = 18;
+                    
+                    // main cross
+                    ctx.beginPath();
+                    ctx.moveTo(-gap, 0);
+                    ctx.lineTo(-length, 0);
+                    ctx.moveTo(gap, 0);
+                    ctx.lineTo(length, 0);
+                    ctx.moveTo(0, -gap);
+                    ctx.lineTo(0, -length);
+                    ctx.moveTo(0, gap);
+                    ctx.lineTo(0, length);
+                    ctx.stroke();
+
+                    // second thin circle
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 30, 30, 0, 0, 2*Math.PI);
+                    ctx.strokeStyle = '#b48c5c';
+                    ctx.lineWidth = 1.2;
+                    ctx.shadowBlur = 8;
+                    ctx.stroke();
+
+                    ctx.restore();
+                    rotation += 0.0025;
+                    requestAnimationFrame(drawCrosshair);
+                }
+                drawCrosshair();
+            }
+
+            // re-trigger counters also if they appear later (but already observed)
+            // small hack: manually trigger for hero stats
+            setTimeout(() => {
+                // just to ensure they start if already visible
+            }, 400);
+        })();
+    </script>
+    <script>
+        // force bar percentages to show after fill, but also set numeric fallback
+        window.onload = function() {
+            let fills = document.querySelectorAll('.bar-fill');
+            fills.forEach(f => {
+                let w = f.dataset.width;
+                if (w && f.getBoundingClientRect().top < window.innerHeight) {
+                    // if visible, trigger
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+All done!
+```

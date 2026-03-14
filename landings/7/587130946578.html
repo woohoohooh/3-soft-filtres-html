@@ -1,0 +1,651 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Void Atlas · private observatory</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0c12;
+            color: #e0e4f0;
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* parallax glow / starfield simulation */
+        .bg-stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            background: radial-gradient(circle at 30% 40%, #13212e 0%, #030507 90%);
+        }
+
+        .bg-stars::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="glow" cx="30%" cy="40%" r="70%"><stop offset="0%" stop-color="%23b5d1ff" stop-opacity="0.2"/><stop offset="100%" stop-color="%23000000" stop-opacity="0"/></radialGradient></defs><rect width="100%" height="100%" fill="url(%23glow)"/></svg>');
+            opacity: 0.7;
+        }
+
+        /* floating particles (JS will move them) */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            display: block;
+            pointer-events: none;
+        }
+
+        /* header / navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1.2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(2, 6, 12, 0.75);
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(255, 215, 120, 0.15);
+            z-index: 100;
+            transition: all 0.3s ease;
+            box-shadow: 0 15px 35px -15px rgba(0,0,0,0.8);
+        }
+
+        .navbar.scrolled {
+            padding: 0.7rem 3rem;
+            background: rgba(0, 2, 5, 0.92);
+            border-bottom: 1px solid rgba(255, 200, 100, 0.3);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: #f2e9d0;
+            text-shadow: 0 0 10px #ffb86b80;
+        }
+        .logo i {
+            color: #f5c27b;
+            margin-right: 6px;
+            font-size: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: #d3d9ec;
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            font-size: 1rem;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav-links a:hover {
+            color: #fadf9e;
+            border-bottom: 1px solid #f5bd5b;
+        }
+
+        /* main blocks */
+        section {
+            position: relative;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 6rem 3rem;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+        section.reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .block-header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+        .block-header h2 {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #fae6c1, #cfb587);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px #96724e40;
+        }
+        .block-header p {
+            color: #a7b2ca;
+            font-size: 1.3rem;
+            max-width: 700px;
+            margin: 1rem auto 0;
+        }
+
+        /* HERO specific */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding-top: 120px;
+        }
+        .hero-content {
+            max-width: 900px;
+        }
+        .hero-sup {
+            font-size: 1.2rem;
+            letter-spacing: 6px;
+            color: #bd9f6e;
+            border-left: 3px solid #c9a55c;
+            padding-left: 20px;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+        }
+        .hero-title {
+            font-size: 5.5rem;
+            font-weight: 200;
+            line-height: 1.1;
+            letter-spacing: 12px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 25px #6a4d2e;
+        }
+        .hero-title span {
+            font-weight: 600;
+            color: #fad56b;
+            display: block;
+            font-size: 6rem;
+            letter-spacing: 16px;
+            text-shadow: 0 0 40px #f9b81b;
+        }
+        .hero-desc {
+            font-size: 1.4rem;
+            max-width: 650px;
+            color: #b9c2da;
+            border-left: 2px solid #c5a156;
+            padding-left: 25px;
+            margin: 2rem 0 3rem;
+        }
+        .hero-btn {
+            background: transparent;
+            border: 2px solid #eac384;
+            color: #faeacb;
+            padding: 1.2rem 3.5rem;
+            font-size: 1.3rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.4s;
+            backdrop-filter: blur(10px);
+            border-radius: 60px;
+            font-weight: 300;
+        }
+        .hero-btn:hover {
+            background: #eac384;
+            color: #0a0c12;
+            box-shadow: 0 0 40px #f6b83e;
+        }
+
+        /* telescopes grid */
+        .scope-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .scope-card {
+            background: rgba(12, 20, 28, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid #3a3f4e;
+            padding: 2.5rem 1.8rem;
+            border-radius: 50px 20px 50px 20px;
+            transition: 0.3s;
+            box-shadow: 0 20px 30px -15px #000;
+        }
+        .scope-card:hover {
+            border-color: #c5a469;
+            box-shadow: 0 0 35px #94774533;
+            transform: translateY(-10px);
+        }
+        .scope-card i {
+            font-size: 3.2rem;
+            color: #f5cd7a;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 15px #d4932b;
+        }
+        .scope-card h3 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 0.8rem;
+        }
+        .scope-card p {
+            color: #9aa4be;
+            font-size: 1rem;
+        }
+
+        /* events list — cosmic timeline */
+        .event-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+        .event-item {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            border-bottom: 1px dashed #3b4457;
+            padding-bottom: 2rem;
+        }
+        .event-date {
+            font-size: 2.4rem;
+            font-weight: 200;
+            color: #dbb05c;
+            min-width: 180px;
+            letter-spacing: 2px;
+        }
+        .event-desc h4 {
+            font-size: 2rem;
+            font-weight: 300;
+        }
+        .event-desc p {
+            color: #9ca9c7;
+            font-size: 1.2rem;
+        }
+        .event-loc i {
+            color: #c2a15b;
+            margin-right: 8px;
+        }
+
+        /* night observation — карточки с glow */
+        .night-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+        .night-card {
+            background: rgba(8, 14, 24, 0.8);
+            backdrop-filter: blur(5px);
+            border: 1px solid #414a5e;
+            padding: 2.5rem;
+            border-radius: 30px;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .night-card:hover {
+            border-color: #f1cf9b;
+            box-shadow: 0 0 55px #775e33;
+        }
+        .night-card i {
+            font-size: 2.8rem;
+            color: #ffd78c;
+            margin-bottom: 1rem;
+        }
+        .night-card h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .night-card .glow-text {
+            font-size: 1.3rem;
+            color: #f8dfb0;
+            text-shadow: 0 0 15px currentColor;
+        }
+
+        /* космическая статистика — цифры счётчики */
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 120px;
+            padding: 4rem 2rem;
+            border: 1px solid #776b4f;
+            backdrop-filter: blur(8px);
+        }
+        .stat-item {
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 4.5rem;
+            font-weight: 200;
+            color: #f7d68f;
+            letter-spacing: 6px;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px #fbbc4e;
+        }
+        .stat-label {
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            color: #afbcdb;
+        }
+
+        /* footer */
+        .footer {
+            background: rgba(0, 2, 8, 0.95);
+            border-top: 1px solid #55472e;
+            padding: 3rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            color: #8c9ac2;
+        }
+        .footer a {
+            color: #d8bf8b;
+            text-decoration: none;
+            margin: 0 1rem 0 0;
+        }
+
+        /* small helpers */
+        i { margin-right: 0.5rem; }
+        .fa-solid, .fa-regular { pointer-events: none; }
+        .accent-gold {
+            color: #ebc27c;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-stars"></div>
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- fixed navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="logo"><i class="fas fa-meteor"></i> VOID ATLAS</div>
+        <div class="nav-links">
+            <a href="#home">HOME</a>
+            <a href="#telescopes">SCOPES</a>
+            <a href="#events">EVENTS</a>
+            <a href="#night">NIGHT</a>
+            <a href="#stats">DATA</a>
+        </div>
+    </nav>
+
+    <!-- BLOCK 1: HERO (secret mission style) -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="hero-sup"><i class="fas fa-user-secret"></i> ▸ OBSERVATION ORDER #OB-42</div>
+            <h1 class="hero-title"><span>PRIVATE</span> ASTRONOMY CLUB</h1>
+            <div class="hero-desc">Access the most advanced telescopes. Confidential star maps. Events under NDA sky.</div>
+            <button class="hero-btn"><i class="fas fa-telescope"></i> reserve focus</button>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: TELESCOPES (card block) -->
+    <section id="telescopes">
+        <div class="block-header">
+            <h2><i class="fas fa-binoculars"></i> THE FLEET</h2>
+            <p>Three exclusive instruments, each with a unique mission profile.</p>
+        </div>
+        <div class="scope-grid">
+            <div class="scope-card">
+                <i class="fas fa-satellite-dish"></i>
+                <h3>QUANTUM 32"</h3>
+                <p>Primary deep-space scope.  •  corrected by adaptive optics •  magnitude 21 reach.</p>
+            </div>
+            <div class="scope-card">
+                <i class="fas fa-globe"></i>
+                <h3>SOLARIS H-α</h3>
+                <p>Hydrogen-alpha solar observations. Prominences, filaments, flares. Class 4 etalon.</p>
+            </div>
+            <div class="scope-card">
+                <i class="fas fa-crown"></i>
+                <h3>NAVIGATOR 20"</h3>
+                <p>Portable carbon truss. Perfect for astrography & remote dark sites.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: COSMIC EVENTS (timeline) -->
+    <section id="events">
+        <div class="block-header">
+            <h2><i class="fas fa-calendar-alt"></i> PRIVATE OBSERVING</h2>
+            <p>Members‑only celestial events & dark‑sky runs.</p>
+        </div>
+        <div class="event-timeline">
+            <div class="event-item">
+                <div class="event-date"><i class="fas fa-moon"></i> 04.12</div>
+                <div class="event-desc">
+                    <h4>LUNAR OCCULTATION <span class="accent-gold">(PLEIADES)</span></h4>
+                    <p><i class="fas fa-location-dot"></i> remote desert station · 21:30</p>
+                </div>
+            </div>
+            <div class="event-item">
+                <div class="event-date"><i class="fas fa-ring"></i> 18.12</div>
+                <div class="event-desc">
+                    <h4>SATURN OPPOSITION <span class="accent-gold">+ Titan shadow</span></h4>
+                    <p><i class="fas fa-location-dot"></i> main dome · champagne & collimation</p>
+                </div>
+            </div>
+            <div class="event-item">
+                <div class="event-date"><i class="fas fa-bolt"></i> 05.01</div>
+                <div class="event-desc">
+                    <h4>GEMINIDS AFTERPARTY <span class="accent-gold">(meteor workshop)</span></h4>
+                    <p><i class="fas fa-location-dot"></i> high plateau · all‑night imaging</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: NIGHT OBSERVATION (glow cards + secret) -->
+    <section id="night">
+        <div class="block-header">
+            <h2><i class="fas fa-eye"></i> NIGHT VAULT</h2>
+            <p>Spectacles under strict confidentiality — members only.</p>
+        </div>
+        <div class="night-grid">
+            <div class="night-card">
+                <i class="fas fa-galaxy"></i>
+                <h3>DEEP SKY TARGETS</h3>
+                <p>Unlock coordinates of 200+ unlisted nebulae, galaxy clusters, and quasar fields.</p>
+                <div class="glow-text"><i class="fas fa-lock-open"></i> 23h objects</div>
+            </div>
+            <div class="night-card">
+                <i class="fas fa-user-astronaut"></i>
+                <h3>DIRECTOR’S NIGHT</h3>
+                <p>Once a month, chief astronomer reveals a “first light” target.</p>
+                <div class="glow-text"><i class="fas fa-crown"></i> next: jan 28</div>
+            </div>
+            <div class="night-card">
+                <i class="fas fa-infrared-on"></i>
+                <h3>INFRARED MODE</h3>
+                <p>Switch to IR sensor — see through cosmic dust. Exclusive to Atlas members.</p>
+            </div>
+            <div class="night-card">
+                <i class="fas fa-map"></i>
+                <h3>SKY ATLAS 2.0</h3>
+                <p>Interactive chart with proper motion, exoplanet hosts, and black hole candidates.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: STATISTICS / космические цифры -->
+    <section id="stats">
+        <div class="block-header">
+            <h2><i class="fas fa-chart-line"></i> OBSERVATIONAL DATA</h2>
+            <p>Exclusive stats from our private observatory network.</p>
+        </div>
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-number counter" data-target="142">0</div>
+                <div class="stat-label">Deep‑sky objects</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number counter" data-target="12">0</div>
+                <div class="stat-label">research nights / month</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number counter" data-target="3100">0</div>
+                <div class="stat-label">mm telescope aperture</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER block -->
+    <footer class="footer">
+        <div><i class="fas fa-copyright"></i> 2025 VOID ATLAS · PRIVATE MEMBERS CLUB</div>
+        <div>
+            <a href="#"><i class="fab fa-x-twitter"></i></a>
+            <a href="#"><i class="fas fa-envelope"></i></a>
+            <a href="#"><i class="fas fa-location-dot"></i> ATLAS DOME</a>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // navbar shrink on scroll
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 30) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+
+            // REVEAL on scroll (blocks fade + translate)
+            const sections = document.querySelectorAll('section');
+            function checkReveal() {
+                const triggerBottom = window.innerHeight * 0.85;
+                sections.forEach(section => {
+                    const sectionTop = section.getBoundingClientRect().top;
+                    if (sectionTop < triggerBottom) {
+                        section.classList.add('reveal');
+                    } else {
+                        // optional: keep visible after first reveal (no remove)
+                        // we do not remove class to keep them visible once shown
+                        if (!section.classList.contains('reveal')) {
+                            // leave as is
+                        }
+                    }
+                });
+            }
+            window.addEventListener('scroll', checkReveal);
+            window.addEventListener('resize', checkReveal);
+            checkReveal(); // on load
+
+            // simple counter animation (stat block)
+            const counters = document.querySelectorAll('.counter');
+            const speed = 180;
+
+            function runCounters() {
+                counters.forEach(counter => {
+                    const updateCount = () => {
+                        const target = +counter.getAttribute('data-target');
+                        const current = +counter.innerText;
+                        const increment = target / speed;
+                        if (current < target) {
+                            counter.innerText = Math.ceil(current + increment);
+                            setTimeout(updateCount, 20);
+                        } else {
+                            counter.innerText = target;
+                        }
+                    };
+                    updateCount();
+                });
+            }
+
+            // trigger counters when stats block appears
+            const statsSection = document.getElementById('stats');
+            let counted = false;
+            function checkStats() {
+                if (!counted) {
+                    const rect = statsSection.getBoundingClientRect();
+                    if (rect.top < window.innerHeight-100) {
+                        runCounters();
+                        counted = true;
+                    }
+                }
+            }
+            window.addEventListener('scroll', checkStats);
+            checkStats();
+
+            // particle background animation (floating stars)
+            const canvas = document.getElementById('particle-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initParticles() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                particles = [];
+                const particleCount = 80;
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 1.8 + 0.5,
+                        speedX: (Math.random() - 0.5) * 0.25,
+                        speedY: (Math.random() - 0.5) * 0.15,
+                        alpha: Math.random() * 0.7 + 0.3,
+                    });
+                }
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 235, 190, ${p.alpha})`;
+                    ctx.shadowColor = '#ffd7a0';
+                    ctx.shadowBlur = 8;
+                    ctx.fill();
+                });
+                // subtle moving effect
+                particles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+                });
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', () => {
+                initParticles();
+            });
+            initParticles();
+            drawParticles();
+
+            // extra glow on text / hover interactions: but kept in css
+        })();
+    </script>
+    <!-- anchor smooth behavior (native) + extra style for i tags -->
+</body>
+</html>
+All done!
+```

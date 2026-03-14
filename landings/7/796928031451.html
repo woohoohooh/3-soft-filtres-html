@@ -1,0 +1,539 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBSERVER · astro lounge</title>
+    <!-- Font & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0c10;
+            color: #e5e9f0;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        /* fixed header animation (compact on scroll) */
+        .header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1300px;
+            background: rgba(10, 15, 22, 0.75);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 60px;
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 999;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .header.compact {
+            top: 10px;
+            padding: 0.4rem 1.8rem;
+            background: rgba(5, 8, 12, 0.9);
+            border-color: rgba(255, 215, 0, 0.4);
+            width: 70%;
+            border-radius: 40px;
+        }
+        .logo {
+            font-size: 1.7rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            background: linear-gradient(130deg, #f0e68c, #ffd966, #f1c40f);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 15px rgba(255,215,0,0.5);
+        }
+        .logo i {
+            color: #ffd966;
+            margin-right: 8px;
+            font-size: 2rem;
+        }
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            font-weight: 500;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: #d0d7e5;
+            font-size: 1.05rem;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav-links a:hover {
+            color: #ffe484;
+            border-bottom-color: #ffd966;
+        }
+        /* glow effect for sections */
+        .section {
+            padding: 5rem 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 1s ease, transform 1s ease;
+        }
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* hero specific */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255,215,0,0.15);
+            padding-top: 120px;
+        }
+        .hero-content {
+            max-width: 950px;
+        }
+        .secret-mission {
+            font-size: 1.4rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #b9a56b;
+            margin-bottom: 1rem;
+            word-spacing: 12px;
+        }
+        .hero h1 {
+            font-size: 5.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            background: linear-gradient(145deg, #fff8e7, #ffe484, #f5cb5c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 25px #ffd96655);
+        }
+        .hero .sub {
+            font-size: 1.7rem;
+            font-weight: 300;
+            color: #cbd5e6;
+            margin-bottom: 2.5rem;
+        }
+        .timer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0,0,0,0.45);
+            border: 1px solid #ffd96655;
+            border-radius: 70px;
+            padding: 0.8rem 2.2rem;
+            backdrop-filter: blur(4px);
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-top: 2rem;
+        }
+        .timer-badge i {
+            color: #ffd966;
+            font-size: 2rem;
+        }
+        #countdown {
+            font-family: 'Inter', monospace;
+            letter-spacing: 6px;
+            background: #1a1e2a;
+            padding: 0.4rem 1.2rem;
+            border-radius: 50px;
+            border-left: 3px solid gold;
+        }
+        /* cards grid */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 3rem;
+        }
+        .card {
+            background: rgba(20, 25, 35, 0.7);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,215,0,0.15);
+            border-radius: 40px;
+            padding: 2rem 1.8rem;
+            transition: all 0.25s ease;
+            box-shadow: 0 20px 30px -15px #00000080;
+        }
+        .card:hover {
+            transform: translateY(-12px) scale(1.02);
+            border-color: #ffd966;
+            box-shadow: 0 0 35px #ffd96633;
+        }
+        .card i {
+            font-size: 3.5rem;
+            color: #f5cb5c;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 15px currentColor;
+        }
+        .card h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        .card p {
+            color: #acb8d0;
+            font-size: 1.15rem;
+            line-height: 1.5;
+        }
+        .big-number {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #ffd966;
+            display: block;
+        }
+        .stat-grid {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            background: rgba(255,215,0,0.03);
+            border-radius: 70px;
+            padding: 3rem 2rem;
+            border: 1px dashed rgba(255,215,0,0.3);
+            backdrop-filter: blur(4px);
+        }
+        .stat-item p {
+            font-size: 1.3rem;
+            color: #b1c3df;
+        }
+        /* dossier block */
+        .dossier-card {
+            background: #0f131b;
+            border-left: 8px solid #e4b425;
+            border-radius: 40px;
+            padding: 3rem;
+            box-shadow: 0 0 50px rgba(255,215,0,0.1);
+            background: linear-gradient(145deg, #11161f, #0a0e15);
+        }
+        .dossier-card ul {
+            list-style: none;
+            font-size: 1.5rem;
+            line-height: 2.3;
+        }
+        .dossier-card li i {
+            color: #e4b425;
+            width: 45px;
+        }
+        /* levels of complexity */
+        .levels {
+            display: flex;
+            gap: 20px;
+            margin-top: 2.5rem;
+        }
+        .level {
+            flex: 1;
+            background: #131a24;
+            border-radius: 30px;
+            padding: 2rem;
+            border: 1px solid #2e3a48;
+            transition: 0.2s;
+        }
+        .level:hover {
+            border-color: #f5cb5c;
+            background: #1b2533;
+        }
+        .level .title {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        .lock-icon {
+            font-size: 2.8rem;
+            margin-bottom: 1rem;
+        }
+        /* footer */
+        .footer {
+            background: #04070b;
+            border-top: 2px solid rgba(255,215,0,0.2);
+            padding: 3rem 2rem;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #9aa8c2;
+            border-radius: 50px 50px 0 0;
+            margin-top: 4rem;
+        }
+        .footer i {
+            color: #ffd966;
+            margin: 0 8px;
+        }
+        .accent-text {
+            color: #ffe066;
+            font-weight: 600;
+        }
+        /* scroll glow */
+        .section:nth-child(even) {
+            border-left: 3px solid rgba(255,215,0,0.1);
+            border-right: 3px solid rgba(255,215,0,0.1);
+            border-radius: 90px;
+        }
+        hr {
+            border: 0.5px solid rgba(255,215,0,0.1);
+            width: 80%;
+            margin: 0 auto;
+        }
+        /* glowing text highlights */
+        .highlight {
+            background: rgba(255,215,0,0.1);
+            color: #ffe484;
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+        i, .fas, .far {
+            filter: drop-shadow(0 0 8px #ffd966aa);
+        }
+    </style>
+</head>
+<body>
+    <!-- Fixed header (compact by scroll) -->
+    <div class="header" id="mainHeader">
+        <div class="logo">
+            <i class="fas fa-meteor"></i> OBSERVER
+        </div>
+        <div class="nav-links">
+            <a href="#home">HOME</a>
+            <a href="#quests">QUESTS</a>
+            <a href="#stats">DOSSIER</a>
+            <a href="#levels">LEVELS</a>
+            <a href="#contact">CONTACT</a>
+        </div>
+    </div>
+
+    <!-- HERO (block 1) - secret mission -->
+    <section id="home" class="hero section">
+        <div class="hero-content">
+            <div class="secret-mission"><i class="fas fa-shield-halos"></i> ⚡ CLASSIFIED ⚡ <i class="fas fa-shield-halos"></i></div>
+            <h1>ESCAPE THE<br>OBSERVER</h1>
+            <div class="sub">real‑time cosmic mission · 60 min to evacuate</div>
+            <div class="timer-badge">
+                <i class="fas fa-hourglass-half"></i>
+                <span id="countdown">14:22:37</span>
+                <span class="highlight">until event horizon</span>
+            </div>
+            <div style="margin-top: 50px;"><i class="fas fa-chevron-down" style="font-size: 2rem; opacity: 0.7;"></i></div>
+        </div>
+    </section>
+
+    <!-- CARDS / QUESTS (block 2) -->
+    <section id="quests" class="section">
+        <h2 style="font-size: 3.5rem; margin-bottom: 1rem; font-weight: 600;"><i class="fas fa-folder-open"></i> ACTIVE FILES</h2>
+        <div class="grid-3">
+            <div class="card">
+                <i class="fas fa-user-secret"></i>
+                <h3>NOVA PROTOCOL</h3>
+                <p>Infiltrate the dark satellite. 4–6 players · extreme encryption · 60 min</p>
+                <span class="accent-text">成功率 73% ▰▰▰▰▰▰▰▰▰▰</span>
+            </div>
+            <div class="card">
+                <i class="fas fa-robot"></i>
+                <h3>AI OVERLORD</h3>
+                <p>Deactivate the core AI before it deletes the universe. puzzles level 9</p>
+                <span class="accent-text">清空率 91% ▰▰▰▰▰▰▰▰▰</span>
+            </div>
+            <div class="card">
+                <i class="fas fa-skull"></i>
+                <h3>BLACK VAULT</h3>
+                <p>Heist of the centuries. motion lasers, gravity locks. 2–5 players.</p>
+                <span class="accent-text">elite ▰▰▰▰▰▰▰▰▰▰▰</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATISTICS & ESCAPE DOSSIER (block 3) -->
+    <section id="stats" class="section">
+        <div class="dossier-card">
+            <div style="display: flex; gap: 40px; align-items: center; flex-wrap: wrap;">
+                <div style="flex: 1.2;">
+                    <span style="font-size: 1.2rem; letter-spacing: 3px;"><i class="fas fa-file-lock"></i> TOP SECRET DOSSIER //</span>
+                    <h2 style="font-size: 3.2rem; margin: 1rem 0;">ESCAPE STATISTICS</h2>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> <span class="accent-text">17,439</span> escape attempts</li>
+                        <li><i class="fas fa-times-circle"></i> <span class="accent-text">8,221</span> lost in time loop</li>
+                        <li><i class="fas fa-trophy"></i> <span class="accent-text">4.77★</span> difficulty rating</li>
+                        <li><i class="fas fa-users"></i> <span class="accent-text">347</span> elite escapers</li>
+                    </ul>
+                </div>
+                <div style="flex: 0.8;">
+                    <div class="stat-grid" style="flex-direction: column; gap: 20px; border: none; background: transparent; padding: 0;">
+                        <div><span class="big-number">89%</span><p>failure first contact</p></div>
+                        <div><span class="big-number">23min</span><p>avg. discovery time</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LEVELS OF COMPLEXITY (block 4) -->
+    <section id="levels" class="section">
+        <h2 style="font-size: 3rem; font-weight: 600; margin-bottom: 1rem;">⟡ INFILTRATION LEVELS ⟡</h2>
+        <div class="levels">
+            <div class="level">
+                <div class="lock-icon"><i class="fas fa-lock-open"></i></div>
+                <div class="title">RECRUIT</div>
+                <p>hints every 5 min · simple ciphers · no time paradox</p>
+            </div>
+            <div class="level">
+                <div class="lock-icon"><i class="fas fa-lock"></i></div>
+                <div class="title">AGENT</div>
+                <p>limited hints · quantum locks · 45 min reality window</p>
+            </div>
+            <div class="level">
+                <div class="lock-icon"><i class="fas fa-skull-crossbones"></i></div>
+                <div class="title">OBSERVER</div>
+                <p>zero hints · AI adapts · 30 min · total amnesia option</p>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 3rem;">
+            <span class="highlight"><i class="fas fa-code-branch"></i> 7 secret levels unlocked by the first team</span>
+        </div>
+    </section>
+
+    <!-- TESTIMONIAL / ESCAPE ROOM VIBE (block 5) -->
+    <section class="section">
+        <div style="background: rgba(255,215,0,0.05); border-radius: 90px; padding: 3rem 2.5rem; border: 1px solid rgba(255,215,0,0.25);">
+            <i class="fas fa-quote-right" style="font-size: 4rem; opacity: 0.3;"></i>
+            <h2 style="font-size: 2.5rem; font-weight: 400; max-width: 900px;">"The best escape room I've ever experienced. It felt like we actually entered a black hole. The countdown is relentless."</h2>
+            <p style="margin-top: 1.5rem;">— MAJOR K. , <span class="accent-text">ORION squadron</span></p>
+            <div style="display: flex; gap: 2rem; margin-top: 2.5rem;">
+                <div><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i> 4.98/5</div>
+                <div><i class="fas fa-flag"></i> 312 reviews (classified)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRE-FOOTER / BOOKING (block 6 - and extra block) -->
+    <section id="contact" class="section" style="border: 2px solid rgba(255,215,0,0.2); border-radius: 100px; background: #0b0f17;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; flex-wrap: wrap;">
+            <div>
+                <h3 style="font-size: 2.7rem;">READY TO ESCAPE?</h3>
+                <p style="font-size: 1.4rem;"><i class="fas fa-ticket-alt"></i> next available mission: <span class="accent-text">T- 6 hours</span></p>
+            </div>
+            <div style="background: #ffd966; color: #0a0c10; padding: 1.2rem 3rem; border-radius: 60px; font-weight: 800; font-size: 1.7rem; box-shadow: 0 0 45px gold;">
+                <i class="fas fa-arrow-right"></i> BOOK NOW
+            </div>
+        </div>
+        <hr style="margin: 2.5rem auto;">
+        <div style="text-align: center; font-size: 1.3rem;">
+            <i class="fas fa-map-pin"></i> 221B OBSERVER ALLEY · LONDON · ENTRY CODE: 2603
+        </div>
+    </section>
+
+    <!-- FOOTER (block 7) -->
+    <footer class="footer">
+        <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin-bottom: 1.8rem;">
+            <span><i class="fab fa-discord"></i> OBSERVER-CONTROL</span>
+            <span><i class="fas fa-envelope"></i> escape@observer.space</span>
+            <span><i class="fas fa-phone-alt"></i> +44 20 7946 0138</span>
+        </div>
+        <p>© 2025 OBSERVER — SECRET ESCAPE ROOMS. ALL RIGHTS RESERVED.<br>
+        <span style="opacity: 0.6;"><i class="fas fa-eye"></i> you are being watched</span></p>
+    </footer>
+
+    <script>
+        (function() {
+            // compact header on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // section reveal on scroll (simple intersection)
+            const sections = document.querySelectorAll('.section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px' });
+            sections.forEach(s => observer.observe(s));
+
+            // dynamic countdown (fake but cool — animated random escape time)
+            function updateCountdown() {
+                const cd = document.getElementById('countdown');
+                if (!cd) return;
+                // generate a mission-like countdown: hours:min:sec
+                const now = new Date();
+                // target midnight + random offset
+                let h = (23 - now.getHours()) % 24;
+                let m = (59 - now.getMinutes()) % 60;
+                let s = (59 - now.getSeconds()) % 60;
+                if (h < 10) h = '0' + h;
+                if (m < 10) m = '0' + m;
+                if (s < 10) s = '0' + s;
+                cd.innerText = `${h}:${m}:${s}`;
+            }
+            setInterval(updateCountdown, 500);
+            updateCountdown();
+
+            // additional cool effect: subtle glow follow mouse on cards? not needed, but small extra:
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('mousemove', function(e) {
+                    let rect = card.getBoundingClientRect();
+                    let x = e.clientX - rect.left; 
+                    let y = e.clientY - rect.top;
+                    card.style.setProperty('--x', x + 'px');
+                    card.style.setProperty('--y', y + 'px');
+                    // optional, but we don't use custom property, we add a little inline shadow love
+                    card.style.boxShadow = `0 0 45px rgba(255,215,0,0.3), 0 0 10px #ffd96622`;
+                });
+                card.addEventListener('mouseleave', function() {
+                    card.style.boxShadow = '0 20px 30px -15px #00000080';
+                });
+            });
+
+            // make header navigation click smooth
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        })();
+    </script>
+    <!-- one more small effect: star twinkle? not needed, but add tiny icon pulse -->
+    <style>
+        .fa-meteor, .fa-shield-halos { animation: pulse 3s infinite; }
+        @keyframes pulse {
+            0% { opacity: 0.9; text-shadow: 0 0 5px gold; }
+            50% { opacity: 1; text-shadow: 0 0 25px gold; }
+        }
+        .section { transition: opacity 1.1s cubic-bezier(0.23, 1, 0.32, 1), transform 1.1s cubic-bezier(0.23, 1, 0.32, 1); }
+    </style>
+</body>
+</html>
+All done!
+```

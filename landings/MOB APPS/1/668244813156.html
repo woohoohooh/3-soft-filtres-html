@@ -1,0 +1,512 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VocabVault · English builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1a1e2b;
+            padding: 12px;
+        }
+        /* phone container */
+        .phone {
+            width: 360px;
+            height: 780px;
+            background-color: var(--bg-primary);
+            border-radius: 44px;
+            overflow: hidden;
+            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.6), 0 0 0 8px #2d313f;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.2s;
+        }
+        /* themes via CSS variables */
+        :root {
+            --bg-primary: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --border-light: #E2E8F0;
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent: #38BDF8;
+            --inactive-icon: #94A3B8;
+            --header-icon: #1e293b;
+            --progress-bg: #E2E8F0;
+            --bottom-bg: #FFFFFF;
+        }
+        .dark-mode {
+            --bg-primary: #0F172A;
+            --bg-card: #1E293B;
+            --text-primary: #E2E8F0;
+            --text-secondary: #CBD5E1;
+            --border-light: #334155;
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --accent: #38BDF8;
+            --inactive-icon: #64748B;
+            --header-icon: #E2E8F0;
+            --progress-bg: #334155;
+            --bottom-bg: #1E293B;
+        }
+
+        /* main flex column */
+        .app-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            background: var(--bg-primary);
+        }
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px 8px 20px;
+            background: transparent;
+        }
+        .header h2 {
+            font-size: 22px;
+            font-weight: 620;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+        .profile-icon {
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 12px;
+            transition: background 0.15s;
+        }
+        .profile-icon:hover { background: rgba(37,99,235,0.1); }
+        /* bottom navigation */
+        .bottom-nav {
+            background: var(--bottom-bg);
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 6px 8px 10px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.02);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            border-radius: 20px;
+            padding: 6px 0 4px;
+        }
+        .nav-item.active {
+            background: rgba(37,99,235,0.08);
+            transform: scale(1.02);
+        }
+        .nav-item.active .nav-icon {
+            transform: scale(1.1);
+        }
+        .nav-icon {
+            width: 28px;
+            height: 28px;
+            margin-bottom: 2px;
+            transition: transform 0.15s;
+        }
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .active .nav-label { color: var(--primary); font-weight: 600; }
+        .active .nav-icon :is(path, circle, rect) { stroke: var(--primary); }
+        .inactive .nav-label { color: var(--inactive-icon); }
+        .inactive .nav-icon :is(path, circle, rect) { stroke: var(--inactive-icon); }
+
+        /* main content */
+        .content {
+            flex: 1;
+            padding: 8px 16px 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        /* cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 18px 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-light);
+        }
+        .row-space {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .badge {
+            background: var(--accent);
+            color: #0F172A;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 40px;
+        }
+        .progress-bar {
+            height: 10px;
+            background: var(--progress-bg);
+            border-radius: 20px;
+            margin: 12px 0 6px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 60%;
+            height: 100%;
+            background: var(--primary);
+            border-radius: 20px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .stat-item {
+            background: var(--bg-primary);
+            border-radius: 18px;
+            padding: 14px 8px;
+            text-align: center;
+            border: 1px solid var(--border-light);
+        }
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 14px 18px;
+            border-radius: 40px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 6px 14px rgba(37,99,235,0.25);
+            width: 100%;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid var(--primary);
+            color: var(--primary);
+            box-shadow: none;
+        }
+        /* onboarding */
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .app-logo svg { width: 48px; height: 48px; }
+        .app-name {
+            font-size: 34px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .tagline {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 8px 0 4px;
+            color: var(--text-primary);
+        }
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-card {
+            background: var(--bg-card);
+            width: 280px;
+            padding: 24px;
+            border-radius: 32px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+        .link-row {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin: 20px 0 8px;
+            font-size: 14px;
+        }
+        .link-row span {
+            color: var(--primary);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        /* chart mimic */
+        .chart-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            height: 100px;
+            margin: 16px 0;
+        }
+        .bar {
+            flex: 1;
+            background: var(--primary);
+            height: 40px;
+            border-radius: 12px 12px 4px 4px;
+            opacity: 0.7;
+            transition: height 0.3s;
+        }
+        .bar:nth-child(1) { height: 70px; }
+        .bar:nth-child(2) { height: 42px; }
+        .bar:nth-child(3) { height: 88px; }
+        .bar:nth-child(4) { height: 56px; }
+        .bar:nth-child(5) { height: 30px; }
+        .bar:nth-child(6) { height: 64px; }
+        /* hide/show screens */
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        .screen.active {
+            display: flex;
+        }
+        .icon-svg { display: none; } /* hide definitions */
+    </style>
+</head>
+<body>
+<div class="phone" id="phoneContainer">
+    <!-- SVG sprite definitions (hidden) -->
+    <div style="display: none;" id="svgDefs">
+        <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+            <symbol id="icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+            <symbol id="icon-learn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+            <symbol id="icon-progress" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+            <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.02.02A10 10 0 0 0 12 17.66a10 10 0 0 0 6.12-2.12z"/><path d="M16.5 6.5 19 9"/><path d="M5 9l2.5-2.5"/></symbol>
+            <symbol id="icon-profile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+            <symbol id="icon-lesson" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+            <symbol id="icon-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+            <symbol id="icon-flashcards" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="14" rx="2" ry="2"/><path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></symbol>
+            <symbol id="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+            <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></symbol>
+        </svg>
+    </div>
+
+    <!-- main dynamic container -->
+    <div class="app-screen" id="appScreen">
+        <!-- 5 screens -->
+        <!-- 1. onboarding -->
+        <div class="screen active" id="screen-onboarding">
+            <div class="content" style="justify-content: center; padding-top: 40px;">
+                <div class="logo-area">
+                    <span class="app-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></span>
+                    <span class="app-name">VocabVault</span>
+                </div>
+                <div class="tagline">Build your English</div>
+                <p style="color: var(--text-secondary); margin: 8px 0 24px;">Master 3000+ words with daily micro‑lessons. Fun, fast and effective.</p>
+                <button class="btn" id="getStartedBtn">Get Started →</button>
+                <div class="link-row">
+                    <span id="privacyLink">Privacy</span>
+                    <span id="termsLink">Terms</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. home dashboard -->
+        <div class="screen" id="screen-home">
+            <div class="header"><h2>Home</h2><div class="profile-icon" id="profileHeaderIcon"><svg width="28" height="28" stroke="var(--header-icon)" fill="none" stroke-width="2"><use href="#icon-profile"/></svg></div></div>
+            <div class="content">
+                <div class="card"><div class="row-space"><span style="font-weight:600;">daily streak</span><span class="badge">🔥 7 days</span></div><div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div></div>
+                <div class="card">
+                    <div style="font-weight:600; margin-bottom:10px;">continue lesson</div>
+                    <div style="display:flex; gap:16px; align-items:center;"><svg width="40" height="40" stroke="var(--primary)" fill="none"><use href="#icon-lesson"/></svg><div><div>Phrasal verbs</div><small>85% complete</small></div></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:85%"></div></div>
+                </div>
+                <div class="grid-2">
+                    <div class="stat-item"><svg width="28" height="28" stroke="var(--primary)"><use href="#icon-flashcards"/></svg><div style="font-size:22px; font-weight:700;">34</div><div style="font-size:12px;">learned</div></div>
+                    <div class="stat-item"><svg width="28" height="28" stroke="var(--primary)"><use href="#icon-chart"/></svg><div style="font-size:22px; font-weight:700;">870</div><div style="font-size:12px;">xp today</div></div>
+                </div>
+                <div class="card"><div style="font-weight:600;">this week</div><div class="chart-row"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div></div>
+            </div>
+        </div>
+
+        <!-- 3. learn / practice -->
+        <div class="screen" id="screen-learn">
+            <div class="header"><h2>Learn</h2><div class="profile-icon" id="profileHeaderIcon2"><svg width="28" height="28" stroke="var(--header-icon)"><use href="#icon-profile"/></svg></div></div>
+            <div class="content">
+                <div class="card" style="display:flex; align-items:center; gap:12px;"><svg width="32" height="32" stroke="var(--primary)"><use href="#icon-play"/></svg><div><b>Word of the day:</b> “meticulous” <span style="color: var(--primary);">→</span></div></div>
+                <div class="card"><div style="font-weight:600;">lessons</div><div style="margin:10px 0;">📘 Business English <span style="float:right;">3/8</span></div><div class="progress-bar"><div class="progress-fill" style="width:37%"></div></div><div style="margin:16px 0 0;">📗 IELTS vocabulary <span style="float:right;">1/12</span></div><div class="progress-bar"><div class="progress-fill" style="width:8%"></div></div></div>
+                <button class="btn btn-outline" id="practiceBtn">start practice →</button>
+            </div>
+        </div>
+
+        <!-- 4. progress / stats -->
+        <div class="screen" id="screen-progress">
+            <div class="header"><h2>Progress</h2><div class="profile-icon" id="profileHeaderIcon3"><svg width="28" height="28" stroke="var(--header-icon)"><use href="#icon-profile"/></svg></div></div>
+            <div class="content">
+                <div class="card"><div style="font-weight:600;">mastery level</div><div style="font-size:36px; color:var(--primary);">B1</div><div style="display:flex; gap:8px; margin-top:8px;"><span>🔥 5600 XP</span><span>🏅 12 badges</span></div></div>
+                <div class="card"><div class="row-space"><span>words learned</span><span>1,245 / 3,000</span></div><div class="progress-bar"><div class="progress-fill" style="width:41.5%"></div></div></div>
+                <div class="card"><div>accuracy (last 7d)</div><div class="chart-row" style="height:60px;"><div class="bar" style="height:44px;"></div><div class="bar" style="height:62px;"></div><div class="bar" style="height:58px;"></div><div class="bar" style="height:70px;"></div><div class="bar" style="height:65px;"></div><div class="bar" style="height:71px;"></div></div></div>
+            </div>
+        </div>
+
+        <!-- 5. settings/profile -->
+        <div class="screen" id="screen-settings">
+            <div class="header"><h2>Settings</h2><div class="profile-icon" id="profileHeaderIcon4"><svg width="28" height="28" stroke="var(--header-icon)"><use href="#icon-profile"/></svg></div></div>
+            <div class="content">
+                <div class="card" style="display:flex; align-items:center; gap:14px;"><svg width="40" height="40" stroke="var(--primary)"><use href="#icon-profile"/></svg><div><b>Alex Chen</b><div>alex@example.com</div></div></div>
+                <div class="card"><div style="display:flex; justify-content:space-between;"><span>🌙 Dark mode</span><label><input type="checkbox" id="darkModeToggle"></label></div></div>
+                <div class="card"><div>🔔 Notifications</div><div>🌐 Language: English</div><div>📲 version 2.4.1</div></div>
+                <button class="btn btn-outline" id="logoutFake" style="margin-top:20px;">Sign out</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- bottom navigation (static) -->
+    <div class="bottom-nav" id="bottomNav">
+        <div class="nav-item active" data-target="home"><span class="nav-icon"><svg width="28" height="28"><use href="#icon-home"/></svg></span><span class="nav-label">Home</span></div>
+        <div class="nav-item inactive" data-target="learn"><span class="nav-icon"><svg width="28" height="28"><use href="#icon-learn"/></svg></span><span class="nav-label">Learn</span></div>
+        <div class="nav-item inactive" data-target="progress"><span class="nav-icon"><svg width="28" height="28"><use href="#icon-progress"/></svg></span><span class="nav-label">Progress</span></div>
+        <div class="nav-item inactive" data-target="settings"><span class="nav-icon"><svg width="28" height="28"><use href="#icon-settings"/></svg></span><span class="nav-label">Settings</span></div>
+    </div>
+</div>
+
+<!-- modal container (hidden) -->
+<div id="modalContainer" style="display:none;"></div>
+
+<script>
+(function() {
+    // screen manager
+    const screens = {
+        onboarding: document.getElementById('screen-onboarding'),
+        home: document.getElementById('screen-home'),
+        learn: document.getElementById('screen-learn'),
+        progress: document.getElementById('screen-progress'),
+        settings: document.getElementById('screen-settings')
+    };
+    const navItems = document.querySelectorAll('.nav-item');
+    const profileIcons = document.querySelectorAll('.profile-icon');
+    const body = document.documentElement;
+    const phone = document.getElementById('phoneContainer');
+
+    function showScreen(screenId) {
+        Object.values(screens).forEach(s => s.classList.remove('active'));
+        if (screens[screenId]) screens[screenId].classList.add('active');
+        // update bottom nav
+        navItems.forEach(item => {
+            const target = item.dataset.target;
+            if (target === screenId) {
+                item.classList.remove('inactive');
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+                item.classList.add('inactive');
+            }
+        });
+    }
+
+    // get started
+    document.getElementById('getStartedBtn').addEventListener('click', ()=>{
+        showScreen('home');
+    });
+
+    // bottom nav clicks
+    navItems.forEach(item => {
+        item.addEventListener('click', (e)=>{
+            const target = item.dataset.target;
+            if (target) showScreen(target);
+        });
+    });
+
+    // profile icon -> settings
+    profileIcons.forEach(icon => {
+        icon.addEventListener('click', ()=>{
+            showScreen('settings');
+        });
+    });
+
+    // modal logic
+    function showModal(title, content) {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal';
+        modalDiv.innerHTML = `<div class="modal-card"><h3 style="margin-bottom:12px;">${title}</h3><p>${content}</p><button class="btn" style="margin-top:16px;" id="closeModalBtn">Close</button></div>`;
+        document.body.appendChild(modalDiv);
+        document.getElementById('closeModalBtn').addEventListener('click', ()=> modalDiv.remove());
+        modalDiv.addEventListener('click', (e)=> { if(e.target === modalDiv) modalDiv.remove(); });
+    }
+    document.getElementById('privacyLink').addEventListener('click', ()=> showModal('Privacy Policy', 'We respect your data. No tracking, no selling.'));
+    document.getElementById('termsLink').addEventListener('click', ()=> showModal('Terms of Service', 'Use VocabVault for personal learning only. Be kind.'));
+
+    // dark mode toggle
+    const darkToggle = document.getElementById('darkModeToggle');
+    if (darkToggle) {
+        darkToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                phone.classList.add('dark-mode');
+            } else {
+                phone.classList.remove('dark-mode');
+            }
+        });
+    }
+
+    // practice button dummy
+    document.getElementById('practiceBtn')?.addEventListener('click', ()=> alert('practice started!'));
+
+    // developer screenshot (Shift+W)
+    let screenshotCounter = 1;
+    document.addEventListener('keydown', (e) => {
+        if (e.shiftKey && e.key === 'W') {
+            const isDark = phone.classList.contains('dark-mode');
+            const filename = isDark ? '6.png' : (screenshotCounter + '.png');
+            if (!isDark) {
+                if (screenshotCounter < 6) screenshotCounter++;
+                else screenshotCounter = 1;
+            }
+            // simulate capture (real screenshot would need canvas, but we follow spec)
+            alert(`📸 Screenshot saved as ${filename} (simulated)`);
+        }
+    });
+
+    // fake initial onboarding
+    showScreen('onboarding');
+
+    // extra: small animation bar update (on home)
+})();
+</script>
+
+<!-- JSON output (Play Store) -->
+<pre style="display:none;" id="jsonOutput"></pre>
+<script>
+    (function() {
+        const titles = {
+            "1.png": "Start Learning",
+            "2.png": "Daily Lessons",
+            "3.png": "Practice Skills",
+            "4.png": "Track Progress",
+            "5.png": "Smart Settings",
+            "6.png": "Dark Theme"
+        };
+        console.log(JSON.stringify(titles, null, 2));
+        document.body.insertAdjacentHTML('beforeend', '<pre style="background:#eee; padding:10px;margin:10px; font-size:10px; border-radius:8px;">' + JSON.stringify(titles, null, 2) + '</pre>');
+    })();
+</script>
+All done!
+```

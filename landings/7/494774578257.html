@@ -1,0 +1,714 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEGIS · private shooting club</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=Lexend+Exa:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0b0c10;
+            color: #e5e9f0;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.5;
+            font-weight: 400;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* custom crosshair cursor */
+        body * {
+            cursor: crosshair;
+        }
+
+        /* typography */
+        h1, h2, h3, .menu a, .stat-number, .btn, .section-subtitle {
+            font-family: 'Lexend Exa', sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            line-height: 1.1;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+        }
+
+        h2 {
+            font-size: 2.8rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            display: inline-block;
+            border-left: 6px solid #ffd700;
+            padding-left: 1.5rem;
+        }
+
+        .section-subtitle {
+            color: #ffd700;
+            font-size: 1rem;
+            letter-spacing: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        /* fixed dynamic header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            background: transparent;
+            mix-blend-mode: exclusion;
+        }
+
+        .header.scrolled {
+            background: rgba(2, 5, 10, 0.95);
+            backdrop-filter: blur(12px);
+            padding: 0.8rem 3rem;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+            mix-blend-mode: normal;
+        }
+
+        .logo {
+            font-family: 'Lexend Exa', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 6px;
+        }
+        .logo span {
+            color: #ffd700;
+        }
+
+        .menu {
+            display: flex;
+            gap: 2.5rem;
+        }
+        .menu a {
+            text-decoration: none;
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-weight: 500;
+            position: relative;
+            padding: 0.3rem 0;
+        }
+        .menu a::after {
+            content: "//";
+            position: absolute;
+            left: 50%;
+            bottom: -18px;
+            transform: translateX(-50%);
+            color: #ffd700;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .menu a:hover::after {
+            opacity: 1;
+            bottom: -12px;
+        }
+
+        /* main container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 3rem;
+        }
+
+        /* hero block */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at 30% 30%, #1f2833, #0b0c10 80%);
+            border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+        }
+        .hero-content {
+            max-width: 800px;
+        }
+        .hero-meta {
+            display: flex;
+            gap: 2rem;
+            margin: 2rem 0 3rem;
+            font-size: 1.2rem;
+            border-left: 2px solid #ffd700;
+            padding-left: 2rem;
+        }
+        .hero-meta i {
+            color: #ffd700;
+            margin-right: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 1.2rem 2.8rem;
+            background: transparent;
+            border: 2px solid #ffd700;
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 3px;
+            position: relative;
+            overflow: hidden;
+            transition: 0.2s;
+            z-index: 1;
+            margin-right: 1.5rem;
+            backdrop-filter: blur(4px);
+        }
+        .btn:hover {
+            color: #0b0c10;
+            background: #ffd700;
+        }
+
+        /* crosshair animation overlay (js later) */
+        #crosshairCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0.35;
+        }
+
+        /* card block (quests -> disciplines) */
+        .disciplines {
+            padding: 7rem 0;
+            background: #11151c;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .card {
+            background: rgba(20, 25, 35, 0.8);
+            border: 1px solid #2a2f3a;
+            padding: 2.5rem 2rem;
+            transition: all 0.25s;
+            position: relative;
+            backdrop-filter: blur(4px);
+        }
+        .card:hover {
+            border-color: #ffd700;
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 25px 40px -10px black;
+        }
+        .card i {
+            font-size: 3rem;
+            color: #ffd700;
+            margin-bottom: 1.5rem;
+        }
+        .card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+        .card p {
+            color: #a0aaba;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* trainers block */
+        .trainers {
+            padding: 7rem 0;
+            background: #0f131a;
+            border-top: 1px solid #202530;
+            border-bottom: 1px solid #202530;
+        }
+        .trainer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+        }
+        .trainer-item {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+        .trainer-icon {
+            font-size: 3.5rem;
+            color: #ffd700;
+            background: #1a1f2b;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px dashed #ffd700;
+        }
+        .trainer-info h4 {
+            font-size: 2rem;
+            margin-bottom: 0.2rem;
+        }
+        .trainer-info p {
+            color: #b0b9cc;
+        }
+
+        /* stats block with counters */
+        .stats {
+            padding: 5rem 0;
+            background: #0b0c10;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        .stat-item {
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 5rem;
+            font-weight: 700;
+            color: #ffd700;
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+        .stat-label {
+            letter-spacing: 2px;
+            color: #c0c8da;
+            margin-top: 0.5rem;
+        }
+
+        /* packages / membership */
+        .packages {
+            padding: 7rem 0;
+            background: #11151e;
+        }
+        .package-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+        .package {
+            background: #1b212b;
+            padding: 2.5rem 2rem;
+            border: 1px solid #323a48;
+            transition: 0.2s;
+        }
+        .package:hover {
+            border-color: #ffd700;
+            transform: scale(1.02);
+        }
+        .package .price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #ffd700;
+            margin: 1.5rem 0;
+        }
+        .package ul {
+            list-style: none;
+            margin-top: 2rem;
+        }
+        .package li {
+            margin: 1rem 0;
+            border-bottom: 1px dashed #334;
+            padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .package li i {
+            color: #ffd700;
+            width: 20px;
+        }
+
+        /* footer */
+        .footer {
+            background: #07090e;
+            padding: 4rem 3rem;
+            border-top: 1px solid #202530;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+        }
+        .footer-col p {
+            color: #7f8a9e;
+            margin-top: 1rem;
+        }
+        .footer-social i {
+            color: #ffd700;
+            margin-left: 1.5rem;
+            font-size: 1.4rem;
+            transition: 0.2s;
+        }
+        .footer-social i:hover {
+            color: white;
+        }
+
+        /* scroll reveal animation (fade up) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.7s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* random ui details */
+        .signature {
+            font-size: 0.8rem;
+            color: #3a4455;
+            margin-top: 2rem;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ffd700, transparent);
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- fixed header -->
+    <div class="header" id="dynamicHeader">
+        <div class="logo">AEGIS<span>⚡</span></div>
+        <div class="menu">
+            <a href="#hero">MISSION</a>
+            <a href="#disciplines">DISCIPLINES</a>
+            <a href="#trainers">OPERATORS</a>
+            <a href="#packages">MEMBERSHIP</a>
+        </div>
+    </div>
+
+    <!-- crosshair canvas (hero animation) -->
+    <canvas id="crosshairCanvas"></canvas>
+
+    <!-- HERO block  -->
+    <section class="hero" id="hero">
+        <div class="container hero-content">
+            <span class="section-subtitle">▸ precision shooting club</span>
+            <h1>LOCK.<br>LOAD.<br>DOMINATE.</h1>
+            <div class="hero-meta">
+                <span><i class="fas fa-bullseye"></i> 0.2 MOA GUARANTEE</span>
+                <span><i class="fas fa-crosshairs"></i> 24/7 RANGE</span>
+                <span><i class="fas fa-shield-alt"></i> ELITE ONLY</span>
+            </div>
+            <a href="#" class="btn">REQUEST DOSSIER</a>
+            <a href="#" class="btn" style="border-color: #4a5a72; color: #ccd6f0;">VIEW CALIBER</a>
+        </div>
+    </section>
+
+    <!-- disciplines block (cards) -->
+    <section class="disciplines" id="disciplines">
+        <div class="container">
+            <span class="section-subtitle reveal">▸ operational fields</span>
+            <h2 class="reveal">precision disciplines</h2>
+            <div class="card-grid">
+                <div class="card reveal">
+                    <i class="fas fa-bullseye"></i>
+                    <h3>PRS TACTICAL</h3>
+                    <p>Precision rifle series. Bolt-action, gas-gun, unknown distance. Up to 1200m.</p>
+                </div>
+                <div class="card reveal">
+                    <i class="fas fa-gun"></i>
+                    <h3>ACTION PISTOL</h3>
+                    <p>Dynamic shooting, movement, multiple targets. IPSC / USPSA stages.</p>
+                </div>
+                <div class="card reveal">
+                    <i class="fas fa-bomb"></i>
+                    <h3>LONG RANGE</h3>
+                    <p>ELR .50 cal platform. 2000m+ steel. Wind reading & ballistic software.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- trainers block (elite operators) -->
+    <section class="trainers" id="trainers">
+        <div class="container">
+            <span class="section-subtitle reveal">▸ high command</span>
+            <h2 class="reveal">weapons & tactics mentors</h2>
+            <div class="trainer-grid">
+                <div class="trainer-item reveal">
+                    <div class="trainer-icon"><i class="fas fa-skull"></i></div>
+                    <div class="trainer-info">
+                        <h4>COLE "GHOST" REID</h4>
+                        <p>EX‑DEVGRU, 18 years. PRS champion, long range specialist.</p>
+                    </div>
+                </div>
+                <div class="trainer-item reveal">
+                    <div class="trainer-icon"><i class="fas fa-crown"></i></div>
+                    <div class="trainer-info">
+                        <h4>NADIA VÖLKER</h4>
+                        <p>Olympic silver, GSG‑9 instructor. Dynamic & combat pistol.</p>
+                    </div>
+                </div>
+                <div class="trainer-item reveal">
+                    <div class="trainer-icon"><i class="fas fa-eye"></i></div>
+                    <div class="trainer-info">
+                        <h4>J. "PREACHER" COLE</h4>
+                        <p>Marine scout sniper, ballistics engineer. 1200m+ confirmed.</p>
+                    </div>
+                </div>
+                <div class="trainer-item reveal">
+                    <div class="trainer-icon"><i class="fas fa-robot"></i></div>
+                    <div class="trainer-info">
+                        <h4>SIMON "AXE" KERR</h4>
+                        <p>SAS reservist, CQB & tactical shotguns. 2‑time UKPSA champ.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- stats block (counters) -->
+    <section class="stats" id="stats">
+        <div class="stat-item reveal">
+            <div class="stat-number" data-target="18700">0</div>
+            <div class="stat-label">ROUNDS / MONTH</div>
+        </div>
+        <div class="stat-item reveal">
+            <div class="stat-number" data-target="15">0</div>
+            <div class="stat-label">PRECISION LANES</div>
+        </div>
+        <div class="stat-item reveal">
+            <div class="stat-number" data-target="3400">0</div>
+            <div class="stat-label">MEMBERS</div>
+        </div>
+        <div class="stat-item reveal">
+            <div class="stat-number" data-target="124">0</div>
+            <div class="stat-label">OPERATORS</div>
+        </div>
+    </section>
+
+    <!-- packages block (membership) -->
+    <section class="packages" id="packages">
+        <div class="container">
+            <span class="section-subtitle reveal">▸ membership tiers</span>
+            <h2 class="reveal">firearm privileges</h2>
+            <div class="package-cards">
+                <div class="package reveal">
+                    <h3>CARBINE</h3>
+                    <div class="price">$350</div>
+                    <p>monthly, induction included</p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Rifle/pistol access (100m)</li>
+                        <li><i class="fas fa-check"></i> 2 guest passes</li>
+                        <li><i class="fas fa-check"></i> Basic coaching</li>
+                    </ul>
+                </div>
+                <div class="package reveal" style="border-color: #ffd700; transform: scale(1.02);">
+                    <h3>BATTLE RIFLE</h3>
+                    <div class="price">$720</div>
+                    <p>most popular</p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> All ranges up to 600m</li>
+                        <li><i class="fas fa-check"></i> Unlimited guests (friday)</li>
+                        <li><i class="fas fa-check"></i> Ballistic analysis</li>
+                        <li><i class="fas fa-check"></i> Armorer discount</li>
+                    </ul>
+                </div>
+                <div class="package reveal">
+                    <h3>.50 BMG</h3>
+                    <div class="price">$1250</div>
+                    <p>executive</p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> ELR 1200m+ lane</li>
+                        <li><i class="fas fa-check"></i> Private vault</li>
+                        <li><i class="fas fa-check"></i> 1on1 with ghost</li>
+                        <li><i class="fas fa-check"></i> Night vision sessions</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer block -->
+    <footer class="footer">
+        <div class="footer-col">
+            <div class="logo" style="font-size: 2rem;">AEGIS<span>⚡</span></div>
+            <p>private shooting club · est. 2014<br>2120 range rd, austin, tx<br>+1 (800) 447-7623</p>
+        </div>
+        <div class="footer-col">
+            <p>⏤ precision ethics ⏤<br>no military simulation without safety.<br>all members pass B.I. & psych eval.</p>
+        </div>
+        <div class="footer-col footer-social">
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-x-twitter"></i>
+            <i class="fab fa-youtube"></i>
+        </div>
+    </footer>
+
+    <!-- JavaScript: header shrink, crosshair animation, counters + scroll reveal -->
+    <script>
+        (function() {
+            // header dynamic on scroll
+            const header = document.getElementById('dynamicHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 80) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // crosshair canvas animation (hero overlay)
+            const canvas = document.getElementById('crosshairCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let mouseX = 0, mouseY = 0;
+            let particles = [];
+
+            function initCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                // create some random crosshair glows
+                for (let i = 0; i < 12; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: 10 + Math.random() * 30,
+                        speed: 0.2 + Math.random() * 0.5,
+                        angle: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+
+            function drawCrosshair(x, y, size = 24, alpha = 0.2) {
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(255, 215, 0, ${alpha})`;
+                ctx.lineWidth = 1.5;
+                // horizontal
+                ctx.moveTo(x - size, y);
+                ctx.lineTo(x - size/3, y);
+                ctx.moveTo(x + size/3, y);
+                ctx.lineTo(x + size, y);
+                // vertical
+                ctx.moveTo(x, y - size);
+                ctx.lineTo(x, y - size/3);
+                ctx.moveTo(x, y + size/3);
+                ctx.lineTo(x, y + size);
+                ctx.stroke();
+                // thin outer circle
+                ctx.beginPath();
+                ctx.arc(x, y, size * 0.8, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.5})`;
+                ctx.stroke();
+            }
+
+            function animateCanvas() {
+                ctx.clearRect(0, 0, width, height);
+                // draw grid lines (very subtle)
+                ctx.strokeStyle = 'rgba(255, 215, 0, 0.05)';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < width; i += 60) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, height);
+                    ctx.stroke();
+                }
+                for (let i = 0; i < height; i += 60) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(width, i);
+                    ctx.stroke();
+                }
+
+                // moving particles (tiny crosshairs)
+                particles.forEach(p => {
+                    p.x += Math.cos(p.angle) * p.speed;
+                    p.y += Math.sin(p.angle) * p.speed;
+                    if (p.x < 0 || p.x > width) p.angle += Math.PI/2;
+                    if (p.y < 0 || p.y > height) p.angle += Math.PI/2;
+                    drawCrosshair(p.x, p.y, 12, 0.12);
+                });
+
+                // dynamic crosshair near mouse
+                if (mouseX > 0 && mouseY > 0) {
+                    drawCrosshair(mouseX, mouseY, 40, 0.45);
+                }
+                requestAnimationFrame(animateCanvas);
+            }
+
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            window.addEventListener('resize', () => {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            });
+
+            initCanvas();
+            animateCanvas();
+
+            // counters on stats block
+            const statNumbers = document.querySelectorAll('.stat-number');
+            const statsSection = document.getElementById('stats');
+            let counted = false;
+
+            function startCounters() {
+                statNumbers.forEach(stat => {
+                    const target = parseInt(stat.getAttribute('data-target'));
+                    let current = 0;
+                    const increment = target / 70; // smooth
+                    const updateCounter = () => {
+                        current += increment;
+                        if (current < target) {
+                            stat.innerText = Math.floor(current);
+                            requestAnimationFrame(updateCounter);
+                        } else {
+                            stat.innerText = target;
+                        }
+                    };
+                    updateCounter();
+                });
+            }
+
+            // scroll reveal + counters trigger
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // if stats block appears, start counters once
+                        if (entry.target.closest('#stats') && !counted) {
+                            counted = true;
+                            startCounters();
+                        }
+                    }
+                });
+            }, { threshold: 0.25 });
+
+            reveals.forEach(el => observer.observe(el));
+
+            // manually pre-reveal hero
+            document.querySelectorAll('.hero .reveal').forEach(el => el.classList.add('active'));
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

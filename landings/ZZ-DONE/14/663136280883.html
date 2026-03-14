@@ -1,0 +1,487 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gleam & Blade · precision barbering</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #1e1e1e;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll + anchor offset */
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 80px;
+        }
+
+        /* ----- fixed header (compact on scroll) ----- */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem 5%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .site-header.compact {
+            padding: 0.7rem 5%;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #1e1e1e, #3a3a3a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: 0.2s;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.8rem;
+            font-weight: 500;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #2c2c2c;
+            font-size: 1.1rem;
+            position: relative;
+            transition: 0.2s;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: #000;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* ----- common block styling ----- */
+        section {
+            padding: 6rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.15, 0.85, 0.35, 1), transform 0.8s cubic-bezier(0.15, 0.85, 0.35, 1);
+        }
+
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h2 {
+            font-size: 3.2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .grid-2, .grid-3, .grid-4 {
+            display: grid;
+            gap: 2.5rem;
+        }
+
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+        /* card style */
+        .service-card, .feature-card {
+            background: #f9f9f9;
+            border-radius: 2rem;
+            padding: 2rem 1.8rem;
+            transition: all 0.3s ease;
+            border: 1px solid #f0f0f0;
+        }
+
+        .service-card:hover, .feature-card:hover {
+            background: #ffffff;
+            box-shadow: 0 30px 40px -20px rgba(0,0,0,0.15);
+            transform: translateY(-8px) scale(1.02);
+            border-color: #dddddd;
+        }
+
+        .service-card i, .feature-card i {
+            font-size: 2.8rem;
+            margin-bottom: 1.5rem;
+            color: #1e1e1e;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #4a4a4a;
+            margin: 1rem 0 1.8rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1e1e1e;
+            color: white;
+            padding: 0.9rem 2.2rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-decoration: none;
+            transition: 0.25s;
+            border: 2px solid #1e1e1e;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #1e1e1e;
+        }
+
+        .btn:hover {
+            background: #3e3e3e;
+            border-color: #3e3e3e;
+            color: white;
+        }
+
+        /* header glitch effect (js) */
+        .glitch-wrapper {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .glitch-title {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            position: relative;
+            color: #1e1e1e;
+        }
+
+        /* footer */
+        .site-footer {
+            background: #f5f5f5;
+            padding: 2.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .socials i {
+            font-size: 1.8rem;
+            margin-left: 1.5rem;
+            color: #2c2c2c;
+            transition: 0.2s;
+        }
+        .socials i:hover { color: #000; transform: scale(1.1); }
+
+        /* ---------- selected random: BARBERSHOP ---------- */
+        /* everything else white background, clean */
+    </style>
+</head>
+<body>
+
+    <!-- FIXED HEADER (block 1) -->
+    <header class="site-header" id="mainHeader">
+        <div class="logo"><i class="fas fa-cut" style="margin-right: 8px; -webkit-text-fill-color: #1e1e1e;"></i> GLEAM&BLADE</div>
+        <div class="nav-links">
+            <a href="#craft">Craft</a>
+            <a href="#services">Services</a>
+            <a href="#team">Team</a>
+            <a href="#pricing">Price</a>
+            <a href="#location">Locate</a>
+        </div>
+    </header>
+
+    <!-- BLOCK 2: HERO with glitch animation (js) -->
+    <section id="hero" style="padding-top: 9rem;">
+        <div class="glitch-wrapper">
+            <div class="glitch-title" id="glitchText">EDGE · PRECISION · SOUL</div>
+        </div>
+        <div style="display: flex; gap: 4rem; align-items: center; margin-top: 2rem;">
+            <div style="flex: 1;">
+                <h2 style="font-size: 4rem; margin-bottom: 1.2rem;">Where <br>architecture meets <br>hair.</h2>
+                <p style="font-size: 1.4rem;">No walk-ins, only appointments. Classic cuts, hot towel shaves, straight-razor finish.</p>
+                <a href="#" class="btn">BOOK OBSESSION →</a>
+            </div>
+            <div style="flex: 1; background: #f0f0f0; border-radius: 3rem; padding: 3rem 2rem; text-align: center;">
+                <i class="fas fa-regular fa-scissors" style="font-size: 6rem; color: #1e1e1e; opacity: 0.8;"></i>
+                <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 2rem;">
+                    <div><i class="fas fa-star"></i> <span style="font-weight:600;">4.9</span> (2k+)</div>
+                    <div><i class="fas fa-clock"></i> 10min wait</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: FEATURE / CRAFT (the "craft" anchor) -->
+    <section id="craft">
+        <h2>We don’t <span style="font-style: italic;">cut</span> — we sculpt.</h2>
+        <div class="grid-2" style="margin-top: 2rem;">
+            <div class="feature-card">
+                <i class="fas fa-regular fa-gem"></i>
+                <h3>Japanese steel</h3>
+                <p>Hand-forged shears & razors. Every line, precise.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-regular fa-hand-sparkles"></i>
+                <h3>Hot towel ritual</h3>
+                <p>Steam, lavender compress, and a classic lather.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: SERVICES (detailed) -->
+    <section id="services">
+        <h2>Signature services</h2>
+        <div class="grid-3">
+            <div class="service-card">
+                <i class="fas fa-cut"></i>
+                <h3>The Executive</h3>
+                <p>Precision cut + razor line-up + hot towel finish. 45min.</p>
+                <span style="font-weight: 700; font-size: 1.8rem;">$58</span>
+            </div>
+            <div class="service-card">
+                <i class="fas fa-regular fa-face-smile"></i>
+                <h3>Luxury shave</h3>
+                <p>3-pass straight razor, oil, balm. Steamed towel ritual.</p>
+                <span style="font-weight: 700; font-size: 1.8rem;">$46</span>
+            </div>
+            <div class="service-card">
+                <i class="fas fa-regular fa-crown"></i>
+                <h3>Royal package</h3>
+                <p>Cut + shave + beard shaping + shoulder massage.</p>
+                <span style="font-weight: 700; font-size: 1.8rem;">$92</span>
+            </div>
+        </div>
+        <div style="margin-top: 3rem; text-align: right;">
+            <a href="#" class="btn btn-outline">see all 12 services →</a>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: TEAM / MASTER BARBERS -->
+    <section id="team">
+        <h2>Masters of the blade</h2>
+        <div class="grid-3">
+            <div class="service-card" style="text-align: center;">
+                <i class="fas fa-regular fa-user" style="font-size: 4rem;"></i>
+                <h3>Leonid Razor</h3>
+                <p>17 years · straight razor specialist</p>
+            </div>
+            <div class="service-card" style="text-align: center;">
+                <i class="fas fa-regular fa-user" style="font-size: 4rem;"></i>
+                <h3>Dorian Black</h3>
+                <p>fade architect · 9 years experience</p>
+            </div>
+            <div class="service-card" style="text-align: center;">
+                <i class="fas fa-regular fa-user" style="font-size: 4rem;"></i>
+                <h3>M. Shears</h3>
+                <p>texture & modern cuts · educator</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 6: PRICING / value -->
+    <section id="pricing">
+        <h2>Effortless investment</h2>
+        <div class="grid-2">
+            <div>
+                <p><i class="fas fa-check" style="margin-right: 10px;"></i> <strong>Haircut</strong> $42 – $58</p>
+                <p><i class="fas fa-check" style="margin-right: 10px;"></i> <strong>Beard sculpt</strong> $32</p>
+                <p><i class="fas fa-check" style="margin-right: 10px;"></i> <strong>Shave (straight)</strong> $46</p>
+            </div>
+            <div>
+                <p><i class="fas fa-check" style="margin-right: 10px;"></i> <strong>Kids cut (u12)</strong> $32</p>
+                <p><i class="fas fa-check" style="margin-right: 10px;"></i> <strong>Royal package</strong> $92</p>
+                <p><i class="fas fa-check" style="margin-right: 10px;"></i> <strong>Membership</strong> $190/month</p>
+            </div>
+        </div>
+        <div style="background: #f2f2f2; border-radius: 3rem; padding: 2rem; margin-top: 3rem;">
+            <i class="fas fa-regular fa-credit-card" style="font-size: 2rem; float: right;"></i>
+            <p style="margin:0; font-size: 1.5rem; font-weight:600;">First timer? 20% off with code: FRESH20</p>
+        </div>
+    </section>
+
+    <!-- BLOCK 7: TESTIMONIAL / INSTA FEED (icon heavy) -->
+    <section id="testimonials">
+        <h2>Sharp words</h2>
+        <div class="grid-3">
+            <div class="feature-card">
+                <i class="fas fa-regular fa-star" style="color: #1e1e1e;"></i> <i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i>
+                <p style="margin-top: 1rem;">“Best fade in the city. Leonid is a true artist.”</p>
+                <p>— J. Parker</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i>
+                <p style="margin-top: 1rem;">“The hot towel shave changed my life. No joke.”</p>
+                <p>— M. V.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i><i class="fas fa-regular fa-star"></i>
+                <p style="margin-top: 1rem;">“Ambiance, music, attention — pure class.”</p>
+                <p>— D. Choi</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 8: LOCATION / CONTACT -->
+    <section id="location">
+        <h2>Find the den</h2>
+        <div class="grid-2" style="align-items: center;">
+            <div>
+                <p><i class="fas fa-regular fa-map-pin"></i> 22 Bond Street, downtown · entrance through black door</p>
+                <p><i class="fas fa-regular fa-clock"></i> Tue–Sat: 10am – 8pm, Sun: 12–5pm (closed Mon)</p>
+                <p><i class="fas fa-regular fa-phone"></i> +1 (212) 555 8765</p>
+                <div style="margin-top: 2rem;">
+                    <a href="#" class="btn"><i class="fab fa-whatsapp" style="margin-right: 8px;"></i> Text us</a>
+                </div>
+            </div>
+            <div style="background: #eaeaea; border-radius: 2rem; padding: 3rem; text-align: center;">
+                <i class="fas fa-regular fa-store" style="font-size: 5rem;"></i>
+                <p style="margin-top: 1rem;">walk-ins? limited. <br> booking essential</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 9: FOOTER (2 blocks actually: footer counts as the 9th) -->
+    <footer class="site-footer">
+        <div style="font-weight: 500;">© 2025 GLEAM&BLADE · built with edge</div>
+        <div class="socials">
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-x-twitter"></i>
+            <i class="fab fa-tiktok"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // 1) compact header on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 20) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // 2) intersection observer — block fade-in (section visible)
+            const sections = document.querySelectorAll('section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+            sections.forEach(sec => observer.observe(sec));
+
+            // 3) glitch / scramble effect on hero text (js animation)
+            const glitchEl = document.getElementById('glitchText');
+            if (glitchEl) {
+                const originalText = glitchEl.innerText;
+                let interval;
+                let frame = 0;
+
+                function startGlitch() {
+                    let glitchCount = 0;
+                    interval = setInterval(() => {
+                        if (glitchCount > 18) {  // enough glitch, then stop
+                            clearInterval(interval);
+                            glitchEl.innerText = originalText;
+                            glitchEl.style.letterSpacing = 'normal';
+                            return;
+                        }
+                        // scramble part of text
+                        let scrambled = '';
+                        for (let i = 0; i < originalText.length; i++) {
+                            if (Math.random() > 0.6) {
+                                scrambled += String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                            } else {
+                                scrambled += originalText[i];
+                            }
+                        }
+                        glitchEl.innerText = scrambled;
+                        glitchEl.style.letterSpacing = Math.random() * 4 + 'px';
+                        glitchCount++;
+                    }, 70);
+                }
+
+                // start glitch after 0.5s, then every 6 sec (playful)
+                setTimeout(startGlitch, 500);
+                setInterval(startGlitch, 6000);
+            }
+
+            // 4) subtle parallax or extra? -> dynamic anchor highlight, optional
+            const navLinks = document.querySelectorAll('.nav-links a');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 90;
+                    if (pageYOffset >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.style.fontWeight = '400';
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.style.fontWeight = '700';
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <!-- ensure first block visible after tiny delay (observer also triggers) -->
+    <script>
+        (function setHeroVisible() {
+            document.getElementById('hero').classList.add('visible');
+        })();
+    </script>
+
+</body>
+</html>
+All done!
+```

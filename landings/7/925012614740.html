@@ -1,0 +1,634 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private astronomy club</title>
+    <!-- Font & Icons (no external images) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #03050b;
+            color: #e0e4f0;
+            line-height: 1.4;
+            font-weight: 300;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* custom glow & selection */
+        ::selection {
+            background: #b6985a;
+            color: #03050b;
+        }
+
+        /* sticky header with dynamic compact effect */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(3, 5, 11, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(182, 152, 90, 0.2);
+            transition: padding 0.3s ease, box-shadow 0.3s ease;
+            padding: 1.4rem 4rem;
+        }
+
+        .header-compact {
+            padding: 0.6rem 4rem !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            border-bottom: 1px solid rgba(182, 152, 90, 0.4);
+        }
+
+        .header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #fff6e5, #c9ac7c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            border-right: 2px solid #b6985a;
+            padding-right: 1.4rem;
+        }
+
+        .nav {
+            display: flex;
+            gap: 3rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1.5px;
+        }
+        .nav a {
+            color: #c6b9a4;
+            text-decoration: none;
+            transition: 0.25s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav a:hover {
+            color: #f2e1c0;
+            border-bottom: 1px solid #b6985a;
+        }
+
+        /* block general */
+        section {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 5rem 4rem;
+            border-bottom: 1px solid rgba(182, 152, 90, 0.08);
+        }
+
+        /* reveal animation on scroll (simple intersection observer) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(36px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+        .reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* hero special: starfield + js moving overlay */
+        .hero {
+            position: relative;
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            padding-top: 2rem;
+            padding-bottom: 6rem;
+            border-bottom: 2px solid #b6985a30;
+            overflow: hidden;
+        }
+
+        #starfield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            max-width: 800px;
+        }
+
+        .hero-pre {
+            font-size: 1rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: #b6985a;
+            border-left: 4px solid #b6985a;
+            padding-left: 1.2rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(90deg, rgba(182,152,90,0.2), transparent);
+        }
+
+        .hero-title {
+            font-size: 5.5rem;
+            font-weight: 700;
+            line-height: 1.0;
+            margin-bottom: 1.8rem;
+            background: linear-gradient(145deg, #ffffff, #beb29f);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+
+        .hero-desc {
+            font-size: 1.3rem;
+            max-width: 620px;
+            color: #aab3cc;
+            margin-bottom: 3rem;
+            font-weight: 300;
+            backdrop-filter: blur(2px);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1.5px solid #b6985a;
+            color: #f2e1c0;
+            padding: 1rem 3rem;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            backdrop-filter: blur(8px);
+        }
+        .btn:hover {
+            background: #b6985a;
+            color: #03050b;
+            box-shadow: 0 0 32px #b6985a80;
+        }
+
+        /* stats / counters */
+        .stats-grid {
+            display: flex;
+            gap: 4rem;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        .stat-item {
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1;
+            background: linear-gradient(135deg, #d4c5aa, #f0e5d2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.4rem;
+            letter-spacing: -1px;
+        }
+        .stat-label {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #8c8faa;
+            border-bottom: 1px solid #b6985a40;
+            padding-bottom: 0.8rem;
+        }
+
+        /* telescopes / cards */
+        .section-title {
+            font-size: 3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            letter-spacing: -0.5px;
+            display: inline-block;
+            border-bottom: 3px solid #b6985a;
+            padding-bottom: 0.4rem;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 2.5rem;
+            margin-top: 4rem;
+        }
+        .telescope-card {
+            background: rgba(10, 14, 23, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 2.2rem 1.8rem;
+            border: 1px solid #b6985a30;
+            transition: 0.2s ease;
+            box-shadow: 0 20px 36px -20px #03050b;
+        }
+        .telescope-card:hover {
+            border-color: #b6985a;
+            transform: translateY(-10px) scale(1.01);
+            background: rgba(20, 24, 36, 0.8);
+            box-shadow: 0 40px 50px -20px #b6985a20;
+        }
+        .card-icon {
+            font-size: 2.4rem;
+            color: #b6985a;
+            margin-bottom: 1.4rem;
+        }
+        .card-icon i {
+            filter: drop-shadow(0 0 10px #b6985a);
+        }
+        .telescope-card h3 {
+            font-size: 1.8rem;
+            font-weight: 500;
+            margin-bottom: 0.6rem;
+            color: #f2e6d5;
+        }
+        .telescope-card p {
+            color: #9ba2b8;
+            font-size: 0.95rem;
+        }
+
+        /* events / timeline style */
+        .event-list {
+            margin-top: 4rem;
+        }
+        .event-item {
+            display: flex;
+            gap: 3rem;
+            padding: 2rem 0;
+            border-bottom: 1px dashed #b6985a40;
+            align-items: center;
+        }
+        .event-date {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #b6985a;
+            min-width: 150px;
+            letter-spacing: 2px;
+        }
+        .event-desc h4 {
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: #d9cfbc;
+        }
+        .event-desc p {
+            color: #939dbb;
+        }
+        .event-glow {
+            font-size: 2rem;
+            margin-left: auto;
+            opacity: 0.3;
+            transition: 0.3s;
+        }
+        .event-item:hover .event-glow {
+            opacity: 1;
+            color: #b6985a;
+        }
+
+        /* membership cards */
+        .membership-grid {
+            display: flex;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .member-card {
+            background: linear-gradient(145deg, #0b0f1a, #04070e);
+            padding: 2.8rem 2rem;
+            flex: 1;
+            border: 1px solid #b6985a30;
+            transition: 0.25s;
+            position: relative;
+        }
+        .member-card.premium {
+            border: 2px solid #b6985a;
+            transform: scale(1.02);
+            background: #0e1322;
+        }
+        .member-card:hover {
+            border-color: #b6985a;
+            box-shadow: 0 0 40px #b6985a30;
+        }
+        .member-card h3 {
+            font-size: 2.2rem;
+            font-weight: 400;
+            color: #e9dbc9;
+        }
+        .member-price {
+            font-size: 3rem;
+            font-weight: 600;
+            color: #b6985a;
+            margin: 1rem 0;
+        }
+        .member-price small {
+            font-size: 1rem;
+            color: #6c7893;
+        }
+        .member-feature {
+            list-style: none;
+            margin: 2rem 0;
+        }
+        .member-feature li {
+            padding: 0.5rem 0;
+            border-bottom: 1px dotted #b6985a30;
+            color: #b2bbd4;
+        }
+        .member-feature i {
+            color: #b6985a;
+            width: 24px;
+        }
+
+        /* deep sky counter (custom js stat) */
+        .deep-sky-stats {
+            display: flex;
+            gap: 4rem;
+            background: rgba(0,0,0,0.25);
+            padding: 3rem;
+            border: 1px solid #b6985a20;
+        }
+
+        /* footer */
+        .footer {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 2rem 4rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            color: #5d6588;
+            border-top: 1px solid #b6985a20;
+            font-size: 0.9rem;
+        }
+        .footer a {
+            color: #b0a48c;
+            text-decoration: none;
+            margin-left: 2rem;
+        }
+
+        hr {
+            border-color: #b6985a10;
+        }
+
+        /* extra glow */
+        .glow-text {
+            text-shadow: 0 0 12px #b6985a70;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- STICKY HEADER (compact on scroll) -->
+    <header class="header" id="mainHeader">
+        <div class="header-inner">
+            <div class="logo">OBSIDIAN</div>
+            <div class="nav">
+                <a href="#telescopes"> optics</a>
+                <a href="#events"> events</a>
+                <a href="#membership"> membership</a>
+                <a href="#deep"> deep sky</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO with moving starfield (JS animation) -->
+    <section class="hero" id="home">
+        <canvas id="starfield"></canvas>
+        <div class="hero-content reveal">
+            <div class="hero-pre">← celestial gateway since 1972</div>
+            <h1 class="hero-title">observe <br>the universe</h1>
+            <p class="hero-desc">Private astronomy club hidden in the chilean andes. 16”–32” telescopes, nightly deep‑sky access.</p>
+            <a href="#membership" class="btn">apply for observation</a>
+        </div>
+    </section>
+
+    <!-- BLOCK: stats / counters (lightweight) -->
+    <section class="reveal">
+        <div class="stats-grid">
+            <div class="stat-item"><div class="stat-number" id="counter1">317</div><div class="stat-label">clear nights / year</div></div>
+            <div class="stat-item"><div class="stat-number" id="counter2">14</div><div class="stat-label">research-grade telescopes</div></div>
+            <div class="stat-item"><div class="stat-number" id="counter3">8.2k</div><div class="stat-label">ngc objects observed</div></div>
+        </div>
+    </section>
+
+    <!-- TELESCOPES / CARDS -->
+    <section id="telescopes" class="reveal">
+        <h2 class="section-title">/ fleet</h2>
+        <div class="card-grid">
+            <div class="telescope-card"><div class="card-icon"><i class="fas fa-meteor"></i></div><h3>Planewave 32”</h3><p>Corrected Dall‑Kirkham · absolute contrast for galaxies.</p></div>
+            <div class="telescope-card"><div class="card-icon"><i class="fas fa-saturn"></i></div><h3>RCOS 24”</h3><p>Ritchey‑Chrétien · planetary & nebular spectroscopy.</p></div>
+            <div class="telescope-card"><div class="card-icon"><i class="fas fa-globe"></i></div><h3>ASA 16”</h3><p>Astrograph · wide‑field CCD, 100 megapixel mosaic.</p></div>
+            <div class="telescope-card"><div class="card-icon"><i class="fas fa-moon"></i></div><h3>Solar Hα 12”</h3><p>Daytime chromosphere & prominences.</p></div>
+        </div>
+    </section>
+
+    <!-- EVENTS / NIGHT PROGRAM -->
+    <section id="events" class="reveal">
+        <h2 class="section-title">/ celestial events</h2>
+        <div class="event-list">
+            <div class="event-item"><span class="event-date">APR 24</span><div class="event-desc"><h4>Jupiter opposition</h4><p>Great Red Spot transit · 32” RC</p></div><div class="event-glow"><i class="fas fa-eye"></i></div></div>
+            <div class="event-item"><span class="event-date">MAY 5</span><div class="event-desc"><h4>Eta Aquariids</h4><p>desert meteor shower · zero light pollution</p></div><div class="event-glow"><i class="fas fa-eye"></i></div></div>
+            <div class="event-item"><span class="event-date">JUN 21</span><div class="event-desc"><h4>Milky Way core</h4><p>photographic marathon with astro‑coach</p></div><div class="event-glow"><i class="fas fa-eye"></i></div></div>
+        </div>
+    </section>
+
+    <!-- MEMBERSHIP (3 cols) -->
+    <section id="membership" class="reveal">
+        <h2 class="section-title">/ join the club</h2>
+        <div class="membership-grid">
+            <div class="member-card"><h3>OBSERVER</h3><div class="member-price">$680 <small>/year</small></div><ul class="member-feature"><li><i class="fas fa-check"></i> 6 nights / year</li><li><i class="fas fa-check"></i> 16” telescope</li><li><i class="fas fa-check"></i> basic astro-lab</li></ul><span class="btn" style="padding:0.6rem 2rem;">enroll</span></div>
+            <div class="member-card premium"><h3>PREMIUM</h3><div class="member-price">$1.8k <small>/year</small></div><ul class="member-feature"><li><i class="fas fa-check"></i> 24 nights</li><li><i class="fas fa-check"></i> all telescopes</li><li><i class="fas fa-check"></i> private imaging suite</li></ul><span class="btn" style="padding:0.6rem 2rem;">enroll</span></div>
+            <div class="member-card"><h3>ALL-NIGHT</h3><div class="member-price">$3.4k <small>/year</small></div><ul class="member-feature"><li><i class="fas fa-check"></i> unlimited access</li><li><i class="fas fa-check"></i> 1:1 astronomer</li><li><i class="fas fa-check"></i> remote observation</li></ul><span class="btn" style="padding:0.6rem 2rem;">enroll</span></div>
+        </div>
+    </section>
+
+    <!-- DEEP SKY STATS with custom JS increment -->
+    <section id="deep" class="reveal">
+        <div class="deep-sky-stats">
+            <div style="flex:1"><span class="stat-number" id="ngcCounter">132</span><div class="stat-label">ngc observed tonight</div></div>
+            <div style="flex:1"><span class="stat-number" id="exoCounter">14</span><div class="stat-label">exoplanet candidates</div></div>
+            <div style="flex:1"><span class="stat-number" id="darkMatter">0.86</span><div class="stat-label">dark sky index</div></div>
+        </div>
+        <p style="margin-top:2rem; color:#9ba2b8"><i class="fas fa-telescope" style="color:#b6985a"></i> live from our remote observatory in Atacama</p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <span>© OBSIDIAN PRIVATE CLUB · for astronomers</span>
+        <span><a href="#home">back to top ↑</a><a href="#">privacy</a><a href="#">contact</a></span>
+    </footer>
+
+    <script>
+        (function() {
+            // ---------- HEADER shrink on scroll (compact) ----------
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 40) {
+                    header.classList.add('header-compact');
+                } else {
+                    header.classList.remove('header-compact');
+                }
+            });
+
+            // ---------- HERO CANVAS (moving starfield with mouse) ----------
+            const canvas = document.getElementById('starfield');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+            let mouseX = 0, mouseY = 0;
+
+            function initStars() {
+                width = window.innerWidth;
+                height = document.querySelector('.hero').offsetHeight;
+                canvas.width = width;
+                canvas.height = height;
+                particles = [];
+                for (let i = 0; i < 180; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 2.2 + 0.6,
+                        speed: Math.random() * 0.4 + 0.1,
+                        origX: 0, origY: 0 // not needed
+                    });
+                }
+            }
+            initStars();
+
+            window.addEventListener('resize', function() {
+                initStars();
+            });
+
+            canvas.addEventListener('mousemove', function(e) {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = e.clientX - rect.left;
+                mouseY = e.clientY - rect.top;
+            });
+
+            canvas.addEventListener('mouseleave', function() {
+                mouseX = -1000; mouseY = -1000;
+            });
+
+            function drawStars() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#f5ebd2';
+                for (let p of particles) {
+                    // subtle movement away from mouse
+                    let dx = mouseX - p.x;
+                    let dy = mouseY - p.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    let moveX = 0, moveY = 0;
+                    if (dist < 120) {
+                        let angle = Math.atan2(dy, dx);
+                        let force = (120 - dist) / 120 * 5; 
+                        moveX = -Math.cos(angle) * force * 0.15;
+                        moveY = -Math.sin(angle) * force * 0.15;
+                    }
+
+                    // also slight drift over time
+                    let driftX = Math.sin(Date.now() * 0.001 + p.y * 0.01) * 0.5;
+                    let driftY = Math.cos(Date.now() * 0.001 + p.x * 0.01) * 0.5;
+
+                    let renderX = p.x + moveX + driftX;
+                    let renderY = p.y + moveY + driftY;
+
+                    // boundary soft constrain
+                    if (renderX < 0) renderX = 0;
+                    if (renderX > width) renderX = width;
+                    if (renderY < 0) renderY = 0;
+                    if (renderY > height) renderY = height;
+
+                    ctx.beginPath();
+                    ctx.arc(renderX, renderY, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 240, 210, ${0.5 + Math.sin(Date.now()*0.002 + p.x)*0.2})`;
+                    ctx.fill();
+                }
+                requestAnimationFrame(drawStars);
+            }
+            drawStars();
+
+            // ---------- SCROLL REVEAL (intersection observer) ----------
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px' });
+            reveals.forEach(r => observer.observe(r));
+
+            // ---------- simple increment counters (wow effect) ----------
+            function animateValue(id, start, end, duration) {
+                const obj = document.getElementById(id);
+                if (!obj) return;
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    obj.innerText = Math.floor(progress * (end - start) + start);
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    } else {
+                        obj.innerText = end; // final
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+
+            // trigger counters when deep section visible
+            const deepSection = document.getElementById('deep');
+            const counterObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        animateValue('ngcCounter', 0, 212, 1800);
+                        animateValue('exoCounter', 0, 27, 1600);
+                        animateValue('darkMatter', 0.0, 0.86, 2000);
+                        counterObserver.unobserve(deepSection);
+                    }
+                });
+            }, { threshold: 0.5 });
+            if (deepSection) counterObserver.observe(deepSection);
+
+            // first stats block counters (reveal gently)
+            const statSection = document.querySelector('.stats-grid');
+            const statObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        animateValue('counter1', 280, 317, 1400);
+                        animateValue('counter2', 6, 14, 1400);
+                        animateValue('counter3', 5000, 8250, 1800);
+                        statObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.3 });
+            if (statSection) statObserver.observe(statSection);
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

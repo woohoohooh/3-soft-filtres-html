@@ -1,0 +1,558 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashLearn · Flashcards</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #1A1E2C;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+        }
+        :root {
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --border-light: #E2E8F0;
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent: #38BDF8;
+            --inactive: #94A3B8;
+            --shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.02);
+            --nav-bg: rgba(255,255,255,0.8);
+            --backdrop: rgba(0,0,0,0.2);
+        }
+        body.dark {
+            --bg: #0F172A;
+            --card-bg: #1E293B;
+            --text-primary: #E2E8F0;
+            --text-secondary: #CBD5E1;
+            --border-light: #334155;
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --accent: #38BDF8;
+            --inactive: #64748B;
+            --shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+            --nav-bg: rgba(30,41,59,0.9);
+            --backdrop: rgba(0,0,0,0.5);
+        }
+
+        #phone {
+            width: 360px;
+            height: 780px;
+            background: var(--bg);
+            border-radius: 42px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4), 0 0 0 8px #2C3A4F;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.2s;
+        }
+
+        /* main app container */
+        .app-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 16px 16px 8px 16px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--border-light);
+        }
+        .app-screen::-webkit-scrollbar {
+            width: 4px;
+        }
+        .app-screen::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 8px;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+        .header h2 {
+            font-size: 24px;
+            font-weight: 650;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+        .profile-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            transition: background 0.15s;
+        }
+        .profile-btn:hover {
+            background: var(--border-light);
+        }
+        .profile-btn svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--text-primary);
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* bottom nav */
+        .bottom-nav {
+            height: 70px;
+            background: var(--nav-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 8px;
+            flex-shrink: 0;
+        }
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 6px 0;
+            border-radius: 20px;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+            color: var(--inactive);
+        }
+        .nav-item.active {
+            color: var(--primary);
+            background: rgba(37,99,235,0.08);
+            transform: scale(1.02);
+        }
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform 0.15s;
+        }
+        .nav-item.active svg {
+            transform: scale(1.15);
+            stroke: var(--primary);
+        }
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* common cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+        }
+        .flex-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 14px 24px;
+            border-radius: 60px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 6px 14px rgba(37,99,235,0.25);
+        }
+        .btn-primary:active { transform: scale(0.97); background: var(--primary-dark); }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--backdrop);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-card {
+            background: var(--card-bg);
+            border-radius: 36px;
+            padding: 28px 24px;
+            max-width: 280px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+        .link-row {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-top: 18px;
+        }
+        .link-row button {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 500;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* progress bar */
+        .progress-bar-bg {
+            height: 8px;
+            background: var(--border-light);
+            border-radius: 30px;
+            margin: 8px 0;
+        }
+        .progress-fill {
+            height: 8px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 30px;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        .badge {
+            background: rgba(37,99,235,0.12);
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--primary);
+        }
+
+        /* chart mimic */
+        .chart-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            height: 80px;
+            margin: 12px 0;
+        }
+        .chart-bar {
+            flex: 1;
+            background: var(--primary);
+            height: calc(100% * 0.6);
+            border-radius: 12px 12px 4px 4px;
+            transition: height 0.3s;
+        }
+    </style>
+</head>
+<body>
+<div id="phone"></div>
+
+<script>
+    (function() {
+        // ------ icon system (inline svg) ------
+        function icon(name, extraClass = '') {
+            const icons = {
+                home: `<svg viewBox="0 0 24 24"><path d="M3 10 L12 3 L21 10 L21 21 L15 21 L15 15 L9 15 L9 21 L3 21 L3 10 Z"/></svg>`,
+                learn: `<svg viewBox="0 0 24 24"><path d="M2 3 L12 3 L12 21 L2 21 L2 3 Z M12 7 L22 7 L22 21 L12 21 L12 7 Z"/><circle cx="7" cy="12" r="1.5"/><circle cx="17" cy="12" r="1.5"/></svg>`,
+                progress: `<svg viewBox="0 0 24 24"><path d="M21 12 C21 16.97 16.97 21 12 21 C7.03 21 3 16.97 3 12 C3 7.03 7.03 3 12 3 L12 12 L21 12 Z"/><circle cx="12" cy="12" r="9"/></svg>`,
+                settings: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path d="M19.4 15 L20.6 18 L18 20.6 L15 19.4 L12 21 L9 19.4 L6 20.6 L3.4 18 L4.6 15 L3 12 L4.6 9 L3.4 6 L6 3.4 L9 4.6 L12 3 L15 4.6 L18 3.4 L20.6 6 L19.4 9 L21 12 L19.4 15 Z"/></svg>`,
+                profile: `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20 L19 20 C19 16 16 13 12 13 C8 13 5 16 5 20Z"/></svg>`,
+                lesson: `<svg viewBox="0 0 24 24"><path d="M4 6 L20 6 L20 18 L4 18 L4 6 Z M8 10 L16 10 M8 14 L13 14"/></svg>`,
+                chart: `<svg viewBox="0 0 24 24"><path d="M21 21 L3 21 L3 3 M7 15 L7 21 M12 11 L12 21 M17 7 L17 21"/></svg>`,
+                flashcards: `<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9 L16 9 M8 13 L14 13"/></svg>`,
+                play: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>`,
+                check: `<svg viewBox="0 0 24 24"><path d="M5 12 L10 17 L19 8"/></svg>`
+            };
+            return icons[name] || icons.home;
+        }
+
+        // ---------- state ----------
+        let currentScreen = 'onboarding';
+        let darkMode = false;
+        let modalContent = null; // null or { title, body }
+        let screenshotCounter = 1;
+
+        // ---------- navigation ----------
+        function navigate(screen) {
+            currentScreen = screen;
+            render();
+        }
+
+        function openModal(type) {
+            if (type === 'privacy') modalContent = { title: 'Privacy Policy', body: 'Your data stays on device. No tracking. Flashcards encrypted.' };
+            else if (type === 'terms') modalContent = { title: 'Terms of Service', body: 'Free educational use. Respect content guidelines.' };
+            else if (type === 'close') modalContent = null;
+            render();
+        }
+
+        function toggleTheme() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark', darkMode);
+            render();
+        }
+
+        // ----- fake interactions -----
+        function startLearning() { navigate('home'); }
+        function startLesson() { alert('📘 Flashcards loaded → 10 new cards'); }
+        function updateProgress() { document.querySelectorAll('.progress-fill').forEach(el => el.style.width = '68%'); }
+
+        // ----- screenshot shift+W -----
+        window.addEventListener('keydown', (e) => {
+            if (e.shiftKey && e.key === 'W') {
+                const phone = document.getElementById('phone');
+                if (!phone) return;
+                import('https://html2canvas.hertzen.com/dist/html2canvas.min.js').then(() => {
+                    html2canvas(phone, { scale: 2, backgroundColor: null }).then(canvas => {
+                        const link = document.createElement('a');
+                        const baseName = darkMode ? '6.png' : `${screenshotCounter}.png`;
+                        link.download = baseName;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        if (!darkMode) screenshotCounter = (screenshotCounter % 5) + 1;
+                    });
+                }).catch(() => alert('html2canvas failed, but Shift+W works'));
+            }
+        });
+
+        // ---------- render engine ----------
+        function render() {
+            const phone = document.getElementById('phone');
+            if (!phone) return;
+
+            // base classes
+            document.body.classList.toggle('dark', darkMode);
+
+            // bottom nav template (depends on active)
+            function bottomNavHTML() {
+                const items = [
+                    { id: 'home', label: 'Home', icon: 'home' },
+                    { id: 'learn', label: 'Learn', icon: 'learn' },
+                    { id: 'progress', label: 'Progress', icon: 'progress' },
+                    { id: 'settings', label: 'Settings', icon: 'settings' }
+                ];
+                return `
+                <div class="bottom-nav">
+                    ${items.map(item => `
+                        <button class="nav-item ${currentScreen === item.id ? 'active' : ''}" data-nav="${item.id}">
+                            ${icon(item.icon)}
+                            <span>${item.label}</span>
+                        </button>
+                    `).join('')}
+                </div>
+                `;
+            }
+
+            // header factory
+            function header(title) {
+                return `
+                <div class="header">
+                    <h2>${title}</h2>
+                    <button class="profile-btn" id="profileBtn">${icon('profile')}</button>
+                </div>
+                `;
+            }
+
+            // onboarding screen
+            function onboardingScreen() {
+                return `
+                    <div class="app-screen" style="justify-content:center;">
+                        <div style="text-align:center; margin-bottom:24px;">${icon('flashcards', 'big-logo')}</div>
+                        <h1 style="font-size:42px; font-weight:700; color:var(--primary);">FlashLearn</h1>
+                        <p style="font-size:18px; color:var(--text-secondary); margin:8px 0;">smart flashcards</p>
+                        <p style="color:var(--text-secondary); margin:12px 0;">Master any topic with adaptive recall. Short sessions, big results.</p>
+                        <button class="btn-primary" id="getStartedBtn" style="width:100%;">Get Started</button>
+                        <div class="link-row">
+                            <button id="privacyLink">Privacy</button>
+                            <button id="termsLink">Terms</button>
+                        </div>
+                        <div style="margin-top:40px; font-size:12px; color:var(--inactive);">v2.6 · 2026</div>
+                    </div>
+                    ${bottomNavHTML()}
+                `;
+            }
+
+            // home dashboard
+            function homeScreen() {
+                return `
+                    <div class="app-screen">
+                        ${header('Home')}
+                        <div class="card">
+                            <div class="flex-row"><span>🔥 Daily streak</span><span class="badge">12 days</span></div>
+                            <div class="progress-bar-bg"><div class="progress-fill" style="width:40%;"></div></div>
+                            <span style="color:var(--text-secondary);">2 of 5 lessons done</span>
+                        </div>
+                        <div class="card" style="display:flex; gap:12px; align-items:center;">
+                            ${icon('flashcards')} <span style="flex:1;"><b>Python basics</b> · 8 min</span>
+                            <button class="badge" id="quickLesson" style="background:var(--primary); color:white; border:none;">Start</button>
+                        </div>
+                        <div class="card" style="display:flex; gap:12px; align-items:center;">
+                            ${icon('lesson')} <span style="flex:1;"><b>JS arrays</b> · 5 cards</span>
+                            <button class="badge" style="background:var(--primary); color:white;">Review</button>
+                        </div>
+                        <div class="card">
+                            <div class="flex-row"><span>📊 weekly activity</span> ${icon('chart')}</div>
+                            <div class="chart-row">
+                                <div class="chart-bar" style="height:30px;"></div><div class="chart-bar" style="height:50px;"></div><div class="chart-bar" style="height:65px;"></div><div class="chart-bar" style="height:40px;"></div><div class="chart-bar" style="height:70px;"></div><div class="chart-bar" style="height:55px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    ${bottomNavHTML()}
+                `;
+            }
+
+            // learn / practice
+            function learnScreen() {
+                return `
+                    <div class="app-screen">
+                        ${header('Practice')}
+                        <div class="card flex-row"><span>📚 Python</span><span class="badge">8/15</span></div>
+                        <div class="card flex-row"><span>🧠 JS puzzles</span><span class="badge">3/10</span></div>
+                        <div class="card flex-row"><span>🔤 vocab builder</span><span class="badge">12/20</span></div>
+                        <div class="card" style="text-align:center;"><button class="btn-primary" id="practiceNow" style="width:100%;">practice now</button></div>
+                        <div class="card">${icon('play')} quick match · 2 min</div>
+                    </div>
+                    ${bottomNavHTML()}
+                `;
+            }
+
+            // progress
+            function progressScreen() {
+                return `
+                    <div class="app-screen">
+                        ${header('Statistics')}
+                        <div class="card"><span>✅ mastered: 143 cards</span><div class="progress-bar-bg"><div class="progress-fill" style="width:72%;"></div></div></div>
+                        <div class="card"><span>⚡ accuracy 88%</span></div>
+                        <div class="card flex-row"><span>🏅 achievements</span><span>5 badges</span></div>
+                        <div class="card">${icon('chart')} monthly progress <div class="chart-row"><div class="chart-bar" style="height:50px;"></div><div class="chart-bar" style="height:80px;"></div><div class="chart-bar" style="height:60px;"></div></div></div>
+                    </div>
+                    ${bottomNavHTML()}
+                `;
+            }
+
+            // settings / profile (includes theme toggle)
+            function settingsScreen() {
+                return `
+                    <div class="app-screen">
+                        ${header('Settings')}
+                        <div class="card flex-row"><span>🌙 Dark mode</span><button class="badge" id="themeToggle">${darkMode ? 'light' : 'dark'}</button></div>
+                        <div class="card flex-row"><span>🔔 reminders</span><span>on</span></div>
+                        <div class="card flex-row"><span>👤 profile</span> ${icon('profile')}</div>
+                        <div class="card flex-row"><span>🔒 privacy</span><button id="privacyLink2" class="badge">view</button></div>
+                    </div>
+                    ${bottomNavHTML()}
+                `;
+            }
+
+            // screens object
+            let mainHtml = '';
+            if (currentScreen === 'onboarding') mainHtml = onboardingScreen();
+            else if (currentScreen === 'home') mainHtml = homeScreen();
+            else if (currentScreen === 'learn') mainHtml = learnScreen();
+            else if (currentScreen === 'progress') mainHtml = progressScreen();
+            else if (currentScreen === 'settings') mainHtml = settingsScreen();
+
+            // modal overlay if any
+            if (modalContent) {
+                mainHtml += `
+                    <div class="modal-overlay" id="modalOverlay">
+                        <div class="modal-card">
+                            <h3 style="margin-bottom:12px;">${modalContent.title}</h3>
+                            <p>${modalContent.body}</p>
+                            <button class="btn-primary" id="closeModalBtn" style="margin-top:20px; padding:8px 20px;">OK</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            phone.innerHTML = mainHtml;
+
+            // ---- attach listeners ----
+            // profile
+            const profileBtn = document.getElementById('profileBtn');
+            if (profileBtn) profileBtn.addEventListener('click', () => navigate('settings'));
+
+            // bottom nav
+            document.querySelectorAll('[data-nav]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const navId = e.currentTarget.dataset.nav;
+                    navigate(navId);
+                });
+            });
+
+            // onboarding actions
+            const getStarted = document.getElementById('getStartedBtn');
+            if (getStarted) getStarted.addEventListener('click', () => navigate('home'));
+
+            const privacyLink = document.getElementById('privacyLink');
+            if (privacyLink) privacyLink.addEventListener('click', () => openModal('privacy'));
+            const termsLink = document.getElementById('termsLink');
+            if (termsLink) termsLink.addEventListener('click', () => openModal('terms'));
+            const privacyLink2 = document.getElementById('privacyLink2');
+            if (privacyLink2) privacyLink2.addEventListener('click', () => openModal('privacy'));
+
+            // theme toggle
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+            // lesson start
+            const quickLesson = document.getElementById('quickLesson');
+            if (quickLesson) quickLesson.addEventListener('click', startLesson);
+            const practiceNow = document.getElementById('practiceNow');
+            if (practiceNow) practiceNow.addEventListener('click', () => { updateProgress(); alert('practice started!'); });
+
+            // modal close
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            if (closeModalBtn) closeModalBtn.addEventListener('click', () => openModal('close'));
+            const modalOverlay = document.getElementById('modalOverlay');
+            if (modalOverlay) modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) openModal('close'); });
+        }
+
+        // initial render
+        render();
+    })();
+</script>
+
+<!-- JSON output (hidden but present) -->
+<script>
+    // store as variable, but also output as string below
+    const playStoreTitles = {
+        "1.png": "Start Learning",
+        "2.png": "Daily Lessons",
+        "3.png": "Practice Skills",
+        "4.png": "Track Progress",
+        "5.png": "Smart Settings",
+        "6.png": "Dark Theme"
+    };
+    console.log(playStoreTitles);
+    // actual required JSON after HTML
+    document.currentScript.insertAdjacentHTML('afterend', '\n' + JSON.stringify(playStoreTitles, null, 2) + '\n');
+</script>
+</body>
+</html>
+All done!
+```

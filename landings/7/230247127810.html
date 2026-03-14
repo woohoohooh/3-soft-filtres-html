@@ -1,0 +1,639 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECRET MISSION · escape room dossier</title>
+    <!-- Font Awesome 6 (free) for sharp icons & crosshair vibe -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0c0f17;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 400;
+            color: #e2e8f0;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback, but we add heavy military style */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap');
+
+        /* custom dossier/secret glow */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* sticky header with compact effect */
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(12, 15, 23, 0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(0, 255, 255, 0.15);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+            transition: padding 0.2s ease, background 0.2s;
+        }
+
+        .header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 0;
+            transition: padding 0.2s;
+        }
+
+        .site-header.compact .header-inner {
+            padding: 0.6rem 0;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(130deg, #7ff0ff, #b78aff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 12px cyan;
+        }
+        .logo i {
+            color: #b78aff;
+            margin-right: 6px;
+            text-shadow: 0 0 16px #b78aff;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+        .nav-menu a {
+            color: #ddd;
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+            transition: 0.2s;
+        }
+        .nav-menu a:hover {
+            color: #9effff;
+            border-bottom-color: #53f2ff;
+            text-shadow: 0 0 8px cyan;
+        }
+
+        /* blocks general */
+        section {
+            padding: 5rem 0;
+            position: relative;
+        }
+
+        /* reveal animation on scroll (simple intersection observer) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.7s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* dossier cards */
+        .badge {
+            display: inline-block;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid #2ff;
+            color: #2ff;
+            font-size: 0.75rem;
+            padding: 0.2rem 1rem;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+        }
+        h2 i {
+            color: cyan;
+            margin-right: 15px;
+            font-size: 2.8rem;
+        }
+
+        .glow-text {
+            background: linear-gradient(120deg, #fff, #b3f0ff, #c5aaff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* HERO — secret mission */
+        .hero {
+            padding: 3rem 0 5rem 0;
+            border-bottom: 2px dashed rgba(0, 255, 255, 0.3);
+        }
+        .hero-grid {
+            display: flex;
+            align-items: center;
+            gap: 4rem;
+        }
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            text-transform: uppercase;
+        }
+        .hero h1 span {
+            display: block;
+            color: #c3aaff;
+            text-shadow: 0 0 16px #8080ff;
+        }
+        .secret-mission-tag {
+            font-size: 1.1rem;
+            border-left: 5px solid cyan;
+            padding-left: 1.8rem;
+            margin: 2rem 0;
+            background: rgba(0, 255, 255, 0.02);
+            box-shadow: -10px 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        /* animated crosshair / cipher */
+        .crosshair-animation {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,255,255,0.1) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #canvasJitter {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid cyan;
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            box-shadow: 0 0 40px #0ff, inset 0 0 20px #0ff;
+            animation: morph 8s infinite alternate ease-in-out;
+        }
+        @keyframes morph {
+            0% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+            50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            100% { border-radius: 40% 60% 70% 30% / 40% 50% 50% 60%; }
+        }
+
+        /* cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .case-card {
+            background: rgba(18, 22, 35, 0.8);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(0, 255, 255, 0.25);
+            padding: 2rem 1.5rem;
+            box-shadow: 0 20px 30px -15px black;
+            transition: 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .case-card:hover {
+            border-color: cyan;
+            box-shadow: 0 0 35px cyan;
+            transform: translateY(-8px) scale(1.02);
+        }
+        .case-card i {
+            font-size: 2.8rem;
+            color: #6ff;
+            margin-bottom: 1rem;
+        }
+        .case-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+        .card-footer {
+            margin-top: 1.5rem;
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: cyan;
+            border-top: 1px dashed cyan;
+            padding-top: 1rem;
+        }
+
+        /* timer block */
+        .timer-block {
+            background: #03050a;
+            border: 2px solid #0ff;
+            box-shadow: inset 0 0 30px rgba(0, 255, 255, 0.2), 0 0 40px #0ff33;
+        }
+        .timer-numbers {
+            display: flex;
+            gap: 3rem;
+            justify-content: center;
+            font-size: 4rem;
+            font-weight: 800;
+            font-family: monospace;
+        }
+        .timer-numbers div {
+            text-align: center;
+            background: #111724;
+            padding: 1rem 2rem;
+            border: 1px solid cyan;
+            border-radius: 4px;
+            min-width: 140px;
+            box-shadow: 0 0 30px cyan;
+        }
+        .timer-numbers span {
+            display: block;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            color: #9bb;
+        }
+
+        /* stat counters */
+        .stat-grid {
+            display: flex;
+            gap: 4rem;
+            justify-content: space-around;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 5rem;
+            font-weight: 800;
+            color: transparent;
+            -webkit-text-stroke: 2px cyan;
+            text-stroke: 2px cyan;
+            text-shadow: 0 0 20px #0ff;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        /* levels as folders */
+        .level-folder {
+            background: rgba(0, 30, 40, 0.3);
+            border-left: 20px solid #0ff;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: -20px 10px 30px black;
+            transition: 0.3s;
+        }
+        .level-folder:hover {
+            border-left-color: #fbffa3;
+            background: #0b1b28;
+        }
+
+        /* footer */
+        .site-footer {
+            border-top: 2px solid cyan;
+            padding: 2rem 0;
+            background: #05070c;
+            text-align: center;
+            font-size: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .mission-accent {
+            color: #a3f5ff;
+        }
+
+        hr {
+            border: 0.5px solid #2ff3;
+            margin: 2rem 0;
+        }
+
+        /* small adjustments */
+        .big-icon {
+            font-size: 3rem;
+        }
+        .btn-outline {
+            border: 2px solid cyan;
+            background: transparent;
+            padding: 0.8rem 2.8rem;
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.2s;
+            cursor: default;
+            display: inline-block;
+        }
+        .btn-outline:hover {
+            background: cyan;
+            color: black;
+            box-shadow: 0 0 50px #0ff;
+        }
+    </style>
+</head>
+<body>
+    <!-- STICKY HEADER (compact on scroll) -->
+    <header class="site-header" id="stickyHeader">
+        <div class="container header-inner">
+            <div class="logo">
+                <i class="fas fa-skull"></i> DOSSIER·X
+            </div>
+            <nav class="nav-menu">
+                <a href="#missions">missions</a>
+                <a href="#countdown">countdown</a>
+                <a href="#stats">stats</a>
+                <a href="#levels">levels</a>
+                <a href="#dossier">dossier</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO: secret mission dossier -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="reveal">
+                    <div class="badge"><i class="fas-regular fa-fingerprint"></i>  CLASSIFIED: OMEGA</div>
+                    <h1>
+                        <span>ESCAPE</span>
+                        <span class="glow-text">THE PROTOCOL</span>
+                    </h1>
+                    <div class="secret-mission-tag">
+                        <i class="fas fa-eye" style="color: cyan;"></i>    You have 60 minutes. One room. No second chances.<br>
+                        <strong>Agents needed.</strong> Choose your mission.
+                    </div>
+                    <div class="btn-outline"><i class="fas-regular fa-compass"></i> ACCESS MISSIONS</div>
+                </div>
+                <div class="crosshair-animation reveal">
+                    <canvas id="canvasJitter" width="280" height="280"></canvas>
+                    <i class="fas fa-crosshairs" style="position: absolute; color: cyan; font-size: 4rem; opacity: 0.7; text-shadow: 0 0 30px white;"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 1: карточки квестов (missions) -->
+    <section id="missions">
+        <div class="container">
+            <h2 class="reveal"><i class="fas fa-folder-open"></i> ACTIVE <span class="glow-text">DOSSIERS</span></h2>
+            <div class="card-grid">
+                <div class="case-card reveal">
+                    <i class="fas fa-ghost"></i>
+                    <h3>ASYLUM</h3>
+                    <p>Abandoned psych ward. Decode the doctor’s notes before the orderlies return. Difficulty: nightmare</p>
+                    <div class="card-footer"><i class="fas-regular fa-key"></i> 342 escapes</div>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-microchip"></i>
+                    <h3>QUANTUM VAULT</h3>
+                    <p>Laser grid + AI guard. One wrong move and the vault seals forever. 45 min left.</p>
+                    <div class="card-footer"><i class="fas-regular fa-microchip"></i> 89 escapes</div>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-skull-crossbones"></i>
+                    <h3>NUCLEUS</h3>
+                    <p>Reactor meltdown simulation. Find the core override. Team of 4 required.</p>
+                    <div class="card-footer"><i class="fas-regular fa-radiation"></i> 217 escapes</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: ТАЙМЕР ДО "ПОБЕГА" (dynamic countdown) -->
+    <section id="countdown" class="timer-block">
+        <div class="container" style="text-align: center;">
+            <span class="badge"><i class="fas fa-stopwatch"></i> NEXT EXTRACTION</span>
+            <h2 class="glow-text" style="font-size: 2.8rem;"><i class="fas fa-hourglass-half"></i> 00:42:17</h2>
+            <div class="timer-numbers" id="countdownTimer">
+                <div>14 <span>HOURS</span></div>
+                <div>23 <span>MIN</span></div>
+                <div>49 <span>SEC</span></div>
+            </div>
+            <p style="margin-top: 2rem; color: #9ac7d9;"><i class="fas fa-bolt"></i> global escape timer resets after each successful team</p>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: СТАТИСТИКА ПОБЕГОВ (счетчики с анимацией) -->
+    <section id="stats">
+        <div class="container">
+            <h2 class="reveal"><i class="fas fa-chart-line"></i> ESCAPE <span class="glow-text">STATISTICS</span></h2>
+            <div class="stat-grid">
+                <div class="stat-item reveal">
+                    <div class="stat-number" id="stat1" data-target="1247">0</div>
+                    <div class="stat-label">escapes</div>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="stat-number" id="stat2" data-target="93">0</div>
+                    <div class="stat-label">success %</div>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="stat-number" id="stat3" data-target="18">0</div>
+                    <div class="stat-label">active rooms</div>
+                </div>
+                <div class="stat-item reveal">
+                    <div class="stat-number" id="stat4" data-target="7">0</div>
+                    <div class="stat-label">legends</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: УРОВНИ СЛОЖНОСТИ / dossier folders -->
+    <section id="levels">
+        <div class="container">
+            <h2 class="reveal"><i class="fas fa-shield-halved"></i> CLEARANCE <span class="glow-text">LEVELS</span></h2>
+            <div class="level-folder reveal">
+                <i class="fas fa-user-secret" style="font-size: 3rem; color:#0ff;"></i>
+                <h3 style="font-size: 2.8rem;"> ▸ LEVEL ALPHA</h3>
+                <p>Entry level · 30 min · hint system active. Perfect for new recruits.</p>
+            </div>
+            <div class="level-folder reveal">
+                <i class="fas fa-bolt" style="font-size: 3rem; color: #ffd966;"></i>
+                <h3 style="font-size: 2.8rem;"> ▸ LEVEL OMEGA</h3>
+                <p>Hardcore · no hints · real puzzles from abandoned bunkers. 8% escape rate.</p>
+            </div>
+            <div class="level-folder reveal">
+                <i class="fas fa-dragon" style="font-size: 3rem; color: #ff8c8c;"></i>
+                <h3 style="font-size: 2.8rem;"> ▸ LEVEL BLACK</h3>
+                <p>Invitation only. Two rooms connected, actors, live horror elements.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: БЛОК С ПОДСВЕТКОЙ / dossiers summary -->
+    <section id="dossier">
+        <div class="container">
+            <h2 class="reveal"><i class="fas fa-envelope"></i> SECRET <span class="glow-text">DOSSIER</span></h2>
+            <div class="card-grid">
+                <div class="case-card reveal">
+                    <i class="fas fa-trophy"></i>
+                    <h3>#1 ESCAPE TEAM</h3>
+                    <p>"Omega squad" — 47 sec left, found secret passage. Hall of fame.</p>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-map"></i>
+                    <h3>NEW VAULT</h3>
+                    <p>Opening soon: "Steam Punk Prison" . Steampunk puzzles, brass & copper.</p>
+                </div>
+                <div class="case-card reveal">
+                    <i class="fas fa-code"></i>
+                    <h3>AGENT LOG</h3>
+                    <p>Whisper key: 0604. decode at entrance. (hint: roman numerals)</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER (2 блок + футер как отдельный) -->
+    <footer class="site-footer">
+        <div class="container">
+            <p><i class="fas fa-skull"></i> DOSSIER X — ESCAPE ROOM INTELLIGENCE <i class="fas fa-skull"></i></p>
+            <p style="margin-top: 1rem; color: #84c5d4;">© 2025 · ALL RIGHTS RESERVED · FOR TRAINED AGENTS ONLY</p>
+            <div style="margin: 1.5rem 0 0; font-size: 1.8rem; letter-spacing: 10px;">
+                <i class="fas fa-fingerprint"></i>   <i class="fas fa-eye"></i>   <i class="fas fa-key"></i>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // compact header on scroll
+            const header = document.getElementById('stickyHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 30) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // Canvas jitter / crosshair animation (secret cipher effect)
+            const canvas = document.getElementById('canvasJitter');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let angle = 0;
+                function drawJitter() {
+                    ctx.clearRect(0, 0, 280, 280);
+                    ctx.strokeStyle = '#0ff';
+                    ctx.lineWidth = 1.5;
+                    ctx.globalAlpha = 0.4 + Math.sin(angle) * 0.2;
+                    // jittering lines
+                    for (let i=0; i<12; i++) {
+                        let offset = Math.sin(angle + i) * 10;
+                        ctx.beginPath();
+                        ctx.moveTo(40 + i*20, 40);
+                        ctx.lineTo(240 + offset, 240 + i*5);
+                        ctx.strokeStyle = i%2===0 ? '#0ff' : '#f0f';
+                        ctx.stroke();
+                    }
+                    // target circles
+                    ctx.beginPath();
+                    ctx.arc(140, 140, 60, 0, 2*Math.PI);
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.setLineDash([10, 10]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    angle += 0.03;
+                    requestAnimationFrame(drawJitter);
+                }
+                drawJitter();
+            }
+
+            // reveal on scroll (intersection observer)
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, { threshold: 0.2 });
+            reveals.forEach(r => observer.observe(r));
+
+            // COUNTDOWN TIMER (fake until escape)
+            function updateTimer() {
+                const hoursDiv = document.querySelector('#countdownTimer div:first-child');
+                const minsDiv = document.querySelector('#countdownTimer div:nth-child(2)');
+                const secsDiv = document.querySelector('#countdownTimer div:nth-child(3)');
+                if (!hoursDiv || !minsDiv || !secsDiv) return;
+
+                let h = parseInt(hoursDiv.innerText) || 14;
+                let m = parseInt(minsDiv.innerText) || 23;
+                let s = parseInt(secsDiv.innerText) || 49;
+
+                s--;
+                if (s < 0) { s = 59; m--; }
+                if (m < 0) { m = 59; h--; }
+                if (h < 0) { h = 23; } // rollover 24h
+
+                hoursDiv.innerHTML = h + ' <span>HOURS</span>';
+                minsDiv.innerHTML = m + ' <span>MIN</span>';
+                secsDiv.innerHTML = s + ' <span>SEC</span>';
+            }
+            setInterval(updateTimer, 1000);
+
+            // STAT counters animation (simple incrementation)
+            function animateStats() {
+                const stat1 = document.getElementById('stat1');
+                const stat2 = document.getElementById('stat2');
+                const stat3 = document.getElementById('stat3');
+                const stat4 = document.getElementById('stat4');
+                if (!stat1) return;
+                const targets = [1247, 93, 18, 7];
+                const elements = [stat1, stat2, stat3, stat4];
+                const current = [0, 0, 0, 0];
+                const step = [13, 1, 1, 1]; // increments
+
+                function updateNumbers() {
+                    let allFinished = true;
+                    for (let i=0; i<targets.length; i++) {
+                        if (current[i] < targets[i]) {
+                            current[i] = Math.min(current[i] + step[i], targets[i]);
+                            elements[i].innerText = current[i];
+                            allFinished = false;
+                        } else {
+                            elements[i].innerText = targets[i];
+                        }
+                    }
+                    if (!allFinished) {
+                        requestAnimationFrame(updateNumbers);
+                    }
+                }
+                updateNumbers();
+            }
+
+            // start stat animation after page load
+            window.addEventListener('load', function() {
+                animateStats();
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,619 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private astronomy club</title>
+    <!-- Font & Icons (Font Awesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0c12;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            color: #e2e4f0;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+
+        /* smooth default font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* ===== global glows & overlays ===== */
+        .section {
+            position: relative;
+            padding: 6rem 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+            border-bottom: 1px solid rgba(88, 130, 193, 0.1);
+        }
+
+        .section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 10%;
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #4b6e9f, #b2b9ff, #4b6e9f, transparent);
+        }
+
+        h2 {
+            font-size: 3.2rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #ffffff, #b7c9f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 3rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        h2 i {
+            background: none;
+            -webkit-text-fill-color: #cfdbfc;
+            margin-right: 15px;
+            font-size: 3rem;
+        }
+
+        .grid-3, .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        /* fixed navigation – compact when scrolling */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(8, 12, 25, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(100, 150, 240, 0.25);
+            border-radius: 60px;
+            padding: 0.6rem 1.8rem;
+            z-index: 999;
+            display: flex;
+            gap: 2.8rem;
+            transition: all 0.25s ease;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(80, 140, 255, 0.2) inset;
+        }
+
+        .navbar.compact {
+            top: 12px;
+            padding: 0.3rem 1.4rem;
+            background: rgba(2, 5, 15, 0.9);
+            border-color: #3e5e8b;
+            gap: 1.8rem;
+        }
+
+        .navbar a {
+            color: #f0f3ff;
+            text-decoration: none;
+            font-weight: 450;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            padding: 8px 0;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+        }
+
+        .navbar a:hover {
+            border-bottom-color: #96baff;
+            color: white;
+            text-shadow: 0 0 8px #6080dd;
+        }
+
+        /* header hero — secret mission style (observatory twist) */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: radial-gradient(circle at 30% 40%, #19223a, #02040c 80%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 1000px;
+            padding: 2rem;
+            z-index: 3;
+        }
+
+        .hero h1 {
+            font-size: 5.5rem;
+            font-weight: 500;
+            line-height: 1.1;
+            text-transform: uppercase;
+            background: linear-gradient(145deg, #f2f3ff, #b0d0ff, #dbeafe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            letter-spacing: 6px;
+        }
+
+        .hero .sub {
+            font-size: 1.8rem;
+            color: #b2cbf2;
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            font-weight: 300;
+            text-shadow: 0 0 10px #28457e;
+        }
+
+        .hero .sub i {
+            font-size: 2.2rem;
+            color: #bbd1ff;
+            filter: drop-shadow(0 0 8px #4263a5);
+        }
+
+        .stars-js {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* floating glow orbs (dynamic via js) */
+        .glow-spot {
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(70, 130, 200, 0.2), transparent 80%);
+            filter: blur(60px);
+            opacity: 0.4;
+            mix-blend-mode: screen;
+        }
+
+        /* cards — dossier style */
+        .dossier-card {
+            background: rgba(12, 18, 34, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid #2c3f66;
+            border-radius: 36px;
+            padding: 2.5rem 1.8rem;
+            box-shadow: 0 30px 40px -20px black;
+            transition: 0.3s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dossier-card:hover {
+            transform: translateY(-10px);
+            border-color: #768fc7;
+            box-shadow: 0 0 30px #20345b;
+        }
+
+        .dossier-card i {
+            font-size: 2.8rem;
+            color: #aac0ff;
+            margin-bottom: 1.5rem;
+        }
+
+        .dossier-card h3 {
+            font-size: 2rem;
+            font-weight: 450;
+            margin-bottom: 0.8rem;
+        }
+
+        .stat-highlight {
+            font-size: 3rem;
+            font-weight: 400;
+            background: linear-gradient(135deg, #eef4ff, #90aeff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .timer-block {
+            background: #0b101f;
+            border-radius: 80px;
+            padding: 1.2rem 2.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 2.5rem;
+            border: 1px solid #3b5285;
+            margin-top: 2rem;
+        }
+
+        .timer-digits {
+            font-family: monospace;
+            font-size: 3.8rem;
+            letter-spacing: 10px;
+            font-weight: 400;
+            color: #d1dfff;
+            text-shadow: 0 0 15px #3b66c9;
+        }
+
+        /* stats block with glowing counters */
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .stat-item {
+            padding: 1rem;
+        }
+
+        .stat-number {
+            font-size: 4.5rem;
+            font-weight: 350;
+            line-height: 1.2;
+            color: #d6e4ff;
+            text-shadow: 0 0 10px #3a63af;
+        }
+
+        /* fade-up animation on scroll */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* footer */
+        .footer {
+            padding: 3rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1300px;
+            margin: 0 auto;
+            color: #7f92bb;
+            border-top: 1px solid #1f2940;
+        }
+
+        .footer .social i {
+            font-size: 1.8rem;
+            margin-left: 25px;
+            color: #9db4e0;
+            transition: 0.2s;
+        }
+
+        .footer .social i:hover {
+            color: white;
+            text-shadow: 0 0 15px white;
+        }
+
+        /* observatory specific glow line */
+        .scope-line {
+            height: 2px;
+            width: 100%;
+            background: linear-gradient(90deg, transparent, #4d7cce, #8cabf0, #4d7cce, transparent);
+        }
+
+        /* membership card premium */
+        .member-card {
+            background: #0d1326;
+            border-radius: 40px;
+            padding: 2.8rem;
+            border: 1px solid #2f4680;
+            box-shadow: 0 20px 30px -10px #000b1c;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #446bb9;
+            border-radius: 40px;
+            padding: 0.8rem 2.5rem;
+            font-size: 1.3rem;
+            color: #ebf3ff;
+            font-weight: 500;
+            transition: 0.2s;
+            cursor: default;
+        }
+
+        .btn-outline i {
+            margin-left: 10px;
+        }
+
+        .btn-outline:hover {
+            background: #1b2747;
+            border-color: #90adf0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- fixed nav (compact on scroll) -->
+    <div class="navbar" id="navbar">
+        <a href="#home">OBSIDIAN</a>
+        <a href="#quests">QUESTS</a>
+        <a href="#stats">DATA</a>
+        <a href="#scope">SCOPE</a>
+        <a href="#join">JOIN</a>
+    </div>
+
+    <!-- Hero / secret mission -->
+    <section class="hero" id="home">
+        <div class="stars-js" id="starfield"></div>
+        <div class="hero-content">
+            <h1>OBSIDIAN<br>OBSERVATORY</h1>
+            <div class="sub">
+                <i class="fas fa-meteor"></i>  DEEP SPACE ACCESS  <i class="fas fa-saturn"></i>
+            </div>
+            <div class="timer-block fade-up">
+                <span class="timer-digits" id="countdown">18:42:17</span>
+                <span>UNTIL <br>DARK WINDOW</span>
+                <i class="fas fa-moon" style="color:#b7ceff; font-size:2rem;"></i>
+            </div>
+        </div>
+        <!-- floating glow spots (js generated) -->
+    </section>
+
+    <!-- BLOCK 1: Kвесты = наблюдения (celestial quests) -->
+    <section class="section" id="quests">
+        <h2><i class="fas fa-scroll"></i> CELESTIAL QUESTS</h2>
+        <div class="grid-3">
+            <div class="dossier-card fade-up">
+                <i class="fas fa-skull"></i>
+                <h3>NEBULA <br>HUNTER</h3>
+                <p>Orion, Eagle, Veil — track five dying stars. exclusive night vision access.</p>
+                <div class="stat-highlight">8/12</div> <span style="color:#9eb2e5;">completed</span>
+            </div>
+            <div class="dossier-card fade-up">
+                <i class="fas fa-ring"></i>
+                <h3>SATURN <br>ENCOUNTER</h3>
+                <p>Observe ring tilt & Cassini division. diffraction-limited imaging.</p>
+                <div class="stat-highlight">1.2B</div> <span style="color:#9eb2e5;">km reached</span>
+            </div>
+            <div class="dossier-card fade-up">
+                <i class="fas fa-dragon"></i>
+                <h3>DRACO <br>VARIABLES</h3>
+                <p>Mag 12–14 variable stars. data pipeline for light curves.</p>
+                <div class="stat-highlight">23</div> <span style="color:#9eb2e5;">pulses detected</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: Секретная статистика / успех побегов (escape stats) -->
+    <section class="section" id="stats">
+        <h2><i class="fas fa-chart-line"></i> ESCAPE STATISTICS</h2>
+        <div class="stats-grid fade-up">
+            <div class="stat-item">
+                <span class="stat-number" id="counter1" data-target="847">0</span>
+                <p>Photons captured (M)</p>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="counter2" data-target="23">0</span>
+                <p>dark nights survived</p>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="counter3" data-target="12">0</span>
+                <p>new moons</p>
+            </div>
+        </div>
+        <!-- dossier line with small icon + crosshair effect -->
+        <div style="margin-top: 4rem; background: #10162b; border-radius: 60px; padding: 1.5rem; display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap;">
+            <span><i class="fas fa-crosshairs" style="color:#86a9ff;"></i> lock precision: 0.03 arcsec</span>
+            <span><i class="fas fa-clock"></i> uptime 98.7%</span>
+            <span><i class="fas fa-skull-crossbones"></i> survival rate 100%</span>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: Уровни сложности + оборудование (scope mastery) -->
+    <section class="section" id="scope">
+        <h2><i class="fas fa-telescope"></i> OBSERVING LEVELS</h2>
+        <div class="grid-3">
+            <div class="dossier-card fade-up">
+                <i class="fas fa-eye"></i>
+                <h3>VISUAL</h3>
+                <p>24" Dobsonian · mag 14.5 · manual finding charts.</p>
+                <div style="border-top: 1px dashed #3a4f78; margin-top: 20px; padding-top: 15px;"><i class="fas fa-star"></i> 120 objects</div>
+            </div>
+            <div class="dossier-card fade-up">
+                <i class="fas fa-camera-retro"></i>
+                <h3>ASTROGRAPH</h3>
+                <p>CMOS + narrowband · 0.7" sampling · remote session.</p>
+                <div style="border-top: 1px dashed #3a4f78; margin-top: 20px; padding-top: 15px;"><i class="fas fa-chart-bar"></i> 12h integration</div>
+            </div>
+            <div class="dossier-card fade-up">
+                <i class="fas fa-satellite-dish"></i>
+                <h3>RADIO</h3>
+                <p>3m dish · neutral hydrogen · pulsar timing.</p>
+                <div style="border-top: 1px dashed #3a4f78; margin-top: 20px; padding-top: 15px;"><i class="fas fa-wave-square"></i> 1420 MHz</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: Членство / пакеты (membership) -->
+    <section class="section" id="join">
+        <h2><i class="fas fa-id-card"></i> PRIVATE MEMBERSHIP</h2>
+        <div class="grid-3">
+            <div class="member-card fade-up">
+                <h3>OBSIDIAN NIGHT</h3>
+                <p><i class="fas fa-check-circle" style="color:#7ca4ff;"></i> 4 sessions / month</p>
+                <p><i class="fas fa-check-circle"></i> all-sky camera access</p>
+                <p class="stat-number" style="font-size: 3rem;">$ 2.8k</p>
+            </div>
+            <div class="member-card fade-up" style="border-color:#788fd8;">
+                <h3>DEEP SPACE</h3>
+                <p><i class="fas fa-check-circle"></i> 8 sessions + data pack</p>
+                <p><i class="fas fa-check-circle"></i> radio telescope slot</p>
+                <p class="stat-number" style="font-size: 3rem;">$ 5.2k</p>
+            </div>
+            <div class="member-card fade-up">
+                <h3>DIRECTOR’S CIRCLE</h3>
+                <p><i class="fas fa-check-circle"></i> unlimited remote</p>
+                <p><i class="fas fa-check-circle"></i> spectroscopy add-on</p>
+                <p class="stat-number" style="font-size: 3rem;">$ 9.6k</p>
+            </div>
+        </div>
+        <div style="text-align: right; margin-top: 3rem;">
+            <span class="btn-outline">BOOK OBSERVATION <i class="fas fa-arrow-right"></i></span>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: отзывы / клубное событие -->
+    <section class="section" style="border-bottom: none;">
+        <h2><i class="fas fa-wine-glass-alt"></i> STAR & SIP</h2>
+        <div style="display: flex; gap: 3rem; align-items: center;">
+            <div style="flex:2;">
+                <div class="dossier-card fade-up" style="background: #0e162f;">
+                    <i class="fas fa-quote-right" style="font-size: 3rem; opacity:0.4;"></i>
+                    <p style="font-size: 1.8rem; font-weight:300;">“The dome slid open, and Saturn just hung there — like a secret shown only to us.”</p>
+                    <p>— M. Doran, member since ‘22</p>
+                </div>
+            </div>
+            <div style="flex:1;">
+                <div class="dossier-card fade-up" style="background: #111a30;">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h3>GALACTIC GALA</h3>
+                    <p>May 24 · black tie · champagne & collimation</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div>© OBSIDIAN PRIVATE CLUB — astronomy redefined</div>
+        <div class="social">
+            <i class="fab fa-x-twitter"></i>
+            <i class="fab fa-grav"></i>
+            <i class="fas fa-telescope"></i>
+        </div>
+    </div>
+
+    <!-- JavaScript: animations, counters, navbar compact, countdown, glow spots -->
+    <script>
+        (function() {
+            // navbar compact on scroll
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 70) {
+                    navbar.classList.add('compact');
+                } else {
+                    navbar.classList.remove('compact');
+                }
+            });
+
+            // animated counters
+            const counterElements = [
+                { elem: document.getElementById('counter1'), target: 847, current: 0, id: 'c1' },
+                { elem: document.getElementById('counter2'), target: 23, current: 0, id: 'c2' },
+                { elem: document.getElementById('counter3'), target: 12, current: 0, id: 'c3' }
+            ];
+
+            function updateCounters() {
+                counterElements.forEach(c => {
+                    if (!c.elem) return;
+                    let step = Math.ceil(c.target / 80); // smooth
+                    if (c.current < c.target) {
+                        c.current = Math.min(c.current + step, c.target);
+                        c.elem.innerText = c.current;
+                    } else {
+                        c.elem.innerText = c.target;
+                    }
+                });
+                requestAnimationFrame(updateCounters);
+            }
+            updateCounters();
+
+            // countdown timer (fake, but dynamic)
+            function updateTimer() {
+                const timerEl = document.getElementById('countdown');
+                if (!timerEl) return;
+                const now = new Date();
+                const target = new Date();
+                target.setHours(22, 0, 0); // 10pm target
+                if (now > target) target.setDate(target.getDate() + 1);
+                let diff = Math.floor((target - now) / 1000);
+                let hours = Math.floor(diff / 3600);
+                let mins = Math.floor((diff % 3600) / 60);
+                let secs = diff % 60;
+                timerEl.innerText = `${hours.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+            }
+            setInterval(updateTimer, 500);
+            updateTimer();
+
+            // Scroll reveal (fade-up)
+            const faders = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appear');
+                    }
+                });
+            }, { threshold: 0.2 });
+            faders.forEach(f => observer.observe(f));
+
+            // Background starfield + glow spots (hero)
+            const starContainer = document.getElementById('starfield');
+            if (starContainer) {
+                for (let i=0; i<45; i++) {
+                    let star = document.createElement('div');
+                    star.style.position = 'absolute';
+                    star.style.width = Math.random() * 3 + 1 + 'px';
+                    star.style.height = star.style.width;
+                    star.style.background = 'white';
+                    star.style.borderRadius = '50%';
+                    star.style.left = Math.random() * 100 + '%';
+                    star.style.top = Math.random() * 100 + '%';
+                    star.style.opacity = Math.random() * 0.8 + 0.2;
+                    star.style.boxShadow = '0 0 12px #9ac0ff';
+                    star.style.animation = `pulse ${Math.random() * 4 + 3}s infinite`;
+                    starContainer.appendChild(star);
+                }
+                // glow spots
+                for (let j=0; j<4; j++) {
+                    let glow = document.createElement('div');
+                    glow.className = 'glow-spot';
+                    glow.style.left = Math.random() * 70 + 10 + '%';
+                    glow.style.top = Math.random() * 70 + 10 + '%';
+                    glow.style.background = `radial-gradient(circle at 30% 30%, rgba(${100 + j*30}, 150, 250, 0.15), transparent 80%)`;
+                    starContainer.appendChild(glow);
+                }
+            }
+
+            // small additional hover crosshair effect on cards (via style)
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes pulse { 0% {opacity:0.3; transform:scale(1);} 50% {opacity:1; transform:scale(1.3);} 100% {opacity:0.3; transform:scale(1);} }
+                .dossier-card { transition: transform 0.3s, box-shadow 0.4s, border-color 0.2s; }
+                .dossier-card:hover i { filter: drop-shadow(0 0 10px #87aef0); }
+                .navbar a { position: relative; }
+            `;
+            document.head.appendChild(style);
+
+            // extra micro-interaction: moving background effect (light)
+            document.addEventListener('mousemove', (e) => {
+                const spots = document.querySelectorAll('.glow-spot');
+                if (!spots.length) return;
+                const x = e.clientX / window.innerWidth;
+                const y = e.clientY / window.innerHeight;
+                spots.forEach((spot, idx) => {
+                    const speed = 15 + idx * 5;
+                    spot.style.transform = `translate(${(x-0.5)*speed}px, ${(y-0.5)*speed}px)`;
+                });
+            });
+        })();
+    </script>
+    <!-- extra scriptless glow line -->
+    <div class="scope-line" style="margin-top: -1px;"></div>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,367 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeLingua · prototype</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #CBD5E1;
+        }
+        .phone-frame {
+            width: 360px;
+            height: 780px;
+            background: var(--bg-primary);
+            border-radius: 44px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px -15px rgba(0,0,0,0.4);
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        .app-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        /* theme variables (light default) */
+        :root {
+            --bg-primary: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --border-light: #E2E8F0;
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent: #38BDF8;
+            --icon-inactive: #94A3B8;
+            --tab-highlight: rgba(37, 99, 235, 0.08);
+            --shadow-sm: 0 4px 10px rgba(0,0,0,0.02);
+        }
+        body.dark {
+            --bg-primary: #0F172A;
+            --bg-card: #1E293B;
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            --border-light: #334155;
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --accent: #38BDF8;
+            --icon-inactive: #64748B;
+            --tab-highlight: rgba(59, 130, 246, 0.15);
+        }
+        .screen {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px 8px 20px;
+            display: flex;
+            flex-direction: column;
+            scrollbar-width: thin;
+            scrollbar-color: var(--icon-inactive) transparent;
+        }
+        .screen::-webkit-scrollbar { width: 4px; }
+        .screen::-webkit-scrollbar-thumb { background: var(--icon-inactive); border-radius: 20px; }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-light);
+        }
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+        .profile-icon {
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 12px;
+            transition: 0.2s;
+        }
+        .profile-icon:hover { background: var(--tab-highlight); }
+        .profile-icon svg { display: block; }
+
+        /* bottom nav */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: var(--bg-card);
+            padding: 6px 8px 10px;
+            border-top: 1px solid var(--border-light);
+        }
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px 0 4px;
+            border-radius: 20px;
+            transition: all 0.15s ease;
+            color: var(--icon-inactive);
+            fill: var(--icon-inactive);
+        }
+        .nav-item span {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .nav-item.active {
+            color: var(--primary);
+            fill: var(--primary);
+            background: var(--tab-highlight);
+            transform: scale(1.02);
+        }
+        .nav-item.active svg {
+            stroke: var(--primary);
+            transform: scale(1.1);
+        }
+        .nav-item svg {
+            stroke: currentColor;
+            fill: none;
+            transition: transform 0.15s;
+        }
+
+        /* cards etc */
+        .card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+        .row-space { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .badge {
+            background: var(--accent); color: #0F172A; padding: 4px 10px; border-radius: 30px; font-size: 0.75rem; font-weight: 600;
+        }
+        .progress-bar {
+            height: 8px; background: var(--border-light); border-radius: 20px; overflow: hidden; width: 100%;
+        }
+        .progress-fill {
+            height: 100%; background: var(--primary); width: 0%; transition: width 0.4s ease;
+        }
+        .btn {
+            background: var(--primary); color: white; border: none; padding: 14px 20px; border-radius: 60px; font-weight: 600; font-size: 1rem; width: 100%; cursor: pointer; transition: 0.2s;
+        }
+        .btn-outline {
+            background: transparent; border: 1.5px solid var(--primary); color: var(--primary);
+        }
+        .modal-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: var(--bg-card); width: 280px; border-radius: 32px; padding: 24px; color: var(--text-primary); border: 1px solid var(--border-light);
+        }
+        .hidden { display: none !important; }
+
+        /* onboarding icons */
+        .logo-big {
+            background: linear-gradient(145deg, #2563EB, #38BDF8); width: 70px; height: 70px; border-radius: 22px; display: flex; align-items: center; justify-content: center; margin: 20px auto 16px;
+        }
+        .link-row { display: flex; gap: 24px; justify-content: center; margin: 16px 0 8px; font-size: 0.8rem; }
+        .link-row button { background: none; border: none; color: var(--primary); text-decoration: underline; cursor: pointer; font-size: 0.8rem; }
+
+        /* chart dummy */
+        .mini-chart { display: flex; align-items: flex-end; gap: 8px; height: 60px; margin: 16px 0; }
+        .bar { width: 22px; background: var(--primary); border-radius: 12px 12px 4px 4px; height: calc(100% - 20px); transition: height 0.3s; }
+
+        /* icon system */
+        svg.icon { width: 24px; height: 24px; stroke-width: 2; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .nav-item svg.icon { width: 22px; height: 22px; }
+    </style>
+</head>
+<body>
+<div class="phone-frame" id="phoneContainer">
+    <div class="app-container" id="app">
+        <!-- dynamic header + screens injected via JS -->
+    </div>
+</div>
+<script>
+    (function(){
+        // ----- theme & utility -----
+        let currentTheme = 'light';
+        let currentScreen = 'onboarding'; // onboarding, home, learn, progress, settings
+        let screenshotCounter = 1;
+        const app = document.getElementById('app');
+
+        // icons definition (inline svg)
+        function icon(name, className = 'icon') {
+            const icons = {
+                home: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 12H3L12 3L21 12H19V20H13V14H11V20H5V12Z" stroke="currentColor" fill="none"/></svg>',
+                learn: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 6V21M12 6C10.5 4.5 7 4 4 6V17C7 15.5 10.5 16 12 18M12 6C13.5 4.5 17 4 20 6V17C17 15.5 13.5 16 12 18" stroke="currentColor"/></svg>',
+                progress: '<svg class="icon" viewBox="0 0 24 24"><path d="M21 12V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H12M15 9L21 3M21 3H16.5M21 3V7.5M7 15H11L18 8L15 5L8 12V15Z" stroke="currentColor"/></svg>',
+                settings: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" /><path d="M19.4 15C18.9 16 18 16.7 17 17.2L19 20.6L16 21L15.2 18.2C14.3 18.5 13.3 18.6 12.3 18.6C11.3 18.6 10.3 18.5 9.4 18.2L8.6 21L5.6 20.6L7.6 17.2C6.6 16.7 5.7 16 5.2 15L2 15V12L5.2 12C5.7 11 6.6 10.3 7.6 9.8L5.6 6.4L8.6 6L9.4 8.8C10.3 8.5 11.3 8.4 12.3 8.4C13.3 8.4 14.3 8.5 15.2 8.8L16 6L19 6.4L17 9.8C18 10.3 18.9 11 19.4 12L22 12V15H19.4Z" stroke="currentColor" /></svg>',
+                profile: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12Z" stroke="currentColor"/><path d="M20 21V19C20 16.8 18.2 15 16 15H8C5.8 15 4 16.8 4 19V21" stroke="currentColor"/></svg>',
+                lesson: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 20H20M4 20H20M4 4H20V16H4V4Z" stroke="currentColor"/><path d="M9 8H15M9 12H13" stroke="currentColor"/></svg>',
+                chart: '<svg class="icon" viewBox="0 0 24 24"><path d="M21 21H3V3M7 15V17M12 11V17M17 7V17" stroke="currentColor"/></svg>',
+                flashcards: '<svg class="icon" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor"/><path d="M9 7H15M9 11H13" stroke="currentColor"/></svg>',
+                play: '<svg class="icon" viewBox="0 0 24 24"><path d="M8 5V19L19 12L8 5Z" stroke="currentColor"/></svg>',
+                check: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 12L10 17L19 8" stroke="currentColor"/></svg>',
+            };
+            return icons[name] || '<svg class="icon" viewBox="0 0 24 24"></svg>';
+        }
+
+        // --- helpers ---
+        function showModal(title, text) {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = `<div class="modal-content"><h3 style="margin-bottom:10px;">${title}</h3><p style="margin-bottom:20px;">${text}</p><button class="btn" id="closeModal">Close</button></div>`;
+            document.body.appendChild(overlay);
+            document.getElementById('closeModal').addEventListener('click', ()=> overlay.remove());
+        }
+
+        function renderHeader(screenTitle) {
+            return `<div class="header"><h1>${screenTitle}</h1><div class="profile-icon" id="profileBtn">${icon('profile')}</div></div>`;
+        }
+
+        function renderBottomNav(active) {
+            const tabs = ['home','learn','progress','settings'];
+            const labels = {home:'Home', learn:'Learn', progress:'Progress', settings:'Settings'};
+            let navHtml = '<div class="bottom-nav">';
+            tabs.forEach(t => {
+                const activeClass = (t === active) ? 'active' : '';
+                navHtml += `<button class="nav-item ${activeClass}" data-nav="${t}">${icon(t)}<span>${labels[t]}</span></button>`;
+            });
+            navHtml += '</div>';
+            return navHtml;
+        }
+
+        function switchScreen(screenName) {
+            currentScreen = screenName;
+            renderApp();
+        }
+
+        function renderApp() {
+            let content = '';
+            // header title mapping
+            const headerTitles = {
+                onboarding: 'Welcome', home: 'Dashboard', learn: 'Practice', progress: 'Insights', settings: 'Settings'
+            };
+            if (currentScreen !== 'onboarding') {
+                content += renderHeader(headerTitles[currentScreen]);
+            } else {
+                content += `<div class="header"><h1>✨ CodeLingua</h1><div class="profile-icon" id="profileBtn">${icon('profile')}</div></div>`;
+            }
+
+            // screen body
+            if (currentScreen === 'onboarding') {
+                content += `<div class="screen" id="mainScreen"><div class="logo-big">${icon('learn')}</div><h2 style="font-size:2rem; text-align:center;">CodeLingua</h2><p style="text-align:center;color:var(--text-secondary); margin:4px 0 16px;">Python, simply fun</p><p style="text-align:center; margin-bottom:24px;">Master Python through bite-sized challenges. No setup, just code.</p><button class="btn" id="getStartedBtn">Get Started</button><div class="link-row"><button id="privacyBtn">Privacy Policy</button><button id="termsBtn">Terms of Service</button></div></div>`;
+            } else {
+                content += `<div class="screen" id="mainScreen">`;
+                if (currentScreen === 'home') {
+                    content += `<div class="card"><div class="row-space"><span>🔥 Daily streak</span><span class="badge">7 days</span></div><div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div><p style="margin-top:12px;">+150 XP today</p></div>`;
+                    content += `<div class="card"><h3>Continue lesson</h3><div style="display:flex; gap:12px; align-items:center; margin:10px 0"><div>${icon('lesson')}</div><div><strong>Variables & Data</strong><div class="progress-bar" style="width:120px;"><div class="progress-fill" style="width:45%"></div></div></div></div><button class="btn btn-outline" id="continueLearn">Continue</button></div>`;
+                    content += `<div class="card"><h3>✨ Achievements</h3><div style="display:flex; gap:20px;">🏆 🏅 🔥</div></div>`;
+                } else if (currentScreen === 'learn') {
+                    content += `<div class="card"><h3>Python basics</h3>${icon('flashcards')}<p>15 flashcards</p><div class="progress-bar"><div class="progress-fill" style="width:30%"></div></div><button class="btn" style="margin-top:12px;" id="startPractice">Start practice</button></div>`;
+                    content += `<div class="card"><h3>Today's challenge</h3><p>Write a function</p><button class="btn-outline btn" id="openLesson">Solve</button></div>`;
+                } else if (currentScreen === 'progress') {
+                    content += `<div class="card"><h3>Weekly activity</h3><div class="mini-chart"><div class="bar" style="height:30px;"></div><div class="bar" style="height:48px;"></div><div class="bar" style="height:22px;"></div><div class="bar" style="height:60px;"></div><div class="bar" style="height:40px;"></div></div></div>`;
+                    content += `<div class="card"><h3>Accuracy 87%</h3><div class="progress-bar"><div class="progress-fill" style="width:87%"></div></div></div>`;
+                } else if (currentScreen === 'settings') {
+                    content += `<div class="card"><h3>Appearance</h3><button class="btn btn-outline" id="themeToggle">Switch to Dark</button></div>`;
+                    content += `<div class="card"><h3>Profile</h3>${icon('profile')} <span>guest learner</span></div>`;
+                }
+                content += `</div>`;
+            }
+
+            // bottom nav for non-onboarding
+            if (currentScreen !== 'onboarding') {
+                content += renderBottomNav(currentScreen);
+            } else {
+                // onboarding has no bottom nav
+            }
+            app.innerHTML = content;
+
+            // event listeners
+            if (currentScreen === 'onboarding') {
+                document.getElementById('getStartedBtn')?.addEventListener('click', ()=>{ switchScreen('home'); });
+                document.getElementById('privacyBtn')?.addEventListener('click', ()=> showModal('Privacy', 'We respect your data. (demo)'));
+                document.getElementById('termsBtn')?.addEventListener('click', ()=> showModal('Terms', 'Educational use only.'));
+            } else {
+                document.querySelectorAll('.nav-item').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const nav = e.currentTarget.dataset.nav;
+                        if (nav) switchScreen(nav);
+                    });
+                });
+                // profile icon
+                document.getElementById('profileBtn')?.addEventListener('click', ()=> { switchScreen('settings'); });
+                // interactive buttons inside cards
+                if (document.getElementById('continueLearn')) document.getElementById('continueLearn').addEventListener('click', ()=> alert('Lesson resumed (demo)'));
+                if (document.getElementById('startPractice')) document.getElementById('startPractice').addEventListener('click', ()=> { alert('Starting flashcards'); document.querySelector('.progress-fill').style.width='55%'; });
+                if (document.getElementById('openLesson')) document.getElementById('openLesson').addEventListener('click', ()=> alert('Open code editor (demo)'));
+                if (document.getElementById('themeToggle')) {
+                    document.getElementById('themeToggle').addEventListener('click', (e)=> {
+                        document.body.classList.toggle('dark');
+                        currentTheme = document.body.classList.contains('dark') ? 'dark' : 'light';
+                        e.target.innerText = currentTheme==='dark' ? 'Switch to Light' : 'Switch to Dark';
+                    });
+                }
+            }
+        }
+
+        // screenshot shift+w
+        window.addEventListener('keydown', (e) => {
+            if (e.shiftKey && e.key === 'W') {
+                const phone = document.getElementById('phoneContainer');
+                html2canvas?.(phone, { scale: 2 }).then(canvas => {
+                    const link = document.createElement('a');
+                    let filename = currentTheme === 'dark' ? '6.png' : (screenshotCounter + '.png');
+                    if (currentTheme === 'dark') filename = '6.png';
+                    else {
+                        filename = screenshotCounter + '.png';
+                        screenshotCounter = screenshotCounter < 5 ? screenshotCounter + 1 : 1;
+                    }
+                    link.download = filename;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }).catch(() => alert('html2canvas not loaded – screenshot simulation (demo)'));
+            }
+        });
+
+        // include html2canvas from cdn (optional)
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        document.head.appendChild(script);
+
+        // start app
+        renderApp();
+
+        // dummy badge update
+        window.updateProgress = function(){};
+    })();
+</script>
+<!-- JSON Play Store text -->
+<pre style="display:none;">{
+    "1.png": "Start Learning",
+    "2.png": "Daily Lessons",
+    "3.png": "Practice Skills",
+    "4.png": "Track Progress",
+    "5.png": "Smart Settings",
+    "6.png": "Dark Theme"
+}</pre>
+All done!
+```

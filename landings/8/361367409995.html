@@ -1,0 +1,715 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private observation club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff;
+            color: #10141a;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* smooth scroll & reveal setup */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* sticky header with compact effect */
+        .site-header {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            background: rgba(255,255,255,0.80);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+            z-index: 100;
+            transition: padding 0.3s, box-shadow 0.3s;
+            padding: 1.2rem 2rem;
+        }
+
+        .site-header.compact {
+            padding: 0.6rem 2rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.02);
+        }
+
+        .header-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            color: #0c1440;
+            font-size: 2rem;
+            transition: transform 0.2s;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+            font-weight: 450;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #1a1f2b;
+            font-size: 1.05rem;
+            border-bottom: 1.5px solid transparent;
+            transition: border-color 0.2s;
+            padding-bottom: 4px;
+        }
+
+        .nav-links a:hover {
+            border-bottom-color: #0b1e42;
+        }
+
+        /* hero animation: rotating glow / starfield effect via JS canvas */
+        .hero {
+            position: relative;
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            background: #f8faff;
+            overflow: hidden;
+            border-bottom: 1px solid #eaeef5;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(10, 20, 50, 0.05);
+            backdrop-filter: blur(2px);
+            padding: 0.4rem 1.2rem;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(0,0,0,0.03);
+            margin-bottom: 2rem;
+        }
+
+        .hero-title {
+            font-size: 5rem;
+            font-weight: 650;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            max-width: 900px;
+        }
+
+        .hero-title span {
+            background: linear-gradient(145deg, #162b4d, #03122e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+
+        .hero-desc {
+            font-size: 1.3rem;
+            margin-top: 1.5rem;
+            max-width: 600px;
+            color: #2b3340;
+            font-weight: 340;
+        }
+
+        .hero-cta {
+            margin-top: 2.5rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: #0d1b30;
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.2s;
+            box-shadow: 0 12px 28px -8px rgba(0,35,70,0.2);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background: #1f3450;
+            transform: scale(1.02);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #0d1b30;
+            color: #0d1b30;
+            padding: 0.9rem 2.8rem;
+            border-radius: 60px;
+            font-weight: 500;
+            font-size: 1.1rem;
+            transition: 0.15s;
+            text-decoration: none;
+        }
+
+        .btn-outline:hover {
+            background: #f0f4fe;
+        }
+
+        /* generic container */
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 5rem 2rem;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 2rem;
+        }
+
+        .section-sub {
+            font-size: 1.2rem;
+            color: #3c4658;
+            max-width: 700px;
+            margin-bottom: 3.5rem;
+            font-weight: 360;
+        }
+
+        /* telescopes / card grid */
+        .scope-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .scope-card {
+            background: #ffffff;
+            border-radius: 36px;
+            padding: 2rem 1.8rem;
+            box-shadow: 0 18px 36px -16px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.02);
+            transition: all 0.3s ease;
+        }
+
+        .scope-card:hover {
+            box-shadow: 0 28px 48px -16px rgba(0,15,45,0.12);
+            border-color: rgba(24,60,120,0.15);
+            transform: translateY(-6px);
+        }
+
+        .scope-icon {
+            font-size: 3rem;
+            color: #111e38;
+            margin-bottom: 1.5rem;
+        }
+
+        .scope-card h3 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .scope-detail {
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            color: #3f4b60;
+        }
+
+        .scope-meta {
+            margin-top: 1.8rem;
+            display: flex;
+            gap: 1.2rem;
+            align-items: center;
+            font-weight: 500;
+        }
+        .scope-meta i { color: #0b1e42; }
+
+        /* events – horizontal cards */
+        .events-row {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .event-item {
+            background: #fbfdff;
+            flex: 1 1 220px;
+            border-radius: 28px;
+            padding: 2rem 1.8rem;
+            border: 1px solid #eceff5;
+            transition: 0.2s;
+        }
+        .event-item:hover {
+            background: #ffffff;
+            border-color: #b0c4de;
+        }
+        .event-date {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #4d6079;
+        }
+        .event-name {
+            font-size: 2rem;
+            font-weight: 500;
+            line-height: 1.1;
+            margin: 1rem 0 0.5rem;
+        }
+        .constellation {
+            color: #23457c;
+            font-weight: 450;
+        }
+
+        /* big numbers / stats */
+        .stats-grid {
+            display: flex;
+            justify-content: space-between;
+            background: #f2f6fd;
+            border-radius: 80px;
+            padding: 3.5rem 3rem;
+            margin: 3rem 0;
+        }
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 650;
+            letter-spacing: -2px;
+            color: #091932;
+        }
+        .stat-label {
+            font-size: 1.2rem;
+            color: #2d3d5c;
+        }
+
+        /* timeline / membership */
+        .membership-cards {
+            display: flex;
+            gap: 2rem;
+        }
+        .member-tier {
+            background: white;
+            border-radius: 40px;
+            padding: 2.5rem 2rem;
+            flex: 1;
+            border: 1px solid #e2e9f2;
+            transition: all 0.2s;
+        }
+        .member-tier:hover {
+            border-color: #13274a;
+            background: #f9fcff;
+        }
+        .tier-name {
+            font-size: 2rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .price {
+            margin: 1.5rem 0;
+            font-size: 2.8rem;
+            font-weight: 650;
+        }
+        .price small { font-size: 1.2rem; font-weight: 300; }
+        .tier-feature {
+            padding: 0.5rem 0;
+            font-size: 1.1rem;
+            border-bottom: 1px dashed #d0dbea;
+        }
+        .tier-feature i { margin-right: 12px; color: #152c50; width: 20px; }
+
+        /* observation stats – extra glow */
+        .obs-stats {
+            display: flex;
+            gap: 3rem;
+            background: #0b1422;
+            color: white;
+            border-radius: 70px;
+            padding: 3rem 4rem;
+            margin-top: 4rem;
+        }
+        .obs-stats .stat-number { color: #c1d9ff; }
+        .obs-stats .stat-label { color: #a3b8d9; }
+
+        /* footer */
+        .site-footer {
+            background: #f2f5fa;
+            padding: 3rem 2rem;
+            border-top: 1px solid #dde3ec;
+        }
+        .footer-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .footer-links i {
+            font-size: 1.6rem;
+            margin-left: 1.5rem;
+            color: #202b40;
+            transition: opacity 0.2s;
+        }
+        .footer-links i:hover { opacity: 0.6; }
+
+        hr { border: none; border-top: 1px solid rgba(0,0,0,0.05); margin: 1rem 0; }
+
+        /* misc */
+        .text-glow {
+            background: linear-gradient(125deg, #09182e, #23467c);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .highlight {
+            background: #e9effa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        /* canvas starfield is behind */
+        .hero-title, .hero-desc, .hero-badge, .hero-cta {
+            position: relative;
+            z-index: 3;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header" id="mainHeader">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-meteor"></i> OBSIDIAN
+            </div>
+            <div class="nav-links">
+                <a href="#telescopes">optics</a>
+                <a href="#events">events</a>
+                <a href="#membership">membership</a>
+                <a href="#stats">cosmos</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO with canvas animation (starfield & glow) -->
+    <section class="hero" id="home">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <div class="hero-badge reveal active">🔭 since 1987 · private observation club</div>
+            <h1 class="hero-title reveal active"><span>observe</span> the universe <br>in absolute silence</h1>
+            <p class="hero-desc reveal active">Bortle class 1 skies · premium optics · remote mount access. Beyond the light.</p>
+            <div class="hero-cta reveal active">
+                <a href="#membership" class="btn-primary">reserve night</a>
+                <a href="#telescopes" class="btn-outline">explore fleet</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 1: telescopes (optics) -->
+    <section class="container" id="telescopes">
+        <h2 class="section-title reveal">optical arsenal <i class="fas fa-telescope" style="margin-left: 15px;"></i></h2>
+        <div class="section-sub reveal">four flagship instruments, each calibrated for deep‑sky & planetary.</div>
+        <div class="scope-grid">
+            <div class="scope-card reveal">
+                <div class="scope-icon"><i class="fas fa-moon"></i></div>
+                <h3>Planewave 24”</h3>
+                <div class="scope-detail">CDK f/6.5 · 1520mm FL · absolute resolution</div>
+                <div class="scope-meta"><i class="fas fa-star"></i> limiting mag 17.5</div>
+            </div>
+            <div class="scope-card reveal">
+                <div class="scope-icon"><i class="fas fa-sun"></i></div>
+                <h3>Solar Hα 152mm</h3>
+                <div class="scope-detail">Double-stack etalon · prominences & surface</div>
+                <div class="scope-meta"><i class="fas fa-fire"></i> day & night use</div>
+            </div>
+            <div class="scope-card reveal">
+                <div class="scope-icon"><i class="fas fa-globe"></i></div>
+                <h3>RCOS 20”</h3>
+                <div class="scope-detail">f/9 astrograph · wide‑field CCD</div>
+                <div class="scope-meta"><i class="fas fa-camera"></i> imaging rig</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: events / celestial calendar -->
+    <section class="container" id="events">
+        <h2 class="section-title reveal">celestial events</h2>
+        <div class="section-sub reveal">members‑only vigils & dark‑sky marathons.</div>
+        <div class="events-row">
+            <div class="event-item reveal">
+                <div class="event-date">may 24–26</div>
+                <div class="event-name">virgo <br>cluster</div>
+                <div class="constellation"><i class="fas fa-galaxy"></i> 35 galaxies</div>
+            </div>
+            <div class="event-item reveal">
+                <div class="event-date">june 14</div>
+                <div class="event-name">mars <br>opposition</div>
+                <div class="constellation"><i class="fas fa-planet-ringed"></i> 18.6”</div>
+            </div>
+            <div class="event-item reveal">
+                <div class="event-date">july 5</div>
+                <div class="event-name">milky way <br>core</div>
+                <div class="constellation"><i class="fas fa-cloud"></i> sagittarius</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: stat highlights + impact numbers (first stats) -->
+    <section class="container" id="stats">
+        <div class="stats-grid reveal">
+            <div class="stat-item">
+                <div class="stat-number">2.1k</div>
+                <div class="stat-label">deep‑sky objects</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">0.2″</div>
+                <div class="stat-label">median seeing</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">21.9</div>
+                <div class="stat-label">sqm mag/arcsec²</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: membership / tiers -->
+    <section class="container" id="membership">
+        <h2 class="section-title reveal">membership & access</h2>
+        <div class="membership-cards">
+            <div class="member-tier reveal">
+                <div class="tier-name"><i class="fas fa-crown"></i> scholar</div>
+                <div class="price">$390 <small>/ year</small></div>
+                <div class="tier-feature"><i class="fas fa-check"></i> 4 nights reservation</div>
+                <div class="tier-feature"><i class="fas fa-check"></i> all scopes (off-peak)</div>
+                <div class="tier-feature"><i class="fas fa-check"></i> member events</div>
+            </div>
+            <div class="member-tier reveal">
+                <div class="tier-name"><i class="fas fa-gem"></i> astronomer</div>
+                <div class="price">$820 <small>/ year</small></div>
+                <div class="tier-feature"><i class="fas fa-check"></i> 12 nights + remote</div>
+                <div class="tier-feature"><i class="fas fa-check"></i> imaging subscription</div>
+                <div class="tier-feature"><i class="fas fa-check"></i> guest pass +2</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: OBSERVATORY STATS (extra wow) -->
+    <section class="container">
+        <div class="obs-stats reveal">
+            <div class="stat-item">
+                <div class="stat-number">147</div>
+                <div class="stat-label">nights clear / year</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">86%</div>
+                <div class="stat-label">photometric quality</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">3.2m</div>
+                <div class="stat-label">elevation</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="logo"><i class="fas fa-meteor"></i> OBSIDIAN club</div>
+            <div class="footer-links">
+                <i class="fab fa-x-twitter"></i>
+                <i class="fab fa-instagram"></i>
+                <i class="fab fa-youtube"></i>
+            </div>
+        </div>
+        <hr>
+        <div class="footer-container" style="justify-content: center; padding-top: 1.2rem; opacity: 0.7;">
+            © obsidian · private observation · 2025
+        </div>
+    </footer>
+
+    <!-- JS: sticky compact header, scroll reveal, hero canvas animation -->
+    <script>
+        (function() {
+            // STICKY HEADER compact effect
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // REVEAL on scroll (intersection observer)
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    } else {
+                        // optional remove class if you want re-trigger (but keep active usually)
+                        // entry.target.classList.remove('active'); // (commented for subtlety)
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -10px 0px' });
+            reveals.forEach(r => observer.observe(r));
+
+            // HERO CANVAS — moving starfield + glow particles
+            const canvas = document.getElementById('hero-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initCanvas() {
+                width = window.innerWidth;
+                height = document.querySelector('.hero').offsetHeight;
+                canvas.width = width;
+                canvas.height = height;
+
+                // create 140 stars with random speeds
+                particles = [];
+                for (let i = 0; i < 140; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 2.2 + 0.6,
+                        speedX: (Math.random() - 0.5) * 0.12,
+                        speedY: (Math.random() - 0.5) * 0.06,
+                        glow: Math.random() * 0.7 + 0.3,
+                    });
+                }
+            }
+
+            function drawStars() {
+                ctx.clearRect(0, 0, width, height);
+                // deep space gradient
+                const grad = ctx.createLinearGradient(0, 0, 0, height);
+                grad.addColorStop(0, '#eef4fd');
+                grad.addColorStop(0.7, '#dbe5f5');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+
+                particles.forEach(p => {
+                    // move
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    // wrap around edges gently
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+
+                    // draw glowing dot
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius * 1.6, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(30, 50, 100, ${p.glow * 0.25})`;
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(10, 20, 50, ${p.glow * 0.9})`;
+                    ctx.fill();
+
+                    // occasional extra glint
+                    if (p.radius > 1.5) {
+                        ctx.beginPath();
+                        ctx.arc(p.x-1, p.y-1, p.radius*0.4, 0, Math.PI*2);
+                        ctx.fillStyle = 'rgba(255,255,250,0.4)';
+                        ctx.fill();
+                    }
+                });
+
+                // extra big glowing core (custom)
+                ctx.beginPath();
+                ctx.arc(width * 0.3, height * 0.3, 80, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(170, 200, 250, 0.02)';
+                ctx.fill();
+
+                requestAnimationFrame(drawStars);
+            }
+
+            window.addEventListener('resize', () => {
+                initCanvas();
+            });
+
+            initCanvas();
+            drawStars();
+
+            // smooth anchor scrolling (optional)
+            document.querySelectorAll('.nav-links a, .btn-primary, .btn-outline').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const hash = this.getAttribute('href');
+                    if (hash && hash.startsWith('#')) {
+                        e.preventDefault();
+                        const target = document.querySelector(hash);
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

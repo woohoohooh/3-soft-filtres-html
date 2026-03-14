@@ -1,0 +1,523 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FrozenFrame · кондиционирование | ice cold performance</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #ffffff;
+      color: #121212;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* интер — чистый, современный */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap');
+
+    /* глобальные секции */
+    section, footer, header {
+      width: 100%;
+      padding: 5rem 2rem;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* ------ хедер (блок 1) с js-анимацией градиента/пульса ------ */
+    .site-header {
+      background: #ffffff;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+      padding: 1.2rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+
+    .site-header.scrolled {
+      padding: 0.6rem 2rem;
+      backdrop-filter: blur(16px);
+      background: rgba(255,255,255,0.8);
+      border-bottom-color: rgba(0,0,0,0.05);
+    }
+
+    .header-flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(125deg, #181818, #3a3a3a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      transition: transform 0.3s;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 3rem;
+      font-weight: 500;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #1f1f1f;
+      font-size: 1.1rem;
+      position: relative;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: #121212;
+      transition: 0.25s ease;
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    /* анимация заголовка через js – крутой градиентный shift */
+    .glitch-title {
+      font-size: 4rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      background: linear-gradient(130deg, #101010, #404040, #202020, #585858);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientBreath 6s ease infinite;
+    }
+
+    @keyframes gradientBreath {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* блоки с появлением при скролле (Intersection Observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* маленькие иконки на базе Font Awesome 6 (free) */
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      width: 1.5em;
+    }
+
+    /* сетки */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 3rem;
+    }
+
+    .grid-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* карточки */
+    .service-card, .feature-card {
+      background: #f8f8f8;
+      border-radius: 32px;
+      padding: 2.5rem 2rem;
+      transition: transform 0.3s, box-shadow 0.3s;
+      border: 1px solid #ececec;
+    }
+
+    .service-card:hover, .feature-card:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 25px 40px -20px rgba(0,0,0,0.15);
+    }
+
+    h2 {
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+    }
+
+    h3 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin: 1rem 0 0.5rem;
+    }
+
+    p {
+      font-size: 1.2rem;
+      opacity: 0.75;
+      font-weight: 400;
+      max-width: 70ch;
+    }
+
+    .hero p {
+      font-size: 1.4rem;
+    }
+
+    .btn {
+      display: inline-block;
+      background: #121212;
+      color: white;
+      font-weight: 600;
+      padding: 1rem 2.8rem;
+      border-radius: 60px;
+      text-decoration: none;
+      font-size: 1.2rem;
+      margin-top: 2rem;
+      border: 2px solid #121212;
+      transition: 0.2s;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #121212;
+    }
+
+    .btn-outline:hover {
+      background: #121212;
+      color: white;
+    }
+
+    footer {
+      background: #f4f4f4;
+      border-top: 1px solid #e0e0e0;
+      font-size: 1rem;
+    }
+
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    /* декоративные элементы */
+    .stat-highlight {
+      font-size: 3.5rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    /* простая анимация при наведении */
+    .hover-lift {
+      transition: transform 0.15s;
+    }
+    .hover-lift:hover {
+      transform: scale(1.02);
+    }
+
+    /* якорное меню в хедере — фиксированные ссылки */
+    html {
+      scroll-padding-top: 100px;
+    }
+  </style>
+  <!-- Font Awesome 6 (бесплатные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+  <!-- БЛОК 1: ХЕДЕР (с анимацией скролла) -->
+  <header class="site-header" id="mainHeader">
+    <div class="header-flex">
+      <div class="logo">❄️ FRZFRAME</div>
+      <nav class="nav-links">
+        <a href="#services">services</a>
+        <a href="#process">process</a>
+        <a href="#stats">stats</a>
+        <a href="#contact">contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- БЛОК 2: ГЛАВНЫЙ ЭКРАН (hero) -->
+  <section class="hero reveal" id="home">
+    <div class="container">
+      <h1 class="glitch-title">industrial‑grade<br>cooling & fresh air</h1>
+      <p style="font-size: 1.6rem; margin: 1.5rem 0; max-width: 800px;">engineering precise microclimate — from server rooms to private residences.</p>
+      <a href="#contact" class="btn btn-outline" style="border-width: 2px;">get free audit <i class="fa-regular fa-snowflake" style="margin-left: 8px;"></i></a>
+      <div style="margin-top: 3rem; display: flex; gap: 2rem; flex-wrap: wrap;">
+        <span><i class="fa-regular fa-clock icon" style="font-size: 1.8rem;"></i> 24/7 emergency</span>
+        <span><i class="fa-regular fa-circle-check icon" style="font-size: 1.8rem;"></i> 5y warranty</span>
+        <span><i class="fa-regular fa-building icon" style="font-size: 1.8rem;"></i> commercial / residential</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: УСЛУГИ (service highlights) -->
+  <section id="services" class="reveal">
+    <div class="container">
+      <h2>core <br>disciplines</h2>
+      <div class="grid-3">
+        <div class="service-card">
+          <i class="fa-regular fa-snowflake icon" style="font-size: 2.8rem; color: #2b6c94;"></i>
+          <h3>precision cooling</h3>
+          <p>VRF / VRV systems, close-control units for data floors, process cooling.</p>
+        </div>
+        <div class="service-card">
+          <i class="fa-regular fa-wind icon" style="font-size: 2.8rem;"></i>
+          <h3>air diagnostics</h3>
+          <p>humidity, filtration, fresh air exchange — certified measurements.</p>
+        </div>
+        <div class="service-card">
+          <i class="fa-regular fa-gear icon" style="font-size: 2.8rem;"></i>
+          <h3>retrofit & automation</h3>
+          <p>smart controllers, BMS integration, energy‑optimized retrofit.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: ТЕХ ПРОЦЕСС (блок с двумя колонками) -->
+  <section id="process" class="reveal">
+    <div class="container">
+      <div class="grid-2" style="align-items: center;">
+        <div>
+          <h2>from site‑scan to sign‑off</h2>
+          <p style="font-size: 1.3rem; margin-bottom: 2rem;">no unnecessary steps — only engineering that matters. we respect your time and building aesthetics.</p>
+          <ul style="list-style: none; font-size: 1.2rem;">
+            <li style="margin: 1rem 0;"><i class="fa-regular fa-ruler-combined" style="margin-right: 1rem;"></i> <strong>1.</strong> load calculation & 3d scan</li>
+            <li style="margin: 1rem 0;"><i class="fa-regular fa-pen-ruler" style="margin-right: 1rem;"></i> <strong>2.</strong> silent design & equipment match</li>
+            <li style="margin: 1rem 0;"><i class="fa-regular fa-bolt" style="margin-right: 1rem;"></i> <strong>3.</strong> installation & pressure tests</li>
+            <li style="margin: 1rem 0;"><i class="fa-regular fa-chart-line" style="margin-right: 1rem;"></i> <strong>4.</strong> balancing + remote handover</li>
+          </ul>
+        </div>
+        <div style="background: #f0f0f0; border-radius: 48px; padding: 3rem 2rem; text-align: center;">
+          <i class="fa-regular fa-chart-pie" style="font-size: 5rem; opacity: 0.5;"></i>
+          <p style="font-weight: 600; margin-top: 1rem;">typical energy saving <br> <span class="stat-highlight">37%</span> after our retrofit</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: ЦИФРЫ / ДОВЕРИЕ -->
+  <section id="stats" class="reveal">
+    <div class="container">
+      <div class="grid-3">
+        <div class="feature-card">
+          <i class="fa-regular fa-face-smile" style="font-size: 3rem;"></i>
+          <div class="stat-highlight">1.400+</div>
+          <p>systems installed since 2012</p>
+        </div>
+        <div class="feature-card">
+          <i class="fa-regular fa-building" style="font-size: 3rem;"></i>
+          <div class="stat-highlight">24/7</div>
+          <p>emergency response — 2h average</p>
+        </div>
+        <div class="feature-card">
+          <i class="fa-regular fa-star" style="font-size: 3rem;"></i>
+          <div class="stat-highlight">4.9</div>
+          <p>star rating (google & proven)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: ОБЪЕКТЫ / ТИПОВЫЕ РЕШЕНИЯ -->
+  <section class="reveal">
+    <div class="container">
+      <h2>environments we master</h2>
+      <div class="grid-2">
+        <div style="padding: 2rem; background: #fafafa; border-radius: 32px;">
+          <i class="fa-regular fa-microchip" style="font-size: 2.5rem;"></i>
+          <h3 style="font-size: 2rem;">server & <br>telecom</h3>
+          <p>precision within ±0.5°C, humidity locks, in-row cooling.</p>
+        </div>
+        <div style="padding: 2rem; background: #fafafa; border-radius: 32px;">
+          <i class="fa-regular fa-house-chimney" style="font-size: 2.5rem;"></i>
+          <h3 style="font-size: 2rem;">private residences</h3>
+          <p>ducted systems, hidden cassettes, hrv/erv fresh air.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: ИНСТРУМЕНТЫ / ТЕХНОЛОГИИ (иконки) -->
+  <section class="reveal">
+    <div class="container">
+      <div style="display: flex; flex-wrap: wrap; gap: 3rem; justify-content: center; align-items: center;">
+        <i class="fa-regular fa-bolt" style="font-size: 4rem; opacity: 0.5;"></i>
+        <i class="fa-regular fa-fan" style="font-size: 4rem; opacity: 0.5;"></i>
+        <i class="fa-regular fa-temperature-low" style="font-size: 4rem; opacity: 0.5;"></i>
+        <i class="fa-regular fa-cloud" style="font-size: 4rem; opacity: 0.5;"></i>
+        <i class="fa-regular fa-brush" style="font-size: 4rem; opacity: 0.5;"></i>
+        <i class="fa-regular fa-flask" style="font-size: 4rem; opacity: 0.5;"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: ПРИЗЫВ / КОНТАКТЫ -->
+  <section id="contact" class="reveal">
+    <div class="container" style="text-align: center; max-width: 800px;">
+      <h2 style="font-size: 3.5rem;">talk to a cooling engineer</h2>
+      <p style="font-size: 1.5rem; margin-bottom: 2rem;">no call‑centers. you get a specialist who designs the solution.</p>
+      <a href="#" class="btn" style="background: #121212;">+1 (212) 970 3322</a>
+      <div style="margin-top: 2.5rem;">
+        <i class="fa-regular fa-envelope" style="margin: 0 1rem; font-size: 2rem;"></i>
+        <i class="fa-regular fa-paper-plane" style="margin: 0 1rem; font-size: 2rem;"></i>
+        <i class="fa-regular fa-comment" style="margin: 0 1rem; font-size: 2rem;"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: ФУТЕР -->
+  <footer class="reveal">
+    <div class="container footer-grid">
+      <span>❄️ FRZFRAME — 2025 · climate engineering</span>
+      <span> <i class="fa-regular fa-helmet-safety"></i> licensed & insured</span>
+      <span>terms · privacy</span>
+    </div>
+  </footer>
+
+  <!-- JS: анимация хедера при скролле + появление блоков reveal + градиент/эффект -->
+  <script>
+    (function() {
+      // 1. Фиксированный хедер анимация
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // 2. Intersection Observer для reveal-блоков
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          } else {
+            // можно оставить active или убрать — оставим для эстетики повторного появления
+            // (но можно и не убирать, но эффект снова появится)
+            // для плавности пусть остается, но если хочешь повтор — удаляем класс
+            // но классика: один раз показали и хватит. убираем, если хочешь, чтоб каждый раз вьезжало
+            // раскомментировать если нужно повторное скрытие:
+            // entry.target.classList.remove('active');
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -60px 0px' }); // чуть смещаем
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // 3. Дополнительная анимация на glitch-title — оставим просто фон градиента, но можно еще мелкую
+      // добавим плавную смену оттенка через css — уже есть. больше вау: random при наведении мыши
+      const heroTitle = document.querySelector('.glitch-title');
+      if (heroTitle) {
+        heroTitle.addEventListener('mousemove', function(e) {
+          // микро-эффект изменения градиента
+          const x = e.clientX / window.innerWidth;
+          const y = e.clientY / window.innerHeight;
+          this.style.background = `linear-gradient(130deg, hsl(0,0%,${10+20*x}%), hsl(0,0%,${30+20*y}%), #202020, #585858)`;
+          this.style.backgroundSize = '300% 300%';
+          this.style.webkitBackgroundClip = 'text';
+          this.style.webkitTextFillColor = 'transparent';
+        });
+        heroTitle.addEventListener('mouseleave', function() {
+          this.style.background = 'linear-gradient(130deg, #101010, #404040, #202020, #585858)';
+          this.style.backgroundSize = '300% 300%';
+        });
+      }
+
+      // 4. Плавный скролл для якорей (без резких прыжков)
+      document.querySelectorAll('.nav-links a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+          const targetEl = document.querySelector(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+
+      // 5. Эффект при загрузке: хедер сразу проверяем
+      if (window.scrollY > 30) header.classList.add('scrolled');
+
+      // 6. маленькая анимация на иконки в блоке 7? можно добавить едва заметное покачивание
+      const icons = document.querySelectorAll('.fa-regular');
+      // очень деликатно: через стили в css, оставим как есть.
+
+      // 7. добавим «live» цифру в статистику? но и так ок.
+
+    })();
+  </script>
+
+  <!-- простой декоративный стиль для активных ревелов, уже прописан в .reveal.active -->
+  <style>
+    /* более плавный старт */
+    .reveal {
+      transition: opacity 1s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    /* для карточек добавим небольшой отклик */
+    .service-card i, .feature-card i {
+      transition: 0.2s;
+    }
+    .service-card:hover i {
+      transform: scale(1.1);
+      color: #2b6c94;
+    }
+    /* белый фон, чистый воздух */
+    body {
+      background: #ffffff;
+    }
+    h2, h3 {
+      color: #121212;
+    }
+    .btn-outline {
+      border-color: #121212;
+    }
+    .btn-outline:hover {
+      background: #121212;
+      color: white;
+    }
+    /* подвал */
+    footer {
+      background: #f4f4f4;
+      color: #222;
+    }
+  </style>
+</body>
+</html>
+```
+All done!

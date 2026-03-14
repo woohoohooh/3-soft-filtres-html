@@ -1,0 +1,632 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private shooting club</title>
+    <!-- Font & Icons (Font Awesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0c0f;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #f0f2f5;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap');
+
+        /* custom crosshair cursor (subtle) */
+        body * {
+            cursor: crosshair;
+        }
+
+        /* fixed header with compact effect on scroll */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 2rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.3s ease;
+            background: rgba(10, 12, 18, 0.2);
+            backdrop-filter: blur(0px);
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+
+        .header.scrolled {
+            padding: 1rem 4rem;
+            background: rgba(8, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.8);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.6rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow: 0 0 8px rgba(255,215,0,0.3);
+        }
+        .logo span {
+            color: #d4af37;
+            font-weight: 400;
+            font-size: 1rem;
+            margin-left: 4px;
+            letter-spacing: 2px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2.8rem;
+        }
+        .nav a {
+            text-decoration: none;
+            color: #eee;
+            font-weight: 500;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav a:hover {
+            color: #d4af37;
+            border-bottom: 2px solid #d4af37;
+        }
+
+        /* hero section – secret mission style */
+        .hero {
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 30%, #1f232e, #030405 80%);
+            display: flex;
+            align-items: center;
+            padding: 0 4rem;
+            position: relative;
+            isolation: isolate;
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+        .hero-label {
+            font-size: 1rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #d4af37;
+            margin-bottom: 1rem;
+            border-left: 4px solid #d4af37;
+            padding-left: 1rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-size: 5.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 i {
+            color: #d4af37;
+            font-style: normal;
+            border-bottom: 4px solid #d4af37;
+            display: inline-block;
+            padding-bottom: 6px;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            color: #b0b8c5;
+            margin-bottom: 2.5rem;
+            border-left: 2px solid #404550;
+            padding-left: 2rem;
+        }
+
+        .cta-btn {
+            background: transparent;
+            border: 2px solid #d4af37;
+            color: #d4af37;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: 0.25s;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-btn:hover {
+            background: #d4af37;
+            color: #0b0c0f;
+            box-shadow: 0 0 25px #d4af37;
+        }
+
+        /* crosshair animation overlay (js will move it) */
+        #crosshair {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            transition: 0.03s linear;
+        }
+        #crosshair::before,
+        #crosshair::after {
+            content: '';
+            position: absolute;
+            background: #d4af37;
+        }
+        #crosshair::before {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+        }
+        #crosshair::after {
+            height: 100%;
+            width: 2px;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+        }
+
+        /* block general */
+        .section {
+            padding: 7rem 4rem;
+            border-bottom: 1px solid #22262e;
+        }
+
+        .section-header {
+            margin-bottom: 4rem;
+        }
+        .section-header h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+        .section-header h2 i {
+            color: #d4af37;
+            border-left: 6px solid #d4af37;
+            padding-left: 1rem;
+            margin-left: 0.5rem;
+        }
+        .section-desc {
+            color: #9aa1af;
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin-top: 1rem;
+            border-left: 2px solid #d4af37;
+            padding-left: 2rem;
+        }
+
+        /* cards grid */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .card {
+            background: #13161e;
+            border: 1px solid #2c313d;
+            padding: 2.5rem 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 15px 25px -10px rgba(0,0,0,0.5);
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: #d4af37;
+            box-shadow: 0 25px 40px -10px #d4af3720;
+        }
+        .card-icon {
+            font-size: 3rem;
+            color: #d4af37;
+            margin-bottom: 1.5rem;
+        }
+        .card h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+        .card p {
+            color: #a0a8b5;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        .stat-highlight {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #fff;
+            margin: 0.5rem 0;
+        }
+        .stat-highlight small {
+            font-size: 1rem;
+            color: #d4af37;
+            font-weight: 400;
+        }
+
+        /* trainers list (inline) */
+        .trainer-list {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .trainer-item {
+            flex: 1 1 200px;
+            background: #10131b;
+            padding: 2rem;
+            border: 1px solid #2e333f;
+            transition: 0.2s;
+        }
+        .trainer-item:hover {
+            border-color: #d4af37;
+        }
+        .trainer-item .fa-user-secret {
+            color: #d4af37;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .trainer-item h4 {
+            font-size: 1.6rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* stats / counters */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            background: #0f121a;
+            padding: 3rem;
+            border: 1px solid #d4af3740;
+        }
+        .stat-block {
+            text-align: center;
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 800;
+            color: #d4af37;
+            line-height: 1;
+        }
+        .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #b1b9c8;
+        }
+
+        /* ammo / hit counter animation */
+        .hit-counter {
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        /* footer */
+        .footer {
+            background: #07090e;
+            padding: 3rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #2f3542;
+        }
+        .footer .logo {
+            font-size: 1.4rem;
+        }
+        .footer-links {
+            display: flex;
+            gap: 3rem;
+            color: #7d8597;
+        }
+
+        /* scroll reveal animation (fade-up) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.7s ease;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* misc */
+        .gold-border {
+            border-bottom: 3px solid #d4af37;
+            width: 80px;
+            margin: 2rem 0;
+        }
+        .small-note {
+            font-size: 0.9rem;
+            color: #5f6779;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- fixed crosshair animation (mouse follower) -->
+    <div id="crosshair"></div>
+
+    <!-- fixed header with js compact effect -->
+    <header class="header" id="mainHeader">
+        <div class="logo">OBSIDIAN <span>◉ shooting club</span></div>
+        <nav class="nav">
+            <a href="#hero">Mission</a>
+            <a href="#disciplines">Disciplines</a>
+            <a href="#trainers">Trainers</a>
+            <a href="#stats">Precision</a>
+            <a href="#packages">Packages</a>
+        </nav>
+    </header>
+
+    <!-- hero block (secret mission style) -->
+    <section class="hero" id="hero">
+        <div class="hero-content reveal">
+            <div class="hero-label">CLASSIFIED // LEVEL 3</div>
+            <h1>PRECISION <i>SHOOTING</i><br>CLUB · OBSIDIAN</h1>
+            <p>Black site for marksmen. No spectators. No compromise. 300m underground range, ballistic computers, real-time impact analytics.</p>
+            <a href="#packages" class="cta-btn">request access</a>
+            <div class="gold-border"></div>
+            <div class="small-note">◉ 12 lanes · AI coaches · tactical sim</div>
+        </div>
+    </section>
+
+    <!-- disciplines block (weapon disciplines) -->
+    <section class="section" id="disciplines">
+        <div class="section-header reveal">
+            <h2>◉ operational <i>disciplines</i></h2>
+            <div class="section-desc">master precision with five weapon ecosystems — each lane tuned for specific ballistics.</div>
+        </div>
+        <div class="grid-3">
+            <div class="card reveal">
+                <div class="card-icon"><i class="fas fa-bullseye"></i></div>
+                <h3>precision rifle</h3>
+                <p>.308 / 6.5 Creedmoor · 100–300m electronic targets · wind simulation</p>
+                <div class="stat-highlight">0.3 <small>MOA</small></div>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon"><i class="fas fa-gun"></i></div>
+                <h3>pistol master</h3>
+                <p>combat & olympic · 25m & 50m · draw & shoot tracking</p>
+                <div class="stat-highlight">0.8 <small>sec draw</small></div>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon"><i class="fas fa-skull"></i></div>
+                <h3>tactical shotgun</h3>
+                <p>slug / buckshot · moving clays · stress reload drills</p>
+                <div class="stat-highlight">97 <small>% hit</small></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- trainers (elite) -->
+    <section class="section" id="trainers">
+        <div class="section-header reveal">
+            <h2>◉ handlers & <i>trainers</i></h2>
+            <div class="section-desc">former special operations, olympic medalists, ballistics scientists.</div>
+        </div>
+        <div class="trainer-list">
+            <div class="trainer-item reveal">
+                <i class="fas fa-user-secret"></i>
+                <h4>K. Vex</h4>
+                <p>17yrs intel branch · precision rifle record 0.19moa</p>
+            </div>
+            <div class="trainer-item reveal">
+                <i class="fas fa-user-secret"></i>
+                <h4>M. Cross</h4>
+                <p>pistol world champion · 0.1s transition drills</p>
+            </div>
+            <div class="trainer-item reveal">
+                <i class="fas fa-user-secret"></i>
+                <h4>Dr. Solis</h4>
+                <p>aerodynamics PhD · wind & climate adaptation</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- stats / counters (animated via js) -->
+    <section class="section" id="stats">
+        <div class="section-header reveal">
+            <h2>◉ precision <i>statistics</i></h2>
+            <div class="section-desc">real‑time aggregated hit rate & operational data.</div>
+        </div>
+        <div class="stats-row reveal">
+            <div class="stat-block">
+                <div class="stat-number" id="statHits" data-target="18740">0</div>
+                <div class="stat-label">hits this month</div>
+            </div>
+            <div class="stat-block">
+                <div class="stat-number" id="statAvg" data-target="0.24">0.00</div>
+                <div class="stat-label">avg MOA (elite)</div>
+            </div>
+            <div class="stat-block">
+                <div class="stat-number" id="statMembers" data-target="208">0</div>
+                <div class="stat-label">active members</div>
+            </div>
+        </div>
+        <!-- subtle hit counter animation (in card) -->
+        <div style="margin-top: 2rem; text-align: right; opacity: 0.5;" class="reveal">
+            <span class="hit-counter" id="hitAnimation">● LIVE HITS: 127</span>
+        </div>
+    </section>
+
+    <!-- membership packages -->
+    <section class="section" id="packages">
+        <div class="section-header reveal">
+            <h2>◉ packages & <i>access</i></h2>
+            <div class="section-desc">clearance levels — from basic to black card (classified).</div>
+        </div>
+        <div class="grid-3">
+            <div class="card reveal">
+                <h3>CARBON</h3>
+                <p>4 visits/mo · standard lanes · ballistics analysis</p>
+                <div class="stat-highlight">$ 280 <small>/mo</small></div>
+            </div>
+            <div class="card reveal">
+                <h3>TITAN</h3>
+                <p>unlimited · coach access · priority sim lab</p>
+                <div class="stat-highlight">$ 520 <small>/mo</small></div>
+            </div>
+            <div class="card reveal">
+                <h3>OBSIDIAN</h3>
+                <p>private vault · AI mentor · 24/7 range + guest</p>
+                <div class="stat-highlight">$ 1.2k <small>/mo</small></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer block (simple) -->
+    <footer class="footer">
+        <div class="logo">OBSIDIAN <span>◉ est. 2019</span></div>
+        <div class="footer-links">
+            <span>◉ 1200M underground</span>
+            <span>◉ members only</span>
+            <span>◉ +1 (702) 55-BLACK</span>
+        </div>
+    </footer>
+
+    <!-- javascript: crosshair, counter, scroll effects, header compact -->
+    <script>
+        (function() {
+            // crosshair follow
+            const cross = document.getElementById('crosshair');
+            document.addEventListener('mousemove', function(e) {
+                cross.style.left = e.clientX - 20 + 'px';
+                cross.style.top = e.clientY - 20 + 'px';
+            });
+
+            // header compact on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // reveal on scroll (intersection observer)
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // optional: start counting when stats block becomes active
+                        if (entry.target.classList.contains('stats-row') || entry.target.parentElement?.classList?.contains('stats-row')) {
+                            startCounters();
+                        }
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+            reveals.forEach(r => observer.observe(r));
+
+            // animated counters (hits, avg moa, members)
+            const statHits = document.getElementById('statHits');
+            const statAvg = document.getElementById('statAvg');
+            const statMembers = document.getElementById('statMembers');
+            let countersFired = false;
+
+            function startCounters() {
+                if (countersFired) return;
+                countersFired = true;
+
+                // hits counter
+                const hitsTarget = parseInt(statHits.getAttribute('data-target'));
+                let hitsCurrent = 0;
+                const hitsInterval = setInterval(() => {
+                    hitsCurrent += Math.ceil(hitsTarget / 70);
+                    if (hitsCurrent >= hitsTarget) {
+                        statHits.innerText = hitsTarget.toLocaleString();
+                        clearInterval(hitsInterval);
+                    } else {
+                        statHits.innerText = hitsCurrent.toLocaleString();
+                    }
+                }, 20);
+
+                // avg moa (float)
+                const avgTarget = parseFloat(statAvg.getAttribute('data-target'));
+                let avgCurrent = 0;
+                const avgInterval = setInterval(() => {
+                    avgCurrent += 0.01;
+                    if (avgCurrent >= avgTarget) {
+                        statAvg.innerText = avgTarget.toFixed(2);
+                        clearInterval(avgInterval);
+                    } else {
+                        statAvg.innerText = avgCurrent.toFixed(2);
+                    }
+                }, 15);
+
+                // members
+                const memTarget = parseInt(statMembers.getAttribute('data-target'));
+                let memCurrent = 0;
+                const memInterval = setInterval(() => {
+                    memCurrent += Math.ceil(memTarget / 70);
+                    if (memCurrent >= memTarget) {
+                        statMembers.innerText = memTarget;
+                        clearInterval(memInterval);
+                    } else {
+                        statMembers.innerText = memCurrent;
+                    }
+                }, 20);
+            }
+
+            // hit counter ticker (every 4 sec random increment)
+            const hitSpan = document.getElementById('hitAnimation');
+            let liveHits = 127;
+            setInterval(() => {
+                liveHits += Math.floor(Math.random() * 5) + 1;
+                hitSpan.innerText = `● LIVE HITS: ${liveHits}`;
+                hitSpan.style.transform = 'scale(1.2)';
+                setTimeout(() => hitSpan.style.transform = 'scale(1)', 150);
+            }, 3400);
+
+            // initial check for stats if already visible
+            if (document.querySelector('.stats-row.reveal')?.getBoundingClientRect().top < window.innerHeight) {
+                startCounters();
+            }
+        })();
+    </script>
+    <!-- manual class for hit counter -->
+    <style>
+        #hitAnimation {
+            display: inline-block;
+            font-weight: 600;
+            color: #d4af37;
+            background: #1a1e28;
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            border: 1px solid #d4af37;
+            transition: transform 0.15s;
+        }
+    </style>
+</body>
+</html>
+All done!
+```

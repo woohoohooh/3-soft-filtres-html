@@ -1,0 +1,682 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orion · Private Observatory</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0d17;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #eef5ff;
+            line-height: 1.5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* inter google font (clean, modern) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+
+        /* custom glow & glass */
+        .glass-card {
+            background: rgba(20, 30, 45, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 215, 0, 0.1) inset;
+            transition: transform 0.2s ease, box-shadow 0.3s;
+        }
+
+        .glass-card:hover {
+            box-shadow: 0 30px 50px -20px #000, 0 0 0 2px rgba(255, 215, 0, 0.3) inset;
+            transform: translateY(-4px);
+        }
+
+        /* fixed navigation — compact, always visible */
+        .fixed-nav {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(8, 12, 25, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            border-radius: 60px;
+            padding: 8px 24px;
+            z-index: 999;
+            display: flex;
+            gap: 36px;
+            box-shadow: 0 10px 30px -10px #00000080;
+            transition: all 0.3s;
+        }
+
+        .fixed-nav a {
+            color: #f0f3fa;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            padding: 8px 0;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .fixed-nav a:hover {
+            color: #ffd966;
+            border-bottom-color: #ffd966;
+        }
+
+        /* section defaults */
+        section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 90px 40px;
+            position: relative;
+        }
+
+        /* header / hero */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 120px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* JS animated canvas background (stars) */
+        #space-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            max-width: 1000px;
+        }
+
+        .hero h1 {
+            font-size: 5.2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #fff8e7, #ffd966, #c0b7a1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px #ffd96630;
+            margin-bottom: 20px;
+        }
+
+        .hero .tagline {
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: #ced4e6;
+            margin-bottom: 40px;
+            backdrop-filter: blur(2px);
+        }
+
+        .hero .cta-btn {
+            background: transparent;
+            border: 2px solid #ffd966;
+            color: #ffd966;
+            padding: 18px 50px;
+            border-radius: 50px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px #ffd96630;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .hero .cta-btn:hover {
+            background: #ffd966;
+            color: #0b0d17;
+            box-shadow: 0 0 45px #ffb347;
+        }
+
+        /* floating stats block (compact) */
+        .stat-bar {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-top: 70px;
+        }
+
+        .stat-item {
+            font-size: 1.3rem;
+            border-right: 1px solid rgba(255,215,0,0.3);
+            padding-right: 50px;
+            text-align: left;
+        }
+        .stat-item:last-child { border-right: none; }
+        .stat-number {
+            font-size: 3.2rem;
+            font-weight: 700;
+            color: #ffd966;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stat-label {
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: #9aa5b8;
+        }
+
+        /* block 2 — telescopes / collection */
+        .section-title {
+            font-size: 3.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 60px;
+            border-left: 6px solid #ffd966;
+            padding-left: 30px;
+        }
+
+        .card-grid {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .scope-card {
+            flex: 1 1 280px;
+            padding: 40px 30px;
+            border-radius: 2.5rem;
+            background: rgba(10, 15, 28, 0.7);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,215,0,0.15);
+            transition: 0.3s;
+            text-align: center;
+        }
+
+        .scope-card i {
+            font-size: 3.8rem;
+            color: #ffd966;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 0 12px goldenrod);
+        }
+
+        .scope-card h3 {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .scope-card p {
+            color: #bcc6db;
+            font-size: 1.1rem;
+        }
+
+        /* block 3 — cosmic events / timeline */
+        .event-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .event-item {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 100px;
+            padding: 15px 35px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,215,0,0.1);
+            transition: 0.3s;
+        }
+        .event-item:hover {
+            border-color: #ffd966;
+            background: rgba(20, 30, 50, 0.5);
+            transform: scale(1.01);
+        }
+        .event-date {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #ffd966;
+            min-width: 180px;
+        }
+        .event-desc {
+            font-size: 1.5rem;
+            font-weight: 300;
+        }
+        .event-desc strong {
+            font-weight: 600;
+            color: white;
+        }
+
+        /* block 4 — night observation packages (pricing like) */
+        .pack-grid {
+            display: flex;
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .pack-card {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,215,0,0.2);
+            border-radius: 40px;
+            padding: 50px 30px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .pack-card.featured {
+            border: 2px solid #ffd966;
+            transform: scale(1.02);
+            background: rgba(30, 20, 10, 0.5);
+            box-shadow: 0 0 40px #ffd96620;
+        }
+        .pack-card .price {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #ffd966;
+        }
+        .pack-card ul {
+            list-style: none;
+            margin: 30px 0;
+        }
+        .pack-card li {
+            font-size: 1.2rem;
+            padding: 8px 0;
+            border-bottom: 1px dashed rgba(255,215,0,0.2);
+        }
+        .pack-card li i {
+            color: #ffd966;
+            margin-right: 12px;
+        }
+
+        /* block 5 — cosmic stats (big counters) */
+        .cosmic-stats {
+            display: flex;
+            gap: 40px;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 200px;
+            padding: 50px 30px;
+            border: 1px solid rgba(255,215,0,0.15);
+            backdrop-filter: blur(8px);
+        }
+        .cosmic-stat {
+            text-align: center;
+        }
+        .cosmic-stat .digits {
+            font-size: 5rem;
+            font-weight: 700;
+            color: #ffd966;
+            line-height: 1;
+        }
+        .cosmic-stat .label {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #b1bbd0;
+        }
+
+        /* footer */
+        .footer {
+            background: #040611;
+            border-top: 1px solid rgba(255,215,0,0.2);
+            padding: 60px 40px 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .footer-logo {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #ffd966;
+        }
+        .footer-links a {
+            color: #ced4e6;
+            text-decoration: none;
+            margin-left: 40px;
+            font-size: 1.1rem;
+        }
+        .footer-links a:hover {
+            color: #ffd966;
+        }
+
+        /* scroll reveal effect (simple fade-up) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* additional micro interactions */
+        .glow-text {
+            color: #ffd966;
+            font-weight: 500;
+            text-shadow: 0 0 8px #ffd966;
+        }
+
+        /* compact fixed menu adaptation (already compact) */
+        @media (max-width: 1200px) {
+            section { padding: 70px 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- FIXED NAVIGATION (compact, always visible) -->
+    <div class="fixed-nav">
+        <a href="#home">ORION</a>
+        <a href="#telescopes"> optics</a>
+        <a href="#events">events</a>
+        <a href="#observe">observe</a>
+        <a href="#cosmic">cosmic</a>
+        <a href="#contact">contact</a>
+    </div>
+
+    <!-- HEADER / HERO with animated canvas (stars + shooting stars) -->
+    <header class="hero" id="home">
+        <canvas id="space-canvas"></canvas>
+        <div class="hero-content">
+            <h1>ORION<br>PRIVATE OBSERVATORY</h1>
+            <div class="tagline">book the universe — exclusive night programs</div>
+            <a href="#observe" class="cta-btn">RESERVE FOCUS</a>
+            <!-- mini stat row -->
+            <div class="stat-bar">
+                <div class="stat-item"><span class="stat-number">4.2</span> <span class="stat-label">dark sky<br>index</span></div>
+                <div class="stat-item"><span class="stat-number">8</span> <span class="stat-label">research-<br>grade</span></div>
+                <div class="stat-item"><span class="stat-number">360</span> <span class="stat-label">clear nights<br>/year</span></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- BLOCK 2: TELESCOPES / COLLECTION -->
+    <section id="telescopes" class="reveal">
+        <h2 class="section-title">✦ the fleet</h2>
+        <div class="card-grid">
+            <div class="scope-card glass-card">
+                <i class="fas fa-satellite"></i>
+                <h3>reflector 32"</h3>
+                <p>carbon-truss, adaptive optics · deep sky imaging</p>
+            </div>
+            <div class="scope-card glass-card">
+                <i class="fas fa-meteor"></i>
+                <h3>schmidt-cassegrain</h3>
+                <p>14" edgeHD · planetary & lunar detail</p>
+            </div>
+            <div class="scope-card glass-card">
+                <i class="fas fa-sun"></i>
+                <h3>hydrogen-alpha</h3>
+                <p>solar chromosphere · day&night flares</p>
+            </div>
+            <div class="scope-card glass-card">
+                <i class="fas fa-globe"></i>
+                <h3>radio telescope</h3>
+                <p>3m dish · pulsar listening</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: EVENTS / TIMELINE -->
+    <section id="events" class="reveal">
+        <h2 class="section-title">✦ cosmic calendar</h2>
+        <div class="event-timeline">
+            <div class="event-item">
+                <span class="event-date">MAY 24</span>
+                <span class="event-desc"><strong>Jupiter opposition</strong> · 2h live session</span>
+            </div>
+            <div class="event-item">
+                <span class="event-date">JUN 08</span>
+                <span class="event-desc"><strong>Ring of fire eclipse</strong> · exclusive camp</span>
+            </div>
+            <div class="event-item">
+                <span class="event-date">JUL 19</span>
+                <span class="event-desc"><strong>Milky Way core</strong> · astrophotography masterclass</span>
+            </div>
+            <div class="event-item">
+                <span class="event-date">AUG 12</span>
+                <span class="event-desc"><strong>Perseids peak</strong> · meteor shower lounge</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: NIGHT OBSERVATION PACKAGES (almost pricing) -->
+    <section id="observe" class="reveal">
+        <h2 class="section-title">✦ night programs</h2>
+        <div class="pack-grid">
+            <div class="pack-card glass-card">
+                <i class="fas fa-star" style="font-size: 3rem; color:#ffd966;"></i>
+                <div class="price">$380</div>
+                <ul>
+                    <li><i class="fas fa-check"></i> 2h private session</li>
+                    <li><i class="fas fa-check"></i> 20" telescope</li>
+                    <li><i class="fas fa-check"></i> astronomer guide</li>
+                </ul>
+            </div>
+            <div class="pack-card featured glass-card">
+                <i class="fas fa-crown" style="font-size: 3rem; color:#ffd966;"></i>
+                <div class="price">$890</div>
+                <ul>
+                    <li><i class="fas fa-check"></i> 4h elite + champagne</li>
+                    <li><i class="fas fa-check"></i> all telescopes access</li>
+                    <li><i class="fas fa-check"></i> 4K live capture</li>
+                </ul>
+            </div>
+            <div class="pack-card glass-card">
+                <i class="fas fa-moon" style="font-size: 3rem; color:#ffd966;"></i>
+                <div class="price">$240</div>
+                <ul>
+                    <li><i class="fas fa-check"></i> 1h quick look</li>
+                    <li><i class="fas fa-check"></i> 14" SCT</li>
+                    <li><i class="fas fa-check"></i> digital star chart</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: STATISTICS & COSMIC DATA (big counters) -->
+    <section id="cosmic" class="reveal">
+        <h2 class="section-title">✦ deep sky metrics</h2>
+        <div class="cosmic-stats glass-card" style="border-radius: 120px;">
+            <div class="cosmic-stat">
+                <span class="digits">17B</span>
+                <span class="label">galaxies<br>catalogued</span>
+            </div>
+            <div class="cosmic-stat">
+                <span class="digits">4.7</span>
+                <span class="label">billion ly<br>reach</span>
+            </div>
+            <div class="cosmic-stat">
+                <span class="digits">99%</span>
+                <span class="label">spectral<br>coverage</span>
+            </div>
+            <div class="cosmic-stat">
+                <span class="digits">14</span>
+                <span class="label">exoplanets<br>confirmed</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER / CONTACT -->
+    <footer class="footer" id="contact">
+        <div class="footer-logo">ORION ♦</div>
+        <div class="footer-links">
+            <a href="#home">home</a>
+            <a href="#telescopes">fleet</a>
+            <a href="#events">calendar</a>
+            <a href="#observe">packages</a>
+            <a href="#">ig</a>
+            <a href="#">email</a>
+        </div>
+        <div style="width:100%; text-align:center; margin-top: 40px; color:#55657b;">© ORION PRIVATE OBSERVATORY · starlight reserve</div>
+    </footer>
+
+    <!-- JavaScript: canvas animation (stars + shooting) + scroll reveal -->
+    <script>
+        (function() {
+            // CANVAS BACKGROUND (header)
+            const canvas = document.getElementById('space-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let stars = [];
+            const STARS_COUNT = 300;
+            let mouseX = 0, mouseY = 0;
+
+            function initStars() {
+                stars = [];
+                for (let i = 0; i < STARS_COUNT; i++) {
+                    stars.push({
+                        x: Math.random(),
+                        y: Math.random(),
+                        radius: Math.random() * 2.2 + 0.6,
+                        alpha: Math.random() * 0.6 + 0.2,
+                        speed: 0.0005 + Math.random() * 0.002,
+                        twinkle: Math.random() * 0.02,
+                    });
+                }
+            }
+            initStars();
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = document.querySelector('.hero').offsetHeight || window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // shooting stars array
+            let shootingStars = [];
+            function addShootingStar() {
+                if (shootingStars.length < 3 && Math.random() < 0.03) {
+                    shootingStars.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height * 0.3,
+                        length: 60 + Math.random() * 80,
+                        speed: 6 + Math.random() * 8,
+                        angle: Math.PI / 3 + Math.random() * 0.3,
+                        opacity: 0.7,
+                    });
+                }
+            }
+
+            function drawStars() {
+                ctx.clearRect(0, 0, width, height);
+                // deep space gradient
+                const grad = ctx.createLinearGradient(0, 0, 0, height);
+                grad.addColorStop(0, '#030514');
+                grad.addColorStop(0.6, '#131b2b');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+
+                // draw fixed stars
+                stars.forEach(s => {
+                    let x = s.x * width;
+                    let y = s.y * height;
+                    // subtle parallax based on mouse (cosmetic)
+                    x += (mouseX - width/2) * 0.01;
+                    y += (mouseY - height/2) * 0.005;
+
+                    let alpha = s.alpha + Math.sin(Date.now() * s.twinkle) * 0.1;
+                    alpha = Math.min(0.9, Math.max(0.2, alpha));
+                    ctx.beginPath();
+                    ctx.arc(x, y, s.radius, 0, 2 * Math.PI);
+                    ctx.fillStyle = `rgba(255, 245, 210, ${alpha})`;
+                    ctx.fill();
+                });
+
+                // draw shooting stars
+                shootingStars = shootingStars.filter(star => {
+                    ctx.beginPath();
+                    ctx.moveTo(star.x, star.y);
+                    const endX = star.x + Math.cos(star.angle) * star.length;
+                    const endY = star.y + Math.sin(star.angle) * star.length;
+                    ctx.lineTo(endX, endY);
+                    ctx.strokeStyle = `rgba(255, 240, 170, ${star.opacity})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // small head
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, 2.5, 0, 2*Math.PI);
+                    ctx.fillStyle = '#fffadc';
+                    ctx.fill();
+
+                    star.x += Math.cos(star.angle) * star.speed;
+                    star.y += Math.sin(star.angle) * star.speed;
+                    star.opacity *= 0.99;
+                    return star.x < width + 100 && star.x > -100 && star.y < height + 100 && star.opacity > 0.01;
+                });
+            }
+
+            function animateCanvas() {
+                if (!canvas || !ctx) return;
+                addShootingStar();
+                drawStars();
+                requestAnimationFrame(animateCanvas);
+            }
+            animateCanvas();
+
+            // mousemove for subtle effect
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            // SCROLL REVEAL (simple)
+            const reveals = document.querySelectorAll('.reveal');
+            function revealCheck() {
+                for (let el of reveals) {
+                    const windowHeight = window.innerHeight;
+                    const revealTop = el.getBoundingClientRect().top;
+                    if (revealTop < windowHeight - 80) {
+                        el.classList.add('active');
+                    }
+                }
+            }
+            window.addEventListener('scroll', revealCheck);
+            revealCheck(); // immediate
+
+            // add extra smoothness: number counters? static, but fine
+        })();
+    </script>
+    <!-- ensure reveal class is active after any resize -->
+    <script>
+        (function secondary() {
+            // small touch: ensure all reveal are active after load
+            window.addEventListener('load', function() {
+                document.querySelectorAll('.reveal').forEach(el => el.classList.add('active'));
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

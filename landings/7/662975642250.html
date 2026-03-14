@@ -1,0 +1,629 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEBULA OBSERVATORY · private stargazing</title>
+    <!-- Font & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0A0F1E;  /* deep space */
+            color: #E9F1FC;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* custom glow & selection */
+        ::selection {
+            background: #B2A4FF;
+            color: #0A0F1E;
+        }
+
+        /* fixed navigation – transforms on scroll (compact) */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(10, 15, 30, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 60px;
+            padding: 10px 28px;
+            z-index: 999;
+            display: flex;
+            gap: 40px;
+            box-shadow: 0 15px 35px -10px rgba(0,0,0,0.8), 0 0 0 1px rgba(210, 180, 140, 0.1) inset;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .navbar.compact {
+            top: 12px;
+            padding: 6px 20px;
+            gap: 28px;
+            background: rgba(5, 8, 18, 0.9);
+            border-color: #F0B27A30;
+            box-shadow: 0 10px 25px -8px #00000080, 0 0 0 1px #F0B27A40 inset;
+        }
+
+        .navbar a {
+            color: #F0E6D2;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding: 4px 0;
+        }
+
+        .navbar a:hover {
+            color: #FFE484;
+            border-bottom-color: #FFBF69;
+        }
+
+        /* sections general */
+        section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 5%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* hero (header) */
+        .hero {
+            background: radial-gradient(ellipse at 70% 40%, #1B2640 0%, #02040F 90%);
+        }
+
+        .hero-grid {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 3rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 7vw, 6rem);
+            font-weight: 800;
+            line-height: 1;
+            text-transform: uppercase;
+            background: linear-gradient(130deg, #FFFFFF, #C0B7E8, #A3D0FF);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .highlight {
+            color: #FEDB77;
+            background: linear-gradient(145deg, #FFE999, #FFB36B);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-sub {
+            font-size: 1.6rem;
+            font-weight: 400;
+            color: #D3E4FF;
+            border-left: 4px solid #FDB750;
+            padding-left: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stats-mini {
+            display: flex;
+            gap: 2.5rem;
+            margin-top: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 15px #76b0ff;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            color: #c6d4ff;
+        }
+
+        /* animated orrery / js header effect */
+        .hero-visual {
+            position: relative;
+            width: 380px;
+            height: 380px;
+            border-radius: 50%;
+            background: rgba(0, 5, 20, 0.6);
+            box-shadow: 0 0 80px #1A2F54 inset, 0 0 60px #000814;
+        }
+
+        .planet-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1px dashed rgba(255, 215, 130, 0.3);
+        }
+
+        .satellite {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: #fde16d;
+            border-radius: 50%;
+            box-shadow: 0 0 25px #ffcf8a;
+            transform: translate(-50%, -50%);
+            transition: 0.05s linear;
+        }
+
+        /* block 2 — telescopes / cards */
+        .telescope-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .scope-card {
+            background: rgba(15, 22, 40, 0.7);
+            backdrop-filter: blur(5px);
+            border: 1px solid #4A3F2E;
+            border-radius: 32px;
+            padding: 2rem 1.8rem;
+            transition: 0.25s ease;
+            box-shadow: 0 25px 40px -20px #000;
+        }
+
+        .scope-card:hover {
+            border-color: #E5B873;
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 0 40px #3F5680;
+        }
+
+        .scope-icon {
+            font-size: 3rem;
+            color: #FCCF7C;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 12px #b58c4a);
+        }
+
+        .scope-card h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+
+        .card-meta {
+            display: inline-block;
+            background: #4B3A2A;
+            padding: 0.3rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #FFE6B3;
+            margin: 1rem 0;
+        }
+
+        /* block 3 — events / calendar with visual */
+        .events {
+            background: #0D1326;
+            position: relative;
+        }
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .event-item {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            padding: 1.2rem 2rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(210,180,140,0.2);
+            border-radius: 60px;
+            backdrop-filter: blur(8px);
+            transition: 0.2s;
+        }
+        .event-item:hover {
+            border-color: #CDA36E;
+            background: rgba(20, 30, 55, 0.7);
+            box-shadow: 0 0 25px #42546e;
+        }
+        .event-date {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #FFD966;
+            min-width: 100px;
+        }
+        .event-name {
+            font-size: 1.6rem;
+            font-weight: 500;
+        }
+        .event-desc {
+            color: #b4c2e0;
+        }
+        .event-glow {
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, #B8915C20 0%, transparent 80%);
+            position: absolute;
+            right: 5%;
+        }
+
+        /* block 4 — statistics / cosmic */
+        .stats-block {
+            background: #070C1A;
+        }
+        .stats-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .stat-super {
+            flex: 1;
+            text-align: center;
+            background: #121b33;
+            border-radius: 60px;
+            padding: 2.8rem 1rem;
+            border: 1px solid #8F7A55;
+            transition: 0.2s;
+        }
+        .stat-super:hover {
+            background: #1b274a;
+            border-color: #ffd966;
+        }
+        .stat-super .number {
+            font-size: 5rem;
+            font-weight: 800;
+            background: linear-gradient(145deg, #FCE6A0, #F0B27A);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* block 5 — membership (pricing) */
+        .membership {
+            background: #11182F;
+        }
+        .price-cards {
+            display: flex;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .price-card {
+            background: rgba(10, 15, 30, 0.9);
+            border-radius: 40px;
+            padding: 2.5rem 2rem;
+            border: 1px solid #7A623A;
+            flex: 1;
+            backdrop-filter: blur(4px);
+            transition: all 0.3s;
+            box-shadow: 0 0 30px #00000060;
+        }
+        .price-card.premium {
+            border-color: #FFB347;
+            transform: scale(1.02);
+            background: #121d3b;
+        }
+        .price-card:hover {
+            border-color: #ebc480;
+            box-shadow: 0 0 45px #4f6799;
+        }
+        .price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #FFD789;
+        }
+
+        /* footer */
+        .footer {
+            background: #030514;
+            padding: 3rem 5%;
+            border-top: 1px solid #51442e;
+            text-align: center;
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin: 1.5rem 0;
+        }
+        .footer-links a {
+            color: #bdafa0;
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+        .footer-links a:hover {
+            color: #FFD966;
+        }
+
+        /* scroll reveal base */
+        .js-reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 1s ease, transform 1s ease;
+        }
+        .js-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        hr {
+            border: 0.5px solid #413a2c;
+            margin: 0;
+        }
+
+        /* typo */
+        h2 {
+            font-size: 3.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        .section-desc {
+            font-size: 1.4rem;
+            color: #cfcfdf;
+        }
+
+        /* responsive only desktop */
+        @media (max-width: 1100px) {
+            .hero-grid { flex-direction: column; }
+            .telescope-grid { grid-template-columns: 1fr 1fr; }
+            .price-cards { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <a href="#home">NEBULA</a>
+        <a href="#telescopes">Optics</a>
+        <a href="#events">Sky events</a>
+        <a href="#stats">Data</a>
+        <a href="#membership">Join</a>
+    </nav>
+
+    <!-- Header / HERO -->
+    <section class="hero" id="home">
+        <div class="container hero-grid">
+            <div class="hero-content js-reveal">
+                <h1>OBSERVE <span class="highlight">THE UNIVERSE</span></h1>
+                <div class="hero-sub">private astronomy club · alt. 2,400m</div>
+                <p style="font-size: 1.3rem; max-width: 500px;">Breathe the cosmos. Members‑only viewing with research‑grade telescopes.</p>
+                <div class="stats-mini">
+                    <div class="stat-item"><span class="stat-number" id="satCount">4</span><div class="stat-label">OBSERVATORIES</div></div>
+                    <div class="stat-item"><span class="stat-number">36"</span><div class="stat-label">PRIMARY MIRROR</div></div>
+                    <div class="stat-item"><span class="stat-number">∞</span><div class="stat-label">DARK SKY</div></div>
+                </div>
+            </div>
+            <div class="hero-visual" id="orreryContainer">
+                <div class="planet-ring" style="transform: rotate(0deg); width: 90%; height: 90%; top: 5%; left: 5%;"></div>
+                <div class="planet-ring" style="transform: rotate(20deg); width: 70%; height: 70%; top: 15%; left: 15%; border-style: dotted;"></div>
+                <div id="satellite1" class="satellite" style="background: #d4a373; top: 20%; left: 70%;"></div>
+                <div id="satellite2" class="satellite" style="background: #a2c8ff; width: 22px; height: 22px; top: 70%; left: 30%;"></div>
+                <div id="satellite3" class="satellite" style="background: #ffe087; width: 12px; height: 12px; top: 45%; left: 15%;"></div>
+                <div id="satellite4" class="satellite" style="background: #b983ff; top: 80%; left: 70%;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: telescopes / cards -->
+    <section id="telescopes">
+        <div class="container">
+            <h2 class="js-reveal">optical arsenal</h2>
+            <div class="section-desc js-reveal">light buckets designed for one thing: capturing photons</div>
+            <div class="telescope-grid">
+                <div class="scope-card js-reveal">
+                    <i class="fas fa-meteor scope-icon"></i>
+                    <h3>RCOS 24"</h3>
+                    <span class="card-meta">CARBON TRUSS</span>
+                    <p>f/8 Ritchey‑Chrétien · deep sky imaging with 0.8" resolution.</p>
+                </div>
+                <div class="scope-card js-reveal" data-delay="150">
+                    <i class="fas fa-sun scope-icon"></i>
+                    <h3>Solar Hα 152mm</h3>
+                    <span class="card-meta">CORONADO</span>
+                    <p>Double‑stacked etalon · prominences & filaments in H‑alpha.</p>
+                </div>
+                <div class="scope-card js-reveal" data-delay="300">
+                    <i class="fas fa-moon scope-icon"></i>
+                    <h3>Planetary 20"</h3>
+                    <span class="card-meta">DALL–KIRKHAM</span>
+                    <p>f/20 cassegrain · incredible lunar / planetary contrast.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: events / cosmic calendar -->
+    <section id="events" class="events">
+        <div class="container">
+            <h2 class="js-reveal">celestial calendar</h2>
+            <div class="section-desc js-reveal">member‑exclusive viewing nights</div>
+            <div class="event-list js-reveal">
+                <div class="event-item">
+                    <span class="event-date">04.12</span>
+                    <span class="event-name">Jupiter opposition</span>
+                    <span class="event-desc">· 7h of GRS & moons</span>
+                </div>
+                <div class="event-item">
+                    <span class="event-date">12.13</span>
+                    <span class="event-name">Geminids peak</span>
+                    <span class="event-desc">· 120+ meteors / hour</span>
+                </div>
+                <div class="event-item">
+                    <span class="event-date">01.24</span>
+                    <span class="event-name">Comet C/2025 P1</span>
+                    <span class="event-desc">· perihelion binocular target</span>
+                </div>
+            </div>
+        </div>
+        <div class="event-glow"></div>
+    </section>
+
+    <!-- BLOCK 4: statistics block (space data) -->
+    <section id="stats" class="stats-block">
+        <div class="container">
+            <h2 class="js-reveal">observatory in numbers</h2>
+            <div class="stats-grid">
+                <div class="stat-super js-reveal"><span class="number">2.4m</span><br><span style="color:#c3b9a8;">primary mirror</span></div>
+                <div class="stat-super js-reveal" data-delay="100"><span class="number">320</span><br><span style="color:#c3b9a8;">clear nights/year</span></div>
+                <div class="stat-super js-reveal" data-delay="200"><span class="number">21.9</span><br><span style="color:#c3b9a8;">sqm reading</span></div>
+                <div class="stat-super js-reveal" data-delay="300"><span class="number">16</span><br><span style="color:#c3b9a8">instruments</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: membership -->
+    <section id="membership">
+        <div class="container">
+            <h2 class="js-reveal">become a member</h2>
+            <div class="section-desc js-reveal">access the dark sky reserve</div>
+            <div class="price-cards">
+                <div class="price-card js-reveal">
+                    <h3>Stargazer</h3>
+                    <div class="price">$290 <span style="font-size:1rem;">/month</span></div>
+                    <p style="margin:1.5rem 0;">4 nights/mo · basic training · digital library</p>
+                </div>
+                <div class="price-card premium js-reveal" data-delay="150">
+                    <h3>Cosmic</h3>
+                    <div class="price">$590 <span style="font-size:1rem;">/month</span></div>
+                    <p style="margin:1.5rem 0;">unlimited nights · all scopes · astro‑photography license</p>
+                </div>
+                <div class="price-card js-reveal" data-delay="300">
+                    <h3>Deep Space</h3>
+                    <div class="price">$980 <span style="font-size:1rem;">/month</span></div>
+                    <p style="margin:1.5rem 0;">priority booking + remote imaging + star parties</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div style="font-size: 2rem; letter-spacing: 6px;">NEBULA</div>
+        <div class="footer-links">
+            <a href="#home"><i class="fas fa-globe"></i> sanctuary</a>
+            <a href="#telescopes"><i class="fas fa-telescope"></i> gear</a>
+            <a href="#membership"><i class="fas fa-star"></i> join</a>
+        </div>
+        <p style="color:#6e6558;">© 2025 NEBULA PRIVATE OBSERVATORY · first light since 1972</p>
+    </footer>
+
+    <script>
+        (function() {
+            // compact navigation on scroll
+            const nav = document.getElementById('mainNav');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 60) {
+                    nav.classList.add('compact');
+                } else {
+                    nav.classList.remove('compact');
+                }
+            });
+
+            // animated orrery (header)
+            const sat1 = document.getElementById('satellite1');
+            const sat2 = document.getElementById('satellite2');
+            const sat3 = document.getElementById('satellite3');
+            const sat4 = document.getElementById('satellite4');
+            const container = document.getElementById('orreryContainer');
+            if (container) {
+                let angle = 0;
+                function orbit() {
+                    angle += 0.005;
+                    // sat1 - big ellipse
+                    if (sat1) {
+                        let x = 190 + 120 * Math.cos(angle * 0.9);
+                        let y = 190 + 70 * Math.sin(angle * 0.7);
+                        sat1.style.left = x + 'px';
+                        sat1.style.top = y + 'px';
+                    }
+                    if (sat2) {
+                        let x = 190 + 90 * Math.sin(angle * 1.2);
+                        let y = 190 + 110 * Math.cos(angle * 0.8);
+                        sat2.style.left = x + 'px';
+                        sat2.style.top = y + 'px';
+                    }
+                    if (sat3) {
+                        let x = 190 + 150 * Math.cos(angle * 0.5 + 1.2);
+                        let y = 190 + 40 * Math.sin(angle * 2.0);
+                        sat3.style.left = x + 'px';
+                        sat3.style.top = y + 'px';
+                    }
+                    if (sat4) {
+                        let x = 190 + 60 * Math.sin(angle * 1.8);
+                        let y = 190 + 150 * Math.cos(angle * 0.6);
+                        sat4.style.left = x + 'px';
+                        sat4.style.top = y + 'px';
+                    }
+                    requestAnimationFrame(orbit);
+                }
+                orbit();
+            }
+
+            // reveal on scroll (simple intersection)
+            const reveals = document.querySelectorAll('.js-reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                    }
+                });
+            }, { threshold: 0.25, rootMargin: '0px' });
+            reveals.forEach(r => observer.observe(r));
+
+            // subtle parallax on hero numbers (update)
+            let satCount = document.getElementById('satCount');
+            if(satCount) {
+                let count = 4;
+                setInterval(() => {
+                    // just for delight: change number slightly
+                    if (Math.random() > 0.7) {
+                        count = (count % 5) + 3; // 3-8
+                        satCount.innerText = count;
+                    }
+                }, 3000);
+            }
+
+            // add micro delay to cards
+            document.querySelectorAll('[data-delay]').forEach(el => {
+                let delay = el.getAttribute('data-delay') || '0';
+                el.style.transitionDelay = delay + 'ms';
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

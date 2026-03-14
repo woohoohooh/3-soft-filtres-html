@@ -1,0 +1,637 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>axiom | precision shooting club</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0b0f12;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #e5e9f0;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* inter font via fallback */
+    h1, h2, h3, .stat-number, .nav-links a {
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    /* custom crosshair cursor / subtle overlay effect */
+    .crosshair {
+      cursor: crosshair;
+    }
+
+    /* fixed header – transforms on scroll (compact) */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 2rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      transition: padding 0.3s ease, background 0.3s ease, backdrop-filter 0.3s ease;
+      background: transparent;
+      backdrop-filter: blur(0px);
+    }
+
+    header.scrolled {
+      padding: 1rem 4rem;
+      background: rgba(10, 15, 18, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 215, 0, 0.25);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #f5e7c8;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .logo span {
+      color: #d4af37;
+      margin-right: 4px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 3rem;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: #e0e5ec;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: 0.2s;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 4px;
+    }
+    .nav-links a:hover {
+      color: #d4af37;
+      border-bottom-color: #d4af37;
+    }
+
+    /* section defaults */
+    section {
+      padding: 6rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: radial-gradient(ellipse at 70% 30%, #1f2a2f, #030506);
+      border-bottom: 2px solid #d4af3720;
+    }
+
+    .hero-content {
+      max-width: 1100px;
+    }
+
+    .hero-eyebrow {
+      font-size: 1.1rem;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      color: #d4af37;
+      margin-bottom: 1rem;
+      animation: fadeGlow 3s infinite alternate;
+    }
+    @keyframes fadeGlow {
+      0% { text-shadow: 0 0 5px #d4af3740; }
+      100% { text-shadow: 0 0 15px #d4af37, 0 0 30px #ab8e3f; }
+    }
+
+    .hero h1 {
+      font-size: 5.5rem;
+      font-weight: 700;
+      line-height: 1.1;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      color: #f0f3fa;
+    }
+    .hero h1 i {
+      color: #d4af37;
+      font-style: normal;
+      border-right: 3px solid #d4af37;
+      padding-right: 15px;
+      margin-right: 10px;
+    }
+    .hero-desc {
+      font-size: 1.5rem;
+      max-width: 700px;
+      margin: 0 auto 2.5rem;
+      color: #b0b9cc;
+    }
+
+    .crosshair-btn {
+      background: transparent;
+      border: 2px solid #d4af37;
+      color: #d4af37;
+      padding: 1rem 3rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      cursor: pointer;
+      transition: 0.25s;
+      backdrop-filter: blur(4px);
+      border-radius: 0;
+      box-shadow: 0 0 15px #d4af3720;
+    }
+    .crosshair-btn:hover {
+      background: #d4af37;
+      color: #0b0f12;
+      box-shadow: 0 0 40px #d4af37;
+    }
+
+    /* animated crosshair line (js will move) */
+    #dynamic-crosshair {
+      position: fixed;
+      width: 40px;
+      height: 40px;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.5;
+      transition: 0.02s linear;
+      mix-blend-mode: difference;
+    }
+    #dynamic-crosshair::before,
+    #dynamic-crosshair::after {
+      content: '';
+      position: absolute;
+      background: #d4af37;
+    }
+    #dynamic-crosshair::before {
+      width: 100%;
+      height: 2px;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+    }
+    #dynamic-crosshair::after {
+      width: 2px;
+      height: 100%;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+    }
+
+    /* stats block (precision counters) */
+    .stats-grid {
+      display: flex;
+      justify-content: space-around;
+      gap: 2rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    .stat-item {
+      text-align: center;
+      min-width: 200px;
+      padding: 2rem 0;
+      border: 1px solid #2b353b;
+      background: #0f1419d0;
+      backdrop-filter: blur(4px);
+      transition: 0.3s;
+    }
+    .stat-item:hover {
+      border-color: #d4af37;
+      transform: scale(1.02);
+      box-shadow: 0 0 50px #00000080;
+    }
+    .stat-number {
+      font-size: 4rem;
+      font-weight: 700;
+      color: #d4af37;
+      line-height: 1;
+    }
+    .stat-label {
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-size: 1rem;
+      color: #a0abb8;
+    }
+
+    /* discipline cards (hover: crosshair corner) */
+    .disciplines-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    .discipline-card {
+      background: #12181e;
+      padding: 3rem 2rem;
+      border-left: 3px solid #d4af37;
+      transition: 0.2s;
+      position: relative;
+      box-shadow: 0 10px 20px #00000060;
+    }
+    .discipline-card i {
+      font-size: 3rem;
+      color: #d4af37;
+      margin-bottom: 1.5rem;
+    }
+    .discipline-card h3 {
+      font-size: 1.9rem;
+      margin-bottom: 1rem;
+    }
+    .discipline-card p {
+      color: #9aa9b9;
+    }
+    .discipline-card::after {
+      content: '✧';
+      position: absolute;
+      bottom: 1rem;
+      right: 1.5rem;
+      font-size: 2rem;
+      color: #d4af3740;
+      transition: 0.2s;
+    }
+    .discipline-card:hover {
+      border-left-width: 6px;
+      background: #1b262e;
+    }
+    .discipline-card:hover::after {
+      color: #d4af37;
+      text-shadow: 0 0 10px gold;
+    }
+
+    /* trainers */
+    .trainers-grid {
+      display: flex;
+      gap: 3rem;
+      justify-content: center;
+      margin-top: 3rem;
+    }
+    .trainer-card {
+      background: #0e141a;
+      padding: 2rem 2rem 3rem;
+      text-align: center;
+      width: 280px;
+      border-radius: 0px;
+      border-bottom: 2px solid #d4af37;
+      transition: all 0.2s;
+    }
+    .trainer-card i {
+      font-size: 4rem;
+      color: #d4af37;
+      margin-bottom: 1rem;
+    }
+    .trainer-card h4 {
+      font-size: 1.8rem;
+      margin-bottom: 0.25rem;
+    }
+    .trainer-card .badge {
+      color: #d4af37;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 0.5rem 0 1rem;
+    }
+    .trainer-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 30px 30px -10px black;
+    }
+
+    /* packages / pricing */
+    .pricing-grid {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      margin-top: 3rem;
+    }
+    .package {
+      background: #10171e;
+      padding: 3rem 2rem;
+      width: 300px;
+      border: 1px solid #2e3b44;
+      text-align: center;
+    }
+    .package.premium {
+      border: 2px solid #d4af37;
+      transform: scale(1.02);
+      box-shadow: 0 0 40px #d4af3720;
+    }
+    .package h3 {
+      font-size: 2.2rem;
+      border-bottom: 1px dashed #d4af37;
+      padding-bottom: 1rem;
+    }
+    .price {
+      font-size: 3rem;
+      margin: 1.5rem 0;
+      color: #d4af37;
+      font-weight: 600;
+    }
+    .price small {
+      font-size: 1rem;
+      color: #a0aaba;
+    }
+    .package ul {
+      list-style: none;
+      text-align: left;
+      margin: 2rem 0;
+    }
+    .package li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #27333b;
+    }
+    .package li i {
+      color: #d4af37;
+      width: 25px;
+    }
+
+    /* statistics bar (precision) */
+    .stat-bar-container {
+      margin-top: 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .stat-bar-item {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+    .stat-bar-label {
+      width: 180px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .bar-bg {
+      flex: 1;
+      height: 10px;
+      background: #25323b;
+      border-radius: 0px;
+    }
+    .bar-fill {
+      height: 10px;
+      background: #d4af37;
+      width: 0%;
+      transition: width 1.2s cubic-bezier(0.22, 0.98, 0.49, 1);
+      box-shadow: 0 0 10px #f0b823;
+    }
+
+    /* footer */
+    footer {
+      background: #05090c;
+      padding: 3rem 4rem;
+      border-top: 2px solid #d4af3710;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .footer-links i {
+      color: #d4af37;
+      margin: 0 1rem;
+      font-size: 1.4rem;
+      transition: 0.2s;
+    }
+    .footer-links i:hover {
+      color: #fff;
+      transform: scale(1.2);
+    }
+    .copy {
+      color: #5c6f7e;
+      letter-spacing: 1px;
+    }
+
+    /* scroll reveal (fade + up) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.9s ease;
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* text highlight effect */
+    ::selection {
+      background: #d4af37;
+      color: #0b0f12;
+    }
+
+    h2 {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+      border-left: 10px solid #d4af37;
+      padding-left: 2rem;
+    }
+
+    hr {
+      border: 0.5px solid #2d3b44;
+      margin: 0 4rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- floating crosshair (follows mouse) -->
+  <div id="dynamic-crosshair"></div>
+
+  <!-- fixed header -->
+  <header id="mainHeader">
+    <div class="logo"><span>⧩</span>AXIOM</div>
+    <div class="nav-links">
+      <a href="#hero">MISSION</a>
+      <a href="#disciplines">DISCIPLINES</a>
+      <a href="#trainers">OPERATORS</a>
+      <a href="#packages">FIREPOWER</a>
+    </div>
+  </header>
+
+  <!-- hero section -->
+  <section class="hero" id="hero">
+    <div class="hero-content reveal">
+      <div class="hero-eyebrow"><i class="fas fa-crosshairs"></i> LOCKED & LOADED</div>
+      <h1><i>PRECISION</i> SHOOTING <br>CLUB</h1>
+      <p class="hero-desc">Where accuracy meets instinct. Join the underground league of marksmen.</p>
+      <button class="crosshair-btn" onclick="document.getElementById('packages').scrollIntoView({behavior:'smooth'});">ENTER THE RANGE</button>
+    </div>
+  </section>
+
+  <!-- stats block (precision counters) -->
+  <section style="padding-top: 0;">
+    <div class="stats-grid reveal">
+      <div class="stat-item"><div class="stat-number" data-target="980">0</div><div class="stat-label">groups < 0.5 moa</div></div>
+      <div class="stat-item"><div class="stat-number" data-target="47">0</div><div class="stat-label">national titles</div></div>
+      <div class="stat-item"><div class="stat-number" data-target="1260">0</div><div class="stat-label">precision members</div></div>
+    </div>
+  </section>
+
+  <!-- disciplines -->
+  <section id="disciplines">
+    <h2 class="reveal">◈ shooting disciplines</h2>
+    <div class="disciplines-grid">
+      <div class="discipline-card reveal"><i class="fas fa-bullseye"></i><h3>PRS</h3><p>Precision rifle series – from 400 to 1200m, wind reading, positional.</p></div>
+      <div class="discipline-card reveal"><i class="fas fa-gun"></i><h3>IPSC</h3><p>Pistol & rifle dynamic stages, speed & accuracy.</p></div>
+      <div class="discipline-card reveal"><i class="fas fa-arrow-up-wide-short"></i><h3>LONGRANGE</h3><p>Extreme long range up to 1 mile, ELR challenges.</p></div>
+    </div>
+  </section>
+
+  <!-- trainers -->
+  <section id="trainers">
+    <h2 class="reveal">◈ RANGE MASTERS</h2>
+    <div class="trainers-grid">
+      <div class="trainer-card reveal"><i class="fas fa-user-secret"></i><h4>M. STEINER</h4><div class="badge">ex‑delta / PRS champion</div><p>13 years operational, 5x national longrange winner</p></div>
+      <div class="trainer-card reveal"><i class="fas fa-crown"></i><h4>V. KOVAC</h4><div class="badge">world speed shooter</div><p>IPSC world shoot-off finalist, coach since 2018</p></div>
+    </div>
+  </section>
+
+  <!-- packages -->
+  <section id="packages">
+    <h2 class="reveal">◈ TRAINING PACKAGES</h2>
+    <div class="pricing-grid">
+      <div class="package reveal"><h3>MARKSMAN</h3><div class="price">$349<small>/mo</small></div><ul><li><i class="fas fa-check"></i> 4 range sessions</li><li><i class="fas fa-check"></i> basic ballistics</li><li><i class="fas fa-check"></i> rifle fitting</li></ul></div>
+      <div class="package premium reveal"><h3>PRECISION</h3><div class="price">$649<small>/mo</small></div><ul><li><i class="fas fa-check"></i> 8 sessions + 1on1</li><li><i class="fas fa-check"></i> advanced wind reading</li><li><i class="fas fa-check"></i> competition prep</li></ul></div>
+      <div class="package reveal"><h3>LEGEND</h3><div class="price">$1199<small>/mo</small></div><ul><li><i class="fas fa-check"></i> unlimited access</li><li><i class="fas fa-check"></i> guest trainer sessions</li><li><i class="fas fa-check"></i> custom rifle tuning</li></ul></div>
+    </div>
+  </section>
+
+  <!-- statistics of precision (bar animation) -->
+  <section style="background: #0b1116;">
+    <h2 class="reveal">◈ ACCURACY METRICS</h2>
+    <div class="stat-bar-container">
+      <div class="stat-bar-item reveal"><span class="stat-bar-label">first round hit</span><div class="bar-bg"><div class="bar-fill" data-width="94"></div></div><span>94%</span></div>
+      <div class="stat-bar-item reveal"><span class="stat-bar-label">wind call accuracy</span><div class="bar-bg"><div class="bar-fill" data-width="87"></div></div><span>87%</span></div>
+      <div class="stat-bar-item reveal"><span class="stat-bar-label">sub‑moa shooters</span><div class="bar-bg"><div class="bar-fill" data-width="78"></div></div><span>78%</span></div>
+    </div>
+  </section>
+
+  <!-- footer -->
+  <footer>
+    <div class="copy"><i class="fas fa-crosshairs"></i> © 2025 AXIOM – PRECISION SHOOTING CLUB</div>
+    <div class="footer-links">
+      <i class="fab fa-instagram"></i><i class="fab fa-x-twitter"></i><i class="fas fa-envelope"></i>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // header compact on scroll
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // crosshair follow (mouse move)
+      const crosshair = document.getElementById('dynamic-crosshair');
+      document.addEventListener('mousemove', (e) => {
+        crosshair.style.left = (e.clientX - 20) + 'px';
+        crosshair.style.top = (e.clientY - 20) + 'px';
+      });
+
+      // animated counters (stat numbers)
+      const statNumbers = document.querySelectorAll('.stat-number');
+      const animateNumber = (el) => {
+        const target = parseInt(el.getAttribute('data-target'), 10);
+        if (isNaN(target)) return;
+        let current = 0;
+        const increment = target / 60; // smooth 60fps approx
+        const updateCounter = () => {
+          current += increment;
+          if (current < target) {
+            el.innerText = Math.floor(current);
+            requestAnimationFrame(updateCounter);
+          } else {
+            el.innerText = target;
+          }
+        };
+        updateCounter();
+      };
+
+      // reveal on scroll (intersection observer)
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+
+            // if stat numbers inside, start counting once
+            if (entry.target.querySelectorAll) {
+              const nums = entry.target.querySelectorAll('.stat-number');
+              nums.forEach(num => {
+                if (!num.dataset.counted) {
+                  num.dataset.counted = 'true';
+                  animateNumber(num);
+                }
+              });
+            }
+
+            // bar fill animation (only once)
+            if (entry.target.querySelectorAll) {
+              const bars = entry.target.querySelectorAll('.bar-fill');
+              bars.forEach(bar => {
+                if (!bar.dataset.animated) {
+                  bar.dataset.animated = 'true';
+                  const width = bar.getAttribute('data-width') || 0;
+                  setTimeout(() => { bar.style.width = width + '%'; }, 100);
+                }
+              });
+            }
+          }
+        });
+      }, { threshold: 0.2 });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // pre-trigger for hero
+      window.addEventListener('load', () => {
+        document.querySelector('.hero .reveal')?.classList.add('active');
+        // start counting first stats if visible
+        document.querySelectorAll('.stats-grid .stat-number').forEach(animateNumber);
+        // manual bar fill after page load (if visible)
+        const bars = document.querySelectorAll('.bar-fill');
+        bars.forEach(bar => {
+          if (!bar.dataset.animated && bar.getBoundingClientRect().top < window.innerHeight) {
+            bar.dataset.animated = 'true';
+            const w = bar.getAttribute('data-width') || 0;
+            bar.style.width = w + '%';
+          }
+        });
+      });
+
+      // scroll-trigger for bars again after orientation
+      window.addEventListener('scroll', () => {
+        document.querySelectorAll('.bar-fill').forEach(bar => {
+          if (!bar.dataset.animated && bar.getBoundingClientRect().top < window.innerHeight-50) {
+            bar.dataset.animated = 'true';
+            const w = bar.getAttribute('data-width') || 0;
+            bar.style.width = w + '%';
+          }
+        });
+      });
+
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

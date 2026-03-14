@@ -1,0 +1,603 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sirius · private astronomy club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #03050b;
+            color: #edeff2;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.4;
+            font-weight: 300;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via google (clean, modern) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,200;14..32,300;14..32,400;14..32,600&display=swap');
+
+        /* custom glow & glass */
+        .glass-card {
+            background: rgba(12, 18, 30, 0.65);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(100, 150, 255, 0.15);
+            border-radius: 2.5rem 1rem 2.5rem 1rem;
+            box-shadow: 0 25px 40px -15px rgba(0, 15, 40, 0.8);
+        }
+
+        /* fixed header (compact on scroll) + js magic */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.8rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+            background: rgba(2, 5, 12, 0.7);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(70, 130, 255, 0.2);
+        }
+
+        header.scrolled {
+            padding: 0.8rem 3rem;
+            background: rgba(0, 2, 8, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #3f6ac0;
+            box-shadow: 0 10px 30px -10px #0a1a3a;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .logo span {
+            font-weight: 600;
+            color: #b3d0ff;
+            text-shadow: 0 0 10px #5f8aff;
+        }
+
+        .nav-links a {
+            color: #dadff0;
+            margin-left: 2.8rem;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+            transition: 0.25s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav-links a:hover {
+            color: white;
+            border-bottom: 1px solid #90b0ff;
+            text-shadow: 0 0 8px #96b5ff;
+        }
+
+        /* glow keyframes */
+        @keyframes softGlow {
+            0% { text-shadow: 0 0 5px #5f7fcf, 0 0 15px #2f4a9e; }
+            50% { text-shadow: 0 0 15px #8ab2ff, 0 0 35px #3f6ac0; }
+            100% { text-shadow: 0 0 5px #5f7fcf, 0 0 15px #2f4a9e; }
+        }
+
+        .glow-text {
+            animation: softGlow 4s infinite ease-in-out;
+        }
+
+        /* universal block padding */
+        .block {
+            min-height: 90vh;
+            padding: 7rem 4rem 4rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .block:nth-child(even) {
+            background: radial-gradient(circle at 30% 40%, #0a1222, #020409);
+        }
+
+        /* hero specific */
+        #home {
+            padding-top: 10rem;
+        }
+
+        .hero-title {
+            font-size: 5.5rem;
+            font-weight: 200;
+            line-height: 1.1;
+            max-width: 1000px;
+        }
+
+        .hero-title strong {
+            font-weight: 500;
+            color: #b8d2ff;
+            display: block;
+            font-size: 6rem;
+        }
+
+        .hero-sub {
+            font-size: 1.6rem;
+            margin-top: 2rem;
+            max-width: 700px;
+            color: #b0bedd;
+            border-left: 3px solid #5675cf;
+            padding-left: 2rem;
+            background: linear-gradient(90deg, rgba(70,130,200,0.1), transparent);
+        }
+
+        .stats-mini {
+            display: flex;
+            gap: 4rem;
+            margin-top: 3.5rem;
+        }
+
+        .stat-item {
+            font-size: 2rem;
+            font-weight: 200;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-digit {
+            font-size: 4rem;
+            font-weight: 400;
+            color: #d3e0ff;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #8da2cf;
+        }
+
+        /* telescope cards / fleet */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.2rem;
+            margin: 3rem 0 1rem;
+        }
+
+        .telescope-card {
+            background: rgba(15, 22, 40, 0.7);
+            border-radius: 2rem 1rem 2rem 1rem;
+            padding: 2.5rem 1.8rem;
+            border: 1px solid #2e4172;
+            backdrop-filter: blur(5px);
+            transition: 0.2s ease;
+            box-shadow: 0 30px 25px -20px #030613;
+        }
+
+        .telescope-card:hover {
+            border-color: #809bdd;
+            transform: translateY(-8px) scale(1.01);
+            background: #0f1930;
+            box-shadow: 0 0 30px #283b66;
+        }
+
+        .card-icon {
+            font-size: 3.2rem;
+            color: #adc6ff;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 2rem;
+            font-weight: 300;
+            border-bottom: 1px dashed #4d6eb0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .events-list {
+            margin-top: 2rem;
+        }
+
+        .event-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: rgba(0, 5, 20, 0.6);
+            border-left: 4px solid #3d66b0;
+            margin-bottom: 0.8rem;
+            font-size: 1.3rem;
+            align-items: center;
+        }
+
+        .event-date {
+            font-weight: 200;
+            color: #b6c8ff;
+        }
+
+        .badge {
+            background: #13213f;
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            color: #b7d0ff;
+            font-size: 0.9rem;
+        }
+
+        /* counter + crosshair-like animation (membership) */
+        .counter-wrap {
+            background: #0a1020d0;
+            backdrop-filter: blur(7px);
+            padding: 3rem;
+            border-radius: 50px 20px 50px 20px;
+            border: 1px solid #2d5080;
+            display: inline-block;
+        }
+
+        .big-counter {
+            font-size: 7rem;
+            font-weight: 200;
+            color: #e7f0ff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .big-counter i {
+            font-size: 5rem;
+            color: #5b82d4;
+            opacity: 0.8;
+        }
+
+        /* levels / membership */
+        .price-package {
+            background: rgba(10, 18, 38, 0.9);
+            border: 1px solid #354e80;
+            border-radius: 30px;
+            padding: 2rem;
+        }
+
+        .price-package:hover {
+            border-color: #99b9ff;
+        }
+
+        .package-name {
+            font-size: 2rem;
+            font-weight: 300;
+            color: #c0d2fc;
+        }
+
+        .price-value {
+            font-size: 3rem;
+            font-weight: 200;
+            margin: 0.5rem 0;
+        }
+
+        .price-value small {
+            font-size: 1.2rem;
+            color: #90a9dd;
+        }
+
+        hr {
+            border-color: #2a3d60;
+            margin: 2rem 0;
+        }
+
+        /* footer */
+        footer {
+            background: #01030a;
+            padding: 3rem 4rem;
+            border-top: 1px solid #263a5e;
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1rem;
+            color: #828db0;
+        }
+
+        .footer-links i {
+            margin: 0 0.8rem;
+            color: #5573b5;
+            transition: 0.2s;
+            font-size: 1.5rem;
+        }
+
+        .footer-links i:hover {
+            color: white;
+            text-shadow: 0 0 20px #6093ff;
+        }
+
+        /* scroll reveal (simple class addition via js) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.2, 0.8, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* additional style */
+        h2 {
+            font-size: 3.5rem;
+            font-weight: 200;
+            margin-bottom: 2rem;
+            letter-spacing: -0.5px;
+        }
+
+        h2 i {
+            color: #4d79d4;
+            margin-right: 1rem;
+        }
+
+        .section-tag {
+            font-size: 1.3rem;
+            letter-spacing: 5px;
+            color: #5f79b0;
+            margin-bottom: 0.5rem;
+        }
+
+        .big-number {
+            font-size: 8rem;
+            font-weight: 200;
+            color: #1e3360;
+            line-height: 0.8;
+            position: relative;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- fixed header (will be compact on scroll) -->
+    <header id="mainHeader">
+        <div class="logo"><span>✦ SIRIUS</span> CLUB</div>
+        <div class="nav-links">
+            <a href="#home">OBSERVE</a>
+            <a href="#telescopes">SCOPES</a>
+            <a href="#events">EVENTS</a>
+            <a href="#stats">COSMOS</a>
+            <a href="#membership">MEMBERSHIP</a>
+        </div>
+    </header>
+
+    <!-- BLOCK 1: HERO (secret mission style) -->
+    <section id="home" class="block">
+        <div class="section-tag reveal">PRIVATE ASTRONOMY CLUB</div>
+        <div class="hero-title reveal">
+            OBSERVE THE <strong class="glow-text">UNIVERSE</strong>
+        </div>
+        <div class="hero-sub reveal">
+            <i class="fa-regular fa-compass" style="margin-right: 20px;"></i> 
+            ELITE OBSERVATORY · MEMBERS ONLY
+        </div>
+        <div class="stats-mini reveal">
+            <div class="stat-item"><span class="stat-digit">8K+</span> <span class="stat-label">NIGHTS</span></div>
+            <div class="stat-item"><span class="stat-digit">12</span> <span class="stat-label">TELESCOPES</span></div>
+            <div class="stat-item"><span class="stat-digit">∞</span> <span class="stat-label">LIGHT YEARS</span></div>
+        </div>
+        <!-- subtle animated crosshair / scope effect -->
+        <div style="position: absolute; right: 10%; bottom: 15%; opacity: 0.2; pointer-events: none;">
+            <i class="fa-solid fa-crosshairs" style="font-size: 150px; color: #7799ee; transform: rotate(20deg);"></i>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: FLEET / TELESCOPES (карточки квестов -> карточки телескопов) -->
+    <section id="telescopes" class="block">
+        <span class="section-tag reveal">✦ THE FLEET</span>
+        <h2 class="reveal"><i class="fa-regular fa-telescope"></i> OBSERVATION EQUIPMENT</h2>
+        <div class="card-grid">
+            <div class="telescope-card reveal">
+                <div class="card-icon"><i class="fa-solid fa-meteor"></i></div>
+                <div class="card-title">HADES 16"</div>
+                <div>Dobsonian · deep sky</div>
+                <hr style="margin: 1rem 0;">
+                <div><i class="fa-regular fa-star"></i> limiting mag 15.2</div>
+                <div><i class="fa-regular fa-moon"></i> 1400x magnification</div>
+            </div>
+            <div class="telescope-card reveal">
+                <div class="card-icon"><i class="fa-solid fa-saturn"></i></div>
+                <div class="card-title">APO 130</div>
+                <div>Refractor · planetary</div>
+                <hr style="margin: 1rem 0;">
+                <div><i class="fa-regular fa-sun"></i> 99% transmission</div>
+                <div><i class="fa-regular fa-gem"></i> fluorite lens</div>
+            </div>
+            <div class="telescope-card reveal">
+                <div class="card-icon"><i class="fa-solid fa-globe"></i></div>
+                <div class="card-title">RITZ 20" RC</div>
+                <div>Ritchey–Chrétien · astrograph</div>
+                <hr style="margin: 1rem 0;">
+                <div><i class="fa-regular fa-camera"></i> wide field 3°</div>
+                <div><i class="fa-regular fa-cloud"></i> adaptive optics</div>
+            </div>
+        </div>
+        <!-- small stat (levels) -->
+        <div class="reveal" style="display: flex; gap: 3rem; margin-top: 2rem;">
+            <div><span style="font-size: 2.2rem;">⚡ 5</span> <span style="color:#8095cf;">observation domes</span></div>
+            <div><span style="font-size: 2.2rem;">◉ 360</span> <span style="color:#8095cf;">clear nights / year</span></div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: EVENTS + TIMER (секретная миссия, таймер до побега → таймер до star party) -->
+    <section id="events" class="block">
+        <span class="section-tag reveal">✦ COSMIC EVENTS</span>
+        <h2 class="reveal"><i class="fa-regular fa-clock"></i> NEXT OBSERVATION</h2>
+        <div class="counter-wrap reveal">
+            <div class="big-counter">
+                <i class="fa-regular fa-hourglass-half"></i>
+                <span id="countdown">--d --h --m --s</span>
+            </div>
+            <div style="font-size: 1.4rem; margin-top: 1rem;">until the "Opposition of Mars" party</div>
+        </div>
+
+        <div class="events-list reveal">
+            <div class="event-row"><span class="event-date">MAY 12 · 21:00</span> <span class="badge">Jupiter transit</span> <i class="fa-regular fa-eye" style="color:#5982dd;"></i></div>
+            <div class="event-row"><span class="event-date">MAY 27 · 20:30</span> <span class="badge">Lunar occultation</span> <i class="fa-regular fa-eye"></i></div>
+            <div class="event-row"><span class="event-date">JUN 05 · 22:15</span> <span class="badge">Saturn at opposition</span> <i class="fa-regular fa-eye"></i></div>
+            <div class="event-row"><span class="event-date">JUN 18 · 23:00</span> <span class="badge">Andromeda marathon</span> <i class="fa-regular fa-eye"></i></div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: STATISTIKA (глубокий космос + glow) -->
+    <section id="stats" class="block">
+        <span class="section-tag reveal">✦ COSMIC DATA</span>
+        <div style="display: flex; align-items: center; gap: 5rem; flex-wrap: wrap;">
+            <div class="reveal">
+                <div class="big-number">2.5M</div>
+                <div style="font-size: 1.7rem;">galaxies catalogued</div>
+                <hr style="width: 200px; margin: 1rem 0;">
+                <div style="color: #afc3f0;"><i class="fa-regular fa-circle-check"></i> 1.2B stars observed</div>
+            </div>
+            <div class="reveal">
+                <div class="big-number">47</div>
+                <div style="font-size: 1.7rem;">exoplanets tracked</div>
+                <hr style="width: 200px; margin: 1rem 0;">
+                <div style="color: #afc3f0;"><i class="fa-regular fa-circle-check"></i> 22 habitable zone</div>
+            </div>
+            <div class="reveal">
+                <div class="big-number">31</div>
+                <div style="font-size: 1.7rem;">deep sky objects / night</div>
+                <hr style="width: 200px; margin: 1rem 0;">
+                <div style="color: #afc3f0;"><i class="fa-regular fa-circle-check"></i> 8.2B light years reach</div>
+            </div>
+        </div>
+        <!-- glow signature -->
+        <div style="margin-top: 4rem; font-size: 1.5rem;" class="reveal glow-text"><i class="fa-regular fa-message"></i> “we measure the universe”</div>
+    </section>
+
+    <!-- BLOCK 5: MEMBERSHIP / PACKAGES (яхт клуб -> астро-членство) -->
+    <section id="membership" class="block">
+        <span class="section-tag reveal">✦ MEMBERSHIP</span>
+        <h2 class="reveal"><i class="fa-regular fa-crown"></i> PRIVATE ACCESS</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div class="price-package reveal">
+                <div class="package-name">OBSERVER</div>
+                <div class="price-value">$690 <small>/ year</small></div>
+                <ul style="list-style: none; font-size: 1.2rem; line-height: 2.2;">
+                    <li><i class="fa-regular fa-check" style="color:#5f97ff;"></i> 10 private nights</li>
+                    <li><i class="fa-regular fa-check"></i> all telescopes access</li>
+                    <li><i class="fa-regular fa-check"></i> guest pass (1)</li>
+                </ul>
+            </div>
+            <div class="price-package reveal" style="border-color: #a185db;">
+                <div class="package-name">✦ SIRIUS ELITE</div>
+                <div class="price-value">$2.4k <small>/ year</small></div>
+                <ul style="list-style: none; font-size: 1.2rem; line-height: 2.2;">
+                    <li><i class="fa-regular fa-star"></i> unlimited observations</li>
+                    <li><i class="fa-regular fa-star"></i> astrophotography studio</li>
+                    <li><i class="fa-regular fa-star"></i> private dome + host</li>
+                </ul>
+            </div>
+        </div>
+        <!-- дополнительный блок с иконкой 🔐 из темы квестов (но в тему) -->
+        <div class="reveal" style="margin-top: 3rem; background: #101a2e; padding: 1.7rem; border-radius: 50px; display: inline-block;">
+            <i class="fa-solid fa-lock" style="color: #cddcff;"></i>  only 52 members accepted yearly
+        </div>
+    </section>
+
+    <!-- FOOTER (как отдельный блок) -->
+    <footer>
+        <div>© SIRIUS PRIVATE OBSERVATORY · <span style="color:#6987cf;"> NGC 2026</span></div>
+        <div class="footer-links">
+            <i class="fa-brands fa-x-twitter"></i>
+            <i class="fa-regular fa-envelope"></i>
+            <i class="fa-regular star">✨</i>
+            <i class="fa-regular fa-message"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // ————— fixed header compact on scroll —————
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 40) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // ————— countdown timer (next star party) —————
+            function updateTimer() {
+                // target: next opposition (fixed example: june 5 2026, 22:00)
+                const target = new Date('June 5, 2026 22:00:00 UTC+0');
+                const now = new Date();
+                const diff = target - now;
+                if (diff < 0) {
+                    document.getElementById('countdown').innerText = `00d 00h 00m 00s`;
+                    return;
+                }
+                const days = Math.floor(diff / (1000*60*60*24));
+                const hours = Math.floor((diff % (86400000)) / (3600000));
+                const mins = Math.floor((diff % 3600000) / (60000));
+                const secs = Math.floor((diff % 60000) / 1000);
+                document.getElementById('countdown').innerText = 
+                    `${days.toString().padStart(2,'0')}d ${hours.toString().padStart(2,'0')}h ${mins.toString().padStart(2,'0')}m ${secs.toString().padStart(2,'0')}s`;
+            }
+            updateTimer();
+            setInterval(updateTimer, 1000);
+
+            // ————— scroll reveal (appear on scroll) —————
+            const reveals = document.querySelectorAll('.reveal');
+            function checkReveal() {
+                const windowHeight = window.innerHeight;
+                reveals.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < windowHeight - 80) {
+                        el.classList.add('active');
+                    }
+                });
+            }
+            window.addEventListener('scroll', checkReveal);
+            window.addEventListener('resize', checkReveal);
+            checkReveal(); // immediate
+
+            // ————— subtle animation on block switch: highlight effect (extra) —————
+            // add an active section glow for fun (optional)
+            const sections = document.querySelectorAll('.block');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(sec => {
+                    const sectionTop = sec.offsetTop - 150;
+                    const sectionHeight = sec.offsetHeight;
+                    if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                        current = sec.getAttribute('id');
+                    }
+                });
+                // just to show dynamic awareness: no real change needed, could mark nav link, but it's fine
+                // optionally dim/bright (just for wow) — highlight nav?
+                const navLinks = document.querySelectorAll('.nav-links a');
+                navLinks.forEach(link => {
+                    link.style.textShadow = 'none';
+                    link.style.color = '#dadff0';
+                    if (current && link.getAttribute('href').includes(current)) {
+                        link.style.textShadow = '0 0 10px #90b0ff';
+                        link.style.color = '#ffffff';
+                    }
+                });
+            });
+        })();
+    </script>
+    <!-- additional script for hover and interaction ++ -->
+    <noscript></noscript>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,694 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian · private observatory</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #fcfcfc;
+            font-family: system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            line-height: 1.4;
+            color: #151515;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll + reveal animation */
+        .section {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.8s cubic-bezier(0.15, 0.85, 0.3, 1), transform 0.8s cubic-bezier(0.15, 0.85, 0.3, 1);
+            will-change: opacity, transform;
+        }
+
+        .section.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* header fixed – becomes compact on scroll */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.80);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+            transition: all 0.2s ease;
+            padding: 1.2rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+
+        header.compact {
+            padding: 0.5rem 2rem;
+            background: rgba(255,255,255,0.94);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.03);
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            color: #0b1f3b;
+            font-size: 2rem;
+            transition: transform 0.2s;
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, #0C1E33 0%, #1F3A5F 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        nav {
+            display: flex;
+            gap: 2.5rem;
+            font-weight: 470;
+            font-size: 1.1rem;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #1e2b3c;
+            transition: 0.15s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        nav a:hover {
+            border-bottom-color: #0b1f3b;
+            color: #0b1f3b;
+        }
+
+        /* main container */
+        main {
+            margin-top: 90px;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 2rem;
+        }
+
+        /* hero */
+        .hero {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        .hero .container {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .hero h1 {
+            font-size: 4.2rem;
+            font-weight: 650;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(165deg, #0A1C31, #1E3E5F);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .highlight {
+            background: linear-gradient(145deg, #121f30, #253f59);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-left: 6px solid #2f4b70;
+            padding-left: 1.2rem;
+            margin: 1.5rem 0 1.8rem 0;
+            font-size: 1.6rem;
+            font-weight: 350;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: #3a4a5e;
+            max-width: 550px;
+            margin-bottom: 2rem;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 3rem;
+            margin-top: 1.2rem;
+        }
+
+        .hero-stats div {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0C1E33;
+        }
+
+        .hero-stats span {
+            display: block;
+            font-size: 1rem;
+            font-weight: 400;
+            color: #5f6a78;
+            letter-spacing: 0.02rem;
+        }
+
+        .glow-icon {
+            filter: drop-shadow(0 0 18px rgba(43, 83, 128, 0.25));
+            animation: float 4s infinite alternate;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-18px); }
+        }
+
+        .icon-grid {
+            display: flex;
+            justify-content: flex-end;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .icon-grid i {
+            font-size: 7rem;
+            color: #13273f;
+            opacity: 0.3;
+            transition: all 0.25s;
+        }
+
+        .icon-grid i:hover {
+            opacity: 0.9;
+            transform: scale(1.04);
+        }
+
+        /* card sections */
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 620;
+            margin-bottom: 2.5rem;
+            letter-spacing: -0.01em;
+            color: #0b1f2f;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .section-title i {
+            font-size: 2.4rem;
+            color: #264a6e;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem 1.6rem;
+            border-radius: 32px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0,0,0,0.02);
+            transition: all 0.25s ease;
+            cursor: default;
+            backdrop-filter: blur(2px);
+        }
+
+        .card:hover {
+            box-shadow: 0 25px 40px -16px rgba(0,35,70,0.15);
+            transform: scale(1.01) translateY(-6px);
+            border-color: rgba(45, 85, 125, 0.2);
+        }
+
+        .card i {
+            font-size: 2.8rem;
+            color: #1f3f5c;
+            margin-bottom: 1.2rem;
+        }
+
+        .card h3 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+        }
+
+        .card p {
+            color: #3a4b5c;
+            font-size: 1.1rem;
+        }
+
+        .badge {
+            background: #e8eef3;
+            color: #112b41;
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+
+        /* TIMELINE / events */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            margin: 2.5rem 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: baseline;
+            gap: 2rem;
+            background: #ffffff;
+            padding: 1.5rem 2rem;
+            border-radius: 40px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.01);
+            border-left: 8px solid #203b54;
+            transition: 0.2s;
+        }
+
+        .timeline-item:hover {
+            background: #f5f9ff;
+        }
+
+        .timeline-time {
+            font-weight: 700;
+            font-size: 2rem;
+            color: #213d58;
+            min-width: 140px;
+        }
+
+        .timeline-desc h4 {
+            font-size: 1.8rem;
+            font-weight: 540;
+        }
+
+        .timeline-desc p {
+            color: #43586b;
+        }
+
+        /* glow extra */
+        .glow-text {
+            background: linear-gradient(145deg, #162b41, #1d3c5a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* stat blocks */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            background: #ffffff;
+            border-radius: 70px;
+            padding: 2.8rem 3rem;
+            border: 1px solid rgba(0,0,0,0.02);
+            box-shadow: 0 0 40px rgba(26, 57, 92, 0.05);
+            margin: 3rem 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #10273d;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            letter-spacing: 0.02rem;
+            color: #2c4055;
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+        }
+
+        /* membership / pricing */
+        .pricing-cards {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .price-card {
+            background: white;
+            border-radius: 40px;
+            padding: 2.4rem 2rem;
+            flex: 1 1 250px;
+            border: 1px solid #e9ecf0;
+            transition: all 0.2s;
+        }
+
+        .price-card:hover {
+            border-color: #27445f;
+            box-shadow: 0 40px 50px -30px #1f3f5c50;
+        }
+
+        .price-card .price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #0b273e;
+            margin: 1rem 0;
+        }
+
+        .price-card ul {
+            list-style: none;
+        }
+
+        .price-card li {
+            padding: 0.5rem 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .price-card i.fa-check-circle {
+            color: #1d583b;
+            font-size: 1.2rem;
+        }
+
+        .btn-outline {
+            border: 1.5px solid #1c3853;
+            background: transparent;
+            border-radius: 60px;
+            padding: 0.8rem 2.2rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            display: inline-block;
+            transition: 0.15s;
+            color: #1c3853;
+            text-decoration: none;
+        }
+
+        .btn-outline:hover {
+            background: #1c3853;
+            color: white;
+        }
+
+        /* footer */
+        footer {
+            background: #ffffff;
+            border-top: 1px solid rgba(0,0,0,0.02);
+            padding: 2.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            font-size: 1.1rem;
+            color: #252f39;
+        }
+
+        footer i {
+            color: #263e55;
+            margin: 0 10px;
+            font-size: 1.5rem;
+        }
+
+        /* keyframes */
+        .word-highlight {
+            background: linear-gradient(120deg, #f4f9ff 0%, #e1ecf9 100%);
+            padding: 0.1rem 0.4rem;
+            font-style: italic;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #dae3ec;
+            margin: 1.5rem 0;
+        }
+    </style>
+</head>
+<body>
+
+<header id="mainHeader">
+    <div class="logo">
+        <i class="fas fa-meteor"></i>
+        <span>OBSIDIAN</span>
+    </div>
+    <nav>
+        <a href="#home">HOME</a>
+        <a href="#events">EVENTS</a>
+        <a href="#fleet">TELESCOPES</a>
+        <a href="#stats">DATA</a>
+        <a href="#membership">MEMBERSHIP</a>
+    </nav>
+</header>
+
+<main>
+    <!-- HERO section (1) -->
+    <section id="home" class="hero section">
+        <div class="container">
+            <div>
+                <h1>observe<br>the universe<span class="word-highlight">.</span></h1>
+                <div class="highlight">private astronomy club · dark sky reserve</div>
+                <p>Access the most advanced telescopes, expert-led nights, and cosmic events beyond city lights.</p>
+                <div class="hero-stats">
+                    <div>36"<span>reflector</span></div>
+                    <div>8K<span>imaging</span></div>
+                    <div>0.5%<span>light pollution</span></div>
+                </div>
+            </div>
+            <div class="icon-grid glow-icon">
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+                <i class="fas fa-planet-ringed"></i>
+                <i class="fas fa-stars"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- telescopes / fleet (2) -->
+    <section id="fleet" class="section container">
+        <div class="section-title">
+            <i class="fas fa-telescope"></i>  observation fleet
+        </div>
+        <div class="cards-grid">
+            <div class="card">
+                <i class="fas fa-telescope"></i>
+                <h3>Cassegrain 36"</h3>
+                <p>Deep space imagery · spectroscopy · adaptive optics</p>
+                <span class="badge">flagship</span>
+            </div>
+            <div class="card">
+                <i class="fas fa-meteor"></i>
+                <h3>Solar H-Alpha</h3>
+                <p>Chromosphere details · prominences · daily patrol</p>
+                <span class="badge">dedicated</span>
+            </div>
+            <div class="card">
+                <i class="fas fa-satellite"></i>
+                <h3>Wide-field 24"</h3>
+                <p>Nebulae · galaxies · astrophotography rig</p>
+                <span class="badge">ultra wide</span>
+            </div>
+            <div class="card">
+                <i class="fas fa-globe"></i>
+                <h3>Radio telescope</h3>
+                <p>21cm hydrogen mapping · pulsar hunting</p>
+                <span class="badge">radio</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- events / timeline (3) -->
+    <section id="events" class="section container">
+        <div class="section-title">
+            <i class="fas fa-calendar-alt"></i>  cosmic events
+        </div>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-time">MAY 24</div>
+                <div class="timeline-desc">
+                    <h4>⏺ Jupiter opposition <span style="font-weight:300; margin-left: 1rem;">· night lab</span></h4>
+                    <p>Detailed observation of GRS & moons · spectroscopy workshop</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">JUN 08</div>
+                <div class="timeline-desc">
+                    <h4>🪐 Saturn at zenith · ring inclination</h4>
+                    <p>Cassini Division, satellite transits · late-night session</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">JUN 22</div>
+                <div class="timeline-desc">
+                    <h4>🌌 deep sky marathon</h4>
+                    <p>100 galaxies in one night · members only</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- stats & deep sky (4) -->
+    <section id="stats" class="section container">
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-number">2.5M</div>
+                <div class="stat-label">objects cataloged</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">328</div>
+                <div class="stat-label">clear nights / year</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">21</div>
+                <div class="stat-label">mag limiting</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">16</div>
+                <div class="stat-label">active researchers</div>
+            </div>
+        </div>
+        <div style="background: #f3f7fb; border-radius: 70px; padding: 2rem; margin: 3rem 0;">
+            <p style="font-size: 2rem; font-weight: 300; text-align: center; color:#0d1f2f;"><i class="fas fa-quote-right" style="color: #2e4c6b; margin-right: 1rem;"></i> we measure the universe in photons & awe. <i class="fas fa-quote-left" style="color: #2e4c6b; margin-left: 1rem;"></i></p>
+        </div>
+    </section>
+
+    <!-- membership / pricing (5) -->
+    <section id="membership" class="section container">
+        <div class="section-title">
+            <i class="fas fa-id-card"></i>  membership
+        </div>
+        <div class="pricing-cards">
+            <div class="price-card">
+                <i class="fas fa-compass" style="font-size: 2.4rem;"></i>
+                <h3>explorer</h3>
+                <div class="price">$190 <span style="font-size:1rem;">/month</span></div>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> 4 night visits</li>
+                    <li><i class="fas fa-check-circle"></i> basic telescope training</li>
+                    <li><i class="fas fa-check-circle"></i> digital star chart</li>
+                </ul>
+                <a href="#" class="btn-outline">join</a>
+            </div>
+            <div class="price-card" style="border: 2px solid #213d58;">
+                <i class="fas fa-crown" style="font-size:2.4rem; color:#244b67;"></i>
+                <h3>Fellow <span style="background: #1b334a; color:white; padding:0.2rem 0.8rem; border-radius: 40px; font-size:0.9rem;">popular</span></h3>
+                <div class="price">$360</div>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> unlimited nights</li>
+                    <li><i class="fas fa-check-circle"></i> imaging data access</li>
+                    <li><i class="fas fa-check-circle"></i> remote observation</li>
+                    <li><i class="fas fa-check-circle"></i> annual banquet</li>
+                </ul>
+                <a href="#" class="btn-outline">apply</a>
+            </div>
+            <div class="price-card">
+                <i class="fas fa-globe"></i>
+                <h3>institution</h3>
+                <div class="price">$890</div>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> up to 5 researchers</li>
+                    <li><i class="fas fa-check-circle"></i> telescope scheduling</li>
+                    <li><i class="fas fa-check-circle"></i> data pipeline</li>
+                </ul>
+                <a href="#" class="btn-outline">contact</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer (6th block) -->
+    <footer class="section" style="opacity:1; transform:none; margin-top: 4rem;">
+        <div><i class="fas fa-meteor"></i> obsidian observatory · 2025 </div>
+        <div>
+            <i class="fab fa-x-twitter"></i>
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-youtube"></i>
+        </div>
+        <div>dark sky preserve · alt. 2,300m</div>
+    </footer>
+</main>
+
+<script>
+    (function() {
+        // header compact on scroll
+        const header = document.getElementById('mainHeader');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 30) {
+                header.classList.add('compact');
+            } else {
+                header.classList.remove('compact');
+            }
+        });
+
+        // Intersection Observer – block reveal
+        const sections = document.querySelectorAll('.section');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                } else {
+                    // optional: remove class to re-animate? we keep visible after first reveal
+                    // but we want permanent after first sight
+                }
+            });
+        }, { threshold: 0.18, rootMargin: '0px 0px -20px 0px' });
+
+        sections.forEach(sec => observer.observe(sec));
+
+        // tiny extra: force first block immediate because hero already visible on load
+        window.addEventListener('load', () => {
+            document.getElementById('home').classList.add('revealed');
+        });
+        // smooth anchor (prevent default jump but keep nice)
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    })();
+</script>
+<!-- small inline patch for immediate hero reveal (if load fast) -->
+<script>
+    (function immediate() {
+        document.getElementById('home')?.classList.add('revealed');
+    })();
+</script>
+</body>
+</html>
+All done!
+```

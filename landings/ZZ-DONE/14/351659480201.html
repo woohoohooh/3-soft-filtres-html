@@ -1,0 +1,527 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drift & Dine · exotic catering</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      color: #1a1e24;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll + anchor offset (fixed header) */
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 80px;
+    }
+
+    /* ---- fixed header (compact + glass) ---- */
+    .header-fixed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(18px) saturate(180%);
+      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.02), 0 2px 6px rgba(0, 20, 40, 0.02);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 5%;
+      z-index: 999;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease;
+    }
+
+    .logo {
+      font-size: 1.9rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .logo i {
+      color: #c92a2a;
+      font-size: 2rem;
+      transform: rotate(5deg);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.2rem;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      font-weight: 500;
+      color: #1e262f;
+      font-size: 1.05rem;
+      padding: 0.3rem 0;
+      border-bottom: 2px solid transparent;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: #c92a2a;
+      color: #c92a2a;
+    }
+
+    .header-cta {
+      background: #c92a2a;
+      color: white;
+      border: none;
+      padding: 0.5rem 1.7rem;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: 0.15s;
+      box-shadow: 0 4px 12px rgba(201, 42, 42, 0.26);
+    }
+
+    .header-cta:hover {
+      background: #aa1f1f;
+      transform: scale(1.02);
+      box-shadow: 0 8px 18px rgba(201, 42, 42, 0.3);
+    }
+
+    /* ---- common block style ---- */
+    .block {
+      min-height: 85vh;
+      padding: 5.5rem 5% 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: white;
+      border-bottom: 1px solid #f0f2f4;
+    }
+
+    .block:nth-child(even) {
+      background: #fbfdff;
+    }
+
+    .block-content {
+      max-width: 1300px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    h2 i {
+      color: #c92a2a;
+      margin-right: 12px;
+      font-size: 2.8rem;
+    }
+
+    .desc {
+      font-size: 1.4rem;
+      color: #3d4a5c;
+      max-width: 700px;
+      margin-bottom: 2.2rem;
+      font-weight: 350;
+    }
+
+    /* ---- animations on scroll (reveal) ---- */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* staggered children */
+    .reveal-stagger > * {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal-stagger.active > * {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-stagger > *:nth-child(1) { transition-delay: 0.1s; }
+    .reveal-stagger > *:nth-child(2) { transition-delay: 0.2s; }
+    .reveal-stagger > *:nth-child(3) { transition-delay: 0.3s; }
+    .reveal-stagger > *:nth-child(4) { transition-delay: 0.4s; }
+
+    /* header hero animation canvas (js animated) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .hero {
+      position: relative;
+      background: white;
+      isolation: isolate;
+    }
+
+    .hero .block-content {
+      position: relative;
+      z-index: 5;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* cards / features */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      background: white;
+      padding: 2rem 1.8rem;
+      border-radius: 2rem;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.02);
+      border: 1px solid rgba(0,0,0,0.02);
+      transition: transform 0.2s;
+    }
+
+    .feature-card i {
+      font-size: 2.8rem;
+      color: #c92a2a;
+      margin-bottom: 1.2rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.9rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      font-size: 1.15rem;
+      color: #4e5a6b;
+    }
+
+    /* price row */
+    .price-row {
+      display: flex;
+      gap: 1.8rem;
+      flex-wrap: wrap;
+      margin: 2rem 0;
+    }
+
+    .price-item {
+      background: #ffffff;
+      border-radius: 2rem;
+      padding: 2rem 2.5rem;
+      box-shadow: 0 18px 40px -12px rgba(0,0,0,0.1);
+      flex: 1 1 200px;
+      border: 1px solid #ebedf0;
+    }
+
+    .price-item .big {
+      font-size: 3.2rem;
+      font-weight: 700;
+      color: #c92a2a;
+    }
+
+    /* footer */
+    .footer-block {
+      min-height: auto;
+      background: #14181f;
+      color: #dfe3e8;
+      padding: 3rem 5%;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .footer-inner a {
+      color: #dfe3e8;
+      margin: 0 1rem 0 0;
+      font-size: 1.3rem;
+      transition: color 0.2s;
+    }
+
+    .footer-inner a:hover {
+      color: #c92a2a;
+    }
+
+    /* responsiveness (only desktop perfect, but minor tweaks) */
+    @media (max-width: 1100px) {
+      h2 { font-size: 2.8rem; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- fixed header (compact) -->
+  <header class="header-fixed">
+    <div class="logo">
+      <i class="fas fa-utensils"></i> DRIFT & DINE
+    </div>
+    <nav class="nav-links">
+      <a href="#home">home</a>
+      <a href="#concept">concept</a>
+      <a href="#menu">menu</a>
+      <a href="#pricing">pricing</a>
+      <a href="#book">book</a>
+    </nav>
+    <button class="header-cta" onclick="document.getElementById('book').scrollIntoView({behavior:'smooth'})">reserve</button>
+  </header>
+
+  <!-- BLOCK 1: HERO (canvas animation) -->
+  <section id="home" class="block hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="block-content">
+      <div class="reveal active" style="max-width: 750px;">
+        <h1 style="font-size: 4.8rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em;">
+          <span style="color: #c92a2a;">FLAVOR</span> ON <br>THE EDGE
+        </h1>
+        <p class="desc" style="font-size: 1.8rem; margin: 1.2rem 0 2rem;">where fire meets ice — exotic catering for the brave</p>
+        <button class="header-cta" style="padding: 1rem 3rem; font-size: 1.2rem;" onclick="document.getElementById('concept').scrollIntoView({behavior:'smooth'})">explore taste</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 2: concept / story -->
+  <section id="concept" class="block">
+    <div class="block-content reveal">
+      <h2><i class="fas fa-compass"></i> nomadic kitchen</h2>
+      <p class="desc">We don't just cook — we create ephemeral dining experiences in abandoned penthouses, rooftops, and secret lofts.</p>
+      <div class="grid-3 reveal-stagger" style="margin-top: 3rem;">
+        <div class="feature-card"><i class="fas fa-fire"></i><h3>open fire</h3><p>100% live-fire cooking, wood & smoke</p></div>
+        <div class="feature-card"><i class="fas fa-snowflake"></i><h3>liquid nitrogen</h3><p>dramatic freezing, explosive textures</p></div>
+        <div class="feature-card"><i class="fas fa-eye-slash"></i><h3>hidden tables</h3><p>secret locations revealed 24h before</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 3: menu (featured dishes) -->
+  <section id="menu" class="block">
+    <div class="block-content reveal">
+      <h2><i class="fas fa-knife-kitchen"></i> signature plates</h2>
+      <div class="grid-3 reveal-stagger">
+        <div class="feature-card"><i class="fas fa-dragon"></i><h3>charred octopus</h3><p>saffron aioli, ink crumble</p></div>
+        <div class="feature-card"><i class="fas fa-leaf"></i><h3>forest tartare</h3><p>beetroot & smoked miso yolk</p></div>
+        <div class="feature-card"><i class="fas fa-fish"></i><h3>ice‑seared tuna</h3><p>yuzu granite, wasabi foam</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 4: sensory experience / video replacement (iconic) -->
+  <section class="block">
+    <div class="block-content reveal">
+      <h2><i class="fas fa-wave-square"></i> synesthesia dinner</h2>
+      <p class="desc">Every course paired with live visuals & reactive soundscapes. Close your eyes, taste the frequency.</p>
+      <div style="background: #eef0f3; border-radius: 3rem; padding: 3rem; text-align: center; font-size: 1.8rem; border: 1px solid #dadde2;">
+        <i class="fas fa-headphones-alt" style="color: #c92a2a; margin-right: 15px;"></i>  sound + bite · 4 senses
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 5: chef's table (unique) -->
+  <section class="block">
+    <div class="block-content reveal">
+      <h2><i class="fas fa-user-chef"></i> chef’s counter</h2>
+      <p class="desc">Only 6 seats. Watch the chaos become art. 12-course blind tasting.</p>
+      <div style="display: flex; gap: 2rem; margin-top: 2rem;">
+        <span style="background: #c92a2a; color: white; border-radius: 60px; padding: 1rem 2.2rem; font-weight: 600; font-size: 1.5rem;">🔥 3 MICHELIN ⭐</span>
+        <span style="background: black; color: white; border-radius: 60px; padding: 1rem 2.2rem; font-weight: 600; font-size: 1.5rem;">₿ crypto only</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 6: pricing (simple) -->
+  <section id="pricing" class="block">
+    <div class="block-content reveal">
+      <h2><i class="fas fa-coins"></i> investment</h2>
+      <div class="price-row reveal-stagger">
+        <div class="price-item"><span class="big">$290</span> <p style="font-size: 1.3rem;">5 courses · pop-up</p></div>
+        <div class="price-item"><span class="big">$450</span> <p style="font-size: 1.3rem;">8 courses · chef’s table</p></div>
+        <div class="price-item"><span class="big">$120</span> <p style="font-size: 1.3rem;">wine flight · pairing</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 7: upcoming events (hover dynamic) -->
+  <section class="block">
+    <div class="block-content reveal">
+      <h2><i class="fas fa-calendar-alt"></i> drift schedule</h2>
+      <ul style="font-size: 1.6rem; list-style: none; line-height: 2.5;">
+        <li><i class="fas fa-map-pin" style="color:#c92a2a;"></i>  JUL 18 – abandoned warehouse B42</li>
+        <li><i class="fas fa-map-pin" style="color:#c92a2a;"></i>  JUL 26 – glass house rooftop</li>
+        <li><i class="fas fa-map-pin" style="color:#c92a2a;"></i>  AUG 04 – cable car (moving dinner)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- BLOCK 8: book / reservation -->
+  <section id="book" class="block">
+    <div class="block-content reveal" style="text-align: center;">
+      <h2><i class="fas fa-ticket-alt"></i> secure your seat</h2>
+      <p class="desc" style="margin-left: auto; margin-right: auto;">releases every monday 10am · 48h only</p>
+      <div style="background: white; border-radius: 80px; display: inline-block; padding: 1rem 3.5rem; box-shadow: 0 12px 30px rgba(201,42,42,0.15); border: 1px solid #c92a2a;">
+        <span style="font-size: 2.4rem; font-weight: 700;">next drop</span>
+        <span style="font-size: 2.4rem; background: #c92a2a; color: white; border-radius: 60px; padding: 0.5rem 2rem; margin-left: 1.5rem;">48h</span>
+      </div>
+      <div style="margin-top: 3rem;">
+        <button class="header-cta" style="padding: 1.5rem 5rem; font-size: 1.8rem; border-radius: 60px;">notify me</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 9: footer (social / contact) -->
+  <footer class="block footer-block">
+    <div class="footer-inner">
+      <div style="font-size: 2rem; font-weight: 500; color: white;">DRIFT & DINE <i class="fas fa-utensils" style="color:#c92a2a;"></i></div>
+      <div>
+        <a href="#"><i class="fab fa-instagram"></i></a>
+        <a href="#"><i class="fab fa-x-twitter"></i></a>
+        <a href="#"><i class="fab fa-tiktok"></i></a>
+        <a href="#"><i class="fab fa-spotify"></i></a>
+      </div>
+      <div style="font-size: 1rem; opacity: 0.6;">NYC · LA · MIA · online</div>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // -------- canvas animation (block1 header) --------
+      const canvas = document.getElementById('heroCanvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function initCanvas() {
+          const hero = document.querySelector('.hero');
+          if (!hero) return;
+          const rect = hero.getBoundingClientRect();
+          width = rect.width;
+          height = rect.height;
+          canvas.width = width;
+          canvas.height = height;
+
+          // create flowing particles
+          particles = [];
+          for (let i = 0; i < 80; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              size: Math.random() * 2.2 + 0.8,
+              speedX: (Math.random() - 0.5) * 0.8,
+              speedY: (Math.random() - 0.5) * 0.6 + 0.3,
+              color: `rgba(201, 42, 42, ${Math.random() * 0.2 + 0.1})`
+            });
+          }
+        }
+
+        function drawParticles() {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          for (let p of particles) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+
+            // move
+            p.x += p.speedX;
+            p.y += p.speedY;
+
+            // wrap around / reset
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+          }
+          requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', () => {
+          initCanvas();
+        });
+
+        initCanvas();
+        drawParticles();
+      }
+
+      // -------- reveal on scroll (intersection observer) --------
+      const revealElements = document.querySelectorAll('.reveal, .reveal-stagger');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          } else {
+            // optional: remove class if you want repeat animation (but we keep active)
+            // we keep active to stay visible after first trigger
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // header background change on scroll (compact effect)
+      const header = document.querySelector('.header-fixed');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.style.background = 'rgba(255, 255, 255, 0.92)';
+          header.style.backdropFilter = 'blur(22px)';
+          header.style.boxShadow = '0 8px 28px rgba(0,0,0,0.04)';
+        } else {
+          header.style.background = 'rgba(255, 255, 255, 0.75)';
+          header.style.backdropFilter = 'blur(18px) saturate(180%)';
+          header.style.boxShadow = '0 6px 24px rgba(0, 0, 0, 0.02)';
+        }
+      });
+
+      // optional: interactive hover on nav links (already css)
+      // ensure all anchor links work with fixed header offset (scroll-padding already set)
+    })();
+  </script>
+
+  <!-- make all blocks visible after possible script -->
+  <noscript>Please enable JavaScript for full effect</noscript>
+</body>
+</html>
+```
+All done!

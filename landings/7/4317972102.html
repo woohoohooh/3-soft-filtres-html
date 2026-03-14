@@ -1,0 +1,712 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VYNER · precision shooting club</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #030507;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #eaeef2;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        h1, h2, h3, .stat-number, .nav-links a {
+            font-weight: 500;
+            letter-spacing: -0.02em;
+        }
+
+        /* custom crosshair cursor */
+        * {
+            cursor: crosshair;
+        }
+
+        a, button, .card, .stat-item, .crosshair-trigger {
+            cursor: crosshair;
+        }
+
+        /* fixed compact header – transforms on scroll via js */
+        header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1300px;
+            background: rgba(2, 6, 12, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 0.5px solid rgba(255, 215, 0, 0.25);
+            border-radius: 60px;
+            padding: 0.8rem 2.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+        }
+
+        header.compact {
+            top: 12px;
+            padding: 0.4rem 1.8rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #b8860b;
+            width: 70%;
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.15);
+        }
+
+        .logo {
+            font-size: 1.7rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #f5e7c8, #b8860b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            transition: 0.2s;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #d4d4d4;
+            font-size: 1rem;
+            text-transform: uppercase;
+            font-weight: 400;
+            letter-spacing: 2px;
+            border-bottom: 1px solid transparent;
+            transition: 0.2s;
+            padding-bottom: 4px;
+        }
+
+        .nav-links a:hover {
+            color: #f5c542;
+            border-bottom: 1px solid #f5c542;
+        }
+
+        /* hero section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 1.5rem;
+            position: relative;
+            background: radial-gradient(circle at 30% 30%, rgba(212, 175, 55, 0.08) 0%, #030507 70%);
+        }
+
+        .hero-meta {
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            font-size: 1.1rem;
+            color: #b8860b;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .hero h1 {
+            font-size: clamp(4rem, 13vw, 7rem);
+            font-weight: 700;
+            line-height: 1;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #ffffff, #c0a56b, #b8860b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+
+        .hero-sub {
+            font-size: 1.4rem;
+            max-width: 700px;
+            color: #afb9c5;
+            margin-bottom: 2.5rem;
+            animation: fadeInUp 1s ease 0.4s both;
+        }
+
+        .cta-btn {
+            background: transparent;
+            border: 2px solid #b8860b;
+            color: #f5e7c8;
+            font-size: 1.3rem;
+            padding: 1rem 3.5rem;
+            border-radius: 60px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+            transition: 0.3s;
+            animation: fadeInUp 1s ease 0.6s both;
+            display: inline-block;
+        }
+
+        .cta-btn:hover {
+            background: #b8860b;
+            color: #030507;
+            box-shadow: 0 0 30px #b8860b66;
+        }
+
+        /* crosshair animated overlay (js powered) */
+        #crosshair-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: overlay;
+            opacity: 0.45;
+        }
+
+        /* section defaults */
+        section {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 6rem 2rem;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 4rem;
+            border-left: 6px solid #b8860b;
+            padding-left: 2rem;
+            color: #f2e9d0;
+        }
+
+        .section-title span {
+            color: #b8860b;
+            font-weight: 300;
+        }
+
+        /* cards grid */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .discipline-card {
+            background: rgba(18, 22, 28, 0.7);
+            border: 1px solid #2a2f38;
+            padding: 2.5rem 1.8rem;
+            border-radius: 40px;
+            transition: 0.25s ease-in-out;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 15px 25px -15px #000;
+        }
+
+        .discipline-card:hover {
+            border-color: #b8860b;
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 30px 30px -10px #b8860b33;
+        }
+
+        .card-icon {
+            font-size: 3.3rem;
+            color: #b8860b;
+            margin-bottom: 1.8rem;
+        }
+
+        .discipline-card h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .discipline-card p {
+            color: #97a2b3;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        /* trainers */
+        .trainer-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+        }
+
+        .trainer-card {
+            background: #0e1219;
+            border-radius: 30px;
+            padding: 2rem 2rem 2.5rem;
+            border: 1px solid #2b2f38;
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .trainer-card:hover {
+            border-color: #b8860b;
+            box-shadow: 0 0 0 2px #b8860b22;
+        }
+
+        .trainer-card i {
+            font-size: 3.5rem;
+            color: #b8860b;
+            background: #1b212a;
+            padding: 0.8rem;
+            border-radius: 60px;
+            margin-bottom: 1.7rem;
+        }
+
+        .trainer-card h4 {
+            font-size: 1.9rem;
+            font-weight: 400;
+            margin-bottom: 0.25rem;
+        }
+
+        .trainer-card .role {
+            color: #b8860b;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .trainer-card p {
+            color: #9da7b5;
+        }
+
+        /* stats block */
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            background: #080d13;
+            border-radius: 100px;
+            padding: 3rem 2rem;
+            border: 1px solid #b8860b40;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 600;
+            color: #f5d97b;
+            line-height: 1;
+        }
+
+        .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 0.9rem;
+            color: #afb9c5;
+        }
+
+        /* packages / pricing */
+        .packages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .package-card {
+            background: #0d121b;
+            border: 1px solid #343a45;
+            border-radius: 40px;
+            padding: 2.5rem 2rem;
+            transition: 0.25s;
+        }
+
+        .package-card.premium {
+            border-color: #b8860b;
+            background: #131a24;
+            transform: scale(1.02);
+        }
+
+        .package-card:hover {
+            border-color: #b8860b;
+            box-shadow: 0 25px 30px -15px #b8860b80;
+        }
+
+        .package-card h3 {
+            font-size: 2rem;
+            border-bottom: 1px dashed #b8860b;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .price {
+            font-size: 2.8rem;
+            font-weight: 600;
+            color: #e5c87b;
+            margin: 1.5rem 0;
+        }
+
+        .price small {
+            font-size: 1rem;
+            color: #7e8998;
+        }
+
+        .package-btn {
+            display: inline-block;
+            border: 1.5px solid #b8860b;
+            background: transparent;
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 40px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            margin-top: 1.8rem;
+        }
+
+        .package-btn:hover {
+            background: #b8860b;
+            color: #030507;
+        }
+
+        /* footer */
+        footer {
+            background: #03070c;
+            border-top: 1px solid #b8860b30;
+            padding: 3rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            color: #6d7a8c;
+            font-size: 0.9rem;
+        }
+
+        .socials i {
+            font-size: 1.5rem;
+            margin-left: 1.5rem;
+            color: #9b8c66;
+            transition: 0.2s;
+        }
+        .socials i:hover { color: #b8860b; }
+
+        /* appear on scroll */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* additional glow */
+        .highlight-gold {
+            color: #f5c542;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fixed header – compact via js on scroll -->
+    <header id="mainHeader">
+        <div class="logo">VYNER</div>
+        <div class="nav-links">
+            <a href="#disciplines">Disciplines</a>
+            <a href="#trainers">Trainers</a>
+            <a href="#packages">Packages</a>
+            <a href="#stats">Stats</a>
+        </div>
+    </header>
+
+    <!-- Crosshair animated overlay canvas (JS) -->
+    <canvas id="crosshair-overlay"></canvas>
+
+    <!-- Hero -->
+    <section class="hero" id="home">
+        <div class="hero-meta">est. 2014 · precision shooting club</div>
+        <h1>VYNER</h1>
+        <div class="hero-sub">where accuracy meets instinct · private tactical club</div>
+        <a href="#packages" class="cta-btn">join the mission</a>
+    </section>
+
+    <!-- Block 1: Disciplines (card) -->
+    <section id="disciplines" class="fade-up">
+        <h2 class="section-title"><span>//</span> precision disciplines</h2>
+        <div class="grid-3">
+            <div class="discipline-card">
+                <div class="card-icon"><i class="fas fa-bullseye"></i></div>
+                <h3>Precision Rifle</h3>
+                <p>600–1200m ranges · ballistic computers · wind reading. Master the long shot.</p>
+            </div>
+            <div class="discipline-card">
+                <div class="card-icon"><i class="fas fa-crosshairs"></i></div>
+                <h3>Tactical Pistol</h3>
+                <p>speed & transition drills · combat accuracy · from holster to 50m.</p>
+            </div>
+            <div class="discipline-card">
+                <div class="card-icon"><i class="fas fa-skull"></i></div>
+                <h3>Moving Target</h3>
+                <p>simulated hostage, moving platforms, reactive steel – elite reflexes.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Block 2: Trainers -->
+    <section id="trainers" class="fade-up">
+        <h2 class="section-title"><span>//</span> master instructors</h2>
+        <div class="trainer-grid">
+            <div class="trainer-card">
+                <i class="fas fa-user-secret"></i>
+                <h4>J. Vasquez</h4>
+                <div class="role">ex‑force sniper</div>
+                <p>22 years operational · 340+ confirmed precision shots · coach since '12</p>
+            </div>
+            <div class="trainer-card">
+                <i class="fas fa-medal"></i>
+                <h4>E. Brenner</h4>
+                <div class="role">ipsc world champion</div>
+                <p>12 gold medals · tactical shooting · mindset & speed specialist</p>
+            </div>
+            <div class="trainer-card">
+                <i class="fas fa-eye"></i>
+                <h4>K. Novak</h4>
+                <div class="role">ballistic engineer</div>
+                <p>ex‑researcher · custom load data · wind & mirage expert</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Block 3: Stats / statistics of hits -->
+    <section id="stats" class="fade-up">
+        <h2 class="section-title"><span>//</span> hit statistics</h2>
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-number" id="stat1">94%</div>
+                <div class="stat-label">first hit accuracy</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="stat2">27k+</div>
+                <div class="stat-label">rounds/month</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="stat3">18</div>
+                <div class="stat-label">active snipers</div>
+            </div>
+        </div>
+        <!-- tiny counters effect will be js updated on appear -->
+    </section>
+
+    <!-- Block 4: training packages -->
+    <section id="packages" class="fade-up">
+        <h2 class="section-title"><span>//</span> member packages</h2>
+        <div class="packages-grid">
+            <div class="package-card">
+                <h3>marksman</h3>
+                <p>4 sessions/mo · rifle/pistol range · basic coaching</p>
+                <div class="price">$320 <small>/mo</small></div>
+                <a href="#" class="package-btn">enroll</a>
+            </div>
+            <div class="package-card premium">
+                <h3>tactical elite</h3>
+                <p>unlimited range · 1on1 with champion · gear discounts</p>
+                <div class="price">$790 <small>/mo</small></div>
+                <a href="#" class="package-btn">enroll</a>
+            </div>
+            <div class="package-card">
+                <h3>precision lab</h3>
+                <p>ballistic analysis · custom dope · 600–1200m coaching</p>
+                <div class="price">$540 <small>/mo</small></div>
+                <a href="#" class="package-btn">enroll</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Block 5: extra "mission critical" banner / engagement (replaces a 5th block) -->
+    <section class="fade-up" style="padding-top: 0;">
+        <div style="background: #0e151f; border-radius: 70px; padding: 4rem 3rem; border: 1px solid #b8860b60; text-align: center;">
+            <i class="fas fa-skull-crossbones" style="font-size: 4rem; color: #b8860b; margin-bottom: 1.5rem;"></i>
+            <h2 style="font-size: 2.8rem; font-weight: 400;">first visit? <span class="highlight-gold">assessment shot</span> included</h2>
+            <p style="max-width: 600px; margin: 1.5rem auto; color: #b7c0cd;">every new member gets a precision diagnosis with our coaches. zero commitment.</p>
+            <a href="#" class="cta-btn" style="font-size: 1rem; padding: 0.9rem 2.8rem;">book assessment</a>
+        </div>
+    </section>
+
+    <!-- footer -->
+    <footer>
+        <div>© 2025 VYNER · private shooting club · all rights reserved</div>
+        <div class="socials">
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-x-twitter"></i>
+            <i class="fab fa-youtube"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // ---------- crosshair canvas animation (moving line) ----------
+            const canvas = document.getElementById('crosshair-overlay');
+            const ctx = canvas.getContext('2d');
+            let w, h;
+            function resizeCanvas() {
+                w = window.innerWidth;
+                h = window.innerHeight;
+                canvas.width = w;
+                canvas.height = h;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            let time = 0;
+            function drawCrosshair() {
+                ctx.clearRect(0, 0, w, h);
+                ctx.strokeStyle = '#b8860b';
+                ctx.lineWidth = 1.2;
+                ctx.globalAlpha = 0.35 + Math.sin(time * 0.01) * 0.1;
+
+                // moving horizontal line
+                let yPos = h * 0.3 + Math.sin(time * 0.02) * 40;
+                ctx.beginPath();
+                ctx.moveTo(0, yPos);
+                ctx.lineTo(w, yPos);
+                ctx.stroke();
+
+                // vertical moving line
+                let xPos = w * 0.7 + Math.cos(time * 0.015) * 50;
+                ctx.beginPath();
+                ctx.moveTo(xPos, 0);
+                ctx.lineTo(xPos, h);
+                ctx.stroke();
+
+                // second subtle crosshair
+                ctx.globalAlpha = 0.2;
+                ctx.beginPath();
+                ctx.moveTo(0, h * 0.6);
+                ctx.lineTo(w, h * 0.6);
+                ctx.strokeStyle = '#f5c542';
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(w * 0.3, 0);
+                ctx.lineTo(w * 0.3, h);
+                ctx.stroke();
+
+                time++;
+                requestAnimationFrame(drawCrosshair);
+            }
+            drawCrosshair();
+
+            // ---------- compact header on scroll ----------
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 80) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // ---------- fade-up observer (blocks appear) + counting animation for stats ----------
+            const fadeElements = document.querySelectorAll('.fade-up');
+            const statNumbers = {
+                stat1: { element: document.getElementById('stat1'), target: 94, suffix: '%', current: 0 },
+                stat2: { element: document.getElementById('stat2'), target: 27, suffix: 'k+', current: 0, isK: true },
+                stat3: { element: document.getElementById('stat3'), target: 18, suffix: '', current: 0 }
+            };
+
+            // increment counters only once
+            let countingStarted = false;
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appear');
+                        // if the stats section appears, trigger counter
+                        if (entry.target.id === 'stats' && !countingStarted) {
+                            countingStarted = true;
+                            animateStats();
+                        }
+                    }
+                });
+            }, { threshold: 0.25 });
+
+            fadeElements.forEach(el => observer.observe(el));
+
+            function animateStats() {
+                const duration = 1500; // ms
+                const stepTime = 20;
+                const steps = duration / stepTime;
+                let step = 0;
+
+                const intervals = setInterval(() => {
+                    step++;
+                    let allDone = true;
+
+                    for (let key in statNumbers) {
+                        let s = statNumbers[key];
+                        if (s.current < s.target) {
+                            allDone = false;
+                            let inc = Math.ceil(s.target / steps);
+                            s.current = Math.min(s.current + inc, s.target);
+                            let displayVal = s.current;
+                            if (s.isK) {
+                                s.element.textContent = displayVal + 'k+';
+                            } else if (s.suffix === '%') {
+                                s.element.textContent = displayVal + '%';
+                            } else {
+                                s.element.textContent = displayVal;
+                            }
+                        }
+                    }
+
+                    if (allDone) {
+                        // final exact set
+                        statNumbers.stat1.element.textContent = '94%';
+                        statNumbers.stat2.element.textContent = '27k+';
+                        statNumbers.stat3.element.textContent = '18';
+                        clearInterval(intervals);
+                    }
+                }, stepTime);
+            }
+
+            // ensure stats start at 0
+            statNumbers.stat1.element.textContent = '0%';
+            statNumbers.stat2.element.textContent = '0k+';
+            statNumbers.stat3.element.textContent = '0';
+
+            // header hide on first load? no, just ensure
+
+            // extra: highlight & hover on cards already done in css
+        })();
+    </script>
+
+    <!-- ensure that stats appear if stats section visible on load (when stats not triggered by appear, but we trigger counting via observer) -->
+    <noscript></noscript>
+</body>
+</html>
+All done!
+```

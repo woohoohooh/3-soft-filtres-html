@@ -1,0 +1,569 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Python – 2026 mobile app</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: #1a1e2b;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 20px;
+        }
+
+        /* phone container */
+        .phone {
+            width: 360px;
+            height: 780px;
+            background-color: var(--bg-primary);
+            border-radius: 48px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 8px #2c3142;
+            overflow: hidden;
+            position: relative;
+            transition: background-color 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* inner screen (clipped) */
+        .app-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--card-bg);
+            background: var(--bg-primary);
+        }
+
+        .app-screen::-webkit-scrollbar {
+            width: 4px;
+        }
+        .app-screen::-webkit-scrollbar-track {
+            background: var(--card-bg);
+        }
+        .app-screen::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 8px;
+        }
+
+        /* themes */
+        :root {
+            --primary: #2563EB;
+            --secondary: #1E40AF;
+            --accent: #38BDF8;
+            --bg-primary: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --icon-inactive: #94A3B8;
+            --header-icon: #1E293B;
+            --border-light: #E2E8F0;
+            --progress-bg: #E2E8F0;
+            --highlight-soft: rgba(37, 99, 235, 0.08);
+        }
+
+        .dark-mode {
+            --primary: #3B82F6;
+            --secondary: #1E3A8A;
+            --accent: #38BDF8;
+            --bg-primary: #0F172A;
+            --card-bg: #1E293B;
+            --text-primary: #E2E8F0;
+            --text-secondary: #CBD5E1;
+            --icon-inactive: #64748B;
+            --header-icon: #F1F5F9;
+            --border-light: #334155;
+            --progress-bg: #334155;
+            --highlight-soft: rgba(59, 130, 246, 0.15);
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px 8px;
+            background: transparent;
+        }
+        .header h2 {
+            font-size: 22px;
+            font-weight: 650;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+        .profile-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-btn svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--header-icon);
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* bottom navigation */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-light);
+            padding: 6px 10px 10px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.02);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 6px 0 4px;
+            width: 70px;
+            border-radius: 30px;
+            transition: all 0.15s ease;
+            color: var(--icon-inactive);
+            fill: none;
+            stroke: var(--icon-inactive);
+            stroke-width: 2;
+        }
+        .nav-item.active {
+            stroke: var(--primary);
+            color: var(--primary);
+            background: var(--highlight-soft);
+            transform: scale(1.05);
+        }
+        .nav-item svg {
+            width: 26px;
+            height: 26px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.1s;
+        }
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+            margin-top: 3px;
+            color: currentColor;
+        }
+        .inactive-tab {
+            stroke: var(--icon-inactive);
+            color: var(--icon-inactive);
+        }
+
+        /* common */
+        .screen-content {
+            padding: 12px 20px 20px;
+            flex: 1;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.02), 0 2px 4px rgba(0,0,0,0.03);
+            border: 1px solid var(--border-light);
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 18px;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+            transition: 0.1s;
+            letter-spacing: 0.3px;
+        }
+        .btn-primary:active { transform: scale(0.98); background: var(--secondary); }
+        .link-row {
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            margin: 18px 0 10px;
+            color: var(--primary);
+            font-size: 14px;
+        }
+        .link-row button {
+            background: none;
+            border: none;
+            color: var(--primary);
+            text-decoration: underline;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .logo-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .logo-icon svg {
+            width: 48px;
+            height: 48px;
+            stroke: var(--primary);
+            stroke-width: 2;
+            fill: none;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.15s;
+        }
+        .modal {
+            background: var(--card-bg);
+            width: 280px;
+            padding: 28px 20px;
+            border-radius: 40px;
+            color: var(--text-primary);
+            text-align: center;
+            border: 2px solid var(--primary);
+        }
+        .modal button {
+            margin-top: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* progress bar */
+        .progress-bar {
+            background: var(--progress-bg);
+            height: 10px;
+            border-radius: 20px;
+            margin: 12px 0;
+        }
+        .progress-fill {
+            background: var(--primary);
+            width: 40%;
+            height: 10px;
+            border-radius: 20px;
+            transition: width 0.3s;
+        }
+        .row-space {
+            display: flex;
+            justify-content: space-between;
+            margin: 12px 0;
+        }
+        .badge {
+            background: var(--accent);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #0F172A;
+        }
+        .icon-svg-sm {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .stat {
+            background: var(--bg-primary);
+            padding: 15px;
+            border-radius: 24px;
+            text-align: center;
+            border: 1px solid var(--border-light);
+        }
+        .grey-text { color: var(--icon-inactive); font-size: 13px; }
+    </style>
+</head>
+<body>
+<div class="phone" id="phoneContainer">
+    <div class="app-screen" id="appScreen">
+        <!-- dynamic header and content injected via JS -->
+    </div>
+</div>
+
+<!-- hidden modals for terms & privacy -->
+<div class="modal-overlay" id="privacyModal">
+    <div class="modal">
+        <h3 style="margin-bottom: 12px;">Privacy</h3>
+        <p style="font-size: 15px;">We protect your data like our own. No selling, no spam.</p>
+        <button id="closePrivacy">OK</button>
+    </div>
+</div>
+<div class="modal-overlay" id="termsModal">
+    <div class="modal">
+        <h3 style="margin-bottom: 12px;">Terms of Service</h3>
+        <p style="font-size: 15px;">Use Daily Python to learn. Don't be evil. Have fun!</p>
+        <button id="closeTerms">OK</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- icon system (inline svg symbols) ----------
+        function iconHome(active = false) { return `<svg viewBox="0 0 24 24"><path d="M5 12H3L12 3L21 12H19V20H13V14H11V20H5V12Z" /></svg>`; }
+        function iconLearn() { return `<svg viewBox="0 0 24 24"><path d="M12 4L20 9V20H15V14H9V20H4V9L12 4Z" /></svg>`; }
+        function iconProgress() { return `<svg viewBox="0 0 24 24"><path d="M21 16V20H3V16H6V12H10V16H14V8H18V16H21Z" /></svg>`; }
+        function iconSettings() { return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M20 7.5l-1-1.7-3.3 1.9c-.5-.3-1.1-.5-1.7-.7L14 3h-4l-.3 4c-.6.2-1.2.4-1.7.7L5 5.8l-1 1.7 3.3 1.9c-.2.5-.3 1.1-.3 1.6 0 .5.1 1.1.3 1.6L4 14.8l1 1.7 3.3-1.9c.5.3 1.1.5 1.7.7l.3 4h4l.3-4c.6-.2 1.2-.4 1.7-.7l3.3 1.9 1-1.7-3.3-1.9c.2-.5.3-1.1.3-1.6 0-.5-.1-1.1-.3-1.6L20 7.5z"/></svg>`; }
+        function iconProfile() { return `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`; }
+        function iconLesson() { return `<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`; }
+        function iconChart() { return `<svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>`; }
+        function iconFlashcards() { return `<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h4"/></svg>`; }
+        function iconPlay() { return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`; }
+        function iconCheck() { return `<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>`; }
+
+        // theme & state
+        let darkMode = false;
+        let currentScreen = 'onboarding'; // onboarding, home, learn, progress, settings
+        let screenshotCounter = 1;
+
+        const app = document.getElementById('appScreen');
+        const phone = document.getElementById('phoneContainer');
+
+        function render() {
+            const headerTitle = getHeaderTitle();
+            let content = '';
+
+            // header html
+            let headerHtml = `
+                <div class="header">
+                    <h2>${headerTitle}</h2>
+                    <button class="profile-btn" id="profileBtn">${iconProfile()}</button>
+                </div>
+            `;
+
+            // screen content
+            if (currentScreen === 'onboarding') content = renderOnboarding();
+            else if (currentScreen === 'home') content = renderHome();
+            else if (currentScreen === 'learn') content = renderLearn();
+            else if (currentScreen === 'progress') content = renderProgress();
+            else if (currentScreen === 'settings') content = renderSettings();
+
+            // bottom nav (not on onboarding)
+            let bottomNavHtml = '';
+            if (currentScreen !== 'onboarding') {
+                bottomNavHtml = `
+                    <div class="bottom-nav">
+                        <button class="nav-item ${currentScreen === 'home' ? 'active' : 'inactive-tab'}" data-nav="home">${iconHome()} <span>Home</span></button>
+                        <button class="nav-item ${currentScreen === 'learn' ? 'active' : 'inactive-tab'}" data-nav="learn">${iconLearn()} <span>Learn</span></button>
+                        <button class="nav-item ${currentScreen === 'progress' ? 'active' : 'inactive-tab'}" data-nav="progress">${iconProgress()} <span>Progress</span></button>
+                        <button class="nav-item ${currentScreen === 'settings' ? 'active' : 'inactive-tab'}" data-nav="settings">${iconSettings()} <span>Settings</span></button>
+                    </div>
+                `;
+            }
+
+            app.innerHTML = headerHtml + `<div class="screen-content">${content}</div>` + bottomNavHtml;
+
+            // attach listeners
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const nav = btn.dataset.nav;
+                    if (nav) { currentScreen = nav; render(); }
+                });
+            });
+
+            const profileBtn = document.getElementById('profileBtn');
+            if (profileBtn) profileBtn.addEventListener('click', () => { currentScreen = 'settings'; render(); });
+
+            // modal listeners
+            document.getElementById('closePrivacy').onclick = () => document.getElementById('privacyModal').style.visibility = 'hidden';
+            document.getElementById('closeTerms').onclick = () => document.getElementById('termsModal').style.visibility = 'hidden';
+            window.addEventListener('click', (e) => { if(e.target.className==='modal-overlay') e.target.style.visibility='hidden'; });
+
+            // privacy/terms buttons
+            document.querySelectorAll('.open-privacy').forEach(b => b.addEventListener('click', () => document.getElementById('privacyModal').style.visibility = 'visible'));
+            document.querySelectorAll('.open-terms').forEach(b => b.addEventListener('click', () => document.getElementById('termsModal').style.visibility = 'visible'));
+
+            // theme toggle inside settings
+            if (currentScreen === 'settings') {
+                const toggle = document.getElementById('themeToggle');
+                if (toggle) {
+                    toggle.checked = darkMode;
+                    toggle.addEventListener('change', (e) => {
+                        darkMode = e.target.checked;
+                        if (darkMode) phone.classList.add('dark-mode');
+                        else phone.classList.remove('dark-mode');
+                        render();
+                    });
+                }
+            }
+
+            // "Get Started"
+            const getStarted = document.getElementById('getStartedBtn');
+            if (getStarted) getStarted.addEventListener('click', () => { currentScreen = 'home'; render(); });
+        }
+
+        function getHeaderTitle() {
+            const map = { 'onboarding': 'Welcome', 'home': 'Home', 'learn': 'Lessons', 'progress': 'Insights', 'settings': 'Settings' };
+            return map[currentScreen] || 'Daily Python';
+        }
+
+        // onboarding screen
+        function renderOnboarding() {
+            return `
+                <div style="margin-top: 20px; text-align: center;">
+                    <div class="logo-badge" style="justify-content:center;">
+                        <span class="logo-icon">${iconLesson()}</span>
+                        <span style="font-size: 32px; font-weight:700; color:var(--primary)">Daily Python</span>
+                    </div>
+                    <p style="font-size: 20px; font-weight:500; margin:10px 0 6px">learn to code, daily</p>
+                    <p style="color:var(--text-secondary); margin-bottom: 40px; padding:0 10px;">Bite-sized Python exercises, quizzes, and real‑world snippets. No setup, just learn.</p>
+                    <button class="btn-primary" id="getStartedBtn">Get Started</button>
+                    <div class="link-row">
+                        <button class="open-privacy">Privacy</button>
+                        <button class="open-terms">Terms</button>
+                    </div>
+                    <div style="margin-top: 30px; display: flex; gap:10px; justify-content:center; color:var(--icon-inactive);">
+                        <span>v2026.03</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // home dashboard
+        function renderHome() {
+            return `
+                <div class="card" style="display:flex; align-items:center; gap:14px;">
+                    <span>${iconPlay()}</span>
+                    <div><strong>Daily streak 12 days 🔥</strong><div class="progress-bar" style="width:180px;"><div class="progress-fill" style="width:70%"></div></div></div>
+                </div>
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between;"><span style="font-weight:600;">Continue learning</span><span class="badge">1/3</span></div>
+                    <div style="margin:16px 0 8px; background:var(--bg-primary); border-radius: 18px; padding:12px;"><strong>Variables & data types</strong> <span style="float:right;">75%</span><div class="progress-bar"><div class="progress-fill" style="width:75%"></div></div></div>
+                    <div style="margin:12px 0 0; background:var(--bg-primary); border-radius: 18px; padding:12px;"><strong>Lists & loops</strong> <span style="float:right;">30%</span><div class="progress-bar"><div class="progress-fill" style="width:30%"></div></div></div>
+                </div>
+                <div class="card">
+                    <div style="display:flex; gap:16px; align-items:center;">
+                        <span>${iconFlashcards()}</span>
+                        <span><strong>Today's challenge</strong><br> <span class="grey-text">Write a function that returns max of three</span></span>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="stat"><span>${iconChart()}</span><br> <span style="font-size:20px;">14</span> <span class="grey-text">lessons</span></div>
+                    <div class="stat"><span>${iconCheck()}</span><br> <span style="font-size:20px;">320</span> <span class="grey-text">XP today</span></div>
+                </div>
+            `;
+        }
+
+        // learn / practice
+        function renderLearn() {
+            return `
+                <div class="card" style="display:flex; align-items:center; gap:12px;">
+                    <span>${iconLesson()}</span><span><strong>Python basics</strong> 8 exercises</span>
+                </div>
+                <div class="card">
+                    <p><input type="radio" name="quiz"> What is the output of print(2**3)?</p>
+                    <p style="margin:12px 0;">▶️ 8</p>
+                    <button class="btn-primary" style="padding:12px; font-size:16px;" onclick="alert('Correct!')">Check answer</button>
+                </div>
+                <div class="card">
+                    <p style="font-weight:600;">Up next: Dictionaries</p>
+                    <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+                    <span class="grey-text">start to unlock 20XP</span>
+                </div>
+            `;
+        }
+
+        // progress
+        function renderProgress() {
+            return `
+                <div class="card"><strong>Weekly activity</strong> <span>${iconChart()}</span>
+                    <div style="height: 80px; display:flex; gap:6px; align-items:flex-end; margin: 15px 0;">
+                        <div style="background:var(--primary); width:20px; height:60px; border-radius:10px;"></div>
+                        <div style="background:var(--primary); width:20px; height:30px; border-radius:10px;"></div>
+                        <div style="background:var(--primary); width:20px; height:75px; border-radius:10px;"></div>
+                        <div style="background:var(--primary); width:20px; height:40px; border-radius:10px;"></div>
+                        <div style="background:var(--primary); width:20px; height:90px; border-radius:10px;"></div>
+                        <div style="background:var(--primary); width:20px; height:55px; border-radius:10px;"></div>
+                    </div>
+                </div>
+                <div class="card"><span>🏅 Achievements (3)</span> <br> <span class="badge">early bird</span> <span class="badge">list master</span></div>
+                <div class="card"><span>total lessons: 47</span><div class="progress-bar"><div class="progress-fill" style="width:47%"></div></div></div>
+            `;
+        }
+
+        // settings / profile
+        function renderSettings() {
+            return `
+                <div class="card">
+                    <div style="display:flex; gap:16px;"><span>${iconProfile()}</span> <span><strong>Alex Chen</strong><br>alex@daily.dev</span></div>
+                </div>
+                <div class="card" style="display: flex; justify-content: space-between;">
+                    <span>🌙 Dark mode</span>
+                    <label><input type="checkbox" id="themeToggle"></label>
+                </div>
+                <div class="card"><span>🔔 Notifications</span> <span class="grey-text">On</span></div>
+                <div class="card"><span>📊 Download my data</span></div>
+                <div style="text-align:center; margin-top: 20px;"><button class="open-privacy" style="background:none; border:none; color:var(--primary)">Privacy</button> • <button class="open-terms" style="background:none; border:none; color:var(--primary)">Terms</button></div>
+            `;
+        }
+
+        // screenshot capture (shift+W)
+        window.addEventListener('keydown', (e) => {
+            if (e.shiftKey && e.key === 'W') {
+                e.preventDefault();
+                const node = document.getElementById('phoneContainer');
+                import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js').then(() => {
+                    html2canvas(node, { scale: 2, backgroundColor: null }).then(canvas => {
+                        const link = document.createElement('a');
+                        let filename = (darkMode ? '6' : screenshotCounter) + '.png';
+                        link.download = filename;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        if (!darkMode) screenshotCounter = (screenshotCounter % 5) + 1;
+                    });
+                }).catch(() => alert('html2canvas not loaded, but you can still test.'));
+            }
+        });
+
+        // init
+        render();
+
+        // expose for inline onclick
+        window.alert = alert;
+    })();
+</script>
+</body>
+</html>
+```
+{"1.png":"Start Learning","2.png":"Daily Lessons","3.png":"Practice Skills","4.png":"Track Progress","5.png":"Smart Settings","6.png":"Dark Theme"}
+All done!
