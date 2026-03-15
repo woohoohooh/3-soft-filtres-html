@@ -1,0 +1,459 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nucleus • silent compute</title>
+  <!-- Feather icons (lightweight, outline) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* ----- RESET & BASE ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      background-color: #fafafa;
+      color: #111;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ----- TYPOGRAPHY & SPACING ----- */
+    section {
+      padding: 6rem 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-size: 2.2rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      color: #1e1e1e;
+    }
+
+    /* ----- HEADER / HERO (full screen, one line) ----- */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background-color: #fafafa;  /* fallback for canvas */
+      overflow: hidden;
+    }
+
+    /* canvas background (animated particles) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;  /* lets the arrow and headline be clickable */
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      width: 100%;
+      padding: 0 1rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 12vw, 6rem);
+      font-weight: 550;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: #181818;
+      white-space: nowrap;           /* force one line */
+      display: inline-block;
+      max-width: 100%;
+      overflow-x: auto;              /* on very tiny screens allow scroll instead of wrap */
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.1rem;        /* avoid cut off */
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #333;
+      opacity: 0.7;
+      transition: opacity 0.25s ease, transform 0.2s ease;
+      padding: 0.5rem;
+    }
+
+    .scroll-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    .scroll-down i {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.2;
+    }
+
+    /* ----- GRIDS & CARDS (monochrome minimal) ----- */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 3rem 2.5rem;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .feature-item, .step-item, .advantage-item, .use-case-item {
+      background: transparent;
+      padding: 1.2rem 0;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1.5rem;
+      color: #222;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 50%;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .icon-circle i {
+      width: 24px;
+      height: 24px;
+      stroke-width: 1.2;
+    }
+
+    .feature-item:hover .icon-circle,
+    .step-item:hover .icon-circle,
+    .advantage-item:hover .icon-circle,
+    .use-case-item:hover .icon-circle {
+      border-color: #888;
+      background: #f0f0f0;
+    }
+
+    h3 {
+      font-size: 1.6rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+      color: #1b1b1b;
+    }
+
+    p {
+      font-size: 1.1rem;
+      color: #3a3a3a;
+      max-width: 45ch;
+    }
+
+    /* CTA section */
+    .cta-box {
+      background-color: #1b1b1b;
+      color: #fff;
+      border-radius: 40px;
+      padding: 5rem 2rem;
+      text-align: center;
+    }
+
+    .cta-box h2 {
+      font-size: 3rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 2rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 1rem 3rem;
+      border-radius: 60px;
+      font-size: 1.3rem;
+      font-weight: 350;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .cta-button:hover {
+      background: #2a2a2a;
+      border-color: #fff;
+    }
+
+    /* reveal animations (on scroll) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsive */
+    @media (max-width: 800px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+      .section-title {
+        font-size: 2rem;
+      }
+      h3 { font-size: 1.5rem; }
+      .hero h1 {
+        white-space: nowrap;        /* still one line, but if screen too small: horizontal scroll (works) */
+        font-size: clamp(2.6rem, 10vw, 5rem);
+      }
+    }
+
+    @media (max-width: 480px) {
+      section { padding: 4rem 1.2rem; }
+      .cta-box { padding: 3rem 1rem; }
+      .cta-box h2 { font-size: 2.2rem; }
+    }
+
+    /* feather icons correct sizing */
+    i {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      stroke: currentColor;
+      fill: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO SECTION (full screen, one‑line headline, canvas background) -->
+  <header class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>syntropic intelligence</h1>   <!-- one line, no break -->
+    </div>
+    <button class="scroll-down" id="scrollDownBtn" aria-label="scroll down">
+      <i data-feather="chevron-down"></i>
+    </button>
+  </header>
+
+  <!-- SECTION 1 – Features / Benefits (monochrome icons) -->
+  <section class="features reveal">
+    <h2 class="section-title">Silent by design</h2>
+    <div class="grid-3">
+      <div class="feature-item">
+        <div class="icon-circle"><i data-feather="wind"></i></div>
+        <h3>Zero moving parts</h3>
+        <p>Conductive thermal diffusion without fans — absolute silence, even under full load.</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon-circle"><i data-feather="cpu"></i></div>
+        <h3>Monolithic core</h3>
+        <p>Unified memory architecture with near‑zero latency. No more bottlenecks.</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon-circle"><i data-feather="battery-charging"></i></div>
+        <h3>Exa‑efficient</h3>
+        <p>6W peak — runs for weeks on a single charge. Passive cooling included.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 – How it works (simple steps) -->
+  <section class="how-it-works reveal">
+    <h2 class="section-title">One flow</h2>
+    <div class="grid-2">
+      <div class="step-item">
+        <div class="icon-circle"><i data-feather="anchor"></i></div>
+        <h3>Attune</h3>
+        <p>Place Nucleus near your workspace. It senses presence and ambient light.</p>
+      </div>
+      <div class="step-item">
+        <div class="icon-circle"><i data-feather="droplet"></i></div>
+        <h3>Diffuse</h3>
+        <p>Computational load spreads across microscopic cores — no heat concentration.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 – Advantages (minimal outline icons) -->
+  <section class="advantages reveal">
+    <h2 class="section-title">Radical simplicity</h2>
+    <div class="grid-3">
+      <div class="advantage-item">
+        <div class="icon-circle"><i data-feather="layers"></i></div>
+        <h3>Stackless</h3>
+        <p>Hardware and software fused — no firmware, no bloat, just instant compute.</p>
+      </div>
+      <div class="advantage-item">
+        <div class="icon-circle"><i data-feather="eye"></i></div>
+        <h3>Glare‑free</h3>
+        <p>Matte e‑ink surface. Readable in direct sun, zero blue light emission.</p>
+      </div>
+      <div class="advantage-item">
+        <div class="icon-circle"><i data-feather="shield"></i></div>
+        <h3>Self‑healing</h3>
+        <p>Micro‑mesh restores from corruptions. No reboots, no interruptions.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 – Use cases -->
+  <section class="use-cases reveal">
+    <h2 class="section-title">Where it lives</h2>
+    <div class="grid-2">
+      <div class="use-case-item">
+        <div class="icon-circle"><i data-feather="compass"></i></div>
+        <h3>Deep focus</h3>
+        <p>Distraction‑free writing, analysis, or composition — the machine disappears.</p>
+      </div>
+      <div class="use-case-item">
+        <div class="icon-circle"><i data-feather="map"></i></div>
+        <h3>Field research</h3>
+        <p>Days off grid, from arid deserts to humid jungles. Sealed, dust‑proof, silent.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 – Call to action (monochrome, elegant) -->
+  <section class="cta reveal">
+    <div class="cta-box">
+      <h2>conscious computing</h2>
+      <a href="#" class="cta-button">Request access</a>
+    </div>
+  </section>
+
+  <script>
+    (function() {
+      feather.replace({ strokeWidth: 1.2 });
+
+      // ----- smooth scroll for down arrow -----
+      const scrollBtn = document.getElementById('scrollDownBtn');
+      if (scrollBtn) {
+        scrollBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          const firstSection = document.querySelector('.features');
+          if (firstSection) {
+            firstSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      }
+
+      // ----- canvas background (modern, subtle animated particles) -----
+      const canvas = document.getElementById('heroCanvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        const initParticles = () => {
+          const count = Math.min(60, Math.floor(width * 0.06));
+          particles = [];
+          for (let i = 0; i < count; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              radius: Math.random() * 2.2 + 0.8,
+              speedX: (Math.random() - 0.5) * 0.15,
+              speedY: (Math.random() - 0.5) * 0.1,
+              opacity: Math.random() * 0.4 + 0.1
+            });
+          }
+        };
+
+        const resizeCanvas = () => {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = width;
+          canvas.height = height;
+          initParticles();
+        };
+
+        const drawParticles = () => {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = '#181818';  // soft dark dots
+          for (let p of particles) {
+            ctx.globalAlpha = p.opacity * 0.6;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // update positions (very slow drift)
+          for (let p of particles) {
+            p.x += p.speedX;
+            p.y += p.speedY;
+
+            // wrap around softly
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+          }
+
+          requestAnimationFrame(drawParticles);
+        };
+
+        window.addEventListener('resize', () => {
+          resizeCanvas();
+        });
+
+        resizeCanvas();
+        drawParticles();
+      }
+
+      // ----- reveal on scroll (intersection observer) -----
+      const revealElements = document.querySelectorAll('.reveal');
+      if (revealElements.length > 0) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('revealed');
+              // optional: unobserve after reveal
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+        revealElements.forEach(el => observer.observe(el));
+      }
+
+      // small fix for feather icons after dynamic content (already replaced at top)
+    })();
+  </script>
+
+  <!-- feather replacement again for safety after canvas (canvas doesn't affect) -->
+  <script>
+    (function secondFeather() {
+      if (typeof feather !== 'undefined') feather.replace({ strokeWidth: 1.2 });
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

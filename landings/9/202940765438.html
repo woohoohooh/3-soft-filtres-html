@@ -1,0 +1,460 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nucleus · edge intelligence</title>
+  <!-- Feather icons (lightweight, outline, monochrome) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* ----- RESET & BASE ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: #f7f9fc;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #1a1e2b;
+      line-height: 1.4;
+    }
+
+    /* ----- TYPOGRAPHY & SPACING ----- */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      color: #0b0f17;
+    }
+
+    /* ----- HERO (one line, large, centered) ----- */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: transparent;
+      overflow: hidden;
+    }
+
+    /* canvas background (subtle animated particles) */
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      max-width: 1200px;
+      padding: 0 1.5rem;
+    }
+
+    .hero-content h1 {
+      font-size: clamp(3rem, 15vw, 7rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: #0c0f15;
+      white-space: nowrap;         /* force one line */
+    }
+
+    /* down arrow (feather) */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #2d3549;
+      opacity: 0.7;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      padding: 0.5rem;
+    }
+
+    .scroll-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    /* ----- cards / features grid ----- */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 3rem 2rem;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .feature-card, .step-card, .advantage-card, .use-card {
+      background: #ffffffd9;
+      backdrop-filter: blur(2px);
+      padding: 2.2rem 1.8rem;
+      border-radius: 2rem;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.02);
+      transition: transform 0.25s ease, box-shadow 0.3s ease;
+      border: 1px solid #eef2f6;
+    }
+
+    .feature-card:hover, .step-card:hover, .advantage-card:hover, .use-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 25px 40px -15px rgba(0, 20, 40, 0.12);
+      border-color: #d9e0e8;
+    }
+
+    /* icon styling (monochrome, outline, modern) */
+    .icon-wrapper {
+      margin-bottom: 1.8rem;
+      color: #1e263a;            /* dark monochrome */
+    }
+
+    .icon-wrapper i-feather {
+      width: 36px;
+      height: 36px;
+      stroke-width: 1.5;
+    }
+
+    h3 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      color: #334155;
+      font-weight: 400;
+    }
+
+    .large-text {
+      font-size: 1.3rem;
+    }
+
+    /* CTA section */
+    .cta-block {
+      background-color: #1a1f2e;
+      border-radius: 3rem;
+      padding: 4rem 3rem;
+      text-align: center;
+      color: white;
+    }
+
+    .cta-block h2 {
+      font-size: 3.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: white;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-button {
+      background: white;
+      border: none;
+      color: #1a1f2e;
+      font-size: 1.5rem;
+      font-weight: 500;
+      padding: 1rem 3.5rem;
+      border-radius: 4rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+      margin-top: 2rem;
+    }
+
+    .cta-button:hover {
+      background: #edf2f9;
+      transform: scale(1.02);
+    }
+
+    /* ----- reveal animation (intersection observer) ----- */
+    .reveal-item {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.8s cubic-bezier(0.15, 0.85, 0.25, 1), transform 0.8s cubic-bezier(0.15, 0.85, 0.25, 1);
+    }
+
+    .reveal-item.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsiveness */
+    @media (max-width: 800px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+      .hero-content h1 {
+        font-size: clamp(2.5rem, 12vw, 5.5rem);
+        white-space: nowrap;       /* keep one line even on mobile */
+      }
+      section {
+        padding: 4rem 1.5rem;
+      }
+      .section-title {
+        font-size: 2.2rem;
+        margin-bottom: 2rem;
+      }
+      .cta-block h2 {
+        font-size: 2.4rem;
+      }
+    }
+
+    /* extra fine tuning */
+    hr {
+      border: none;
+      border-top: 1px solid #e0e6ed;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* feather icons defaults */
+    i-feather {
+      stroke: currentColor;
+      fill: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO with animated canvas background (particle field) -->
+  <section class="hero" id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <h1>intelligence at the edge</h1>
+    </div>
+    <a class="scroll-down" id="scrollDownArrow" aria-label="scroll down">
+      <i data-feather="chevron-down" width="48" height="48"></i>
+    </a>
+  </section>
+
+  <!-- FEATURES / BENEFITS (section 1) -->
+  <section class="reveal-item">
+    <h2 class="section-title">unified inference · low latency</h2>
+    <div class="grid-2">
+      <div class="feature-card">
+        <div class="icon-wrapper"><i data-feather="cpu"></i></div>
+        <h3>neural processing</h3>
+        <p class="large-text">Dedicated AI accelerators reduce latency by 83% — real‑time decisions on device.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-wrapper"><i data-feather="lock"></i></div>
+        <h3>privacy first</h3>
+        <p class="large-text">All inferences stay local. Your data never leaves the edge node.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS (section 2) -->
+  <section class="reveal-item">
+    <h2 class="section-title">works in three steps</h2>
+    <div class="grid-3">
+      <div class="step-card">
+        <div class="icon-wrapper"><i data-feather="radio"></i></div>
+        <h3>1. ingest</h3>
+        <p>Connect any sensor stream — camera, LIDAR, audio — with minimal setup.</p>
+      </div>
+      <div class="step-card">
+        <div class="icon-wrapper"><i data-feather="zap"></i></div>
+        <h3>2. infer</h3>
+        <p>Run optimized models (TensorRT, CoreML, TFLite) at native hardware speed.</p>
+      </div>
+      <div class="step-card">
+        <div class="icon-wrapper"><i data-feather="trending-up"></i></div>
+        <h3>3. act</h3>
+        <p>Trigger actions or forward aggregated insights to the cloud.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADVANTAGES (section 3) -->
+  <section class="reveal-item">
+    <h2 class="section-title">built for scale</h2>
+    <div class="grid-2">
+      <div class="advantage-card">
+        <div class="icon-wrapper"><i data-feather="hard-drive"></i></div>
+        <h3>bandwidth‑smart</h3>
+        <p>Only 2 MB of model footprints. Reduce cloud egress by 95%.</p>
+      </div>
+      <div class="advantage-card">
+        <div class="icon-wrapper"><i data-feather="watch"></i></div>
+        <h3>sub‑10ms response</h3>
+        <p>Deterministic inference pipeline — even on congested networks.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES (section 4) -->
+  <section class="reveal-item">
+    <h2 class="section-title">where it works</h2>
+    <div class="grid-3">
+      <div class="use-card">
+        <div class="icon-wrapper"><i data-feather="package"></i></div>
+        <h3>smart logistics</h3>
+        <p>Real‑time package damage detection on sorting belts.</p>
+      </div>
+      <div class="use-card">
+        <div class="icon-wrapper"><i data-feather="activity"></i></div>
+        <h3>healthcare</h3>
+        <p>Vitals monitoring with instant alerting at the bedside.</p>
+      </div>
+      <div class="use-card">
+        <div class="icon-wrapper"><i data-feather="map"></i></div>
+        <h3>autonomous retail</h3>
+        <p>Inventory tracking without cloud dependency.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION (section 5) -->
+  <section class="reveal-item">
+    <div class="cta-block">
+      <h2>deploy at the edge<br>in one afternoon</h2>
+      <button class="cta-button" id="demoButton">get early access →</button>
+      <p style="color: #b7c0d0; margin-top: 2rem;">no credit card · fully private preview</p>
+    </div>
+  </section>
+
+  <script>
+    (function() {
+      feather.replace({ width: '1.5em', height: '1.5em', 'stroke-width': 1.5 });
+
+      // ----- SMOOTH SCROLL (down arrow) -----
+      const arrow = document.getElementById('scrollDownArrow');
+      if (arrow) {
+        arrow.addEventListener('click', (e) => {
+          e.preventDefault();
+          const sections = document.querySelectorAll('section');
+          if (sections.length > 1) {
+            // scroll to first section after hero
+            sections[1].scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      }
+
+      // ----- SUBTLE CANVAS BACKGROUND (hero particles) -----
+      const canvas = document.getElementById('hero-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function initParticles() {
+          const count = 65;
+          particles = [];
+          for (let i = 0; i < count; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              radius: Math.random() * 2.5 + 0.8,
+              speedX: (Math.random() - 0.5) * 0.25,
+              speedY: (Math.random() - 0.5) * 0.15,
+              alpha: Math.random() * 0.4 + 0.15,
+            });
+          }
+        }
+
+        function resizeCanvas() {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = width;
+          canvas.height = height;
+          initParticles();
+        }
+
+        function drawParticles() {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = '#2d3b52';   // very dark blueish gray, monochrome feel
+          for (let p of particles) {
+            ctx.globalAlpha = p.alpha * 0.5;   // extra subtle
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // slight movement
+          for (let p of particles) {
+            p.x += p.speedX;
+            p.y += p.speedY;
+
+            // wrap softly
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+          }
+
+          requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', () => {
+          resizeCanvas();
+        });
+
+        resizeCanvas();
+        drawParticles();
+      }
+
+      // ----- REVEAL ON SCROLL (Intersection Observer) -----
+      const revealItems = document.querySelectorAll('.reveal-item');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional: unobserve after reveal
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+
+      revealItems.forEach(item => observer.observe(item));
+
+      // small demo button interaction (just for feedback)
+      const demoBtn = document.getElementById('demoButton');
+      if (demoBtn) {
+        demoBtn.addEventListener('click', () => {
+          alert('✨ preview invite sent (demo) — thank you');
+        });
+      }
+
+      // feather replacement for any dynamic content (already called at top)
+    })();
+  </script>
+  <hr>
+  <!-- just a spacer line before final "All done!" – but we place it exactly at the end -->
+  <!-- and then the required final line -->
+  All done!
+</body>
+</html>
+```

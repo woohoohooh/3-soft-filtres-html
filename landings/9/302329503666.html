@@ -1,0 +1,526 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus • silent compute</title>
+  <style>
+    /* ---------- RESET & BASE ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: #f7f9fc;
+      color: #1b2b40;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* ---------- REVEAL ANIMATION (intersection observer) ---------- */
+    .reveal-section {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 1s cubic-bezier(0.15, 0.85, 0.25, 1), transform 1s cubic-bezier(0.15, 0.85, 0.25, 1);
+      will-change: opacity, transform;
+    }
+
+    .reveal-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ---------- TYPOGRAPHY ---------- */
+    h1 {
+      font-size: clamp(3.5rem, 15vw, 8rem);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: #0c1a2b;
+    }
+
+    h2 {
+      font-size: clamp(2.2rem, 7vw, 3.8rem);
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      color: #0c1a2b;
+    }
+
+    p {
+      font-size: 1.25rem;
+      color: #2c3f55;
+      max-width: 600px;
+      margin: 1.5rem 0;
+    }
+
+    /* ---------- HEADER / HERO SECTION ---------- */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background-color: #f7f9fc;
+      overflow: hidden;
+    }
+
+    /* canvas background (animated) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;  /* makes text clickable */
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      white-space: nowrap;
+      font-weight: 480;
+      color: #0a182a;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    /* down arrow */
+    .scroll-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 100%;
+      transition: opacity 0.2s ease, transform 0.3s ease;
+      color: #1b2b40;
+      opacity: 0.75;
+    }
+
+    .scroll-arrow:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(5px);
+    }
+
+    .scroll-arrow svg {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.5;
+    }
+
+    /* ---------- GENERAL SECTION STYLING ---------- */
+    .section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 7rem 2rem;
+    }
+
+    .section-compact {
+      padding: 5rem 2rem;
+    }
+
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 4rem 3rem;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2,1fr); }
+    .grid-3 { grid-template-columns: repeat(3,1fr); }
+
+    /* feature card */
+    .feature-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.25rem;
+    }
+
+    .feature-card .icon {
+      color: #1f3a5f;
+      transition: transform 0.2s ease;
+    }
+
+    .feature-card:hover .icon {
+      transform: scale(1.02);
+    }
+
+    .feature-card h3 {
+      font-size: 1.8rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      color: #0b1d31;
+    }
+
+    .feature-card p {
+      font-size: 1.2rem;
+      margin: 0;
+      color: #365573;
+    }
+
+    /* minimal monochrome icons via feather (lucide) */
+    .icon svg {
+      width: 48px;
+      height: 48px;
+      stroke: currentColor;
+      stroke-width: 1.2;
+      fill: none;
+    }
+
+    /* use cases – small inline icons */
+    .use-case-item {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .use-case-item .icon svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    .use-case-item span {
+      font-size: 1.6rem;
+      font-weight: 400;
+      color: #1e344c;
+    }
+
+    /* CTA */
+    .cta-box {
+      background-color: #eef2f6;
+      padding: 4rem 3rem;
+      border-radius: 32px;
+      text-align: center;
+      transition: background 0.2s;
+    }
+
+    .cta-box:hover {
+      background-color: #e9eef3;
+    }
+
+    .cta-button {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 1rem 3rem;
+      font-size: 1.4rem;
+      font-weight: 450;
+      background: #1b2b40;
+      color: white;
+      border-radius: 60px;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.2s;
+      border: none;
+      cursor: default; /* non interactive demo */
+    }
+
+    .cta-button:hover {
+      background: #0f1e2f;
+      transform: scale(0.98);
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @media (max-width: 800px) {
+      h1 { white-space: normal; font-size: clamp(3rem, 12vw, 5rem); } /* fallback if too narrow, but we keep nowrap */
+      .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 3rem; }
+      .section { padding: 5rem 1.5rem; }
+      .use-case-item span { font-size: 1.4rem; }
+      .cta-box { padding: 3rem 1.5rem; }
+    }
+
+    /* extra small screens — allow line break only as last resort (hero still one line) */
+    @media (max-width: 450px) {
+      .hero h1 { font-size: 3.2rem; white-space: normal; } /* fallback for very small */
+    }
+
+    /* spacing */
+    hr {
+      border: none;
+      border-top: 1px solid rgba(0,0,0,0.05);
+      margin: 2rem 0;
+    }
+
+    .text-center { text-align: center; }
+    .max-w-lg { max-width: 700px; margin-left: auto; margin-right: auto; }
+
+    /* footer line */
+    .footer-note {
+      text-align: center;
+      padding: 3rem 2rem 2rem;
+      color: #6c7f96;
+      border-top: 1px solid #e3e9f0;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO with canvas background -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>Silent infrastructure.</h1>
+    </div>
+    <a class="scroll-arrow" href="#features" aria-label="scroll down">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 4 4 4-4"/><path d="M12 8v8"/></svg>
+    </a>
+  </section>
+
+  <!-- FEATURES section (1) -->
+  <section id="features" class="section reveal-section">
+    <h2>Zero‑footprint · full control</h2>
+    <div class="grid-2">
+      <div class="feature-card">
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg></div>
+        <h3>Bare metal simplicity</h3>
+        <p>No orchestration layers — just raw performance, deployed in seconds.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+        <h3>Latency‑optimized</h3>
+        <p>Global edge network with sub‑millisecond jitter, designed for real‑time.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS (2) -->
+  <section class="section reveal-section">
+    <h2 class="text-center">How it works</h2>
+    <div class="grid-3" style="margin-top:2rem">
+      <div class="feature-card">
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M12 22V12"/><path d="M3.3 7 12 12l8.7-5"/></svg></div>
+        <h3>Declare</h3>
+        <p>Simple JSON or API call — your infrastructure becomes code.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></div>
+        <h3>Deploy</h3>
+        <p>Global rollout in under 3 seconds, with automatic TLS and DNS.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01"/><path d="M7 20h.01"/><path d="M12 20h.01"/><path d="M17 20h.01"/><path d="M22 20h.01"/><path d="M2 4h.01"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/><path d="M22 4h.01"/></svg></div>
+        <h3>Observe</h3>
+        <p>Real‑time metrics & logs, no agents required.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADVANTAGES (3) -->
+  <section class="section reveal-section">
+    <h2>Why teams switch</h2>
+    <div class="grid-2">
+      <div class="feature-card">
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
+        <h3>40% lower total cost</h3>
+        <p>No hidden fees, no egress charges — pay only for what you use.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div>
+        <h3>Unified control plane</h3>
+        <p>Manage containers, VMs and functions from one API.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES (4) -->
+  <section class="section reveal-section">
+    <h2>Use cases</h2>
+    <div style="max-width: 800px;">
+      <div class="use-case-item">
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M8 10h8"/><path d="M8 14h6"/></svg></div>
+        <span>High‑frequency trading backends</span>
+      </div>
+      <div class="use-case-item">
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M5 5l14 14"/></svg></div>
+        <span>Real‑time multiplayer game sync</span>
+      </div>
+      <div class="use-case-item">
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg></div>
+        <span>AI inference at the edge</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION (5) -->
+  <section class="section-compact reveal-section">
+    <div class="cta-box max-w-lg">
+      <h2 style="margin-bottom:1rem">Built for the relentless.</h2>
+      <p style="margin:0 auto">Start free — $200 credits, no card required.</p>
+      <span class="cta-button">Claim your environment</span>
+    </div>
+  </section>
+
+  <div class="footer-note">
+    <span>© silent infrastructure · nexus</span>
+  </div>
+
+  <!-- JavaScript: canvas animation + intersection observer -->
+  <script>
+    (function() {
+      // ---------- canvas background (elegant moving mesh) ----------
+      const canvas = document.getElementById('heroCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let points = [];
+      const NUMBER_OF_POINTS = 8;
+      let mouseX = null, mouseY = null;
+      let time = 0;
+
+      function initPoints() {
+        points = [];
+        for (let i = 0; i < NUMBER_OF_POINTS; i++) {
+          points.push({
+            x: Math.random(),
+            y: Math.random(),
+            vx: (Math.random() - 0.5) * 0.002,
+            vy: (Math.random() - 0.5) * 0.002,
+            baseX: Math.random(),
+            baseY: Math.random(),
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function updatePoints() {
+        time += 0.001;
+        // gentle drift + subtle mouse influence
+        points.forEach(p => {
+          // natural drift
+          p.x += p.vx;
+          p.y += p.vy;
+
+          // wrap softly
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          // mouse attraction if inside canvas (very subtle)
+          if (mouseX !== null && mouseY !== null) {
+            let dx = (mouseX / width) - p.x;
+            let dy = (mouseY / height) - p.y;
+            let dist = Math.hypot(dx, dy);
+            if (dist < 0.3) {
+              p.x += dx * 0.0008;
+              p.y += dy * 0.0008;
+            }
+          }
+        });
+      }
+
+      function draw() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+
+        // draw very light connecting lines
+        ctx.strokeStyle = '#9bb7d4';
+        ctx.lineWidth = 1.2;
+        for (let i = 0; i < points.length; i++) {
+          for (let j = i + 1; j < points.length; j++) {
+            const p1 = points[i];
+            const p2 = points[j];
+            const x1 = p1.x * width;
+            const y1 = p1.y * height;
+            const x2 = p2.x * width;
+            const y2 = p2.y * height;
+            const dist = Math.hypot(x2 - x1, y2 - y1);
+            if (dist < Math.min(width, height) * 0.45) {
+              ctx.globalAlpha = 0.18 * (1 - dist / (Math.min(width, height) * 0.5));
+              ctx.beginPath();
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x2, y2);
+              ctx.stroke();
+            }
+          }
+        }
+
+        // draw subtle dots
+        ctx.fillStyle = '#3d5e7f';
+        points.forEach(p => {
+          ctx.globalAlpha = 0.4;
+          ctx.beginPath();
+          ctx.arc(p.x * width, p.y * height, 3, 0, 2 * Math.PI);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+      }
+
+      function animate() {
+        if (!canvas.isConnected) return;
+        updatePoints();
+        draw();
+        requestAnimationFrame(animate);
+      }
+
+      function onMouseMove(e) {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+      }
+
+      function onMouseLeave() {
+        mouseX = null;
+        mouseY = null;
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      canvas.addEventListener('mousemove', onMouseMove);
+      canvas.addEventListener('mouseleave', onMouseLeave);
+
+      initPoints();
+      resizeCanvas();
+      animate();
+
+      // ---------- intersection observer (reveal sections) ----------
+      const sections = document.querySelectorAll('.reveal-section');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+      sections.forEach(section => observer.observe(section));
+
+      // manual smooth scroll for arrow (already uses href="#features")
+      // just prevent default if needed – but default is fine.
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

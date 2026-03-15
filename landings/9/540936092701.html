@@ -1,0 +1,495 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>axiom • ambient compute</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f6f5f3;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1a1e24;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* ---- hero section ---- */
+    .hero {
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-color: #f6f5f3;
+    }
+
+    /* canvas — subtle animated background */
+    #bgCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      padding: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 15vw, 8rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #1a1e24;
+      line-height: 1.1;
+      white-space: nowrap;         /* forces single line */
+      text-transform: none;
+      margin: 0;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* down arrow – minimal */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #1a1e24;
+      transition: opacity 0.2s ease;
+      padding: 0.5rem;
+    }
+    .scroll-down:hover {
+      opacity: 0.55;
+    }
+    .scroll-down i {
+      width: 36px;
+      height: 36px;
+      stroke-width: 1.5;
+    }
+
+    /* ----- shared section style ----- */
+    .section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+      border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+    .section:last-of-type {
+      border-bottom: none;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 4rem;
+      color: #1a1e24;
+    }
+
+    /* layout grid */
+    .grid-3, .grid-2 {
+      display: grid;
+      gap: 3rem 4rem;
+    }
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* cards / feature blocks */
+    .feature-card {
+      background: transparent;
+      padding: 0;
+    }
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.8rem;
+      color: #1a1e24;
+    }
+    .icon-circle i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.2;
+    }
+    .feature-card h3 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+    .feature-card p {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      color: #3d4148;
+      max-width: 38ch;
+    }
+
+    /* subtle reveal on scroll (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* modern hover */
+    .feature-card {
+      transition: transform 0.25s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+    }
+
+    /* CTA section */
+    .cta-block {
+      text-align: center;
+      padding: 3rem 2rem 2rem;
+    }
+    .cta-block h2 {
+      font-size: 3.2rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 2.2rem;
+    }
+    .cta-button {
+      display: inline-block;
+      background: #1a1e24;
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 450;
+      padding: 1.1rem 3.5rem;
+      border-radius: 48px;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+    }
+    .cta-button:hover {
+      background: #2b313b;
+      transform: scale(1.02);
+    }
+
+    /* responsiveness */
+    @media (max-width: 800px) {
+      .hero h1 {
+        font-size: clamp(2.8rem, 12vw, 5rem);
+      }
+      .section {
+        padding: 4rem 1.5rem;
+      }
+      .section-title {
+        font-size: 2.4rem;
+        margin-bottom: 2.5rem;
+      }
+      .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+      .feature-card p {
+        max-width: 100%;
+      }
+      .cta-block h2 {
+        font-size: 2.4rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 {
+        font-size: clamp(2.4rem, 10vw, 3.8rem);
+      }
+    }
+
+    /* feather icons custom (outline, monochrome) */
+    i {
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* down arrow animation (subtle bounce) */
+    @keyframes soft-bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(5px); }
+    }
+    .scroll-down {
+      animation: soft-bounce 3s infinite ease-in-out;
+    }
+
+    /* no extra decorations */
+    hr {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO (single line headline) -->
+  <section class="hero" id="top">
+    <canvas id="bgCanvas"></canvas>
+    <div class="hero-content">
+      <h1>ambient compute</h1>
+    </div>
+    <button class="scroll-down" id="scrollToNext" aria-label="scroll down">
+      <i data-lucide="chevron-down"></i>
+    </button>
+  </section>
+
+  <!-- section 1 – Features / benefits -->
+  <section class="section reveal" id="features">
+    <h2 class="section-title">unobtrusive · intelligent</h2>
+    <div class="grid-3">
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="eye-off"></i></span>
+        <h3>zero friction</h3>
+        <p>no screens, no wearables — your space becomes the interface.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="radio"></i></span>
+        <h3>ambient link</h3>
+        <p>ultra‑wideband mesh follows you from room to room.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="cpu"></i></span>
+        <h3>edge native</h3>
+        <p>all inference runs locally on dedicated tensor cores.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 – How it works -->
+  <section class="section reveal" id="how-it-works">
+    <h2 class="section-title">whisper‑thin logic</h2>
+    <div class="grid-2">
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="waves"></i></span>
+        <h3>1. spatial sense</h3>
+        <p>tiny micro‑doppler radar maps presence without cameras.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="shapes"></i></span>
+        <h3>2. intent prediction</h3>
+        <p>lightweight transformer anticipates your next action.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="waypoints"></i></span>
+        <h3>3. adaptive response</h3>
+        <p>devices adjust — light, sound, climate — silently.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="circle-fading-plus"></i></span>
+        <h3>4. you forget</h3>
+        <p>technology recedes, comfort stays.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3 – Advantages (different angle) -->
+  <section class="section reveal" id="advantages">
+    <h2 class="section-title">beyond smart</h2>
+    <div class="grid-3">
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="battery-charging"></i></span>
+        <h3>years, not days</h3>
+        <p>coin cells last 24 months — no charging ritual.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="shield"></i></span>
+        <h3>private by design</h3>
+        <p>everything encrypted, no cloud, no voice data.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="ruler"></i></span>
+        <h3>retrofit minimal</h3>
+        <p>stickers, pucks, threads — nothing permanent.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4 – Use cases -->
+  <section class="section reveal" id="use-cases">
+    <h2 class="section-title">already living</h2>
+    <div class="grid-2">
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="book-open"></i></span>
+        <h3>deep work</h3>
+        <p>desk lights follow your focus, distraction‑free zone.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="moon"></i></span>
+        <h3>sleep sanctuary</h3>
+        <p>temperature drifts with your circadian phase.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="music"></i></span>
+        <h3>invisible audio</h3>
+        <p>music follows you — no headphones, no speakers you see.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><i data-lucide="footprints"></i></span>
+        <h3>elder care</h3>
+        <p>subtle alerts if movement deviates, no cameras.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 – Call to action -->
+  <section class="section reveal" id="cta">
+    <div class="cta-block">
+      <h2>silence is the new luxury</h2>
+      <a href="#" class="cta-button">reserve whisper unit</a>
+      <p style="margin-top: 2rem; font-size: 1rem; color: #5e636b;">first batch ships Q4 2025</p>
+    </div>
+  </section>
+
+  <script>
+    (function() {
+      // --- canvas animation (subtle wave / grain + moving dots) ---
+      const canvas = document.getElementById('bgCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        particles = [];
+        const count = 40;
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            vx: (Math.random() - 0.5) * 0.002,
+            vy: (Math.random() - 0.5) * 0.0015,
+            baseRadius: Math.random() * 2.5 + 1.2,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#1a1e24';
+        
+        for (let p of particles) {
+          // update position
+          p.x += p.vx;
+          p.y += p.vy;
+
+          // wrap around gently
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          const xPos = p.x * width;
+          const yPos = p.y * height;
+          const radius = p.baseRadius * (0.8 + 0.4 * Math.sin(Date.now() * 0.002 + p.x * 10)); // micro pulse
+
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, radius, 0, Math.PI * 2);
+          ctx.globalAlpha = 0.12;
+          ctx.fillStyle = '#2e3b4e';
+          ctx.fill();
+        }
+
+        // additional very faint horizontal lines (like static)
+        ctx.strokeStyle = '#9aa6b5';
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.1;
+        for (let i = 0; i < 5; i++) {
+          const y = (height * 0.2) + (i * height * 0.15) + Math.sin(Date.now() * 0.001 + i) * 6;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1.0;
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // --- smooth scroll: down arrow ---
+      document.getElementById('scrollToNext').addEventListener('click', () => {
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // --- reveal animation (intersection observer) ---
+      const reveals = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          } else {
+            // optional: remove class if you want to re-hide, but keep visible for elegance
+            // entry.target.classList.remove('visible'); // (commented – stays visible)
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -60px 0px' });
+
+      reveals.forEach(r => observer.observe(r));
+
+      // --- Lucide icons replace ---
+      lucide.createIcons();
+    })();
+  </script>
+
+  <!-- ensure icons in dynamic canvas don't interfere, and static icons replaced -->
+  <script>
+    (function secondPass() {
+      // re-run lucide for safety (dynamic content already static)
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

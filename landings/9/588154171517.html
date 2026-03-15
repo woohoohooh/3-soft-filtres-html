@@ -1,0 +1,523 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helix · silent compute</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f6f7f9;
+      font-family: system-ui, -apple-system, 'Inter', 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      color: #111213;
+      line-height: 1.3;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* sections base */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    /* hero */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 2rem;
+    }
+
+    /* canvas – animated background */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 12vw, 6.5rem);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      color: #111213;
+      text-align: center;
+      white-space: nowrap;
+      max-width: 100%;
+      padding: 0 0.5rem;
+      line-height: 1.1;
+      background: rgba(255,255,255,0.45);
+      backdrop-filter: blur(2px);
+      display: inline-block;
+      border-radius: 2rem;
+      padding: 0.2em 1em;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #1e1e24;
+      transition: opacity 0.2s ease, transform 0.25s ease;
+      opacity: 0.7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .scroll-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    .scroll-down i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.2;
+    }
+
+    /* section headers */
+    .section-header {
+      margin-bottom: 4rem;
+    }
+
+    .section-header h2 {
+      font-size: 3.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #111213;
+    }
+
+    @media (max-width: 640px) {
+      section { padding: 4rem 1.5rem; }
+      .section-header h2 { font-size: 2.5rem; }
+    }
+
+    /* cards grid */
+    .grid-3, .grid-2 {
+      display: grid;
+      gap: 3rem;
+    }
+
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+    @media (max-width: 800px) {
+      .grid-3, .grid-2 { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+
+    .feature-card, .step-card, .advantage-card, .case-card {
+      background: transparent;
+      padding: 1.2rem 0;
+    }
+
+    .icon-circle {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 1.5rem;
+    }
+
+    .icon-circle i {
+      width: 48px;
+      height: 48px;
+      stroke: #1a1c1e;
+      stroke-width: 1.2;
+      color: #1a1c1e;
+      transition: stroke 0.2s ease, transform 0.2s ease;
+    }
+
+    .feature-card:hover i, .step-card:hover i, .advantage-card:hover i, .case-card:hover i {
+      transform: scale(1.02);
+      stroke: #2f3a48;
+    }
+
+    h3 {
+      font-size: 2rem;
+      font-weight: 540;
+      letter-spacing: -0.02em;
+      margin: 0.75rem 0 1rem;
+    }
+
+    p {
+      font-size: 1.3rem;
+      line-height: 1.5;
+      color: #2e3338;
+      max-width: 65ch;
+      font-weight: 380;
+    }
+
+    .card-text {
+      font-size: 1.25rem;
+    }
+
+    /* how it works – numbered */
+    .step-card h3::before {
+      content: "—";
+      display: inline-block;
+      font-weight: 300;
+      letter-spacing: -0.1rem;
+      margin-right: 0.5rem;
+      color: #7b8a9b;
+    }
+
+    /* CTA */
+    .cta-section {
+      background: #ffffff;
+      border-radius: 2rem;
+      margin: 2rem 2rem 4rem;
+      padding: 5rem 3rem;
+      text-align: center;
+      box-shadow: 0 15px 35px -15px rgba(0,0,0,0.02);
+      border: 1px solid #e2e6ec;
+    }
+
+    .cta-section h2 {
+      font-size: 4rem;
+      font-weight: 580;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-button {
+      background: #111213;
+      border: none;
+      color: white;
+      font-size: 1.6rem;
+      padding: 1rem 3.5rem;
+      border-radius: 60px;
+      font-weight: 470;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      margin-top: 2rem;
+      display: inline-block;
+      border: 1px solid #111213;
+    }
+
+    .cta-button:hover {
+      background: #2d2f33;
+      transform: scale(0.98);
+    }
+
+    /* reveal animations (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.75s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.75s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    hr {
+      border: 0;
+      border-top: 1px solid #d8dde5;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* feather icons custom overrides */
+    i[data-lucide] {
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* no extra colors */
+    .advantage-card, .case-card {
+      border-left: 2px solid #d5dbe3;
+      padding-left: 1.8rem;
+    }
+
+    @media (max-width: 640px) {
+      .hero h1 { white-space: normal; } /* fallback for very narrow, but stays one line on most */
+      .hero h1 { white-space: nowrap; font-size: clamp(2.2rem, 8vw, 5rem); }
+    }
+
+    /* tiny one‑line insurance */
+    @media (max-width: 420px) {
+      .hero h1 { white-space: normal; } /* only extreme edge */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO (full screen, one‑line headline) -->
+  <section class="hero" id="top">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1 class="hero-headline">Helix · ambient compute</h1>
+    </div>
+    <a href="#features" class="scroll-down" id="downArrow">
+      <i data-lucide="arrow-down-circle"></i>
+    </a>
+  </section>
+
+  <!-- FEATURES / BENEFITS -->
+  <section id="features" class="reveal">
+    <div class="section-header">
+      <h2>whisper‑thin core</h2>
+    </div>
+    <div class="grid-3">
+      <div class="feature-card">
+        <div class="icon-circle"><i data-lucide="cpu"></i></div>
+        <h3>neural engine</h3>
+        <p class="card-text">In‑sensor inference, zero latency. Your data never leaves the edge.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-lucide="battery-charging"></i></div>
+        <h3>months on a coin</h3>
+        <p class="card-text">0.3W typical — run for seasons. No fans, no noise, no heat.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-lucide="cloud-off"></i></div>
+        <h3>off‑by‑default</h3>
+        <p class="card-text">Mesh sync, no cloud required. End‑to‑end noise‑proof fabric.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS (simple 3 steps) -->
+  <section class="reveal">
+    <div class="section-header">
+      <h2>silent flow</h2>
+    </div>
+    <div class="grid-3">
+      <div class="step-card">
+        <div class="icon-circle"><i data-lucide="radio"></i></div>
+        <h3>whisper wake</h3>
+        <p>Always‑listening, 8µW keyword spot. No cloud, no recording.</p>
+      </div>
+      <div class="step-card">
+        <div class="icon-circle"><i data-lucide="waypoints"></i></div>
+        <h3>local intent</h3>
+        <p>On‑device transformer parses meaning — 12ms, 50mW.</p>
+      </div>
+      <div class="step-card">
+        <div class="icon-circle"><i data-lucide="sparkles"></i></div>
+        <h3>ambient action</h3>
+        <p>Haptics, light, or mesh — the room shifts without screens.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADVANTAGES (2‑column) -->
+  <section class="reveal">
+    <div class="section-header">
+      <h2>beyond smart</h2>
+    </div>
+    <div class="grid-2">
+      <div class="advantage-card">
+        <div class="icon-circle"><i data-lucide="eye-off"></i></div>
+        <h3>zero telemetry</h3>
+        <p class="card-text">No behavioural data leaves your space. No profiles, no tracking.</p>
+      </div>
+      <div class="advantage-card">
+        <div class="icon-circle"><i data-lucide="antenna"></i></div>
+        <h3>sub‑GHz mesh</h3>
+        <p class="card-text">Concrete‑penetrating, 2km open field. resilient like trees.</p>
+      </div>
+      <div class="advantage-card">
+        <div class="icon-circle"><i data-lucide="fingerprint"></i></div>
+        <h3>ceramic package</h3>
+        <p class="card-text">Molded silicon, inert. No rare earths, fully recyclable.</p>
+      </div>
+      <div class="advantage-card">
+        <div class="icon-circle"><i data-lucide="infinity"></i></div>
+        <h3>air‑upgradable</h3>
+        <p class="card-text">Signed, post‑quantum firmware. Your hardware never obsolete.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES (2‑column) -->
+  <section class="reveal">
+    <div class="section-header">
+      <h2>in the wild</h2>
+    </div>
+    <div class="grid-2">
+      <div class="case-card">
+        <div class="icon-circle"><i data-lucide="trees"></i></div>
+        <h3>ancient forests</h3>
+        <p>Poacher detection by footfall. Solar mesh, zero maintenance.</p>
+      </div>
+      <div class="case-card">
+        <div class="icon-circle"><i data-lucide="factory"></i></div>
+        <h3>quiet factories</h3>
+        <p>Machine vibration & temp – no EMI, no cables, 10‑year nodes.</p>
+      </div>
+      <div class="case-card">
+        <div class="icon-circle"><i data-lucide="home"></i></div>
+        <h3>deep retrofit</h3>
+        <p>Stick on any wall, presence & air quality, off‑grid aware.</p>
+      </div>
+      <div class="case-card">
+        <div class="icon-circle"><i data-lucide="backpack"></i></div>
+        <h3>solo expeditions</h3>
+        <p>Sat‑backed emergency mesh. 150g base, weeks of autonomy.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION (separate, clean) -->
+  <div class="cta-section reveal">
+    <h2>design the invisible</h2>
+    <p style="font-size: 1.8rem; max-width: 700px; margin: 0 auto;">developer kits shipping now · zero‑cloud by design</p>
+    <button class="cta-button">order silent hardware</button>
+  </div>
+
+  <script>
+    (function() {
+      // === canvas background (subtle animated particles) ===
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 45;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            size: 0.6 + Math.random() * 2.2,
+            speedX: (Math.random() - 0.5) * 0.0025,
+            speedY: (Math.random() - 0.5) * 0.0025,
+            opacity: 0.08 + Math.random() * 0.15
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#8d9cae'; // monochrome grey-blue
+        for (let p of particles) {
+          ctx.globalAlpha = p.opacity;
+          ctx.beginPath();
+          ctx.arc(p.x * width, p.y * height, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // faint connecting lines between close particles (elegant)
+        ctx.globalAlpha = 0.05;
+        ctx.strokeStyle = '#5b6f84';
+        ctx.lineWidth = 0.8;
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const p1 = particles[i], p2 = particles[j];
+            const dx = (p1.x - p2.x) * width;
+            const dy = (p1.y - p2.y) * height;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 140) {
+              ctx.beginPath();
+              ctx.moveTo(p1.x * width, p1.y * height);
+              ctx.lineTo(p2.x * width, p2.y * height);
+              ctx.strokeStyle = '#70879b';
+              ctx.globalAlpha = 0.025 * (1 - dist/180);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.globalAlpha = 1.0;
+      }
+
+      function updateParticles() {
+        for (let p of particles) {
+          p.x += p.speedX;
+          p.y += p.speedY;
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+        }
+        drawParticles();
+        requestAnimationFrame(updateParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        drawParticles();
+      });
+
+      initParticles();
+      resizeCanvas();
+      drawParticles();
+      requestAnimationFrame(updateParticles);
+
+      // === smooth scroll to next (down arrow) ===
+      document.getElementById('downArrow').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // === lucide icons ===
+      lucide.createIcons();
+
+      // === reveal on scroll (intersection observer) ===
+      const reveals = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+      reveals.forEach(el => observer.observe(el));
+    })();
+  </script>
+
+  <!-- subtle horizontal rule before footer (clean separation) -->
+  <hr>
+  <footer style="text-align: center; padding: 2.5rem; color: #5b687a; font-size: 1rem; font-weight: 350;">
+    Helix · silent infrastructure
+  </footer>
+</body>
+</html>
+All done!
+```

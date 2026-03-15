@@ -1,0 +1,496 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helix · Edge compute</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f6f8fa;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #1a1e24;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* particle canvas background */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* sections */
+    .hero, .section {
+      position: relative;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: transparent;
+      z-index: 2;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 14vw, 7rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #111419;
+      white-space: nowrap;
+      margin: 0;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .down-arrow {
+      position: absolute;
+      bottom: 2.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #2f3a46;
+      transition: opacity 0.2s, transform 0.25s ease;
+      padding: 0.8rem;
+      line-height: 0;
+      border-radius: 100px;
+    }
+    .down-arrow:hover {
+      opacity: 0.55;
+      transform: translateX(-50%) translateY(4px);
+    }
+    .down-arrow svg {
+      width: 36px;
+      height: 36px;
+      stroke-width: 1.5;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* general section styling */
+    .section {
+      padding-top: 6rem;
+      padding-bottom: 7rem;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.9s cubic-bezier(0.15, 0.85, 0.25, 1), transform 0.9s cubic-bezier(0.15, 0.85, 0.25, 1);
+    }
+    .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section-header {
+      margin-bottom: 3.5rem;
+    }
+    .section-header h2 {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #1b212a;
+      line-height: 1.2;
+    }
+    .section-header p {
+      font-size: 1.4rem;
+      color: #5b6878;
+      max-width: 560px;
+      margin-top: 1rem;
+    }
+
+    /* card / grid layouts */
+    .grid-3, .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 3.5rem 2.5rem;
+    }
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .card {
+      background: transparent;
+    }
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 8px 18px -6px rgba(0,20,40,0.08), 0 2px 4px rgba(0,0,0,0.02);
+      margin-bottom: 1.5rem;
+      color: #1e2b39;
+      transition: transform 0.2s, box-shadow 0.25s;
+    }
+    .card:hover .icon-circle {
+      transform: scale(1.02);
+      box-shadow: 0 14px 24px -10px rgba(20,40,70,0.12);
+    }
+    .icon-circle svg {
+      width: 28px;
+      height: 28px;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      fill: none;
+    }
+
+    .card h3 {
+      font-size: 1.9rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .card p {
+      font-size: 1.2rem;
+      color: #3b4757;
+      max-width: 380px;
+    }
+
+    .use-case-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3rem 2rem;
+      margin-top: 2rem;
+    }
+    .use-case-item {
+      flex: 1 1 240px;
+    }
+
+    /* cta section */
+    .cta-block {
+      background: #ffffff;
+      border-radius: 32px;
+      padding: 4rem 3.5rem;
+      box-shadow: 0 30px 50px -30px rgba(0,30,60,0.2);
+      text-align: center;
+    }
+    .cta-block h2 {
+      font-size: 3.2rem;
+      font-weight: 450;
+      margin-bottom: 1.25rem;
+    }
+    .cta-button {
+      display: inline-block;
+      background: #1e2b39;
+      color: white;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1.5rem;
+      font-weight: 450;
+      border-radius: 60px;
+      cursor: default;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-top: 1.2rem;
+      text-decoration: none;
+    }
+    .cta-button:hover {
+      background: #2d3f51;
+      transform: scale(1.02);
+    }
+
+    /* responsive */
+    @media (max-width: 720px) {
+      .hero h1 {
+        font-size: 15vw;
+        white-space: normal;    /* fallback for very narrow, but stays one line if possible */
+      }
+      .section-header h2 {
+        font-size: 2.4rem;
+      }
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .cta-block {
+        padding: 2.5rem 1.5rem;
+      }
+      .cta-block h2 {
+        font-size: 2.4rem;
+      }
+    }
+
+    /* feather replacement (local inline avoids external) */
+    .icon {
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid rgba(0,0,0,0.05);
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    footer {
+      text-align: center;
+      color: #a1b2c3;
+      padding: 3rem 1.5rem 4rem;
+      font-size: 1rem;
+    }
+
+    /* prevent blue flash */
+    a, button {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- hero with canvas animation -->
+  <div style="position: relative; background: #f6f8fa;">
+    <canvas id="heroCanvas"></canvas>
+    <section class="hero">
+      <div class="hero-content">
+        <h1>Edge that evolves.</h1>
+      </div>
+      <a class="down-arrow" href="#start" id="scrollDownBtn" aria-label="scroll down">
+        <svg viewBox="0 0 24 24" width="36" height="36">
+          <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="1.8" fill="none"/>
+        </svg>
+      </a>
+    </section>
+  </div>
+
+  <!-- first anchor -->
+  <span id="start" style="display: block; height: 0;"></span>
+
+  <!-- section 1 - features / benefits -->
+  <section class="section" id="features">
+    <div class="section-header">
+      <h2>Low latency, high trust.</h2>
+      <p>Designed for the next billion requests — minimal infrastructure, maximum velocity.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="icon-circle">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h3>Sub‑10ms</h3>
+        <p>Global network with local response times. No cold starts.</p>
+      </div>
+      <div class="card">
+        <div class="icon-circle">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h3>Zero‑trust</h3>
+        <p>Every request verified at the edge. Built‑in DDoS mitigation.</p>
+      </div>
+      <div class="card">
+        <div class="icon-circle">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Simple pricing</h3>
+        <p>Flat per‑request cost. No surprise bandwidth fees.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 - how it works (minimal steps) -->
+  <section class="section" id="how-it-works">
+    <div class="section-header">
+      <h2>Deploy in one command.</h2>
+      <p>From local to global — without changing your code.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="icon-circle"><svg class="icon" viewBox="0 0 24 24"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"/></svg></div>
+        <h3>1. Connect</h3>
+        <p>Link your git repo or upload a folder. Auto‑detects runtime.</p>
+      </div>
+      <div class="card">
+        <div class="icon-circle"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></div>
+        <h3>2. Preview</h3>
+        <p>Instant preview URL with every commit. Share with teammates.</p>
+      </div>
+      <div class="card">
+        <div class="icon-circle"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        <h3>3. Go live</h3>
+        <p>Promote to edge in one click. Global in <2 seconds.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3 - advantages (clean grid with icons) -->
+  <section class="section" id="advantages">
+    <div class="section-header">
+      <h2>Why developers choose Helix</h2>
+      <p>No lock‑in, just fast.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="icon-circle"><svg class="icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-2.17 2.17a4 4 0 0 1-5.66 0L9 12 3 6"/><path d="M15 6l3 3"/></svg></div>
+        <h3>Multi‑cloud mesh</h3>
+        <p>Runs on AWS, GCP, and Azure — you control the exit.</p>
+      </div>
+      <div class="card">
+        <div class="icon-circle"><svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <h3>Real‑time analytics</h3>
+        <p>See every request, error, and cold start in one dashboard.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4 - use cases (three minimal outline) -->
+  <section class="section" id="use-cases">
+    <div class="section-header">
+      <h2>Built for modern apps</h2>
+      <p>Used by inference engines, e‑commerce, and APIs.</p>
+    </div>
+    <div class="use-case-row">
+      <div class="card use-case-item">
+        <div class="icon-circle"><svg class="icon" viewBox="0 0 24 24"><path d="M2 20h.01"/><path d="M7 20h.01"/><path d="M12 20h.01"/><path d="M17 20h.01"/><path d="M22 20h.01"/><rect x="2" y="6" width="20" height="8" rx="1"/></svg></div>
+        <h3>AI inference</h3>
+        <p>Run lightweight models within 5 ms of your user.</p>
+      </div>
+      <div class="card use-case-item">
+        <div class="icon-circle"><svg class="icon" viewBox="0 0 24 24"><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/><path d="M4 12h2"/><path d="M18 12h2"/></svg></div>
+        <h3>API composition</h3>
+        <p>Aggregate backends at the edge — no middleware.</p>
+      </div>
+      <div class="card use-case-item">
+        <div class="icon-circle"><svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg></div>
+        <h3>Personalisation</h3>
+        <p>Server‑side rendering with per‑user variants.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 - call to action (clean) -->
+  <section class="section" id="cta">
+    <div class="cta-block">
+      <h2>Start deploying at the edge</h2>
+      <p style="font-size: 1.4rem; color:#4b5f73;">From 30M requests free per month.</p>
+      <span class="cta-button">Get started →</span>
+      <p style="margin-top: 2rem; font-size: 1rem; color:#8c9db0;">No credit card required · 30 second deploy</p>
+    </div>
+  </section>
+
+  <hr>
+  <footer>
+    <span>© Helix · edge compute</span>
+  </footer>
+
+  <script>
+    (function() {
+      // canvas animation – subtle particles
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 45;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            vx: (Math.random() - 0.5) * 0.002,
+            vy: (Math.random() - 0.5) * 0.001,
+            radius: Math.random() * 2.2 + 1,
+            alpha: Math.random() * 0.15 + 0.05,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        if (!particles.length) return;
+
+        ctx.fillStyle = '#2d3f55';
+        for (let p of particles) {
+          // update positions (very slow drift)
+          p.x += p.vx;
+          p.y += p.vy;
+          // wrap around gentle
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          const xPos = p.x * width;
+          const yPos = p.y * height;
+
+          ctx.globalAlpha = p.alpha * 0.9;
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // scroll reveal
+      const sections = document.querySelectorAll('.section');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+      sections.forEach(sec => observer.observe(sec));
+
+      // down arrow smooth scroll
+      const scrollBtn = document.getElementById('scrollDownBtn');
+      scrollBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.getElementById('features');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+
+      // optional: one line headline stays even on small screens — but if screen under 380px we relax via css
+      // to ensure no letter clipping (already handled)
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

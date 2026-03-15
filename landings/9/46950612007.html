@@ -1,0 +1,500 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>minimal • lumen</title>
+  <!-- Feather Icons (lightweight, outline only) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* RESET & BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: #f7f9fc;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #1e2b37;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* HERO – full screen, one line, canvas background */
+    .hero {
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #f0f4f8;  /* fallback while canvas loads */
+    }
+
+    canvas#heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;   /* so click passes through */
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      width: 100%;
+      padding: 0 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 15vw, 8rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #1a2b3c;
+      line-height: 1.1;
+      white-space: nowrap;           /* force one line */
+      margin: 0;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+
+    /* down arrow – minimal, bouncing */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      color: #2d4059;
+      opacity: 0.75;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      cursor: pointer;
+      animation: floatDown 2.2s infinite ease-in-out;
+    }
+
+    .scroll-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.1);
+    }
+
+    @keyframes floatDown {
+      0% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(8px); }
+      100% { transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ----- global section style ----- */
+    .section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-header h2 {
+      font-size: 3rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #14212b;
+    }
+
+    .section-header p {
+      font-size: 1.3rem;
+      color: #4a5f73;
+      max-width: 700px;
+      margin: 1rem auto 0;
+    }
+
+    /* grids */
+    .grid-3, .grid-2, .grid-4 {
+      display: grid;
+      gap: 3rem 2rem;
+    }
+
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    /* cards / items */
+    .feature-item, .step-item, .advantage-item, .use-case-item {
+      background: transparent;
+      padding: 0.5rem;
+      transition: transform 0.25s ease, opacity 0.3s ease;
+      opacity: 0;
+      transform: translateY(25px);
+    }
+
+    /* reveal animation (applied via JS) */
+    .feature-item.revealed, .step-item.revealed, 
+    .advantage-item.revealed, .use-case-item.revealed,
+    .cta-card.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .icon-large {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1.5rem;
+      color: #1e2b37;          /* monochrome, single color */
+      stroke-width: 1.5;
+    }
+
+    .feature-item h3, .step-item h3, .advantage-item h3, .use-case-item h3 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+      color: #1c2c3a;
+    }
+
+    .feature-item p, .step-item p, .advantage-item p, .use-case-item p {
+      font-size: 1.2rem;
+      color: #405b73;
+      max-width: 400px;
+    }
+
+    /* CTA special */
+    .cta-card {
+      background: #1e2b37;
+      color: white;
+      border-radius: 48px;
+      padding: 4rem 3rem;
+      text-align: center;
+      transition: opacity 0.4s ease, transform 0.3s ease;
+      opacity: 0;
+      transform: translateY(25px);
+    }
+
+    .cta-card h2 {
+      font-size: 3.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+
+    .cta-card p {
+      font-size: 1.5rem;
+      opacity: 0.8;
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: white;
+      color: #1e2b37;
+      font-size: 1.3rem;
+      font-weight: 500;
+      padding: 1rem 3rem;
+      border-radius: 40px;
+      text-decoration: none;
+      transition: 0.2s ease;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .cta-button:hover {
+      background: #eef4ff;
+      transform: scale(1.02);
+      box-shadow: 0 15px 30px -10px rgba(0,0,0,0.15);
+    }
+
+    /* spacing & lines */
+    hr {
+      border: none;
+      border-top: 1px solid #dbe4ed;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* mobile adjustments */
+    @media (max-width: 800px) {
+      .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .hero h1 { font-size: clamp(2.8rem, 12vw, 6rem); } /* still one line */
+      .section { padding: 4rem 1.5rem; }
+    }
+
+    @media (max-width: 550px) {
+      .grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr; }
+      .hero h1 { font-size: clamp(2.5rem, 15vw, 4rem); white-space: nowrap; }
+      .cta-card h2 { font-size: 2.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO with canvas background -->
+  <section class="hero" id="home">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>lumen · edge</h1>
+    </div>
+    <a class="scroll-down" href="#start">
+      <i data-feather="arrow-down" width="40" height="40"></i>
+    </a>
+  </section>
+
+  <!-- first section anchor -->
+  <div id="start"></div>
+
+  <!-- SECTION 1 – Features (benefits) -->
+  <section class="section">
+    <div class="section-header">
+      <h2>built different</h2>
+      <p>radically simple, infinitely scalable</p>
+    </div>
+    <div class="grid-3">
+      <div class="feature-item">
+        <span class="icon-large"><i data-feather="zap" width="48" height="48"></i></span>
+        <h3>lightning fast</h3>
+        <p>sub‑second response, worldwide edge network. no cold starts.</p>
+      </div>
+      <div class="feature-item">
+        <span class="icon-large"><i data-feather="shield" width="48" height="48"></i></span>
+        <h3>zero‑trust</h3>
+        <p>every request verified, end‑to‑end encrypted by default.</p>
+      </div>
+      <div class="feature-item">
+        <span class="icon-large"><i data-feather="cpu" width="48" height="48"></i></span>
+        <h3>universal runtime</h3>
+        <p>javascript, rust, python — one platform, no lock‑in.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- SECTION 2 – How it works (simple steps) -->
+  <section class="section">
+    <div class="section-header">
+      <h2>how it works</h2>
+      <p>from zero to global in three moves</p>
+    </div>
+    <div class="grid-3">
+      <div class="step-item">
+        <span class="icon-large"><i data-feather="code" width="48" height="48"></i></span>
+        <h3>1. write</h3>
+        <p>use your favorite language & framework. no DSL, no wrappers.</p>
+      </div>
+      <div class="step-item">
+        <span class="icon-large"><i data-feather="upload-cloud" width="48" height="48"></i></span>
+        <h3>2. deploy</h3>
+        <p>git push → we build and distribute to 300+ locations.</p>
+      </div>
+      <div class="step-item">
+        <span class="icon-large"><i data-feather="globe" width="48" height="48"></i></span>
+        <h3>3. scale</h3>
+        <p>traffic spikes? our mesh auto‑scales to zero latency.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- SECTION 3 – Advantages (unique) -->
+  <section class="section">
+    <div class="section-header">
+      <h2>edge intelligence</h2>
+      <p>your code, but closer to the user</p>
+    </div>
+    <div class="grid-2">
+      <div class="advantage-item">
+        <span class="icon-large"><i data-feather="clock" width="48" height="48"></i></span>
+        <h3>< 50ms p99</h3>
+        <p>global anycast + tiered caching — responses feel instant.</p>
+      </div>
+      <div class="advantage-item">
+        <span class="icon-large"><i data-feather="droplet" width="48" height="48"></i></span>
+        <h3>hydration‑free</h3>
+        <p>no serverful overhead. our workers are always on, never idle.</p>
+      </div>
+      <div class="advantage-item">
+        <span class="icon-large"><i data-feather="layers" width="48" height="48"></i></span>
+        <h3>composable</h3>
+        <p>chain functions, query databases, stream responses.</p>
+      </div>
+      <div class="advantage-item">
+        <span class="icon-large"><i data-feather="bar-chart-2" width="48" height="48"></i></span>
+        <h3>real‑time metrics</h3>
+        <p>every invocation traced, every millisecond measured.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- SECTION 4 – Use cases -->
+  <section class="section">
+    <div class="section-header">
+      <h2>use cases</h2>
+      <p>where edge makes the difference</p>
+    </div>
+    <div class="grid-4">
+      <div class="use-case-item">
+        <span class="icon-large"><i data-feather="shopping-cart" width="48" height="48"></i></span>
+        <h3>flash sales</h3>
+        <p>handle 1M req/s without warming.</p>
+      </div>
+      <div class="use-case-item">
+        <span class="icon-large"><i data-feather="video" width="48" height="48"></i></span>
+        <h3>video streams</h3>
+        <p>transcode & serve at the edge.</p>
+      </div>
+      <div class="use-case-item">
+        <span class="icon-large"><i data-feather="lock" width="48" height="48"></i></span>
+        <h3>auth & jwt</h3>
+        <p>validate tokens before origin.</p>
+      </div>
+      <div class="use-case-item">
+        <span class="icon-large"><i data-feather="database" width="48" height="48"></i></span>
+        <h3>global kv</h3>
+        <p>low‑latency data for every user.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- SECTION 5 – Call to action -->
+  <section class="section" style="padding-bottom: 8rem;">
+    <div class="cta-card">
+      <h2>ready for the edge?</h2>
+      <p>deploy your first function in 60 seconds · no credit card required</p>
+      <a href="#" class="cta-button">start building →</a>
+    </div>
+  </section>
+
+  <!-- feather replacement + scroll + canvas animation + reveal -->
+  <script>
+    (function() {
+      // ---- init feather icons ----
+      feather.replace({ strokeWidth: 1.5, width: 48, height: 48 });
+
+      // ---- hero canvas: subtle animated background (moving particles) ----
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 50;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 2.5 + 1.2,
+            speedX: (Math.random() - 0.5) * 0.4,
+            speedY: (Math.random() - 0.5) * 0.2,
+            opacity: Math.random() * 0.3 + 0.1,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#d9e2ec';    // very light grey-blue, minimal
+        for (let p of particles) {
+          ctx.globalAlpha = p.opacity;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // move particles
+        for (let p of particles) {
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around edges
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      drawParticles();
+
+      // ---- smooth scroll for down arrow (already smooth via css, but anchor works) ----
+      document.querySelector('.scroll-down').addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector('#start');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // ---- reveal on scroll (IntersectionObserver) ----
+      const itemsToReveal = document.querySelectorAll(
+        '.feature-item, .step-item, .advantage-item, .use-case-item, .cta-card'
+      );
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // you can unobserve after reveal if you want
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -30px 0px' });
+
+      itemsToReveal.forEach(item => observer.observe(item));
+
+      // ensure already visible items on load get revealed (just in case)
+      window.addEventListener('load', () => {
+        itemsToReveal.forEach(item => {
+          const rect = item.getBoundingClientRect();
+          if (rect.top < window.innerHeight * 0.8) {
+            item.classList.add('revealed');
+            observer.unobserve(item);
+          }
+        });
+      });
+
+    })();
+  </script>
+
+  <!-- ensures icons are rendered inside all spans (feather.replace also covers dynamic? but we call after dom ready) -->
+  <script>
+    (function secondaryIcons() {
+      // call again after everything (just in case)
+      if (typeof feather !== 'undefined') {
+        feather.replace({ strokeWidth: 1.5 });
+      }
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

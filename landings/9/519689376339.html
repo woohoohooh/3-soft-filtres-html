@@ -1,0 +1,494 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>morph · spatial computing</title>
+  <!-- Feather icons (lightweight, outline only) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* -------------------- reset & base -------------------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: #f6f7f9;
+      color: #13181c;
+      font-family: system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* -------------------- sections structure ------------ */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 2rem;
+    }
+
+    /* canvas background (subtle animated) */
+    #bgCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: clamp(3.5rem, 15vw, 7rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #13181c;
+      line-height: 1.1;
+      white-space: nowrap;           /* keep on one line */
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #2e383f;
+      opacity: 0.7;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .scroll-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+    .scroll-down i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.2;
+    }
+
+    /* -------------------- section headings ---------------- */
+    h2 {
+      font-size: 2.8rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      color: #13181c;
+    }
+
+    @media (max-width: 700px) {
+      section { padding: 4rem 1.5rem; }
+      h2 { font-size: 2.2rem; margin-bottom: 2.5rem; }
+    }
+
+    /* -------------------- card / layout grid ------------ */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4rem 2rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4rem 3rem;
+    }
+
+    @media (max-width: 800px) {
+      .grid-3, .grid-2 { grid-template-columns: 1fr; gap: 3rem; }
+    }
+
+    .feature-item, .advantage-item, .use-case-item, .how-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    /* icon styling (monochrome outline, minimal) */
+    .icon-wrap {
+      margin-bottom: 1.8rem;
+      color: #2e383f;    /* single dark grey */
+    }
+    .icon-wrap i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.2;   /* thin outline */
+    }
+
+    h3 {
+      font-size: 1.7rem;
+      font-weight: 450;
+      margin-bottom: 1rem;
+      letter-spacing: -0.01em;
+      color: #1d262c;
+    }
+
+    p {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      color: #3e4a53;
+      max-width: 45ch;
+    }
+
+    /* CTA section specific */
+    .cta-box {
+      background: transparent;
+      border: 1px solid #d0d9e0;
+      padding: 4rem;
+      text-align: center;
+      border-radius: 2rem;
+      transition: box-shadow 0.3s ease;
+    }
+    .cta-box:hover {
+      box-shadow: 0 30px 45px -25px rgba(0,20,30,0.2);
+    }
+    .cta-box h3 {
+      font-size: 2.4rem;
+      margin-bottom: 1.5rem;
+    }
+    .cta-box p {
+      margin: 0 auto 2.5rem auto;
+    }
+    .cta-button {
+      background: #13181c;
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      padding: 0.9rem 2.8rem;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+      border: 1px solid #13181c;
+      font-weight: 450;
+      letter-spacing: 0.3px;
+    }
+    .cta-button:hover {
+      background: #2e383f;
+      border-color: #2e383f;
+      transform: scale(1.02);
+    }
+
+    /* reveal on scroll (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s cubic-bezier(0.15,0.85,0.35,1), transform 0.7s cubic-bezier(0.15,0.85,0.35,1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* divider lines (modern air) */
+    .section-divider {
+      max-width: 1280px;
+      margin: 0 auto;
+      border-bottom: 1px solid #e2e8ed;
+    }
+
+    /* footer */
+    .footer-note {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem;
+      text-align: center;
+      font-size: 0.95rem;
+      color: #7b8a95;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- hero section with canvas background -->
+  <section class="hero" id="home">
+    <canvas id="bgCanvas"></canvas>
+    <div class="hero-content">
+      <h1>spatial is now morph</h1>
+    </div>
+    <a class="scroll-down" href="#features" aria-label="scroll down">
+      <i data-feather="arrow-down"></i>
+    </a>
+  </section>
+
+  <!-- features / benefits (section 1) -->
+  <section id="features" class="reveal">
+    <h2>built for depth</h2>
+    <div class="grid-3">
+      <div class="feature-item">
+        <span class="icon-wrap"><i data-feather="eye"></i></span>
+        <h3>native 3D</h3>
+        <p>Render immersive environments without latency. Real-time mesh understanding.</p>
+      </div>
+      <div class="feature-item">
+        <span class="icon-wrap"><i data-feather="layers"></i></span>
+        <h3>spatial sdk</h3>
+        <p>One unified API for all headsets — keep your logic clean, ship everywhere.</p>
+      </div>
+      <div class="feature-item">
+        <span class="icon-wrap"><i data-feather="users"></i></span>
+        <h3>multi‑presence</h3>
+        <p>Up to 32 simultaneous users with shared anchors and voice sync.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- how it works (section 2) -->
+  <section id="how-it-works" class="reveal">
+    <h2>how it works</h2>
+    <div class="grid-2">
+      <div class="how-item">
+        <span class="icon-wrap"><i data-feather="code"></i></span>
+        <h3>1. import morph</h3>
+        <p>One line in your web project — no bulky engines. Compatible with Three.js.</p>
+      </div>
+      <div class="how-item">
+        <span class="icon-wrap"><i data-feather="map"></i></span>
+        <h3>2. anchor world</h3>
+        <p>Define spatial anchors that persist across sessions. Automatic occlusion.</p>
+      </div>
+      <div class="how-item">
+        <span class="icon-wrap"><i data-feather="zap"></i></span>
+        <h3>3. low‑code logic</h3>
+        <p>Use our visual graph or pure JS. Hot‑reload while staying in VR.</p>
+      </div>
+      <div class="how-item">
+        <span class="icon-wrap"><i data-feather="globe"></i></span>
+        <h3>4. publish anywhere</h3>
+        <p>Web, mobile, or native. Same experience, no recompile needed.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- advantages (section 3) -->
+  <section id="advantages" class="reveal">
+    <h2>edge</h2>
+    <div class="grid-3">
+      <div class="advantage-item">
+        <span class="icon-wrap"><i data-feather="cpu"></i></span>
+        <h3>10x compression</h3>
+        <p>Stream high‑detail assets 10x faster than standard glTF.</p>
+      </div>
+      <div class="advantage-item">
+        <span class="icon-wrap"><i data-feather="battery-charging"></i></span>
+        <h3>ultra low power</h3>
+        <p>Runs at 90fps on mobile chips for 3+ hours without throttling.</p>
+      </div>
+      <div class="advantage-item">
+        <span class="icon-wrap"><i data-feather="shield"></i></span>
+        <h3>privacy first</h3>
+        <p>All spatial data processed on‑device. No cloud dependency.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- use cases (section 4) -->
+  <section id="use-cases" class="reveal">
+    <h2>already in use</h2>
+    <div class="grid-2">
+      <div class="use-case-item">
+        <span class="icon-wrap"><i data-feather="home"></i></span>
+        <h3>virtual staging</h3>
+        <p>Real estate firms let clients walk unbuilt properties, accurate lighting.</p>
+      </div>
+      <div class="use-case-item">
+        <span class="icon-wrap"><i data-feather="activity"></i></span>
+        <h3>sports training</h3>
+        <p>Pro athletes analyse spatial replays from any angle, on‑field.</p>
+      </div>
+      <div class="use-case-item">
+        <span class="icon-wrap"><i data-feather="shopping-bag"></i></span>
+        <h3>retail try‑on</h3>
+        <p>Furniture & fashion brands report 34% fewer returns with morph.</p>
+      </div>
+      <div class="use-case-item">
+        <span class="icon-wrap"><i data-feather="briefcase"></i></span>
+        <h3>industrial training</h3>
+        <p>Simulate hazardous procedures without risk, full haptic ready.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- call to action (section 5) -->
+  <section id="cta" class="reveal">
+    <div class="cta-box">
+      <h3>build the next dimension</h3>
+      <p>Start with our free tier — no credit card. Deploy to all headsets today.</p>
+      <button class="cta-button">claim your space →</button>
+    </div>
+  </section>
+
+  <!-- minimal footer -->
+  <footer class="footer-note">
+    <span>© morph · spatial intelligence</span>
+  </footer>
+
+  <!-- javascript: feather icons, canvas animation, scroll reveal, smooth nav -->
+  <script>
+    (function() {
+      // ----- init feather icons -----
+      feather.replace();
+
+      // ----- canvas background (subtle moving gradient) -----
+      const canvas = document.getElementById('bgCanvas');
+      const ctx = canvas.getContext('2d');
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      // subtle animated orbs (minimal, elegant)
+      let time = 0;
+      function drawBackground() {
+        if (!ctx) return;
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        // soft base
+        const gradient = ctx.createLinearGradient(0, 0, w * 0.5, h);
+        gradient.addColorStop(0, '#eaeef2');
+        gradient.addColorStop(1, '#f0f3f7');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, w, h);
+
+        // two very light floating circles
+        time += 0.003;
+        const offsetX = Math.sin(time) * 20;
+        const offsetY = Math.cos(time * 1.3) * 15;
+
+        ctx.save();
+        ctx.filter = 'blur(70px)';
+
+        // first orb
+        ctx.beginPath();
+        ctx.arc(w * 0.3 + offsetX, h * 0.4 + offsetY, 180, 0, 2 * Math.PI);
+        ctx.fillStyle = '#d9e2ec';
+        ctx.globalAlpha = 0.45;
+        ctx.fill();
+
+        // second orb
+        ctx.beginPath();
+        ctx.arc(w * 0.8 - offsetY, h * 0.7 - offsetX, 220, 0, 2 * Math.PI);
+        ctx.fillStyle = '#d3dde8';
+        ctx.globalAlpha = 0.3;
+        ctx.fill();
+
+        ctx.restore();
+
+        requestAnimationFrame(drawBackground);
+      }
+      drawBackground();
+
+      // ----- smooth scroll for down arrow -----
+      const downArrow = document.querySelector('.scroll-down');
+      if (downArrow) {
+        downArrow.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = downArrow.getAttribute('href'); // "#features"
+          const targetEl = document.querySelector(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      }
+
+      // ----- reveal on scroll (intersection observer) -----
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -10px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ----- tiny hover animation for icons (optional modern touch) -----
+      const icons = document.querySelectorAll('.icon-wrap');
+      icons.forEach(wrap => {
+        wrap.addEventListener('mouseenter', () => {
+          const iElem = wrap.querySelector('i');
+          if (iElem) {
+            iElem.style.transition = 'transform 0.2s ease';
+            iElem.style.transform = 'scale(1.06)';
+          }
+        });
+        wrap.addEventListener('mouseleave', () => {
+          const iElem = wrap.querySelector('i');
+          if (iElem) {
+            iElem.style.transform = 'scale(1)';
+          }
+        });
+      });
+
+      // make CTA button interactive
+      const ctaBtn = document.querySelector('.cta-button');
+      if (ctaBtn) {
+        ctaBtn.addEventListener('click', () => {
+          alert('✨ welcome to morph spatial (demo).');
+        });
+      }
+
+    })();
+  </script>
+
+  <!-- ensure one‑line headline on all screen widths (extra safety) -->
+  <style>
+    /* if for any extreme edge-case it breaks, force nowrap */
+    h1 {
+      white-space: nowrap;
+    }
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 14vw;   /* keeps one line, even on very small screen */
+      }
+    }
+    /* down arrow icon color matches monochrome */
+    .scroll-down i {
+      color: #2e383f;
+    }
+  </style>
+
+</body>
+</html>
+All done!
+```

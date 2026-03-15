@@ -1,0 +1,605 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aether · flow</title>
+  <!-- Feather icons (lightweight, outline, monochrome) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* ---------- RESET & BASE ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: #fafaf8;
+      color: #1e1e1e;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* ---------- TYPOGRAPHY & UTILITY ---------- */
+    h1, h2, p {
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    h1 {
+      font-size: clamp(3.5rem, 15vw, 9rem);
+      font-weight: 500;
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      color: #121212;
+    }
+
+    h2 {
+      font-size: clamp(2.8rem, 8vw, 5rem);
+      line-height: 1.1;
+      margin-bottom: 2rem;
+      font-weight: 450;
+    }
+
+    .section-sub {
+      font-size: 1.4rem;
+      color: #4a4a4a;
+      max-width: 38rem;
+      margin: 0 auto 3rem auto;
+      font-weight: 350;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ---------- HEADER / HERO ---------- */
+    .hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      background-color: #fafaf8;  /* base color, canvas for animation */
+    }
+
+    /* animated background canvas (js layer) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;  /* allows click-through to down arrow */
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      padding: 0 1.5rem;
+    }
+
+    .hero h1 {
+      display: inline-block;  /* keeps one line, respects width */
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #111;
+      padding: 0 0.2rem;
+      text-shadow: 0 2px 8px rgba(255,255,255,0.5);
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      cursor: pointer;
+      color: #1e1e1e;
+      transition: opacity 0.2s ease, transform 0.3s ease;
+      background: transparent;
+      border: none;
+      padding: 0.8rem;
+      line-height: 0;
+      border-radius: 100%;
+      backdrop-filter: blur(4px);
+    }
+
+    .scroll-down:hover {
+      opacity: 0.6;
+      transform: translateX(-50%) translateY(6px);
+    }
+
+    .scroll-down i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.2;
+      color: #222;
+    }
+
+    /* ---------- GENERIC SECTION ---------- */
+    section {
+      padding: 8rem 0;
+      border-bottom: 1px solid #eaeae8;
+    }
+
+    section:last-of-type {
+      border-bottom: none;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 5rem;
+    }
+
+    /* reveal animation (intersection observer) */
+    .reveal-item {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal-item.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* card / grid layouts */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4rem 2rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4rem 3rem;
+    }
+
+    .feature-card {
+      text-align: center;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2rem;
+      color: #1f1f1f;
+      transition: transform 0.2s ease;
+    }
+
+    .feature-card:hover .icon-circle {
+      transform: scale(1.04);
+    }
+
+    .icon-circle i {
+      width: 48px;
+      height: 48px;
+      stroke-width: 1.2;
+    }
+
+    .feature-card h3 {
+      font-size: 2rem;
+      font-weight: 450;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .feature-card p {
+      font-size: 1.2rem;
+      color: #3a3a3a;
+      line-height: 1.5;
+      max-width: 24rem;
+      margin: 0 auto;
+    }
+
+    /* how it works – left/right layout */
+    .steps-list {
+      list-style: none;
+    }
+    .steps-list li {
+      display: flex;
+      gap: 1.8rem;
+      align-items: flex-start;
+      margin-bottom: 2.8rem;
+    }
+    .steps-list li i {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      stroke-width: 1.2;
+      margin-top: 0.1rem;
+    }
+    .step-content h4 {
+      font-size: 2rem;
+      font-weight: 470;
+      margin-bottom: 0.3rem;
+    }
+    .step-content p {
+      font-size: 1.2rem;
+      color: #4a4a4a;
+      max-width: 32rem;
+    }
+
+    .right-image {
+      background-color: #ecece8;
+      border-radius: 2rem;
+      min-height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 300;
+      color: #3b3b3b;
+      transition: background-color 0.2s;
+    }
+
+    .right-image i {
+      width: 80px;
+      height: 80px;
+      stroke-width: 1;
+      opacity: 0.7;
+    }
+
+    /* use cases simple rows */
+    .use-case-row {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      padding: 2rem 0;
+      border-bottom: 1px solid #dddcd8;
+    }
+    .use-case-row:last-child {
+      border-bottom: none;
+    }
+    .use-case-row i {
+      width: 42px;
+      height: 42px;
+      stroke-width: 1.2;
+      flex-shrink: 0;
+    }
+    .use-case-row span {
+      font-size: 1.8rem;
+      font-weight: 430;
+      letter-spacing: -0.01em;
+    }
+    .use-case-row .use-case-desc {
+      margin-left: auto;
+      font-size: 1.2rem;
+      color: #555;
+    }
+
+    /* cta */
+    .cta-box {
+      background-color: #1e1e1e;
+      color: white;
+      border-radius: 3rem;
+      padding: 5rem 3rem;
+      text-align: center;
+    }
+    .cta-box h2 {
+      color: white;
+      margin-bottom: 1.5rem;
+    }
+    .cta-box p {
+      font-size: 1.6rem;
+      margin-bottom: 3rem;
+      color: #cccccc;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+      padding: 1.2rem 4rem;
+      border-radius: 60px;
+      font-size: 1.6rem;
+      font-weight: 450;
+      text-decoration: none;
+      transition: 0.15s ease;
+      cursor: default; /* not real link — demo */
+    }
+    .cta-btn:hover {
+      background: white;
+      color: black;
+    }
+
+    /* mobile */
+    @media (max-width: 800px) {
+      h1 {
+        white-space: normal;    /* fallback if extremely narrow, but we keep one-line by design */
+        font-size: clamp(3rem, 12vw, 6rem);
+      }
+      .hero h1 {
+        white-space: normal;   /* actually one-line may break on very small, but we keep content */
+      }
+      .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+      .use-case-row {
+        flex-wrap: wrap;
+      }
+      .use-case-row .use-case-desc {
+        margin-left: 0;
+        width: 100%;
+      }
+      .right-image {
+        min-height: 240px;
+      }
+      section {
+        padding: 5rem 0;
+      }
+    }
+
+    /* extra fine tuning */
+    .separator-light {
+      height: 1px;
+      background: #e0e0e0;
+      width: 100%;
+      margin: 2rem 0;
+    }
+
+    footer {
+      padding: 3rem 0;
+      text-align: center;
+      color: #5a5a5a;
+      border-top: 1px solid #eaeae8;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO SECTION with canvas animation -->
+  <header class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>aether·flow</h1>
+    </div>
+    <div class="scroll-down" id="scrollDownArrow">
+      <i data-feather="arrow-down"></i>
+    </div>
+  </header>
+
+  <!-- SECTION 1 – Features / Benefits -->
+  <section class="container" id="features">
+    <div class="section-header reveal-item">
+      <h2>silent precision</h2>
+      <div class="section-sub">crafted for the uninterrupted mind</div>
+    </div>
+    <div class="grid-3">
+      <div class="feature-card reveal-item">
+        <div class="icon-circle"><i data-feather="layers"></i></div>
+        <h3>infinite layers</h3>
+        <p>Seamless context switching without overload — pure spatial navigation.</p>
+      </div>
+      <div class="feature-card reveal-item">
+        <div class="icon-circle"><i data-feather="wind"></i></div>
+        <h3>zero latency</h3>
+        <p>Real‑time sync across all nodes. no waiting, no buffering.</p>
+      </div>
+      <div class="feature-card reveal-item">
+        <div class="icon-circle"><i data-feather="shield"></i></div>
+        <h3>crystal trust</h3>
+        <p>End‑to‑end encryption meets minimalist transparency.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 – How it works -->
+  <section class="container">
+    <div class="section-header reveal-item">
+      <h2>one step. one breath.</h2>
+      <div class="section-sub">no dashboards, no clutter</div>
+    </div>
+    <div class="grid-2">
+      <div class="reveal-item">
+        <ul class="steps-list">
+          <li>
+            <i data-feather="plus-circle"></i>
+            <div class="step-content">
+              <h4>1. create a flow</h4>
+              <p>Name your space — it’s that simple. one line defines the container.</p>
+            </div>
+          </li>
+          <li>
+            <i data-feather="link-2"></i>
+            <div class="step-content">
+              <h4>2. invite context</h4>
+              <p>Drop links, notes, or media. everything lives as an object.</p>
+            </div>
+          </li>
+          <li>
+            <i data-feather="move"></i>
+            <div class="step-content">
+              <h4>3. arrange in silence</h4>
+              <p>Drag, group, or leave them untouched. spatial memory does the rest.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="right-image reveal-item">
+        <i data-feather="figma"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 – Advantages (minimalist comparison) -->
+  <section class="container">
+    <div class="section-header reveal-item">
+      <h2>less is faster</h2>
+      <div class="section-sub">engineered for cognitive ease</div>
+    </div>
+    <div class="grid-2">
+      <div class="feature-card reveal-item">
+        <div class="icon-circle"><i data-feather="smartphone"></i></div>
+        <h3>native everywhere</h3>
+        <p>no app gap. works on any screen, any orientation.</p>
+      </div>
+      <div class="feature-card reveal-item">
+        <div class="icon-circle"><i data-feather="cpu"></i></div>
+        <h3>0kb javascript*</h3>
+        <p>at least after load. but jokes aside – it’s featherlight.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 – Use cases (elegant list) -->
+  <section class="container">
+    <div class="section-header reveal-item">
+      <h2>use anywhere</h2>
+      <div class="section-sub">no instructions needed</div>
+    </div>
+    <div class="use-case-row reveal-item">
+      <i data-feather="users"></i>
+      <span>distributed teams</span>
+      <span class="use-case-desc">async updates without noise</span>
+    </div>
+    <div class="use-case-row reveal-item">
+      <i data-feather="book-open"></i>
+      <span>personal knowledge</span>
+      <span class="use-case-desc">networked thoughts, not folders</span>
+    </div>
+    <div class="use-case-row reveal-item">
+      <i data-feather="compass"></i>
+      <span>creative moodboards</span>
+      <span class="use-case-desc">visual, fluid, endless</span>
+    </div>
+  </section>
+
+  <!-- SECTION 5 – Call to action -->
+  <section class="container">
+    <div class="cta-box reveal-item">
+      <h2>enter aether·flow</h2>
+      <p>it’s always been this quiet.</p>
+      <span class="cta-btn">request invite →</span>
+    </div>
+  </section>
+
+  <!-- minimalist footer -->
+  <footer>
+    <div class="container">
+      <span>© aether·flow — silent infrastructure</span>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      feather.replace({ stroke: 'currentColor', 'stroke-width': 1.2 });
+
+      // ---------- subtle animated canvas background ----------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 70;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: Math.random() * 1.6 + 0.5,
+            speedX: (Math.random() - 0.5) * 0.002,
+            speedY: (Math.random() - 0.5) * 0.0015,
+            opacity: Math.random() * 0.25 + 0.1,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#121212'; // very subtle dark dots
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.globalAlpha = p.opacity * 0.6;
+          ctx.arc(p.x * width, p.y * height, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#2c2c2c';
+          ctx.fill();
+
+          // move
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around gently
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // ---------- smooth scroll down arrow ----------
+      const scrollArrow = document.getElementById('scrollDownArrow');
+      scrollArrow.addEventListener('click', () => {
+        const featuresSection = document.getElementById('features');
+        if (featuresSection) {
+          featuresSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // ---------- reveal on scroll (intersection observer) ----------
+      const revealItems = document.querySelectorAll('.reveal-item');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional: keep revealed after first sight
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+      revealItems.forEach(item => observer.observe(item));
+
+      // small hover animation for icons (already in css, but we ensure feather re-up if needed)
+      // also manually trigger re-initialization? (feather already replaced)
+    })();
+  </script>
+  <!-- ensure one-line headline on all screens (extra guard) -->
+  <style>
+    @media (max-width: 450px) {
+      .hero h1 { font-size: 4rem; white-space: nowrap; }
+    }
+    @media (max-width: 360px) {
+      .hero h1 { font-size: 3.4rem; }
+    }
+  </style>
+</body>
+</html>
+All done!
+```

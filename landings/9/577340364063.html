@@ -1,0 +1,537 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ethereal • nexus</title>
+  <style>
+    /* reset & base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #fafafc;
+      color: #1e1e2f;
+      line-height: 1.5;
+    }
+
+    /* sections structure */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    /* hero specific */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      padding: 2rem;
+      max-width: none;
+      background-color: #fafafc; /* base, canvas gets effect overlay */
+    }
+
+    /* canvas (particle background) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none; /* allow click through */
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      width: 100%;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 14vw, 8rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #1e1e2f;
+      text-transform: none;
+      white-space: nowrap;      /* force one line */
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #1e1e2f;
+      transition: transform 0.2s ease;
+      padding: 0.5rem;
+    }
+    .scroll-down:hover {
+      transform: translateX(-50%) translateY(6px);
+      opacity: 0.7;
+    }
+    .scroll-down svg {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.5;
+    }
+
+    /* section headings */
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 4rem;
+      line-height: 1.2;
+      max-width: 900px;
+    }
+
+    .section-title.light {
+      font-weight: 400;
+      color: #3b3b4d;
+    }
+
+    /* feature grid */
+    .grid-3, .grid-2 {
+      display: grid;
+      gap: 4rem 3rem;
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .feature-card, .advantage-card, .use-case-card {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    .feature-card.revealed, .advantage-card.revealed, .use-case-card.revealed,
+    .step-item.revealed, .cta-block.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* icon style (monochrome outline) */
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1.5rem;
+      color: #1e1e2f;   /* solid neutral */
+    }
+
+    .icon svg {
+      width: 48px;
+      height: 48px;
+      stroke-width: 1.2;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    h3 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    .desc {
+      font-size: 1.2rem;
+      color: #4a4a5e;
+      max-width: 400px;
+    }
+
+    /* steps (how it works) */
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .step-marker {
+      font-size: 2rem;
+      font-weight: 400;
+      color: #a0a0b2;
+      min-width: 3.5rem;
+    }
+
+    .step-content h4 {
+      font-size: 2rem;
+      font-weight: 450;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-content p {
+      font-size: 1.2rem;
+      color: #4a4a5e;
+      max-width: 600px;
+    }
+
+    /* call to action */
+    .cta-block {
+      background: #1e1e2f;
+      color: white;
+      padding: 5rem 4rem;
+      border-radius: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .cta-block h2 {
+      font-size: 3.5rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+      line-height: 1.2;
+      max-width: 800px;
+    }
+
+    .cta-button {
+      background: white;
+      color: #1e1e2f;
+      border: none;
+      padding: 1rem 3.5rem;
+      font-size: 1.4rem;
+      font-weight: 500;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s;
+      margin-top: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .cta-button:hover {
+      background: #f0f0f5;
+      transform: scale(1.03);
+    }
+
+    /* icons only from feather (via cdn) */
+    .i {
+      stroke: currentColor;
+      stroke-width: 1.5;
+      fill: none;
+    }
+
+    /* responsiveness */
+    @media (max-width: 900px) {
+      section { padding: 4rem 1.5rem; }
+      .hero h1 { font-size: clamp(2.8rem, 10vw, 5rem); white-space: nowrap; }
+      .grid-3 { grid-template-columns: repeat(2, 1fr); gap: 3rem; }
+      .section-title { font-size: 2.2rem; margin-bottom: 3rem; }
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: clamp(2.5rem, 9vw, 3.8rem); }
+      .grid-3, .grid-2 { grid-template-columns: 1fr; gap: 3rem; }
+      .section-title { font-size: 2rem; }
+      .step-item { flex-direction: column; gap: 0.5rem; }
+      .cta-block { padding: 3rem 1.5rem; }
+      .cta-block h2 { font-size: 2.2rem; }
+    }
+
+    /* no gradients, no colors on icons — only monochrome */
+    hr {
+      border: none;
+      border-top: 1px solid #eaeaef;
+      margin: 0;
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 1rem 4rem;
+      color: #7a7a8c;
+      font-size: 1rem;
+      border-top: 1px solid #eaeaef;
+    }
+  </style>
+  <!-- feather icons (lightweight, outline) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+  <!-- hero section -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>nexus•flow</h1>
+    </div>
+    <a href="#features" class="scroll-down" aria-label="scroll down">
+      <i data-feather="arrow-down-circle"></i>
+    </a>
+  </section>
+
+  <!-- features section -->
+  <section id="features">
+    <h2 class="section-title light">built for clarity ·<br>designed for motion</h2>
+    <div class="grid-3">
+      <div class="feature-card">
+        <span class="icon"><i data-feather="activity"></i></span>
+        <h3>live intelligence</h3>
+        <p class="desc">real‑time signal processing with near‑zero latency, edge‑first architecture.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon"><i data-feather="wind"></i></span>
+        <h3>ambient sync</h3>
+        <p class="desc">adapts to network flow — seamless handoff between devices, no drop.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon"><i data-feather="layers"></i></span>
+        <h3>unified layer</h3>
+        <p class="desc">one abstraction for web, mobile, and edge — deploy once, run anywhere.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- how it works -->
+  <section id="how-it-works">
+    <h2 class="section-title">how it works · three moves</h2>
+    <div class="steps-list">
+      <div class="step-item">
+        <div class="step-marker">001</div>
+        <div class="step-content">
+          <h4>connect · pulse</h4>
+          <p>establish a lightweight peer mesh. every node shares a synchronized state layer.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-marker">002</div>
+        <div class="step-content">
+          <h4>negotiate · route</h4>
+          <p>automatic path discovery selects the fastest channel between you and your data.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-marker">003</div>
+        <div class="step-content">
+          <h4>evolve · scale</h4>
+          <p>as demand grows, the network dynamically reconfigures — no downtime, no latency peak.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- advantages (3 columns) -->
+  <section id="advantages">
+    <h2 class="section-title light">minimal overhead · maximum output</h2>
+    <div class="grid-3">
+      <div class="advantage-card">
+        <span class="icon"><i data-feather="lock"></i></span>
+        <h3>zero‑trust fabric</h3>
+        <p class="desc">every request verified, every packet encrypted — no legacy vpn.</p>
+      </div>
+      <div class="advantage-card">
+        <span class="icon"><i data-feather="cpu"></i></span>
+        <h3>10x efficiency</h3>
+        <p class="desc">built on wasm and native code, 90% less energy per operation.</p>
+      </div>
+      <div class="advantage-card">
+        <span class="icon"><i data-feather="radio"></i></span>
+        <h3>offline first</h3>
+        <p class="desc">full functionality without connectivity — sync when back online.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- use cases (2 column) -->
+  <section id="use-cases">
+    <h2 class="section-title">use cases · from studio to field</h2>
+    <div class="grid-2">
+      <div class="use-case-card">
+        <span class="icon"><i data-feather="video"></i></span>
+        <h3>distributed production</h3>
+        <p class="desc">real‑time editing across continents with frame‑accurate sync.</p>
+      </div>
+      <div class="use-case-card">
+        <span class="icon"><i data-feather="database"></i></span>
+        <h3>edge compute</h3>
+        <p class="desc">run inference near sensors — instant insights, no cloud roundtrip.</p>
+      </div>
+      <div class="use-case-card">
+        <span class="icon"><i data-feather="users"></i></span>
+        <h3>collaborative xr</h3>
+        <p class="desc">shared spatial anchors for multi‑user immersive experiences.</p>
+      </div>
+      <div class="use-case-card">
+        <span class="icon"><i data-feather="shield"></i></span>
+        <h3>verifiable audit</h3>
+        <p class="desc">immutable logs for regulated industries — tamper‑proof by design.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- call to action -->
+  <section id="cta">
+    <div class="cta-block">
+      <h2>the unified layer for<br>ambient computing</h2>
+      <button class="cta-button">request early access</button>
+      <p style="margin-top: 2.5rem; opacity: 0.6; font-size: 1rem;">no spam, only nexus updates</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>© 2026 nexus•flow — silent infrastructure</span>
+  </footer>
+
+  <!-- scripts -->
+  <script>
+    (function() {
+      // Initialize feather icons
+      feather.replace({ width: '1em', height: '1em', 'stroke-width': 1.5 });
+
+      // ---------- subtle canvas background (hero) ----------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      const resizeCanvas = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      };
+
+      const initParticles = () => {
+        const count = Math.min(60, Math.floor(width * height / 12000));
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.2,
+            vy: (Math.random() - 0.5) * 0.1,
+            radius: Math.random() * 1.8 + 0.8,
+            baseAlpha: Math.random() * 0.2 + 0.1,
+          });
+        }
+      };
+
+      const drawParticles = () => {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#1e1e2f';
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(30, 30, 47, ${p.baseAlpha * 0.7})`;
+          ctx.fill();
+
+          // occasional thin connection lines (very subtle)
+          for (let other of particles) {
+            const dx = p.x - other.x;
+            const dy = p.y - other.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 100 && dist > 10 && Math.random() < 0.005) {
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(other.x, other.y);
+              ctx.strokeStyle = `rgba(30, 30, 47, 0.06)`;
+              ctx.lineWidth = 0.5;
+              ctx.stroke();
+            }
+          }
+        }
+      };
+
+      const updateParticles = () => {
+        for (let p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          // wrap gently
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+      };
+
+      const animateCanvas = () => {
+        if (!ctx) return;
+        updateParticles();
+        drawParticles();
+        requestAnimationFrame(animateCanvas);
+      };
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      animateCanvas();
+
+      // ---------- intersection observer (reveal animations) ----------
+      const revealElements = document.querySelectorAll('.feature-card, .advantage-card, .use-case-card, .step-item, .cta-block');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional unobserve after reveal
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ensure arrow scroll works
+      document.querySelector('.scroll-down').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelector('#features').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // optional: cta button dummy
+      document.querySelector('.cta-button')?.addEventListener('click', () => {
+        alert('demo: early access modal (concept)');
+      });
+
+      // refresh feather after dynamic content (none, but keep for safety)
+      feather.replace();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

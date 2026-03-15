@@ -1,0 +1,508 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nuvem · ambient compute</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background-color: #fafafc;
+            color: #1b1b1f;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* hero */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fafafc;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        canvas#bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 1200px;
+            margin: 0 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 13vw, 6.5rem);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #1b1b1f;
+            line-height: 1.1;
+            white-space: nowrap;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 {
+                font-size: 13vw;   /* stays on one line even on mobile */
+                white-space: nowrap;
+            }
+        }
+
+        .scroll-down {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: none;
+            border: none;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            color: #2c2c30;
+        }
+
+        .scroll-down:hover {
+            opacity: 1;
+            transform: translateX(-50%) translateY(4px);
+        }
+
+        .scroll-down svg {
+            width: 32px;
+            height: 32px;
+            stroke-width: 1.8;
+        }
+
+        /* general sections */
+        .section {
+            padding: 6rem 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s cubic-bezier(0.15, 0.75, 0.25, 1), transform 0.8s cubic-bezier(0.15, 0.75, 0.25, 1);
+        }
+
+        .section.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            margin-bottom: 3rem;
+            color: #1b1b1f;
+            line-height: 1.2;
+        }
+
+        @media (max-width: 700px) {
+            .section-title {
+                font-size: 2.2rem;
+            }
+        }
+
+        /* grids */
+        .grid-3, .grid-2 {
+            display: grid;
+            gap: 3rem;
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 800px) {
+            .grid-3 {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+            }
+        }
+
+        /* cards */
+        .feature-card, .step-card, .advantage-card, .use-case-card {
+            background: transparent;
+            padding: 0.5rem 0;
+        }
+
+        .icon-circle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: transparent;
+            border-radius: 50%;
+            margin-bottom: 1.8rem;
+            border: 1.5px solid #2c2c30;
+            color: #2c2c30;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .icon-circle svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 1.7;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .feature-card:hover .icon-circle,
+        .step-card:hover .icon-circle,
+        .advantage-card:hover .icon-circle,
+        .use-case-card:hover .icon-circle {
+            background: #2c2c30;
+            color: #fafafc;
+        }
+
+        h3 {
+            font-size: 1.8rem;
+            font-weight: 450;
+            letter-spacing: -0.01em;
+            margin-bottom: 1rem;
+        }
+
+        .section p {
+            font-size: 1.2rem;
+            color: #3b3b40;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        .use-case-card p, .advantage-card p {
+            max-width: none;
+        }
+
+        /* CTA */
+        .cta-block {
+            background: #1b1b1f;
+            color: #fafafc;
+            padding: 4rem 3rem;
+            border-radius: 40px;
+            text-align: center;
+        }
+
+        .cta-block h2 {
+            font-size: 3rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+            color: #fafafc;
+        }
+
+        .cta-block p {
+            color: #c5c5cf;
+            font-size: 1.3rem;
+            max-width: 500px;
+            margin: 0 auto 2rem auto;
+        }
+
+        .cta-button {
+            background: transparent;
+            border: 1.5px solid #fafafc;
+            color: #fafafc;
+            padding: 0.9rem 2.8rem;
+            font-size: 1.2rem;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+            font-weight: 450;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .cta-button:hover {
+            background: #fafafc;
+            color: #1b1b1f;
+            transform: scale(1.02);
+        }
+
+        hr {
+            margin: 2rem 0;
+            border: 0;
+            border-top: 1px solid #e0e0e6;
+        }
+
+        /* footer whisper */
+        .footer-note {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #8b8b95;
+            padding: 2rem 1.5rem 3rem;
+            border-top: 1px solid #ececf0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* no extra colors, only monochrome */
+    </style>
+    <!-- Feather icons (lightweight, outline) -->
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+
+    <!-- HERO with canvas animation -->
+    <section class="hero" id="top">
+        <canvas id="bgCanvas"></canvas>
+        <div class="hero-content">
+            <h1>ambient compute</h1>
+        </div>
+        <a href="#features" class="scroll-down" id="scrollBtn" aria-label="scroll down">
+            <i data-feather="arrow-down"></i>
+        </a>
+    </section>
+
+    <!-- FEATURES / BENEFITS -->
+    <section id="features" class="section">
+        <h2 class="section-title">pure simplicity.<br>invisible power.</h2>
+        <div class="grid-3">
+            <div class="feature-card">
+                <div class="icon-circle"><i data-feather="cpu"></i></div>
+                <h3>zero latency</h3>
+                <p>Edge nodes respond within 8ms — no spinning, no waiting. Just flow.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-circle"><i data-feather="wind"></i></div>
+                <h3>ambient interface</h3>
+                <p>Works with presence, glance, and whisper. Screens fade into surfaces.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-circle"><i data-feather="shield"></i></div>
+                <h3>local-first mesh</h3>
+                <p>Your data never leaves the room. End‑to‑end cryptographically signed.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS (2 columns) -->
+    <section class="section">
+        <h2 class="section-title">designed to disappear.</h2>
+        <div class="grid-2">
+            <div class="step-card">
+                <div class="icon-circle"><i data-feather="radio"></i></div>
+                <h3>1. whisper network</h3>
+                <p>Ultra‑wideband handshake happens before you enter the room. Zero pairing.</p>
+            </div>
+            <div class="step-card">
+                <div class="icon-circle"><i data-feather="layers"></i></div>
+                <h3>2. spatial compute</h3>
+                <p>Digital objects anchor to physical coordinates — desk, wall, or air.</p>
+            </div>
+            <div class="step-card">
+                <div class="icon-circle"><i data-feather="eye"></i></div>
+                <h3>3. glance activation</h3>
+                <p>Look at a surface to wake. A subtle glow follows your focus.</p>
+            </div>
+            <div class="step-card">
+                <div class="icon-circle"><i data-feather="command"></i></div>
+                <h3>4. ephemeral ui</h3>
+                <p>Controls appear only when needed. Then they dissolve into matter.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ADVANTAGES (minimal icons) -->
+    <section class="section">
+        <h2 class="section-title">beyond glass slabs.</h2>
+        <div class="grid-3">
+            <div class="advantage-card">
+                <div class="icon-circle"><i data-feather="droplet"></i></div>
+                <h3>organic material</h3>
+                <p>Biopolymer casing, recycled ocean metal. Feels warm, not cold.</p>
+            </div>
+            <div class="advantage-card">
+                <div class="icon-circle"><i data-feather="sun"></i></div>
+                <h3>harvests energy</h3>
+                <p>Ambient light and motion power the mesh — no cables ever.</p>
+            </div>
+            <div class="advantage-card">
+                <div class="icon-circle"><i data-feather="mic"></i></div>
+                <h3>silent air</h3>
+                <p>No fans, no coils. Only subsonic resonance you can feel.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- USE CASES -->
+    <section class="section">
+        <h2 class="section-title">lives it weaves into.</h2>
+        <div class="grid-2">
+            <div class="use-case-card">
+                <div class="icon-circle"><i data-feather="home"></i></div>
+                <h3>atelier / studio</h3>
+                <p>Tools float beside your hands. Palettes follow material — clay, light, sound.</p>
+            </div>
+            <div class="use-case-card">
+                <div class="icon-circle"><i data-feather="users"></i></div>
+                <h3>collective space</h3>
+                <p>Shared walls become whiteboards. Private layers only you see.</p>
+            </div>
+            <div class="use-case-card">
+                <div class="icon-circle"><i data-feather="activity"></i></div>
+                <h3>recovery & calm</h3>
+                <p>Biometric tapestries that adapt to breath, light, and heart.</p>
+            </div>
+            <div class="use-case-card">
+                <div class="icon-circle"><i data-feather="compass"></i></div>
+                <h3>wayfinding</h3>
+                <p>Subtle haptic paths through space. No screen, no voice.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CALL TO ACTION -->
+    <section class="section">
+        <div class="cta-block">
+            <h2>join the quiet shift.</h2>
+            <p>Early access for architects, weavers, and ambient thinkers.</p>
+            <button class="cta-button" onclick="alert('thank you · we’ll whisper back')">request invitation</button>
+        </div>
+    </section>
+
+    <div class="footer-note">
+        <span>n u v e m  —  edge embodied</span>
+    </div>
+
+    <script>
+        (function() {
+            // --- feather icons replace
+            feather.replace({ width: '1em', height: '1em', strokeWidth: 1.7 });
+
+            // --- subtle canvas background (elegant moving particles)
+            const canvas = document.getElementById('bgCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                createParticles();
+            }
+
+            function createParticles() {
+                particles = [];
+                const particleCount = 60;
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 1.8 + 0.6,
+                        speedX: (Math.random() - 0.5) * 0.2,
+                        speedY: (Math.random() - 0.5) * 0.1,
+                        opacity: Math.random() * 0.35 + 0.1,
+                    });
+                }
+            }
+
+            function drawParticles() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#8a8a99'; // soft grey, monochrome
+                for (let p of particles) {
+                    ctx.globalAlpha = p.opacity;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+                // subtle extra lines between close particles
+                ctx.globalAlpha = 0.04;
+                ctx.strokeStyle = '#4c4c55';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 120) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                ctx.globalAlpha = 1.0;
+            }
+
+            function updateParticles() {
+                for (let p of particles) {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    // wrap
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+                }
+                drawParticles();
+                requestAnimationFrame(updateParticles);
+            }
+
+            window.addEventListener('resize', () => {
+                initCanvas();
+            });
+
+            initCanvas();
+            updateParticles();
+
+            // --- REVEAL ON SCROLL (intersection observer)
+            const sections = document.querySelectorAll('.section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                    }
+                });
+            }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+
+            sections.forEach(section => observer.observe(section));
+
+            // --- smooth scroll for down arrow
+            document.getElementById('scrollBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+            });
+
+            // one-line hero guarantee: h1 already no wrap, extra safety for mobile
+        })();
+    </script>
+    <!-- down arrow uses feather, replaced above -->
+</body>
+</html>
+All done!
+```

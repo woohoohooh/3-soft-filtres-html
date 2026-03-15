@@ -1,0 +1,512 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helix · edge compute</title>
+  <style>
+    /* reset & base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f7f9fc;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1a1e2b;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* sections structure */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: clamp(3rem, 15vw, 6.5rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #0b0f17;
+      white-space: nowrap;
+      z-index: 5;
+      text-align: center;
+    }
+
+    /* canvas (animated background) */
+    #bgCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .down-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 100%;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 20;
+      color: #1e293b;
+      opacity: 0.7;
+    }
+
+    .down-arrow:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    /* section headings */
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      color: #0f172a;
+    }
+
+    .section-subhead {
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: #334155;
+      max-width: 600px;
+      margin-bottom: 3rem;
+    }
+
+    /* cards / grids */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 3rem 2rem;
+      margin-top: 2rem;
+    }
+
+    .feature-item {
+      background: transparent;
+      padding: 1rem 0;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border: 1.5px solid #1e293b;
+      border-radius: 50%;
+      margin-bottom: 1.8rem;
+      color: #1e293b;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .feature-item:hover .icon-circle {
+      background: #f1f5f9;
+      border-color: #0f172a;
+    }
+
+    .feature-item h3 {
+      font-size: 1.7rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-item p {
+      font-size: 1.1rem;
+      color: #334155;
+      max-width: 360px;
+    }
+
+    hr {
+      border: 0;
+      border-top: 1px solid #dce3ec;
+      margin: 2rem 0 3rem;
+    }
+
+    .two-col {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4rem;
+    }
+
+    .col-text {
+      flex: 1 1 300px;
+    }
+
+    .col-text h2 {
+      font-size: 2.4rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .col-text p {
+      font-size: 1.2rem;
+      color: #334155;
+      margin-bottom: 1.8rem;
+      max-width: 520px;
+    }
+
+    .icon-row {
+      display: flex;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .icon-row .icon-circle {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 0;
+    }
+
+    /* how it works step */
+    .step-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2.5rem;
+      justify-content: space-between;
+    }
+
+    .step {
+      flex: 1 1 200px;
+    }
+
+    .step .icon-circle {
+      margin-bottom: 1.5rem;
+    }
+
+    .step h4 {
+      font-size: 1.5rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+
+    .step p {
+      color: #475569;
+    }
+
+    /* cta */
+    .cta-box {
+      background: #f0f4fa;
+      border-radius: 36px;
+      padding: 4rem 3rem;
+      text-align: center;
+    }
+
+    .cta-box h2 {
+      font-size: 3rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-box p {
+      font-size: 1.3rem;
+      color: #1e293b;
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .cta-button {
+      background: #0f172a;
+      border: none;
+      color: white;
+      font-size: 1.3rem;
+      font-weight: 450;
+      padding: 1rem 3rem;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+      border: 1px solid #0f172a;
+    }
+
+    .cta-button:hover {
+      background: #1e293b;
+      transform: scale(1.02);
+    }
+
+    /* reveal animation (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* mobile corrections */
+    @media (max-width: 640px) {
+      section { padding: 4rem 1.5rem; }
+      h1 { font-size: 4rem; }   /* still one line if short enough, 'Helix' fits */
+      .section-title { font-size: 2.2rem; }
+      .two-col { gap: 2rem; }
+      .cta-box { padding: 3rem 1.5rem; }
+      .cta-box h2 { font-size: 2.4rem; }
+    }
+
+    /* feather icons (weight ok) */
+    .i {
+      width: 28px;
+      height: 28px;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .icon-circle .i {
+      width: 28px;
+      height: 28px;
+    }
+  </style>
+  <!-- feather icons lightweight replacement (inline sprite-like simplicity) -->
+  <script src="https://unpkg.com/feather-icons@4.29.1/dist/feather.min.js"></script>
+</head>
+<body>
+
+  <!-- HERO with canvas background and down arrow -->
+  <section class="hero" id="hero">
+    <canvas id="bgCanvas"></canvas>
+    <h1>Helix · edge compute</h1>
+    <button class="down-arrow" id="scrollDownBtn" aria-label="scroll down">
+      <i data-feather="arrow-down" width="44" height="44"></i>
+    </button>
+  </section>
+
+  <!-- section 1 / features -->
+  <section class="reveal">
+    <h2 class="section-title">Built for low‑latency<br>deployments.</h2>
+    <div class="grid-3">
+      <div class="feature-item">
+        <div class="icon-circle"><i data-feather="zap"></i></div>
+        <h3>Sub‑10ms</h3>
+        <p>Global edge network, responses in milliseconds — no cold starts.</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon-circle"><i data-feather="lock"></i></div>
+        <h3>Isolated V8</h3>
+        <p>Secure, lightweight isolates with per‑request sandboxing.</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon-circle"><i data-feather="code"></i></div>
+        <h3>JS / Wasm first</h3>
+        <p>JavaScript, TypeScript, WebAssembly — same workflow.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 / how it works (simple steps) -->
+  <section class="reveal">
+    <h2 class="section-title">How it works</h2>
+    <div class="step-list">
+      <div class="step">
+        <div class="icon-circle"><i data-feather="terminal"></i></div>
+        <h4>1. Write</h4>
+        <p>Write functions locally using familiar JS.</p>
+      </div>
+      <div class="step">
+        <div class="icon-circle"><i data-feather="upload-cloud"></i></div>
+        <h4>2. Deploy</h4>
+        <p>Push via CLI or GitHub — instant global distribution.</p>
+      </div>
+      <div class="step">
+        <div class="icon-circle"><i data-feather="globe"></i></div>
+        <h4>3. Run</h4>
+        <p>Requests are served from the nearest region.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3 / advantages (two column) -->
+  <section class="reveal">
+    <div class="two-col">
+      <div class="col-text">
+        <h2>No ops, just code.</h2>
+        <p>Helix abstracts scaling, regions, and deployment — you only push code. Built-in monitoring and logs.</p>
+        <div class="icon-row">
+          <div class="icon-circle"><i data-feather="activity"></i></div>
+          <div class="icon-circle"><i data-feather="cpu"></i></div>
+          <div class="icon-circle"><i data-feather="database"></i></div>
+        </div>
+      </div>
+      <div class="col-text">
+        <h2>Pay per request</h2>
+        <p>Generous free tier, then only for what you use. No idle costs, no hidden fees.</p>
+        <p style="margin-top: 1rem; font-size: 1rem; color: #4b5565;">~$0.15 per million requests</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4 / use cases -->
+  <section class="reveal">
+    <h2 class="section-title">Ideal for</h2>
+    <div class="grid-3">
+      <div class="feature-item">
+        <div class="icon-circle"><i data-feather="layers"></i></div>
+        <h3>API composition</h3>
+        <p>Aggregate third‑party APIs without backend orchestration.</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon-circle"><i data-feather="image"></i></div>
+        <h3>Real‑time transforms</h3>
+        <p>Image resizing, AVIF conversion, all at the edge.</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon-circle"><i data-feather="shield"></i></div>
+        <h3>Auth & validation</h3>
+        <p>JWT verification, rate limiting, request filtering.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 / call to action -->
+  <section class="reveal">
+    <div class="cta-box">
+      <h2>Deploy in seconds</h2>
+      <p>From zero to global in two commands. Join the private beta.</p>
+      <button class="cta-button">Start building →</button>
+    </div>
+  </section>
+
+  <!-- scripts -->
+  <script>
+    (function() {
+      // feather icons replace
+      feather.replace({ width: 28, height: 28, 'stroke-width': 1.8 });
+
+      // ----- canvas background (subtle animated dots) -----
+      const canvas = document.getElementById('bgCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 60;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 2.4 + 0.8,
+            speedX: (Math.random() - 0.5) * 0.18,
+            speedY: (Math.random() - 0.5) * 0.18,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      function draw() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#9aa9bb';   // very soft grey-blue
+        ctx.globalAlpha = 0.3;       // subtle, minimal
+        
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // move
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around edges softly (no hard cut)
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      draw();
+
+      // ----- smooth scroll down arrow -----
+      document.getElementById('scrollDownBtn').addEventListener('click', () => {
+        const firstSection = document.querySelector('section:not(.hero)');
+        if (firstSection) {
+          firstSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // ----- reveal on scroll (intersection observer) -----
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            // optional: unobserve after reveal
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' }); // subtle offset
+
+      revealElements.forEach(el => observer.observe(el));
+    })();
+  </script>
+
+  <!-- adjust feather for arrow size manually (hero arrow large) -->
+  <script>
+    (function secondaryIconFix() {
+      // ensure down arrow is extra large (44px already set by attr)
+      const arrowIcon = document.querySelector('.down-arrow i');
+      if (arrowIcon) {
+        feather.replace({ width: 44, height: 44 });
+      }
+      // also ensure all other icons keep 28px (default above)
+      // but we re-run with width spec for arrow only? quick fix:
+      document.querySelectorAll('.down-arrow i').forEach(el => {
+        el.setAttribute('width', '44');
+        el.setAttribute('height', '44');
+      });
+      // ensure all other .icon-circle icons use 28px (feather default was set)
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,589 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helix • ambient compute</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #fafafa;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #111;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* ---- hero section ---- */
+        .hero {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #fafafa;
+        }
+
+        /* canvas background (animated, subtle) */
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: clamp(3.5rem, 16vw, 9rem);
+            font-weight: 550;
+            letter-spacing: -0.02em;
+            color: #1b1b1b;
+            line-height: 1.1;
+            white-space: nowrap;              /* force single line */
+            margin: 0;
+            text-transform: uppercase;
+            font-family: system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+        }
+
+        /* down arrow */
+        .scroll-down {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            cursor: pointer;
+            color: #333;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            background: none;
+            border: none;
+            padding: 0.5rem;
+        }
+
+        .scroll-down:hover {
+            opacity: 0.6;
+            transform: translateX(-50%) translateY(5px);
+        }
+
+        .scroll-down svg {
+            width: 2rem;
+            height: 2rem;
+            stroke-width: 1.5;
+        }
+
+        /* ---- general sections layout ---- */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 5rem 2rem;
+        }
+
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            margin-bottom: 4rem;
+            color: #111;
+        }
+
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: #555;
+            max-width: 720px;
+            margin-bottom: 3rem;
+        }
+
+        /* reveal animation (intersection observer) */
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.15, 0.85, 0.35, 1), transform 0.8s cubic-bezier(0.15, 0.85, 0.35, 1);
+        }
+
+        .reveal-item.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* cards / grid */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 4rem 2rem;
+        }
+
+        .feature-card {
+            background: transparent;
+            padding: 1rem 0;
+        }
+
+        .feature-icon {
+            margin-bottom: 1.5rem;
+            color: #222;
+        }
+
+        .feature-icon svg {
+            width: 2.4rem;
+            height: 2.4rem;
+            stroke-width: 1.5;
+        }
+
+        .feature-card h3 {
+            font-size: 1.8rem;
+            font-weight: 460;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.01em;
+        }
+
+        .feature-card p {
+            font-size: 1.2rem;
+            color: #444;
+            max-width: 400px;
+        }
+
+        /* steps / how it works */
+        .steps-list {
+            list-style: none;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 2rem;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 2rem;
+        }
+
+        .step-item:last-child {
+            border-bottom: none;
+        }
+
+        .step-number {
+            font-size: 2rem;
+            font-weight: 350;
+            color: #aaa;
+            line-height: 1;
+            min-width: 3rem;
+        }
+
+        .step-content h4 {
+            font-size: 2rem;
+            font-weight: 460;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-content p {
+            font-size: 1.3rem;
+            color: #444;
+            max-width: 700px;
+        }
+
+        /* advantages (two column) */
+        .two-col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem 4rem;
+        }
+
+        .advantage-item {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .advantage-icon svg {
+            width: 2rem;
+            height: 2rem;
+            stroke-width: 1.5;
+            color: #222;
+        }
+
+        .advantage-text h4 {
+            font-size: 1.8rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .advantage-text p {
+            font-size: 1.1rem;
+            color: #4a4a4a;
+        }
+
+        /* use cases — monochrome list */
+        .use-cases {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem 3rem;
+            margin-top: 2rem;
+        }
+
+        .use-case-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: #f0f0f0;
+            border-radius: 60px;
+            padding: 0.8rem 2rem 0.8rem 1.5rem;
+        }
+
+        .use-case-item svg {
+            width: 1.6rem;
+            height: 1.6rem;
+            stroke-width: 1.5;
+            color: #111;
+        }
+
+        .use-case-item span {
+            font-size: 1.3rem;
+            font-weight: 430;
+        }
+
+        /* cta section */
+        .cta-block {
+            background: #111;
+            color: white;
+            border-radius: 32px;
+            padding: 5rem 4rem;
+            text-align: center;
+        }
+
+        .cta-block h2 {
+            font-size: 3.5rem;
+            font-weight: 450;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+            color: #fff;
+        }
+
+        .cta-block p {
+            font-size: 1.5rem;
+            color: #ccc;
+            max-width: 600px;
+            margin: 0 auto 3rem;
+        }
+
+        .cta-button {
+            background: transparent;
+            border: 2px solid #fff;
+            color: white;
+            padding: 1.2rem 3.2rem;
+            font-size: 1.5rem;
+            font-weight: 460;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, transform 0.1s;
+            background: #fff;
+            color: #111;
+            border: none;
+            font-weight: 500;
+        }
+
+        .cta-button:hover {
+            background: #e0e0e0;
+            transform: scale(1.02);
+        }
+
+        /* footer */
+        .footer {
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #6b6b6b;
+            border-top: 1px solid #eaeaea;
+            font-size: 1rem;
+        }
+
+        /* responsiveness */
+        @media (max-width: 680px) {
+            .hero h1 {
+                font-size: clamp(2.8rem, 15vw, 5.5rem);
+                white-space: nowrap;           /* still one line */
+            }
+            .section-title {
+                font-size: 2.2rem;
+            }
+            .two-col {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            .step-item {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .step-number {
+                font-size: 2rem;
+            }
+            .cta-block h2 {
+                font-size: 2.5rem;
+            }
+            .cta-block p {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* no line breaks anywhere */
+        br {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HERO (minimal, one-line headline) -->
+    <section class="hero" id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <h1>HELIX</h1>                       <!-- one line, large, centered -->
+        </div>
+        <div class="scroll-down" id="scrollDownBtn">
+            <i data-lucide="chevron-down"></i>
+        </div>
+    </section>
+
+    <!-- SECTION 1 – FEATURES -->
+    <section class="container" id="features">
+        <h2 class="section-title reveal-item">fluid intelligence</h2>
+        <div class="grid-3">
+            <div class="feature-card reveal-item">
+                <div class="feature-icon" data-lucide="cpu"></div>
+                <h3>neural fabric</h3>
+                <p>Adaptive inference that reshapes with each query – silent, instant, endless.</p>
+            </div>
+            <div class="feature-card reveal-item">
+                <div class="feature-icon" data-lucide="eye"></div>
+                <h3>spatial vision</h3>
+                <p>Perceive environments without cameras — pure ambient data becomes sight.</p>
+            </div>
+            <div class="feature-card reveal-item">
+                <div class="feature-icon" data-lucide="zap"></div>
+                <h3>edge pulse</h3>
+                <p>Logic happens at the edge. zero latency, infinite privacy.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2 – HOW IT WORKS -->
+    <section class="container" id="how-it-works">
+        <h2 class="section-title reveal-item">silent motion</h2>
+        <ul class="steps-list">
+            <li class="step-item reveal-item">
+                <span class="step-number">01</span>
+                <div class="step-content">
+                    <h4>whisper scan</h4>
+                    <p>Helix listens to the electromagnetic noise of your space — no mic, no audio.</p>
+                </div>
+            </li>
+            <li class="step-item reveal-item">
+                <span class="step-number">02</span>
+                <div class="step-content">
+                    <h4>phase construct</h4>
+                    <p>An invisible model of occupancy and intent is built inside a single chip.</p>
+                </div>
+            </li>
+            <li class="step-item reveal-item">
+                <span class="step-number">03</span>
+                <div class="step-content">
+                    <h4>light-touch response</h4>
+                    <p>Your environment reacts — lights, sound fields, haptics — with no wearable.</p>
+                </div>
+            </li>
+        </ul>
+    </section>
+
+    <!-- SECTION 3 – ADVANTAGES -->
+    <section class="container" id="advantages">
+        <h2 class="section-title reveal-item">beyond digital</h2>
+        <div class="two-col">
+            <div class="advantage-item reveal-item">
+                <div class="advantage-icon" data-lucide="battery-charging"></div>
+                <div class="advantage-text">
+                    <h4>years, not days</h4>
+                    <p>Micro-watt architecture — run a decade on a coin cell.</p>
+                </div>
+            </div>
+            <div class="advantage-item reveal-item">
+                <div class="advantage-icon" data-lucide="lock"></div>
+                <div class="advantage-text">
+                    <h4>zero cloud</h4>
+                    <p>Everything stays inside your walls. no subscription, no exposure.</p>
+                </div>
+            </div>
+            <div class="advantage-item reveal-item">
+                <div class="advantage-icon" data-lucide="layers"></div>
+                <div class="advantage-text">
+                    <h4>material-agnostic</h4>
+                    <p>Works through concrete, glass, timber — embeds into any surface.</p>
+                </div>
+            </div>
+            <div class="advantage-item reveal-item">
+                <div class="advantage-icon" data-lucide="infinity"></div>
+                <div class="advantage-text">
+                    <h4>self-healing mesh</h4>
+                    <p>Nodes reorganise if one goes dark. no single point of failure.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4 – USE CASES -->
+    <section class="container" id="use-cases">
+        <h2 class="section-title reveal-item">ambient applications</h2>
+        <div class="use-cases">
+            <div class="use-case-item reveal-item"><i data-lucide="home"></i><span>private homes</span></div>
+            <div class="use-case-item reveal-item"><i data-lucide="building"></i><span>deep workspaces</span></div>
+            <div class="use-case-item reveal-item"><i data-lucide="car"></i><span>autonomous cabins</span></div>
+            <div class="use-case-item reveal-item"><i data-lucide="warehouse"></i><span>silent logistics</span></div>
+            <div class="use-case-item reveal-item"><i data-lucide="hotel"></i><span>healing environments</span></div>
+            <div class="use-case-item reveal-item"><i data-lucide="leaf"></i><span>regenerative retail</span></div>
+        </div>
+    </section>
+
+    <!-- SECTION 5 – CALL TO ACTION -->
+    <section class="container" id="cta">
+        <div class="cta-block reveal-item">
+            <h2>enter the field</h2>
+            <p>首批开发单元 — 申请私密试用</p>
+            <button class="cta-button" id="ctaBtn">request prototype</button>
+        </div>
+    </section>
+
+    <!-- footer (minimal) -->
+    <footer class="footer">
+        <span>© Helix 2025 · ambient compute</span>
+    </footer>
+
+    <!-- JS: canvas animation, lucide, scroll + reveal -->
+    <script>
+        (function() {
+            // ---------- canvas animation (subtle moving waves) ----------
+            const canvas = document.getElementById('hero-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let width, height;
+            let time = 0;
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            function drawWave() {
+                // ultra minimal, almost monochrome moving lines
+                ctx.clearRect(0, 0, width, height);
+                ctx.strokeStyle = '#c0c0c0';
+                ctx.lineWidth = 1.2;
+                
+                const amplitude = 16;
+                const frequency = 0.002;
+                const speed = 0.02;
+
+                // draw 3 flowing lines
+                for (let l = 0; l < 3; l++) {
+                    ctx.beginPath();
+                    const yOffset = height * (0.3 + l * 0.2);
+                    for (let x = 0; x < width; x += 20) {
+                        const wave1 = Math.sin(x * frequency + time + l * 2) * amplitude;
+                        const wave2 = Math.cos(x * frequency * 0.5 + time * 0.8) * amplitude * 0.6;
+                        const y = yOffset + wave1 + wave2;
+
+                        if (x === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.strokeStyle = `rgba(60, 60, 60, ${0.2 + l*0.1})`;
+                    ctx.stroke();
+                }
+
+                // second set, very faint
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(30, 30, 30, 0.15)';
+                for (let x = 0; x < width; x += 30) {
+                    const y = height/2 + Math.sin(x * 0.003 + time * 1.4) * 30;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+
+                time += speed;
+                requestAnimationFrame(drawWave);
+            }
+            drawWave();
+
+            // ---------- lucide icons ----------
+            lucide.createIcons();
+
+            // ---------- smooth scroll down ----------
+            document.getElementById('scrollDownBtn').addEventListener('click', (e) => {
+                document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+            });
+
+            // tiny hover effect on cta (light animation)
+            const ctaBtn = document.getElementById('ctaBtn');
+            ctaBtn.addEventListener('mouseenter', () => {
+                ctaBtn.style.transform = 'scale(1.02)';
+            });
+            ctaBtn.addEventListener('mouseleave', () => {
+                ctaBtn.style.transform = 'scale(1)';
+            });
+
+            // ---------- reveal on scroll (intersection observer) ----------
+            const revealItems = document.querySelectorAll('.reveal-item');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+            revealItems.forEach(item => observer.observe(item));
+
+            // trigger for any that are already visible
+            window.addEventListener('load', () => {
+                revealItems.forEach(item => {
+                    const rect = item.getBoundingClientRect();
+                    if (rect.top < window.innerHeight - 100) {
+                        item.classList.add('revealed');
+                    }
+                });
+            });
+
+        })();
+    </script>
+    <!-- re-run lucide after dynamic content (some icons added via innerHTML) -->
+    <script>
+        // ensure icons inside use-case / advantage etc are replaced
+        lucide.createIcons();
+    </script>
+</body>
+</html>
+All done!
+```

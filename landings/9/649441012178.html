@@ -1,0 +1,479 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aperi · sync</title>
+  <!-- Feather icons (lightweight, outline) -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <style>
+    /* RESET + BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f6f7f9;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.4;
+      color: #15181e;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* large typography, clean spacing */
+    h1, h2, h3 {
+      font-weight: 450;
+      letter-spacing: -0.02em;
+    }
+
+    .section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    /* ----- hero ----- */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: #f6f7f9;
+      overflow: hidden;
+    }
+
+    /* canvas background (animated subtle grid) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.45;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 3;
+      text-align: center;
+      width: 100%;
+      padding: 0 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.2rem, 14vw, 6.8rem);
+      font-weight: 470;
+      line-height: 1.1;
+      color: #1a1e26;
+      white-space: nowrap;         /* force one line */
+      margin: 0 auto;
+      max-width: 100%;
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      word-break: keep-all;
+    }
+
+    /* down arrow (hero) */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #2c313c;
+      transition: opacity 0.2s;
+    }
+    .scroll-down svg {
+      width: 38px;
+      height: 38px;
+      stroke-width: 1.3;
+      stroke: currentColor;
+      fill: none;
+    }
+    .scroll-down:hover {
+      opacity: 0.6;
+    }
+
+    /* ----- general section headings ----- */
+    .section-title {
+      font-size: 3.2rem;
+      margin-bottom: 4rem;
+      font-weight: 430;
+      letter-spacing: -0.02em;
+      color: #171c24;
+    }
+
+    /* features grid / cards */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 4rem 3rem;
+    }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .feature-card, .advantage-card, .use-case-card {
+      background: transparent;
+      padding: 0;
+    }
+
+    /* icons only outline, monochrome */
+    .icon-outline {
+      color: #262d38;
+      margin-bottom: 1.5rem;
+      display: inline-flex;
+    }
+    .icon-outline svg {
+      width: 36px;
+      height: 36px;
+      stroke-width: 1.3;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    h3 {
+      font-size: 1.9rem;
+      font-weight: 450;
+      margin-bottom: 0.9rem;
+      color: #1d232b;
+    }
+
+    p {
+      font-size: 1.2rem;
+      color: #2f3743;
+      max-width: 550px;
+      font-weight: 380;
+    }
+
+    /* how it works — minimalist step list */
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2.5rem 4rem;
+      justify-content: space-between;
+    }
+    .step-item {
+      flex: 1 1 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .step-marker {
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: #6c7787;
+      margin-bottom: 1rem;
+      letter-spacing: 0.3px;
+    }
+
+    /* call to action */
+    .cta-box {
+      background: #1e242c;
+      padding: 5rem 4rem;
+      border-radius: 24px;
+      color: white;
+      text-align: center;
+    }
+    .cta-box h2 {
+      color: white;
+      font-size: 3.5rem;
+      margin-bottom: 2rem;
+      font-weight: 430;
+    }
+    .cta-btn {
+      background: white;
+      border: none;
+      color: #1e242c;
+      font-size: 1.4rem;
+      padding: 1rem 4rem;
+      border-radius: 48px;
+      font-weight: 460;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+    }
+    .cta-btn:hover {
+      background: #eef2f6;
+      transform: scale(0.98);
+    }
+
+    /* reveal animation (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.75s ease, transform 0.75s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* footer small */
+    .footer-note {
+      text-align: center;
+      padding: 2rem;
+      color: #7b8493;
+      font-size: 0.95rem;
+      border-top: 1px solid #dfe4ea;
+    }
+
+    /* responsiveness */
+    @media (max-width: 800px) {
+      .section { padding: 4rem 1.5rem; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 3rem; }
+      .hero h1 { font-size: clamp(2.8rem, 12vw, 5rem); } /* keep one line even on small screens — but may shrink */
+      .section-title { font-size: 2.8rem; }
+      .cta-box { padding: 3rem 1.5rem; }
+      .cta-box h2 { font-size: 2.5rem; }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 2.4rem; }  /* still one line: for very narrow screens, word may be too long, but keep design */
+    }
+
+    /* feather replace */
+    .feather {
+      stroke-width: 1.3;
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO section -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>APERI SYNC</h1>
+    </div>
+    <div class="scroll-down" id="scrollDownArrow">
+      <i data-feather="arrow-down"></i>
+    </div>
+  </section>
+
+  <!-- SECTION 1 – Features / Benefits -->
+  <section class="section" id="features">
+    <h2 class="section-title reveal">Core capacities</h2>
+    <div class="grid-3">
+      <div class="feature-card reveal">
+        <div class="icon-outline"><i data-feather="cpu"></i></div>
+        <h3>Zero‑latency mesh</h3>
+        <p>Direct p2p sync under 30ms — no relay, no central buffer.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="icon-outline"><i data-feather="layers"></i></div>
+        <h3>Immutable branches</h3>
+        <p>Every change is a signed delta; full audit trail without overhead.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="icon-outline"><i data-feather="key"></i></div>
+        <h3>Local‑first encryption</h3>
+        <p>Data never leaves your devices in clear — only end‑to‑end.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 – How it works (minimal steps) -->
+  <section class="section" id="how-it-works">
+    <h2 class="section-title reveal">Flow</h2>
+    <div class="steps">
+      <div class="step-item reveal">
+        <span class="step-marker">⸻ 01</span>
+        <h3>Connect identity</h3>
+        <p>Pair via signed QR or numeric code — ed25519 key exchange.</p>
+      </div>
+      <div class="step-item reveal">
+        <span class="step-marker">⸻ 02</span>
+        <h3>Sync scope</h3>
+        <p>Choose folders, app data or whole volumes — set once.</p>
+      </div>
+      <div class="step-item reveal">
+        <span class="step-marker">⸻ 03</span>
+        <h3>Conflict‑free</h3>
+        <p>Automatic CRDT merge — no duplicates, no lost bits.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 – Advantages (monochrome icons) -->
+  <section class="section" id="advantages">
+    <h2 class="section-title reveal">Why different</h2>
+    <div class="grid-2">
+      <div class="advantage-card reveal">
+        <div class="icon-outline"><i data-feather="zap"></i></div>
+        <h3>No cloud tax</h3>
+        <p>Direct device sync — your bandwidth, your rules. No monthly fees.</p>
+      </div>
+      <div class="advantage-card reveal">
+        <div class="icon-outline"><i data-feather="archive"></i></div>
+        <h3>Version everything</h3>
+        <p>Incremental snapshots kept locally — rewind any file to any second.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 – Use cases -->
+  <section class="section" id="use-cases">
+    <h2 class="section-title reveal">Use cases</h2>
+    <div class="grid-3">
+      <div class="use-case-card reveal">
+        <div class="icon-outline"><i data-feather="code"></i></div>
+        <h3>Dev environments</h3>
+        <p>Sync repos, containers, and IDE settings across machines.</p>
+      </div>
+      <div class="use-case-card reveal">
+        <div class="icon-outline"><i data-feather="camera"></i></div>
+        <h3>Media teams</h3>
+        <p>Raw footage & proxies — edit on set, sync to post instantly.</p>
+      </div>
+      <div class="use-case-card reveal">
+        <div class="icon-outline"><i data-feather="users"></i></div>
+        <h3>Offline mesh</h3>
+        <p>Expeditions, remote sites — sync when in range, no internet needed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 – Call to action -->
+  <section class="section" id="cta">
+    <div class="cta-box reveal">
+      <h2>Sync without borders</h2>
+      <button class="cta-btn" id="demoCta">Get early access</button>
+    </div>
+  </section>
+
+  <!-- tiny footer -->
+  <div class="footer-note">
+    aperi sync — edge first
+  </div>
+
+  <script>
+    (function() {
+      // feather icons replace
+      feather.replace({ width: '1.3em', height: '1.3em' });
+
+      // ------ smooth scroll (down arrow) ------
+      const downArrow = document.getElementById('scrollDownArrow');
+      if (downArrow) {
+        downArrow.addEventListener('click', (e) => {
+          e.preventDefault();
+          const featuresSection = document.getElementById('features');
+          if (featuresSection) {
+            featuresSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      }
+
+      // ------ canvas animation (subtle moving grid) ------
+      const canvas = document.getElementById('heroCanvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let time = 0;
+
+        function resizeCanvas() {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = width;
+          canvas.height = height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawGrid() {
+          ctx.clearRect(0, 0, width, height);
+          
+          const cellSize = 45;
+          const cols = Math.ceil(width / cellSize) + 2;
+          const rows = Math.ceil(height / cellSize) + 2;
+
+          ctx.strokeStyle = '#a2acbc';
+          ctx.lineWidth = 0.5;
+          ctx.globalAlpha = 0.18 + 0.06 * Math.sin(time * 0.01);
+
+          // vertical lines
+          ctx.beginPath();
+          for (let i = 0; i <= cols; i++) {
+            const x = i * cellSize + (time * 0.05) % cellSize;
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+          }
+          // horizontal lines
+          for (let i = 0; i <= rows; i++) {
+            const y = i * cellSize + (time * 0.03) % cellSize;
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+          }
+          ctx.stroke();
+
+          // extra tiny dots at intersections (elegant)
+          ctx.fillStyle = '#7d8798';
+          ctx.globalAlpha = 0.12;
+          for (let i = 0; i <= cols; i+=2) {
+            for (let j = 0; j <= rows; j+=2) {
+              const x = i * cellSize + (time * 0.05) % cellSize;
+              const y = j * cellSize + (time * 0.03) % cellSize;
+              if (x < width && y < height) {
+                ctx.beginPath();
+                ctx.arc(x, y, 1.2, 0, 2 * Math.PI);
+                ctx.fill();
+              }
+            }
+          }
+          ctx.globalAlpha = 1;
+          time += 1;
+          requestAnimationFrame(drawGrid);
+        }
+        drawGrid();
+      }
+
+      // ------ reveal on scroll (intersection observer) ------
+      const revealElements = document.querySelectorAll('.reveal');
+      if (revealElements.length > 0) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+            } else {
+              // optional: remove class if you want them to hide again (subtle)
+              // entry.target.classList.remove('visible'); // comment to keep visible after once shown
+            }
+          });
+        }, { threshold: 0.2, rootMargin: '0px 0px -30px 0px' });
+
+        revealElements.forEach(el => observer.observe(el));
+      }
+
+      // tiny interactive CTA button feedback (no action)
+      const ctaBtn = document.getElementById('demoCta');
+      if (ctaBtn) {
+        ctaBtn.addEventListener('click', () => {
+          alert('preview — sync mesh would activate');  // minimal modern feedback
+        });
+      }
+
+      // make sure one-line hero even on resize (h1 already white-space nowrap)
+      // just extra insurance
+    })();
+  </script>
+  <!-- feather icons CDN already included above, but we re-run replace after dynamic content -->
+  <script>
+    (function secondPass() {
+      // ensure icons inside reveal are also replaced (if any dynamic later)
+      if (typeof feather !== 'undefined') {
+        feather.replace({ strokeWidth: 1.3 });
+      }
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

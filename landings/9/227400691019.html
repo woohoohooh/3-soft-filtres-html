@@ -1,0 +1,497 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nebula · Flow</title>
+  <!-- Feather icons (lightweight, outline, monochrome) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #fafafc;
+      color: #111;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* canvas background (subtle animated particles) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    /* sections stacking */
+    section {
+      position: relative;
+      z-index: 2;
+      background: #fafafc;
+    }
+
+    .hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #fafafc; /* fallback */
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 1200px;
+      width: 100%;
+      padding: 0 24px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 12vw, 7rem);
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #111;
+      white-space: nowrap;       /* keep on one line */
+      overflow-wrap: normal;
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #333;
+      transition: transform 0.2s ease, opacity 0.2s;
+      opacity: 0.8;
+    }
+    .scroll-down:hover {
+      transform: translateX(-50%) translateY(4px);
+      opacity: 1;
+    }
+    .scroll-down svg {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.5;
+    }
+
+    /* container for sections */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 120px 24px;
+    }
+
+    /* section headers */
+    .section-title {
+      font-size: 3.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 64px;
+      line-height: 1.2;
+    }
+
+    /* feature grid etc */
+    .grid-3, .grid-2 {
+      display: grid;
+      gap: 64px 48px;
+    }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+    .card {
+      background: transparent;
+    }
+    .card-icon {
+      margin-bottom: 28px;
+      color: #111;
+    }
+    .card-icon svg {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.5;
+      stroke: currentColor;
+    }
+    .card h3 {
+      font-size: 1.8rem;
+      font-weight: 550;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+    .card p {
+      font-size: 1.2rem;
+      color: #444;
+      max-width: 90%;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+      margin-bottom: 48px;
+    }
+    .step-number {
+      font-size: 2.2rem;
+      font-weight: 350;
+      color: #aaa;
+      line-height: 1;
+      min-width: 60px;
+    }
+    .step-content h4 {
+      font-size: 2rem;
+      font-weight: 550;
+      margin-bottom: 12px;
+    }
+    .step-content p {
+      font-size: 1.3rem;
+      color: #444;
+      max-width: 700px;
+    }
+
+    /* advantages list */
+    .advantage-list {
+      list-style: none;
+    }
+    .advantage-list li {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      font-size: 1.7rem;
+      font-weight: 480;
+      margin-bottom: 48px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 32px;
+    }
+    .advantage-list li:last-child {
+      border-bottom: none;
+    }
+    .advantage-list svg {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.5;
+      flex-shrink: 0;
+    }
+
+    .use-case {
+      background: #fff;
+      padding: 48px;
+      border-radius: 48px;
+      box-shadow: 0 20px 40px -20px rgba(0,0,0,0.15);
+    }
+    .use-case p {
+      font-size: 1.4rem;
+      color: #222;
+    }
+
+    .cta-box {
+      background: #111;
+      color: white;
+      border-radius: 60px;
+      padding: 96px 64px;
+      text-align: center;
+    }
+    .cta-box h2 {
+      font-size: 4rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+    }
+    .cta-box p {
+      font-size: 1.6rem;
+      color: #ccc;
+      margin-bottom: 48px;
+    }
+    .cta-button {
+      background: white;
+      color: #111;
+      border: none;
+      font-size: 1.5rem;
+      font-weight: 520;
+      padding: 20px 56px;
+      border-radius: 80px;
+      cursor: pointer;
+      transition: 0.15s ease;
+      box-shadow: 0 4px 20px rgba(255,255,255,0.1);
+    }
+    .cta-button:hover {
+      background: #f0f0f0;
+      transform: scale(0.97);
+    }
+
+    /* reveal animation (fade+up) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* mobile */
+    @media (max-width: 800px) {
+      .grid-3 { grid-template-columns: 1fr; gap: 48px; }
+      .grid-2 { grid-template-columns: 1fr; gap: 48px; }
+      .section-title { font-size: 2.6rem; }
+      .hero h1 { font-size: clamp(2.8rem, 15vw, 6rem); white-space: nowrap; }
+      .step-item { flex-direction: column; gap: 8px; }
+      .step-number { font-size: 2rem; }
+      .step-content h4 { font-size: 1.8rem; }
+      .step-content p { font-size: 1.2rem; }
+      .cta-box { padding: 64px 24px; }
+      .cta-box h2 { font-size: 3rem; }
+      .advantage-list li { font-size: 1.4rem; }
+      .container { padding: 80px 24px; }
+    }
+
+    /* feather icons default */
+    i { display: inline-flex; vertical-align: middle; }
+  </style>
+</head>
+<body>
+
+  <!-- hero section with canvas background -->
+  <section class="hero" id="home">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>Intelligence that flows.</h1>
+    </div>
+    <button class="scroll-down" id="scrollDownBtn" aria-label="scroll down">
+      <i data-feather="arrow-down"></i>
+    </button>
+  </section>
+
+  <!-- FEATURES / BENEFITS -->
+  <section id="features" class="reveal">
+    <div class="container">
+      <h2 class="section-title">Radically simple · radically powerful</h2>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon"><i data-feather="zap"></i></div>
+          <h3>Instant reflexes</h3>
+          <p>Sub‑millisecond latency, feels like native thought. No spinning, no waiting.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i data-feather="lock"></i></div>
+          <h3>Zero‑knowledge</h3>
+          <p>Your data is encrypted end‑to‑end. We never see your keys — ever.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i data-feather="globe"></i></div>
+          <h3>Native omnipresence</h3>
+          <p>Works across all your devices. Seamless, secure, and always in sync.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS (simple steps) -->
+  <section id="how-it-works" class="reveal">
+    <div class="container">
+      <h2 class="section-title">One flow. Three moves.</h2>
+      <div class="step-item">
+        <div class="step-number">01</div>
+        <div class="step-content">
+          <h4>Connect your sources</h4>
+          <p>APIs, webhooks, or plain text — we unify everything into a single stream.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-number">02</div>
+        <div class="step-content">
+          <h4>Let the agent learn</h4>
+          <p>Your private model builds a dynamic map of your context and intent.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-number">03</div>
+        <div class="step-content">
+          <h4>Ask, act, automate</h4>
+          <p>Natural language becomes action. It’s like having a co‑pilot for everything.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADVANTAGES (clean bullet list with icons) -->
+  <section id="advantages" class="reveal">
+    <div class="container">
+      <h2 class="section-title">Built different.</h2>
+      <ul class="advantage-list">
+        <li><i data-feather="check-circle"></i> No training data leakage — private by design</li>
+        <li><i data-feather="check-circle"></i> 1ms inference on dedicated instances</li>
+        <li><i data-feather="check-circle"></i> Transparent pricing: no hidden tokens</li>
+        <li><i data-feather="check-circle"></i> Full SOC2 & GDPR compliance</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- USE CASES (elegant block) -->
+  <section id="use-cases" class="reveal">
+    <div class="container">
+      <h2 class="section-title">Already reshaping industries</h2>
+      <div class="grid-2">
+        <div class="use-case">
+          <i data-feather="users" style="width:44px;height:44px;margin-bottom:24px;"></i>
+          <h3 style="font-size:2.2rem; margin-bottom:16px;">Support</h3>
+          <p>Human‑like resolution in 5 languages. 70% less escalations.</p>
+        </div>
+        <div class="use-case">
+          <i data-feather="code" style="width:44px;height:44px;margin-bottom:24px;"></i>
+          <h3 style="font-size:2.2rem; margin-bottom:16px;">Development</h3>
+          <p>From documentation to deployed code — the fastest way to ship.</p>
+        </div>
+        <div class="use-case">
+          <i data-feather="trending-up" style="width:44px;height:44px;margin-bottom:24px;"></i>
+          <h3 style="font-size:2.2rem; margin-bottom:16px;">Analytics</h3>
+          <p>Natural language queries over billions of rows. Instant insights.</p>
+        </div>
+        <div class="use-case">
+          <i data-feather="shield" style="width:44px;height:44px;margin-bottom:24px;"></i>
+          <h3 style="font-size:2.2rem; margin-bottom:16px;">Security</h3>
+          <p>Real‑time threat detection and automated incident playbooks.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section id="cta" class="reveal">
+    <div class="container">
+      <div class="cta-box">
+        <h2>Start flowing today.</h2>
+        <p>Join the private beta — deploy in minutes, not months.</p>
+        <button class="cta-button">Reserve your seat</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function() {
+      // 1. Feather icons init
+      feather.replace({ strokeWidth: 1.5 });
+
+      // 2. smooth scroll for down arrow
+      const scrollBtn = document.getElementById('scrollDownBtn');
+      if (scrollBtn) {
+        scrollBtn.addEventListener('click', () => {
+          document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+        });
+      }
+
+      // 3. canvas background (subtle particles)
+      const canvas = document.getElementById('heroCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 60;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 2 + 1,
+            speedX: (Math.random() - 0.5) * 0.25,
+            speedY: (Math.random() - 0.5) * 0.15,
+            opacity: Math.random() * 0.4 + 0.1,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#111';
+
+        for (let p of particles) {
+          ctx.globalAlpha = p.opacity * 0.6;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // move
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around edges gently (no hard cut)
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      drawParticles();
+
+      // 4. reveal on scroll (intersection observer)
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional: unobserve after reveal
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // 5. ensure all icons are replaced after dynamic content (feather already called, but to be safe)
+      // also because use-case icons are inside revealed blocks, we re-run after small delay to be perfect
+      setTimeout(() => feather.replace({ strokeWidth: 1.5 }), 100);
+    })();
+  </script>
+
+  <!-- small extra style for feather icons (monochrome, outline) -->
+  <style>
+    i.feather, svg.feather { stroke: currentColor; fill: none; }
+    .use-case svg { stroke: #111; margin-bottom: 24px; }
+    .advantage-list svg { stroke: #111; }
+    .card-icon svg { stroke: #111; }
+    .cta-box svg { stroke: white; }
+  </style>
+
+</body>
+</html>
+All done!
+```

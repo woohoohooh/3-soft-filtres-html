@@ -1,0 +1,486 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helix • precision sound</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f8fafc;
+      color: #0b1e2e;
+      font-family: system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* ---- sections general ---- */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-header {
+      font-size: 2.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      line-height: 1.1;
+    }
+
+    @media (max-width: 700px) {
+      section { padding: 4rem 1.5rem; }
+      .section-header { font-size: 2.2rem; margin-bottom: 2rem; }
+    }
+
+    /* grid / card layout */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem 2rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 3rem 4rem;
+    }
+
+    @media (max-width: 800px) {
+      .grid-3, .grid-2 { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+
+    /* cards */
+    .feature-card, .step-card, .advantage-item, .use-case-card {
+      background: transparent;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border: 1.5px solid #1e2f3f;
+      border-radius: 50%;
+      margin-bottom: 1.8rem;
+      color: #1e2f3f;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .feature-card:hover .icon-circle,
+    .step-card:hover .icon-circle,
+    .advantage-item:hover .icon-circle,
+    .use-case-card:hover .icon-circle {
+      border-color: #4b6a8b;
+      transform: scale(1.02);
+    }
+
+    .icon-circle svg {
+      width: 28px;
+      height: 28px;
+      stroke-width: 1.5;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    h3 {
+      font-size: 1.8rem;
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-text {
+      font-size: 1.2rem;
+      color: #2d3f50;
+      max-width: 400px;
+    }
+
+    /* ----- hero section ----- */
+    .hero {
+      height: 100vh;
+      min-height: 680px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 0 1.5rem;
+      background-color: #f8fafc;  /* fallback */
+      overflow: hidden;
+    }
+
+    /* canvas animation background (js) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;  /* allows click through to down arrow */
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 12vw, 7rem);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      color: #0f212f;
+      line-height: 1;        /* keeps one-line */
+      white-space: nowrap;    /* force single line */
+      margin: 0 auto;
+      width: fit-content;
+      max-width: 95vw;
+      overflow: visible;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* small screens: we keep nowrap, but clamp prevents overflow */
+    @media (max-width: 500px) {
+      .hero h1 { font-size: clamp(2.8rem, 13vw, 5rem); }
+    }
+
+    /* down arrow */
+    .hero-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #1e2f3f;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      padding: 0.5rem;
+    }
+
+    .hero-arrow:hover {
+      opacity: 0.6;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    .hero-arrow svg {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.8;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* ----- reveal animation (intersection observer) ----- */
+    .reveal-item {
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity 0.7s cubic-bezier(0.15, 0.75, 0.25, 1), transform 0.7s cubic-bezier(0.15, 0.75, 0.25, 1);
+    }
+
+    .reveal-item.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* cta section */
+    .cta-block {
+      background-color: #e9eef2;
+      border-radius: 32px;
+      padding: 4rem 3rem;
+      text-align: center;
+    }
+
+    .cta-title {
+      font-size: 3.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+    }
+
+    .cta-button {
+      background: none;
+      border: 2px solid #1e2f3f;
+      padding: 1.2rem 3.2rem;
+      font-size: 1.4rem;
+      font-weight: 500;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: background-color 0.2s, color 0.2s, transform 0.1s;
+      color: #1e2f3f;
+      background-color: transparent;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .cta-button:hover {
+      background-color: #1e2f3f;
+      color: white;
+      transform: scale(1.02);
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #d3dce3;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* footer whisper */
+    .footer-note {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem;
+      color: #4a5f70;
+      font-size: 1rem;
+      border-top: 1px solid #d9e1e8;
+    }
+
+    /* monochrome, minimal */
+    a, button { outline: none; }
+  </style>
+  <!-- feather icons (lightweight, open) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <!-- hero with canvas animation -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>audio helix</h1>
+    </div>
+    <a class="hero-arrow" href="#features" aria-label="scroll down">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </a>
+  </section>
+
+  <!-- section 1 - features -->
+  <section id="features" class="reveal-item">
+    <h2 class="section-header">pure,<br>unfiltered.</h2>
+    <div class="grid-3">
+      <div class="feature-card">
+        <div class="icon-circle" data-lucide="waveform"></div>
+        <h3>planar clarity</h3>
+        <div class="card-text">Magnetic array driver — no distortion, just transparent sound across the entire spectrum.</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle" data-lucide="battery-charging"></div>
+        <h3>72h endurance</h3>
+        <div class="card-text">High‑density energy cell. Three full days of listening on a single rapid charge.</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle" data-lucide="bluetooth"></div>
+        <h3>lossless stream</h3>
+        <div class="card-text">Custom LDAC 24bit/96kHz — zero compression, bit‑perfect wireless.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 - how it works (three simple steps) -->
+  <section class="reveal-item">
+    <h2 class="section-header">orchestrated in layers.</h2>
+    <div class="grid-3">
+      <div class="step-card">
+        <div class="icon-circle" data-lucide="microwave"></div>
+        <h3>scan your ear</h3>
+        <div class="card-text">Impulse response mapping creates a unique acoustic fingerprint for your ears.</div>
+      </div>
+      <div class="step-card">
+        <div class="icon-circle" data-lucide="cpu"></div>
+        <h3>neural filter</h3>
+        <div class="card-text">On‑board AI adapts crossover in real time to your environment.</div>
+      </div>
+      <div class="step-card">
+        <div class="icon-circle" data-lucide="volume-2"></div>
+        <h3>coherent soundfield</h3>
+        <div class="card-text">Phase alignment produces a three‑dimensional soundstage beyond physical speakers.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3 - advantages (2 column) -->
+  <section class="reveal-item">
+    <h2 class="section-header">engineered for permanence.</h2>
+    <div class="grid-2">
+      <div class="advantage-item">
+        <div class="icon-circle" data-lucide="shield"></div>
+        <h3>monocoque chassis</h3>
+        <div class="card-text">Milled from a single block of aluminium — no joints, no resonance, no compromise.</div>
+      </div>
+      <div class="advantage-item">
+        <div class="icon-circle" data-lucide="wind"></div>
+        <h3>atmospheric vent</h3>
+        <div class="card-text">Rear pressure release eliminates diaphragm flex, keeping bass tight and fast.</div>
+      </div>
+      <div class="advantage-item">
+        <div class="icon-circle" data-lucide="droplet"></div>
+        <h3>hydrophobic mesh</h3>
+        <div class="card-text">IPX5 certified — rain, sweat, or splash won’t reach the drivers.</div>
+      </div>
+      <div class="advantage-item">
+        <div class="icon-circle" data-lucide="cable"></div>
+        <h3>detachable OCC</h3>
+        <div class="card-text">Silver‑plated copper cable, interchangeable 2‑pin connectors, balanced ready.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4 - use cases (2 column) -->
+  <section class="reveal-item">
+    <h2 class="section-header">adapts to your moment.</h2>
+    <div class="grid-2">
+      <div class="use-case-card">
+        <div class="icon-circle" data-lucide="microscope"></div>
+        <h3>critical listening</h3>
+        <div class="card-text">Reference monitors for mix engineers — every micro‑detail reveals itself.</div>
+      </div>
+      <div class="use-case-card">
+        <div class="icon-circle" data-lucide="compass"></div>
+        <h3>immersive travel</h3>
+        <div class="card-text">Adaptive ANC turns a plane cabin into an isolated listening room.</div>
+      </div>
+      <div class="use-case-card">
+        <div class="icon-circle" data-lucide="radio"></div>
+        <h3>studio creation</h3>
+        <div class="card-text">Flat, neutral response for composing and editing on the go.</div>
+      </div>
+      <div class="use-case-card">
+        <div class="icon-circle" data-lucide="headphones"></div>
+        <h3>daily focus</h3>
+        <div class="card-text">Comfort so light you forget you’re wearing them — pure flow state.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 - call to action -->
+  <section class="reveal-item">
+    <div class="cta-block">
+      <div class="cta-title">hear beyond words.</div>
+      <button class="cta-button" id="ctaButton">reserve your unit</button>
+      <p style="margin-top: 2rem; font-size: 1.1rem; color: #2a3c4b;">first batch ships Q4 — $50 deposit</p>
+    </div>
+  </section>
+
+  <!-- minimal footer -->
+  <div class="footer-note">
+    <span>helix audio · 2025</span>
+  </div>
+
+  <!-- JavaScript: canvas animation + lucide icons + scroll reveal -->
+  <script>
+    (function() {
+      // ---------- lucide icons ----------
+      lucide.createIcons();
+
+      // ---------- canvas animation (hero background) ----------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      const initCanvas = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // create elegant particles
+        const num = Math.min(60, Math.floor(width * 0.08));
+        particles = [];
+        for (let i = 0; i < num; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: 2 + Math.random() * 5,
+            speedX: (Math.random() - 0.5) * 0.25,
+            speedY: (Math.random() - 0.5) * 0.15,
+            opacity: 0.1 + Math.random() * 0.2,
+          });
+        }
+      };
+
+      const drawParticles = () => {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#9bb7d4';  // very subtle, modern grey-blue
+        for (let p of particles) {
+          ctx.globalAlpha = p.opacity * 0.8;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // move
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around gently
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+      };
+
+      window.addEventListener('resize', () => {
+        initCanvas();
+      });
+
+      initCanvas();
+      drawParticles();
+
+      // ---------- smooth scroll to section (down arrow) ----------
+      document.querySelector('.hero-arrow').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // ---------- reveal on scroll (intersection observer) ----------
+      const revealItems = document.querySelectorAll('.reveal-item');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+
+      revealItems.forEach(item => observer.observe(item));
+
+      // ----- tiny cta button interaction -----
+      document.getElementById('ctaButton').addEventListener('click', () => {
+        alert('pre-order demo — thank you for your interest.');  // just a subtle touch
+      });
+
+    })();
+  </script>
+
+  <!-- ensure all icons replace even dynamically added ones (lucide watches DOM, but we recall after observer? not needed) -->
+  <script>
+    (function secondaryIconCall() {
+      lucide.createIcons();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

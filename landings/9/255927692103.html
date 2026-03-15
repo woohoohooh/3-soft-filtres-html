@@ -1,0 +1,590 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Holo • ambient interface</title>
+  <style>
+    /* RESET & BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: #f6f7f9;
+      font-family: system-ui, -apple-system, 'Inter', 'Helvetica Neue', sans-serif;
+      color: #1e1e2f;
+      line-height: 1.5;
+    }
+
+    /* REUSABLE SECTIONS */
+    section:not(.hero) {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 7rem 2rem;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      color: #1e1e2f;
+    }
+
+    /* HERO — full screen, one line headline */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: #f6f7f9;  /* fallback behind canvas */
+      overflow: hidden;
+    }
+
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;  /* allows clicking through to arrow */
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      width: 100%;
+      padding: 0 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.2rem, 15vw, 8rem);
+      font-weight: 550;
+      letter-spacing: -0.03em;
+      color: #1e1e2f;
+      white-space: nowrap;
+      margin: 0;
+      line-height: 1.1;
+      text-shadow: 0 0 1px rgba(0,0,0,0.02);
+    }
+
+    /* down arrow */
+    .scroll-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #2c2c3a;
+      opacity: 0.7;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      padding: 0.5rem;
+    }
+
+    .scroll-arrow:hover {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.05);
+    }
+
+    .scroll-arrow svg {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.8;
+    }
+
+    /* ----- 5 clean sections with minimal icons (lucide) ----- */
+    /* Feature grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 3.5rem 2.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .feature-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.2rem;
+    }
+
+    .feature-item .icon {
+      color: #1e1e2f;
+      width: 48px;
+      height: 48px;
+      stroke-width: 1.5;
+      transition: transform 0.2s ease;
+    }
+
+    .feature-item:hover .icon {
+      transform: translateY(-4px);
+    }
+
+    .feature-item h3 {
+      font-size: 1.9rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .feature-item p {
+      font-size: 1.2rem;
+      color: #3e3e4e;
+      max-width: 32ch;
+    }
+
+    /* How it works — simple step row */
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3rem 2rem;
+      justify-content: space-between;
+    }
+
+    .step {
+      flex: 1 1 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.2rem;
+    }
+
+    .step .icon {
+      width: 48px;
+      height: 48px;
+      color: #1e1e2f;
+      stroke-width: 1.5;
+      transition: opacity 0.2s;
+    }
+
+    .step:hover .icon {
+      opacity: 0.7;
+    }
+
+    .step h4 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .step p {
+      font-size: 1.2rem;
+      color: #3e3e4e;
+    }
+
+    /* advantages — two column */
+    .advantages-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 3rem 2rem;
+    }
+
+    .advantage-card {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+
+    .advantage-card .icon {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      color: #1e1e2f;
+      stroke-width: 1.5;
+    }
+
+    .advantage-card h4 {
+      font-size: 1.6rem;
+      font-weight: 500;
+      margin-bottom: 0.3rem;
+    }
+
+    .advantage-card p {
+      font-size: 1.15rem;
+      color: #3e3e4e;
+    }
+
+    /* use cases — minimal list */
+    .use-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2.2rem;
+      max-width: 800px;
+    }
+
+    .use-item {
+      display: flex;
+      align-items: center;
+      gap: 1.8rem;
+      border-bottom: 1px solid rgba(30,30,47,0.08);
+      padding-bottom: 1.5rem;
+    }
+
+    .use-item .icon {
+      width: 40px;
+      height: 40px;
+      color: #1e1e2f;
+      stroke-width: 1.5;
+    }
+
+    .use-item span {
+      font-size: 1.5rem;
+      font-weight: 430;
+      letter-spacing: -0.01em;
+    }
+
+    /* CTA */
+    .cta-box {
+      background-color: #1e1e2f;
+      color: white;
+      padding: 4rem 3rem;
+      border-radius: 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 1.8rem;
+    }
+
+    .cta-box h2 {
+      font-size: 3.2rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: white;
+    }
+
+    .cta-box p {
+      font-size: 1.4rem;
+      color: #d0d0dc;
+      max-width: 520px;
+    }
+
+    .cta-button {
+      background: transparent;
+      border: 1.5px solid white;
+      color: white;
+      font-size: 1.4rem;
+      padding: 0.9rem 3rem;
+      border-radius: 60px;
+      cursor: default;  /* not interactive, just demo */
+      transition: background 0.15s, color 0.15s;
+      font-weight: 450;
+    }
+
+    .cta-button:hover {
+      background: white;
+      color: #1e1e2f;
+    }
+
+    /* reveal animations (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsive tweaks */
+    @media (max-width: 700px) {
+      .hero h1 {
+        font-size: 16vw;   /* keeps it one line, shrinks dynamically */
+        white-space: nowrap;
+      }
+      .section-title {
+        font-size: 2.2rem;
+      }
+      .feature-item h3 {
+        font-size: 1.6rem;
+      }
+      .use-item span {
+        font-size: 1.3rem;
+      }
+      .cta-box h2 {
+        font-size: 2.5rem;
+      }
+      .advantage-card {
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+    }
+
+    @media (max-width: 450px) {
+      .hero h1 {
+        font-size: 14vw; /* still one line */
+      }
+      section:not(.hero) {
+        padding: 5rem 1.5rem;
+      }
+    }
+
+    /* misc */
+    .mono-line {
+      max-width: 100%;
+    }
+  </style>
+  <!-- lucide icons via feather (lightweight) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <!-- HERO with canvas background -->
+  <section class="hero" id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <h1>ambient intelligence</h1>
+    </div>
+    <button class="scroll-arrow" id="scrollDownBtn" aria-label="scroll down">
+      <i data-lucide="chevron-down"></i>
+    </button>
+  </section>
+
+  <!-- 5 clean sections -->
+  <section class="features reveal" id="features">
+    <h2 class="section-title">essentials</h2>
+    <div class="features-grid">
+      <div class="feature-item">
+        <i data-lucide="scan-eye" class="icon"></i>
+        <h3>glance</h3>
+        <p>peripheral awareness without overload — calm technology.</p>
+      </div>
+      <div class="feature-item">
+        <i data-lucide="waves" class="icon"></i>
+        <h3>resonance</h3>
+        <p>spatial signatures that adapt to your environment.</p>
+      </div>
+      <div class="feature-item">
+        <i data-lucide="bean" class="icon"></i>
+        <h3>seed</h3>
+        <p>encrypted local context, no cloud dependency.</p>
+      </div>
+      <div class="feature-item">
+        <i data-lucide="orbit" class="icon"></i>
+        <h3>orbit</h3>
+        <p>personal data sphere that moves with you.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="howitworks reveal" id="howitworks">
+    <h2 class="section-title">silent setup</h2>
+    <div class="steps">
+      <div class="step">
+        <i data-lucide="hand" class="icon"></i>
+        <h4>01. place</h4>
+        <p>set one hub in your central space.</p>
+      </div>
+      <div class="step">
+        <i data-lucide="radio" class="icon"></i>
+        <h4>02. listen</h4>
+        <p>it maps ambient patterns inaudibly.</p>
+      </div>
+      <div class="step">
+        <i data-lucide="sparkles" class="icon"></i>
+        <h4>03. harmonize</h4>
+        <p>light, sound, air adjust intuitively.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="advantages reveal" id="advantages">
+    <h2 class="section-title">silent edge</h2>
+    <div class="advantages-grid">
+      <div class="advantage-card">
+        <i data-lucide="shield" class="icon"></i>
+        <div>
+          <h4>zero‑trace</h4>
+          <p>no recordings, only ephemeral signatures.</p>
+        </div>
+      </div>
+      <div class="advantage-card">
+        <i data-lucide="battery-charging" class="icon"></i>
+        <div>
+          <h4>years of poise</h4>
+          <p>ultra‑low power, months on a single coin.</p>
+        </div>
+      </div>
+      <div class="advantage-card">
+        <i data-lucide="cone" class="icon"></i>
+        <div>
+          <h4>acoustic mesh</h4>
+          <p>multiple units form a distributed field.</p>
+        </div>
+      </div>
+      <div class="advantage-card">
+        <i data-lucide="flower" class="icon"></i>
+        <div>
+          <h4>biomimetic</h4>
+          <p>algorithms inspired by natural sensing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="usecases reveal" id="usecases">
+    <h2 class="section-title">inhabit</h2>
+    <div class="use-list">
+      <div class="use-item">
+        <i data-lucide="house" class="icon"></i>
+        <span>home — presence that fades when you leave</span>
+      </div>
+      <div class="use-item">
+        <i data-lucide="library" class="icon"></i>
+        <span>study — deep focus without notifications</span>
+      </div>
+      <div class="use-item">
+        <i data-lucide="hotel" class="icon"></i>
+        <span>gallery — ambient sound for each exhibit</span>
+      </div>
+      <div class="use-item">
+        <i data-lucide="tent" class="icon"></i>
+        <span>retreat — off‑grid atmospheric companion</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta reveal" id="cta">
+    <div class="cta-box">
+      <h2>feel the field</h2>
+      <p>closed studio series — spring demo</p>
+      <div class="cta-button">request invite</div>
+    </div>
+  </section>
+
+  <script>
+    (function() {
+      // initialise lucide icons
+      lucide.createIcons();
+
+      // down arrow smooth scroll
+      const arrow = document.getElementById('scrollDownBtn');
+      arrow.addEventListener('click', (e) => {
+        e.preventDefault();
+        const featuresSection = document.getElementById('features');
+        if (featuresSection) {
+          featuresSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // ---------- canvas animation (elegant background) ----------
+      const canvas = document.getElementById('hero-canvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      const resizeCanvas = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      };
+
+      const initParticles = () => {
+        particles = [];
+        const pCount = 36;
+        for (let i = 0; i < pCount; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: 1.8 + Math.random() * 3,
+            speedX: (Math.random() - 0.5) * 0.15,
+            speedY: (Math.random() - 0.5) * 0.15,
+            baseAlpha: 0.2 + Math.random() * 0.15,
+          });
+        }
+      };
+
+      // subtle blurred circles
+      const draw = () => {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        
+        // fog-like soft edges
+        ctx.fillStyle = '#f6f7f9';
+        ctx.fillRect(0, 0, width, height);
+
+        particles.forEach(p => {
+          // update
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap gently
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+
+          // draw soft circle
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius * 2.2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(70, 70, 90, ${p.baseAlpha * 0.6})`;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(p.x-2, p.y-2, p.radius * 1.2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(100, 100, 120, ${p.baseAlpha * 0.3})`;
+          ctx.fill();
+
+          // extra tiny highlight
+          ctx.beginPath();
+          ctx.arc(p.x+4, p.y+3, p.radius * 0.7, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${p.baseAlpha * 0.2})`;
+          ctx.fill();
+        });
+
+        requestAnimationFrame(draw);
+      };
+
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+      draw();
+
+      // ---------- Intersection observer (reveal) ----------
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          } else {
+            // optional remove class if you want re-animate, but we keep visible after first reveal
+            // (keeping visible is nicer) – we add class but not remove.
+            // entry.target.classList.remove('revealed'); // (commented for subtle once)
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ensure icons inside revealed also update? lucide already replaced.
+      // but lucide icons are already drawn, fine.
+      // small extra: update icons if any dynamic? none.
+    })();
+  </script>
+  <!-- ensure icons re-run after dom? lucide already runs on load, but we also call createIcons early. -->
+  <script>
+    // minor patch: lucide icons after canvas insert might need rerun? but canvas doesn't remove dom.
+    // But for safety, we re-run after everything (some icons inside sections)
+    (function secondCall(){
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

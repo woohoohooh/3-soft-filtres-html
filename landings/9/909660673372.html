@@ -1,0 +1,548 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nebulix · ambient compute</title>
+  <style>
+    /* RESET & BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background-color: #f7f7f9;
+      color: #1b1b1f;
+      line-height: 1.3;
+      overflow-x: hidden;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* subtle animated background (hero only) */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #f7f7f9;
+      isolation: isolate;
+    }
+
+    .hero-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .hero-bg span {
+      position: absolute;
+      display: block;
+      width: 4px;
+      height: 4px;
+      background: rgba(28, 28, 32, 0.12);
+      border-radius: 0;
+      transform: rotate(45deg);
+      animation: floatParticles 24s infinite ease-in-out;
+      opacity: 0.7;
+    }
+
+    @keyframes floatParticles {
+      0% { transform: translateY(0) rotate(45deg) scale(1); opacity: 0.3; }
+      50% { transform: translateY(-30vh) rotate(90deg) scale(1.8); opacity: 0.6; }
+      100% { transform: translateY(0) rotate(45deg) scale(1); opacity: 0.3; }
+    }
+
+    /* random positions + delays */
+    .hero-bg span:nth-child(1) { top: 10%; left: 15%; width: 6px; height: 6px; animation-delay: 0s; background: #2b2b33; }
+    .hero-bg span:nth-child(2) { top: 70%; left: 80%; width: 10px; height: 10px; animation-delay: 2s; background: #3a3a44; }
+    .hero-bg span:nth-child(3) { top: 40%; left: 45%; width: 7px; height: 7px; animation-delay: 4s; background: #1e1e24; }
+    .hero-bg span:nth-child(4) { top: 85%; left: 22%; width: 5px; height: 5px; animation-delay: 1s; background: #2d2d35; }
+    .hero-bg span:nth-child(5) { top: 15%; left: 88%; width: 9px; height: 9px; animation-delay: 5s; background: #25252c; }
+    .hero-bg span:nth-child(6) { top: 60%; left: 10%; width: 8px; height: 8px; animation-delay: 3.5s; background: #40404b; }
+    .hero-bg span:nth-child(7) { top: 30%; left: 72%; width: 6px; height: 6px; animation-delay: 1.8s; background: #31313b; }
+    .hero-bg span:nth-child(8) { top: 92%; left: 48%; width: 7px; height: 7px; animation-delay: 6s; background: #2a2a32; }
+    .hero-bg span:nth-child(9) { top: 48%; left: 5%; width: 5px; height: 5px; animation-delay: 2.2s; background: #3d3d48; }
+    .hero-bg span:nth-child(10) { top: 77%; left: 68%; width: 8px; height: 8px; animation-delay: 0.7s; background: #212129; }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 1200px;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: clamp(4rem, 18vw, 9rem);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      color: #0f0f12;
+      line-height: 1;
+      margin: 0;
+      white-space: nowrap;
+      text-transform: uppercase;
+      word-break: keep-all;
+    }
+
+    @media (max-width: 700px) {
+      h1 {
+        font-size: clamp(3.5rem, 15vw, 5rem);
+        white-space: nowrap;
+      }
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #2c2c34;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      opacity: 0.7;
+    }
+
+    .scroll-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    .scroll-down svg {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.8;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* section general */
+    .section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 8rem 2rem;
+      border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    .section-header {
+      margin-bottom: 4.5rem;
+    }
+
+    .section-header h2 {
+      font-size: 3.2rem;
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      color: #16161c;
+    }
+
+    @media (max-width: 600px) {
+      .section-header h2 {
+        font-size: 2.4rem;
+      }
+    }
+
+    /* feature / card grids */
+    .grid-3, .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4rem 2rem;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 800px) {
+      .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+    }
+
+    .feature-card, .advantage-card, .step-card, .case-card {
+      background: transparent;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1.8rem;
+      color: #1d1d25;
+      background: transparent;
+    }
+
+    .icon-circle svg {
+      width: 44px;
+      height: 44px;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      fill: none;
+    }
+
+    h3 {
+      font-size: 1.8rem;
+      font-weight: 540;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+      color: #1b1b22;
+    }
+
+    .feature-card p, .step-card p, .case-card p {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      color: #3b3b46;
+      max-width: 36ch;
+    }
+
+    /* how it works */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 4rem;
+    }
+
+    .step-row {
+      display: flex;
+      gap: 3rem;
+      align-items: flex-start;
+      border-bottom: 1px solid #e4e4ec;
+      padding-bottom: 2.5rem;
+    }
+
+    .step-row:last-child {
+      border-bottom: none;
+    }
+
+    .step-number {
+      font-size: 2rem;
+      font-weight: 400;
+      color: #a0a0b0;
+      min-width: 60px;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-content h3 {
+      margin-bottom: 0.6rem;
+    }
+
+    @media (max-width: 600px) {
+      .step-row {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+
+    /* CTA */
+    .cta-box {
+      background: #1b1b24;
+      color: #f5f5f9;
+      border-radius: 32px;
+      padding: 5rem 4rem;
+      text-align: center;
+    }
+
+    .cta-box h2 {
+      font-size: 3.2rem;
+      font-weight: 520;
+      color: #ffffff;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .cta-box p {
+      font-size: 1.4rem;
+      color: #c6c6d6;
+      margin-bottom: 3rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: #ffffff;
+      color: #1b1b24;
+      font-size: 1.2rem;
+      font-weight: 550;
+      padding: 1.2rem 3.2rem;
+      border-radius: 60px;
+      text-decoration: none;
+      transition: 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .cta-button:hover {
+      background: #efeff5;
+      transform: scale(1.02);
+    }
+
+    /* reveal on scroll (simple intersection) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    .reveal.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* feather icons (via cdn) */
+    /* all icons will be replaced via data-feather attribute, but we keep inline fallback ? 
+    we inject lucide? no, use feather-icons script. But we also use SVG inside HTML manually for simplicity 
+    but the prompt allows lightweight icon library, we'll include feather-icons and replace with minimal script */
+    /* we also manually put inline SVGs for reliability, but still include feather for minimalism */
+    /* but easier: use manually written simple outline icons (same style) – completely independent. 
+    I'll use inline SVGs to avoid extra library, but still keep minimal monochrome style. 
+    prompt says "only lightweight external icon library allowed (like Lucide or Feather)". 
+    I'll load feather from CDN (4kb) and replace placeholders. safer. */
+  </style>
+  <!-- feather icons (lightweight) -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body>
+  <!-- HERO with animated bg -->
+  <section class="hero" id="top">
+    <div class="hero-bg">
+      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="hero-content">
+      <h1>EDGE · OS</h1>
+    </div>
+    <button class="scroll-down" id="scrollDownBtn" aria-label="scroll down">
+      <i data-feather="arrow-down"></i>
+    </button>
+  </section>
+
+  <!-- section 1 – features -->
+  <section class="section" id="features">
+    <div class="section-header reveal">
+      <h2>Conscious by design</h2>
+    </div>
+    <div class="grid-3">
+      <div class="feature-card reveal">
+        <div class="icon-circle"><i data-feather="cpu"></i></div>
+        <h3>In‑memory fabric</h3>
+        <p>Zero‑latency access across distributed nodes. No more local‑first limits.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="icon-circle"><i data-feather="shield"></i></div>
+        <h3>Unbreakable seal</h3>
+        <p>Hardware‑anchored trust, post‑quantum ready. Keys never leave the silicon.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="icon-circle"><i data-feather="zap"></i></div>
+        <h3>Inference at edge</h3>
+        <p>Run 200B models locally with 8ms response. No cloud, no latency.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 – how it works (minimal) -->
+  <section class="section" id="how-it-works">
+    <div class="section-header reveal">
+      <h2>Flow · three moves</h2>
+    </div>
+    <div class="steps">
+      <div class="step-row reveal">
+        <span class="step-number">01</span>
+        <div class="step-content">
+          <h3>Declare intent</h3>
+          <p>Write plain‑language rules or use APIs. EdgeOS translates to deterministic policies.</p>
+        </div>
+        <div class="icon-circle"><i data-feather="edit-3"></i></div>
+      </div>
+      <div class="step-row reveal">
+        <span class="step-number">02</span>
+        <div class="step-content">
+          <h3>Mesh propagate</h3>
+          <p>Cryptographic consensus in under 50ms across 10k nodes. Zero master.</p>
+        </div>
+        <div class="icon-circle"><i data-feather="share-2"></i></div>
+      </div>
+      <div class="step-row reveal">
+        <span class="step-number">03</span>
+        <div class="step-content">
+          <h3>Execute offline‑first</h3>
+          <p>Every node runs independently. Synchronizes when mesh resumes.</p>
+        </div>
+        <div class="icon-circle"><i data-feather="globe"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3 – advantages -->
+  <section class="section" id="advantages">
+    <div class="section-header reveal">
+      <h2>Radical efficiency</h2>
+    </div>
+    <div class="grid-2">
+      <div class="advantage-card reveal">
+        <div class="icon-circle"><i data-feather="battery-charging"></i></div>
+        <h3>Energy‑sparse</h3>
+        <p>Uses 94% less power than conventional stacks. Carbon‑negative by design.</p>
+      </div>
+      <div class="advantage-card reveal">
+        <div class="icon-circle"><i data-feather="hard-drive"></i></div>
+        <h3>Legacy‑free core</h3>
+        <p>No Linux, no bloated kernels. Bare‑metal microvisor for instant boot.</p>
+      </div>
+      <div class="advantage-card reveal">
+        <div class="icon-circle"><i data-feather="eye"></i></div>
+        <h3>Self‑auditing</h3>
+        <p>Real‑time verifiable logs. No black boxes, every bit provable.</p>
+      </div>
+      <div class="advantage-card reveal">
+        <div class="icon-circle"><i data-feather="wind"></i></div>
+        <h3>Thermal silent</h3>
+        <p>Passive cooling even under full load. No fans, no coils, no noise.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4 – use cases -->
+  <section class="section" id="use-cases">
+    <div class="section-header reveal">
+      <h2>Applied quietly</h2>
+    </div>
+    <div class="grid-3">
+      <div class="case-card reveal">
+        <div class="icon-circle"><i data-feather="activity"></i></div>
+        <h3>Medical mesh</h3>
+        <p>Surgical AR with zero packet loss. Decentralised patient data.</p>
+      </div>
+      <div class="case-card reveal">
+        <div class="icon-circle"><i data-feather="map"></i></div>
+        <h3>Subsea autonomy</h3>
+        <p>Swarm robotics 4km deep. No surface communication needed.</p>
+      </div>
+      <div class="case-card reveal">
+        <div class="icon-circle"><i data-feather="radio"></i></div>
+        <h3>Spectrum farming</h3>
+        <p>Real‑time RF inference, predictive frequency hopping.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 – call to action -->
+  <section class="section" id="cta">
+    <div class="cta-box reveal">
+      <h2>Join the post‑cloud</h2>
+      <p>Early access for hardware partners & edge architects.</p>
+      <a href="#" class="cta-button">Request preview</a>
+    </div>
+  </section>
+
+  <!-- feather replacement + reveal + smooth scroll down -->
+  <script>
+    (function() {
+      // 1. feather icons replace (simple outlines)
+      if (typeof feather !== 'undefined') {
+        feather.replace({ width: '100%', height: '100%', stroke: 'currentColor', 'stroke-width': 1.8, fill: 'none' });
+      } else {
+        // fallback: do nothing, but icons already in i tags? we also have inline? just safe.
+      }
+
+      // 2. smooth scroll down arrow
+      const scrollBtn = document.getElementById('scrollDownBtn');
+      if (scrollBtn) {
+        scrollBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const featuresSection = document.getElementById('features');
+          if (featuresSection) {
+            featuresSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      }
+
+      // 3. reveal on scroll (intersection observer)
+      const revealElements = document.querySelectorAll('.reveal');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('show');
+            // optional: unobserve after show to reduce load
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // 4. minor manual hover animations (scale / transition on cards) 
+      // we also predefine some via css.
+    })();
+  </script>
+  <!-- extra micro-interaction: cards hover subtle -->
+  <style>
+    .feature-card, .advantage-card, .case-card, .step-row {
+      transition: transform 0.2s ease;
+    }
+    .feature-card:hover, .advantage-card:hover, .case-card:hover, .step-row:hover {
+      transform: translateY(-4px);
+    }
+    .icon-circle {
+      transition: opacity 0.2s;
+    }
+    .feature-card:hover .icon-circle, .advantage-card:hover .icon-circle {
+      opacity: 0.8;
+    }
+    .cta-button {
+      transition: background 0.2s, transform 0.15s;
+    }
+    /* ensure h1 stays one line (mobile) */
+    @media (max-width: 380px) {
+      h1 { font-size: 3.2rem; }
+    }
+    /* Feather icons fix sizing */
+    .icon-circle svg {
+      width: 44px;
+      height: 44px;
+      stroke: currentColor;
+    }
+    .scroll-down svg {
+      width: 40px;
+      height: 40px;
+    }
+    /* down arrow style */
+  </style>
+  <!-- ensure no extra library used except feather (already included) -->
+  <!-- small extra for feather fallback replace if script runs later -->
+  <script>
+    (function secondPass() {
+      // if feather loaded async but replace didn't get all, recall after microtask
+      if (typeof feather !== 'undefined') {
+        feather.replace();
+      }
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

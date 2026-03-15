@@ -1,0 +1,501 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nodus • ambient compute</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.344.0/font/lucide.css">
+  <style>
+    /* -------------------- reset & base -------------------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: #f4f5f7;
+      font-family: system-ui, -apple-system, 'Inter', 'SF Pro', 'Helvetica Neue', sans-serif;
+      line-height: 1.4;
+      color: #1a1e2b;
+      overflow-x: hidden;
+    }
+
+    /* -------------------- reusable container -------------------- */
+    .section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    /* -------------------- hero with canvas background ----------- */
+    .hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #11131f;  /* fallback deep navy */
+    }
+
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      width: 100%;
+      padding: 0 2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 15vw, 9rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: white;
+      text-shadow: 0 0 10px rgba(255,255,255,0.1);
+      white-space: nowrap;
+      line-height: 1.1;
+    }
+
+    /* down arrow – minimal, smooth scroll */
+    .hero-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      color: rgba(255,255,255,0.7);
+      font-size: 2.2rem;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1;
+    }
+
+    .hero-arrow i {
+      font-size: 2.8rem;
+      display: inline-block;
+      animation: floatArrow 2.4s infinite ease-in-out;
+    }
+
+    .hero-arrow:hover {
+      color: white;
+    }
+
+    @keyframes floatArrow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    /* -------------------- generic section style ---------------- */
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      color: #11131f;
+    }
+
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 3rem;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2,1fr); }
+    .grid-3 { grid-template-columns: repeat(3,1fr); }
+
+    .card {
+      background: transparent;
+      padding: 0.5rem 0;
+    }
+
+    .card-icon {
+      margin-bottom: 1.5rem;
+      color: #2b2f3a;
+      font-size: 2.2rem;
+    }
+
+    .card-icon i {
+      font-size: 2.8rem;
+      display: inline-block;
+      transition: transform 0.2s;
+    }
+
+    .card:hover .card-icon i {
+      transform: scale(1.02);
+    }
+
+    .card h3 {
+      font-size: 1.8rem;
+      font-weight: 460;
+      margin-bottom: 0.75rem;
+      color: #11131f;
+    }
+
+    .card p {
+      font-size: 1.3rem;
+      line-height: 1.5;
+      color: #3a4050;
+      max-width: 90%;
+    }
+
+    /* large readable text */
+    .large-text {
+      font-size: 1.5rem;
+      color: #2a2f3c;
+    }
+
+    /* -------------------- reveal animation (intersection) ------ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.2,0.9,0.3,1), transform 0.7s cubic-bezier(0.2,0.9,0.3,1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* -------------------- feature specific --------------------- */
+    .feature-list {
+      list-style: none;
+    }
+    .feature-list li {
+      font-size: 1.5rem;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .feature-list i {
+      color: #1f232e;
+      opacity: 0.8;
+      font-size: 1.9rem;
+    }
+
+    .border-top-light {
+      border-top: 1px solid rgba(0,0,0,0.05);
+      margin-top: 2rem;
+      padding-top: 2rem;
+    }
+
+    /* CTA */
+    .cta-block {
+      background: #1a1e2b;
+      color: white;
+      border-radius: 2rem;
+      padding: 5rem 4rem;
+      text-align: center;
+    }
+
+    .cta-block h2 {
+      color: white;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: white;
+      color: #1a1e2b;
+      font-size: 1.7rem;
+      font-weight: 470;
+      padding: 1.2rem 3.2rem;
+      border-radius: 3rem;
+      text-decoration: none;
+      transition: all 0.15s;
+      margin-top: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .cta-button:hover {
+      background: #f0f2f5;
+      transform: scale(1.02);
+      box-shadow: 0 20px 35px -10px rgba(0,0,0,0.3);
+    }
+
+    /* -------------------- responsiveness ----------------------- */
+    @media (max-width: 800px) {
+      .section { padding: 4rem 1.5rem; }
+      h2 { font-size: 2.6rem; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 2.5rem; }
+      .card p { max-width: 100%; }
+      .hero h1 { white-space: normal; }  /* fallback for very narrow, but we keep one-line as much as possible */
+      .hero h1 { white-space: nowrap; }  /* force one line on most screens, tiny screens will shrink */
+      @media (max-width: 500px) {
+        .hero h1 { font-size: clamp(2.4rem, 13vw, 4rem); white-space: nowrap; }
+      }
+      .cta-block { padding: 3rem 2rem; }
+      .cta-button { font-size: 1.4rem; padding: 1rem 2.5rem; }
+    }
+
+    /* feather/lucide overrides */
+    [class^="lucide-"]:before, [class*=" lucide-"]:before {
+      font-family: 'lucide';
+    }
+    i {
+      font-style: normal;
+    }
+    .lucide {
+      font-size: inherit;
+    }
+
+    /* extra whitespace */
+    .mt-2 { margin-top: 2rem; }
+    .mb-1 { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+  <!-- HERO: ambient canvas + one line headline + down arrow -->
+  <section class="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <h1>ambient compute</h1>
+    </div>
+    <a class="hero-arrow" href="#features-start" aria-label="scroll down">
+      <i class="lucide-arrow-down"></i>
+    </a>
+  </section>
+
+  <!-- sections wrapper -->
+  <main id="features-start">
+    <!-- 1. FEATURES / BENEFITS -->
+    <section class="section reveal">
+      <h2>Invisible power, radical clarity.</h2>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-icon"><i class="lucide lucide-waves"></i></div>
+          <h3>Ambient interface</h3>
+          <p>No screens, no taps — your environment responds before you think. Light, sound, and haptics fade into the background.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i class="lucide lucide-shield"></i></div>
+          <h3>Zero‑trust fabric</h3>
+          <p>Every node verifies identity continuously. Your data never touches a central cloud — only edge‑native sync.</p>
+        </div>
+      </div>
+      <div class="grid-2 mt-2">
+        <div class="card">
+          <div class="card-icon"><i class="lucide lucide-battery-charging"></i></div>
+          <h3>Infinite energy mesh</h3>
+          <p>Devices draw from ambient RF, motion, and light. No batteries, no wires — perpetual micro‑presence.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i class="lucide lucide-gem"></i></div>
+          <h3>Self‑evolving code</h3>
+          <p>Models distill on‑device, improving with each interaction. Your tools grow with you, no updates required.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. HOW IT WORKS (simple steps) -->
+    <section class="section reveal">
+      <h2>Three gestures, infinite reach.</h2>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon"><i class="lucide lucide-circle-dot"></i></div>
+          <h3>1. Anchor</h3>
+          <p>Drop a digital intent in any physical space. Nodus maps context, geometry, and presence.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i class="lucide lucide-merge"></i></div>
+          <h3>2. Weave</h3>
+          <p>Gestures or micro‑movements connect nodes. Instant secure pairing without menus.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i class="lucide lucide-sparkles"></i></div>
+          <h3>3. Resonate</h3>
+          <p>Environment shifts — light guides, sound fades in. Information appears only when needed.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. ADVANTAGES (monochrome icon list, large) -->
+    <section class="section reveal">
+      <h2>Beyond the glass slab.</h2>
+      <div class="grid-2">
+        <div>
+          <ul class="feature-list">
+            <li><i class="lucide lucide-infinity"></i> No latency — local mesh reasoning</li>
+            <li><i class="lucide lucide-brain"></i> Contextual memory that forgets noise</li>
+            <li><i class="lucide lucide-eye-off"></i> Cameras optional — spatial audio only</li>
+            <li><i class="lucide lucide-hand"></i> Gesture language you already know</li>
+          </ul>
+        </div>
+        <div>
+          <ul class="feature-list">
+            <li><i class="lucide lucide-database"></i> Zero remote storage by default</li>
+            <li><i class="lucide lucide-wind"></i> Self‑repairing connection fabric</li>
+            <li><i class="lucide lucide-venetian-mask"></i> Anonymous by architecture</li>
+            <li><i class="lucide lucide-ratio"></i> 100% recyclable bio‑polymer shell</li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-top-light large-text" style="margin-top: 3rem; padding-top: 2rem;">
+        <span>⚡ 5 ms mean response — no cloud, no waiting.</span>
+      </div>
+    </section>
+
+    <!-- 4. USE CASES -->
+    <section class="section reveal">
+      <h2>Use cases: silent integration</h2>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon"><i class="lucide lucide-microscope"></i></div>
+          <h3>Deep work studio</h3>
+          <p>Ambient focus mode: lights dim, distraction‑free flow. Devices pause notifications by proximity.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i class="lucide lucide-users"></i></div>
+          <h3>Collaborative space</h3>
+          <p>Walk into a room, share surfaces instantly. No codes, no pairing — just presence.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i class="lucide lucide-tree-pine"></i></div>
+          <h3>Field research</h3>
+          <p>Rugged, off‑grid nodes collect microclimate data for years without maintenance.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. CALL TO ACTION -->
+    <section class="section reveal">
+      <div class="cta-block">
+        <h2 style="color:white;">Minimal. Infinite.</h2>
+        <div style="font-size: 2rem; margin: 1.5rem 0; color: #cbd5e1;">⌘</div>
+        <p class="large-text" style="color: #d4d8e5; max-width: 600px; margin: 0 auto 2rem;">Nodus is now available for early access. First units ship Q4 2026.</p>
+        <a href="#" class="cta-button">reserve silent node →</a>
+        <div style="margin-top: 2.5rem; font-size: 1.2rem; opacity: 0.5;">no email spam, just one notification.</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- canvas background animation (subtle moving gradients) -->
+  <script>
+    (function() {
+      const canvas = document.getElementById('hero-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let width, height;
+      let circles = [];
+
+      function initCircles() {
+        circles = [];
+        const count = 30;
+        for (let i = 0; i < count; i++) {
+          circles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: 0.04 + Math.random() * 0.1,
+            speedX: (Math.random() - 0.5) * 0.0008,
+            speedY: (Math.random() - 0.5) * 0.0008,
+            opacity: 0.15 + Math.random() * 0.2,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function draw() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+
+        // very dark base (keeps elegance)
+        const gradient = ctx.createLinearGradient(0, 0, width*0.5, height);
+        gradient.addColorStop(0, '#12141c');
+        gradient.addColorStop(1, '#1d212f');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+
+        // draw floating soft circles
+        ctx.globalCompositeOperation = 'screen';
+        for (let c of circles) {
+          // update positions gently
+          c.x += c.speedX;
+          c.y += c.speedY;
+          if (c.x < 0) c.x = 1;
+          if (c.x > 1) c.x = 0;
+          if (c.y < 0) c.y = 1;
+          if (c.y > 1) c.y = 0;
+
+          const xPos = c.x * width;
+          const yPos = c.y * height;
+          const rad = c.radius * Math.min(width, height) * 0.6;
+
+          const grd = ctx.createRadialGradient(xPos, yPos, rad*0.2, xPos, yPos, rad);
+          grd.addColorStop(0, `rgba(150, 180, 255, ${c.opacity*0.5})`);
+          grd.addColorStop(1, `rgba(30, 50, 90, 0)`);
+
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, rad, 0, 2 * Math.PI);
+          ctx.fillStyle = grd;
+          ctx.fill();
+        }
+
+        ctx.globalCompositePosition = 'source-over';
+        requestAnimationFrame(draw);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      initCircles();
+      resizeCanvas();
+      draw();
+
+      // subtle circles refresh on orientation change
+      window.addEventListener('orientationchange', () => {
+        initCircles();
+      });
+    })();
+
+    // REVEAL ON SCROLL (intersection observer)
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+    reveals.forEach(r => observer.observe(r));
+
+    // optional: make sure first section (hero) not needed, but we manually reveal after tiny delay? we just observe all
+    // also immediately show first section if visible
+    window.addEventListener('load', () => {
+      reveals.forEach(r => { if (r.getBoundingClientRect().top < window.innerHeight) r.classList.add('active'); });
+    });
+  </script>
+
+  <!-- feather / lucide icon references (no external js, just the font CSS already loaded) -->
+  <!-- down arrow is already using lucide class, everything works -->
+</body>
+</html>
+All done!
+```

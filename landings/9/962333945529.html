@@ -1,0 +1,572 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orion • silent compute</title>
+  <!-- Feather icons (lightweight, outline) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* RESET & BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f6f7f9;
+      color: #111113;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* subtle grain & background for hero canvas */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #eceef2;  /* fallback */
+      overflow: hidden;
+    }
+
+    /* canvas – elegant animated background */
+    #bgCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.7;
+    }
+
+    /* hero content stack */
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      max-width: 1280px;
+      margin: 0 1.5rem;
+    }
+
+    .main-headline {
+      font-size: clamp(3.5rem, 15vw, 8rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #111113;
+      white-space: nowrap;         /* force one line */
+      text-shadow: 0 2px 10px rgba(255,255,255,0.3);
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #2a2c31;
+      transition: opacity 0.2s ease, transform 0.3s ease;
+      padding: 0.5rem;
+    }
+    .scroll-down:hover {
+      opacity: 0.5;
+      transform: translateX(-50%) translateY(4px);
+    }
+    .scroll-down i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.5;
+    }
+
+    /* global sections */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 7rem 2rem;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 4rem;
+      color: #1e1f24;
+      line-height: 1.2;
+    }
+
+    .section-title.light {
+      color: #fff;
+    }
+
+    /* feature / card grids */
+    .grid-2, .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 3.5rem;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 680px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: transparent;
+      padding: 0.5rem 0;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1.5px solid #222226;
+      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+      margin-bottom: 1.8rem;
+    }
+
+    .icon-circle i {
+      width: 32px;
+      height: 32px;
+      stroke: #222226;
+      stroke-width: 1.2;
+    }
+
+    .card h3 {
+      font-size: 1.9rem;
+      font-weight: 470;
+      letter-spacing: -0.01em;
+      margin-bottom: 1rem;
+      color: #16171c;
+    }
+
+    .card p {
+      font-size: 1.25rem;
+      line-height: 1.5;
+      color: #2d2f36;
+      max-width: 38ch;
+    }
+
+    /* how it works – simple step list */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 2rem;
+      border-bottom: 1px solid #d0d4dd;
+      padding-bottom: 2rem;
+    }
+    .step-item:last-child {
+      border-bottom: none;
+    }
+    .step-num {
+      font-size: 3.2rem;
+      font-weight: 350;
+      color: #a3a7b2;
+      line-height: 1;
+      min-width: 70px;
+    }
+    .step-content h4 {
+      font-size: 2rem;
+      font-weight: 450;
+      margin-bottom: 0.5rem;
+    }
+    .step-content p {
+      font-size: 1.2rem;
+      color: #3b3e48;
+      max-width: 600px;
+    }
+
+    /* use cases – small cards with icons */
+    .use-case-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2.5rem;
+    }
+    .use-item {
+      background: #ffffffc4;
+      backdrop-filter: blur(2px);
+      padding: 2rem 1.5rem;
+      border-radius: 0px;
+      border: 1px solid #e4e7ec;
+      transition: transform 0.15s ease, box-shadow 0.2s;
+    }
+    .use-item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 30px -12px rgba(0,0,0,0.08);
+    }
+    .use-item i {
+      width: 32px;
+      height: 32px;
+      stroke: #1c1e24;
+      margin-bottom: 1.5rem;
+    }
+    .use-item h4 {
+      font-size: 1.6rem;
+      font-weight: 470;
+      margin-bottom: 0.75rem;
+    }
+    .use-item p {
+      font-size: 1rem;
+      color: #40444f;
+    }
+
+    /* CTA section – dark, minimal */
+    .cta-section {
+      background-color: #141519;
+      color: #f0f2f5;
+      padding: 7rem 2rem;
+    }
+    .cta-inner {
+      max-width: 950px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .cta-title {
+      font-size: 4rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.2rem;
+      color: #ffffff;
+    }
+    .cta-sub {
+      font-size: 1.4rem;
+      color: #b0b6c5;
+      margin-bottom: 3rem;
+    }
+    .cta-button {
+      background: transparent;
+      border: 2px solid #f0f2f5;
+      color: #f0f2f5;
+      padding: 0.9rem 3.2rem;
+      font-size: 1.3rem;
+      font-weight: 450;
+      cursor: pointer;
+      transition: 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .cta-button:hover {
+      background: #f0f2f5;
+      color: #141519;
+    }
+
+    /* reveal on scroll (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+    .reveal.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* feather icons config */
+    i {
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* one-line enforcement */
+    @media (max-width: 480px) {
+      .main-headline {
+        font-size: 14vw;   /* still one line on tiny screens */
+      }
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #dbdfe6;
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO with canvas background -->
+  <section class="hero" id="home">
+    <canvas id="bgCanvas"></canvas>
+    <div class="hero-content">
+      <h1 class="main-headline">silent compute™</h1>
+    </div>
+    <!-- down arrow (smooth scroll) -->
+    <button class="scroll-down" id="scrollDownBtn" aria-label="scroll down">
+      <i data-feather="chevron-down"></i>
+    </button>
+  </section>
+
+  <!-- section 1 – features / benefits -->
+  <section class="section" id="features">
+    <h2 class="section-title reveal">designed for <br>depth.</h2>
+    <div class="grid-3">
+      <div class="card reveal">
+        <div class="icon-circle"><i data-feather="wind"></i></div>
+        <h3>zero moving parts</h3>
+        <p>Passive cooling architecture, absolute silence — no fan, no coil whine.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle"><i data-feather="cpu"></i></div>
+        <h3>neural engine</h3>
+        <p> Dedicated AI accelerator for real‑time inference, on‑device.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle"><i data-feather="hard-drive"></i></div>
+        <h3>unified memory</h3>
+        <p>192GB/s bandwidth, up to 128 GB — your workspace never waits.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 – how it works (minimal steps) -->
+  <section class="section" id="how-it-works">
+    <h2 class="section-title reveal">one language.<br>any mesh.</h2>
+    <div class="steps">
+      <div class="step-item reveal">
+        <span class="step-num">001</span>
+        <div class="step-content">
+          <h4>scan & understand</h4>
+          <p>Millions of geometry points are processed in seconds by the neural engine.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <span class="step-num">002</span>
+        <div class="step-content">
+          <h4>topology simplify</h4>
+          <p>Instant retopology without losing detail — edge flow preserved.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <span class="step-num">003</span>
+        <div class="step-content">
+          <h4>material prediction</h4>
+          <p>PBR materials are assigned automatically using spectral AI.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3 – advantages (2 columns, large type) -->
+  <section class="section" id="advantages">
+    <h2 class="section-title reveal">beyond raw <br>teraflops.</h2>
+    <div class="grid-2">
+      <div class="card reveal">
+        <div class="icon-circle"><i data-feather="zap"></i></div>
+        <h3>instant wake</h3>
+        <p>No boot, no resume delay. 0.2 seconds from sleep to full compute.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle"><i data-feather="shield"></i></div>
+        <h3>privacy fabric</h3>
+        <p>Hardware encrypted memory partitions for multi‑tenant workflows.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle"><i data-feather="link-2"></i></div>
+        <h3>cluster bridge</h3>
+        <p>Interconnect up to 8 units without switch — 800Gb/s optical link.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle"><i data-feather="activity"></i></div>
+        <h3>power curve</h3>
+        <p>12W idle – 45W peak. Efficiency without compromise.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4 – use cases (modern icons + light border) -->
+  <section class="section" id="use-cases">
+    <h2 class="section-title reveal">adopted by <br>frontiers.</h2>
+    <div class="use-case-grid">
+      <div class="use-item reveal">
+        <i data-feather="droplet"></i>
+        <h4>fluid simulation</h4>
+        <p>Real‑time CFD for architecture and automotive.</p>
+      </div>
+      <div class="use-item reveal">
+        <i data-feather="mic"></i>
+        <h4>field recording</h4>
+        <p>Ultra‑low noise floor for scientific sonic analysis.</p>
+      </div>
+      <div class="use-item reveal">
+        <i data-feather="box"></i>
+        <h4>volumetric video</h4>
+        <p>6DoF playback without rendering farms.</p>
+      </div>
+      <div class="use-item reveal">
+        <i data-feather="globe"></i>
+        <h4>digital twins</h4>
+        <p>City‑scale models that update live from sensors.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 – call to action (dark) -->
+  <section class="cta-section" id="cta">
+    <div class="cta-inner reveal">
+      <h2 class="cta-title">think silent.</h2>
+      <p class="cta-sub">reserve your development node —首批 units ship Q4 2025.</p>
+      <button class="cta-button">request access</button>
+    </div>
+  </section>
+
+  <!-- feather icons replacement -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      feather.replace({ width: '1.2em', height: '1.2em', 'stroke-width': 1.5 });
+    });
+  </script>
+
+  <!-- JavaScript: canvas animation + intersection observer + smooth scroll -->
+  <script>
+    (function() {
+      // ---------- canvas background (elegant moving grid/lines) ----------
+      const canvas = document.getElementById('bgCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 45;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            vx: (Math.random() - 0.5) * 0.0015,
+            vy: (Math.random() - 0.5) * 0.0015,
+            baseRadius: 1.6,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+      initParticles();
+
+      function draw() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+
+        // very light translucent grid lines (subtle)
+        ctx.strokeStyle = '#9ba1ae20';
+        ctx.lineWidth = 0.6;
+        const step = 70;
+        ctx.beginPath();
+        for (let i = 0; i <= width; i += step) {
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, height);
+        }
+        for (let i = 0; i <= height; i += step) {
+          ctx.moveTo(0, i);
+          ctx.lineTo(width, i);
+        }
+        ctx.stroke();
+
+        // moving particles (tiny dots)
+        ctx.fillStyle = '#2c2f36';
+        for (let p of particles) {
+          // update
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > 1) { p.vx *= -1; p.x = Math.min(1, Math.max(0, p.x)); }
+          if (p.y < 0 || p.y > 1) { p.vy *= -1; p.y = Math.min(1, Math.max(0, p.y)); }
+
+          const xPos = p.x * width;
+          const yPos = p.y * height;
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, p.baseRadius, 0, Math.PI * 2);
+          ctx.fillStyle = '#2a2c31';
+          ctx.globalAlpha = 0.25 + 0.1 * Math.sin(Date.now() * 0.002 + p.x * 10);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
+        requestAnimationFrame(draw);
+      }
+      draw();
+
+      // ---------- intersection observer (reveal) ----------
+      const reveals = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('show');
+          } else {
+            // optional: remove class to repeat animation? keep subtle, no remove
+            // entry.target.classList.remove('show'); // (optional, but we keep once)
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+      
+      reveals.forEach(el => observer.observe(el));
+
+      // ---------- smooth scroll for down arrow ----------
+      const scrollBtn = document.getElementById('scrollDownBtn');
+      scrollBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const featuresSection = document.getElementById('features');
+        if (featuresSection) {
+          featuresSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+
+      // also make CTA button interactive (simple alert for demo)
+      document.querySelector('.cta-button')?.addEventListener('click', () => {
+        alert('demo: request received (prototype)');
+      });
+
+    })();
+  </script>
+
+  <!-- manual icon size adjust after feather (smaller footprint) -->
+  <style>
+    /* ensure icons are monochrome & outline */
+    i.feather {
+      stroke: currentColor;
+      stroke-width: 1.5;
+    }
+    .icon-circle i {
+      width: 32px;
+      height: 32px;
+    }
+    .use-item i {
+      width: 28px;
+      height: 28px;
+    }
+    .scroll-down i {
+      width: 44px;
+      height: 44px;
+    }
+  </style>
+</body>
+</html>
+All done!
+```

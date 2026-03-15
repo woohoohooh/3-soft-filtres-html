@@ -1,0 +1,503 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lumina · silent compute</title>
+    <!-- Feather icons (lightweight, outline) -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        /* -------------------- RESET & BASE -------------------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fafafa;
+            color: #111;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* -------------------- REVEAL ANIMATION (on scroll) -------------------- */
+        .section {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.8s cubic-bezier(0.15, 0.85, 0.35, 1), transform 0.8s cubic-bezier(0.15, 0.85, 0.35, 1);
+        }
+
+        .section.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* -------------------- TYPOGRAPHY & SPACING -------------------- */
+        h1, h2, h3 {
+            font-weight: 500;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-size: 2.8rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            h2 {
+                font-size: 2.2rem;
+            }
+        }
+
+        p {
+            color: #444;
+            font-size: 1.2rem;
+            max-width: 580px;
+            margin: 1.2rem 0;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 5%;
+        }
+
+        /* -------------------- HERO (full screen, one line) -------------------- */
+        .hero {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #f2f2f2; /* fallback */
+        }
+
+        /* canvas for animated background (subtle moving particles) */
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none; /* allows click-through */
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 15vw, 7rem);
+            font-weight: 500;
+            line-height: 1.1;
+            color: #111;
+            text-transform: none;
+            white-space: nowrap;         /* force one line */
+            letter-spacing: -0.02em;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 700px) {
+            .hero h1 {
+                font-size: 13vw;          /* stays on one line, shrinks */
+                white-space: nowrap;
+            }
+        }
+
+        /* down arrow */
+        .hero-arrow {
+            position: absolute;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            cursor: pointer;
+            color: #222;
+            transition: opacity 0.2s ease;
+            opacity: 0.7;
+            background: transparent;
+            border: none;
+            padding: 8px;
+        }
+
+        .hero-arrow:hover {
+            opacity: 1;
+        }
+
+        .hero-arrow i {
+            width: 36px;
+            height: 36px;
+            stroke-width: 1.5;
+        }
+
+        /* -------------------- SECTIONS (shared) -------------------- */
+        .section {
+            padding: 120px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .section:last-of-type {
+            border-bottom: none;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 60px 40px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background: transparent;
+        }
+
+        .card-icon {
+            margin-bottom: 24px;
+        }
+
+        .card-icon i {
+            width: 40px;
+            height: 40px;
+            stroke-width: 1.5;
+            color: #222;
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover .card-icon i {
+            transform: scale(1.02);
+        }
+
+        .card h3 {
+            font-size: 1.8rem;
+            font-weight: 450;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .card p {
+            font-size: 1.1rem;
+            color: #444;
+            margin: 0;
+        }
+
+        /* CTA section */
+        .cta-box {
+            background: #111;
+            color: white;
+            padding: 80px 60px;
+            border-radius: 32px;
+            text-align: center;
+        }
+
+        .cta-box h2 {
+            color: white;
+            margin-bottom: 1.2rem;
+        }
+
+        .cta-box p {
+            color: #ccc;
+            margin: 0 auto 2rem;
+        }
+
+        .cta-button {
+            background: white;
+            color: #111;
+            border: none;
+            padding: 16px 48px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            border-radius: 60px;
+            cursor: default; /* non-interactive for demo, just style */
+            transition: box-shadow 0.2s ease, background 0.2s;
+            box-shadow: 0 8px 20px rgba(255,255,255,0.1);
+            display: inline-block;
+        }
+
+        .cta-button:hover {
+            background: #f0f0f0;
+            box-shadow: 0 12px 28px rgba(255,255,255,0.15);
+        }
+
+        /* -------------------- UTILS -------------------- */
+        .text-center {
+            text-align: center;
+        }
+
+        .max-w-xl {
+            max-width: 720px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* responsiveness */
+        @media (max-width: 600px) {
+            .section {
+                padding: 80px 0;
+            }
+            .card h3 {
+                font-size: 1.6rem;
+            }
+            .cta-box {
+                padding: 50px 20px;
+            }
+        }
+
+        /* feather icons default size fix */
+        i {
+            width: 1em;
+            height: 1em;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HERO – ONE LINE HEADLINE, animated canvas, down arrow -->
+    <section class="hero" id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <h1>compute without noise.</h1>
+        </div>
+        <a class="hero-arrow" href="#start" id="down-arrow">
+            <i data-feather="arrow-down"></i>
+        </a>
+    </section>
+
+    <!-- SECTIONS (5) after hero, each with .section and container -->
+    <div id="start"></div>
+
+    <!-- 1. Features / Benefits -->
+    <section class="section container" id="features">
+        <h2 class="text-center">Silence is the new speed.</h2>
+        <div class="section-grid">
+            <div class="card">
+                <div class="card-icon"><i data-feather="wind"></i></div>
+                <h3>Zero moving parts</h3>
+                <p>Passive conduction chassi — no fans, no coils, absolute 0 dB even under full load.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i data-feather="cpu"></i></div>
+                <h3>1536 core array</h3>
+                <p>Custom ARM‑based neural fabric. 45 TOPS, silent, and cold to the touch.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i data-feather="battery-charging"></i></div>
+                <h3>12W envelope</h3>
+                <p>Entire workstation runs on USB‑C PD. No bulky power supply — just minimalism.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. How it works -->
+    <section class="section container" id="how-it-works">
+        <h2>Passive, powerful, pure.</h2>
+        <div class="section-grid" style="grid-template-columns: repeat(3,1fr);">
+            <div class="card">
+                <div class="card-icon"><i data-feather="hard-drive"></i></div>
+                <h3>1. vapor chamber</h3>
+                <p>Heat spreads across monolithic aluminium unibody — whole case becomes heatsink.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i data-feather="activity"></i></div>
+                <h3>2. adaptive clocking</h3>
+                <p>No throttling, just graceful power distribution across efficiency cores.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i data-feather="droplet"></i></div>
+                <h3>3. phase‑change material</h3>
+                <p>Internal PCM absorbs spikes — sustained loads stay silent and steady.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Advantages -->
+    <section class="section container" id="advantages">
+        <h2>Uncompromised clarity.</h2>
+        <div class="section-grid">
+            <div class="card">
+                <div class="card-icon"><i data-feather="eye"></i></div>
+                <h3>Dead‑quiet studio</h3>
+                <p>Recording, mixing, mastering — no fan noise in your condenser mics.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i data-feather="command"></i></div>
+                <h3>Mineral‑white finish</h3>
+                <p>Ceramic coating, fingerprint proof, blends into any workspace.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i data-feather="shield"></i></div>
+                <h3>No dust, no wear</h3>
+                <p>Fully sealed enclosure — IP54, zero maintenance, lifetime passive.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Use cases -->
+    <section class="section container" id="usecases">
+        <h2>built for creators, healers, thinkers.</h2>
+        <div class="section-grid">
+            <div class="card">
+                <div class="card-icon"><i data-feather="mic"></i></div>
+                <h3>audio post‑production</h3>
+                <p>No coil whine, no fan ramp — hear only your mix.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i data-feather="thermometer"></i></div>
+                <h3>sleep labs / healthcare</h3>
+                <p>Zero noise for patient environments, 24/7 operation.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i data-feather="book-open"></i></div>
+                <h3>deep work sanctuaries</h3>
+                <p>Libraries, writing studios, meditation spaces.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Call to action -->
+    <section class="section container" id="cta">
+        <div class="cta-box">
+            <h2>experience silent compute.</h2>
+            <p class="max-w-xl">First batch ships Q4 2025. Register for priority access.</p>
+            <span class="cta-button">notify me →</span>
+            <!-- static demo element, non functional -->
+        </div>
+    </section>
+
+    <!-- JavaScript (smooth scroll, canvas animation, reveal observer, feather icons) -->
+    <script>
+        (function() {
+            // ---------- feather icons ----------
+            feather.replace({ width: '1.2em', height: '1.2em', 'stroke-width': 1.5 });
+
+            // ---------- HERO CANVAS (subtle animated background) ----------
+            const canvas = document.getElementById('hero-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initParticles() {
+                const count = 45;
+                particles = [];
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random(),
+                        y: Math.random(),
+                        radius: Math.random() * 2.2 + 0.8,
+                        speedX: (Math.random() - 0.5) * 0.002,
+                        speedY: (Math.random() - 0.5) * 0.002,
+                        opacity: Math.random() * 0.3 + 0.1,
+                    });
+                }
+            }
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#111111'; // very subtle dark dots
+                for (let p of particles) {
+                    // update position (slow drift)
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    // wrap around
+                    if (p.x < 0) p.x = 1;
+                    if (p.x > 1) p.x = 0;
+                    if (p.y < 0) p.y = 1;
+                    if (p.y > 1) p.y = 0;
+
+                    const xPos = p.x * width;
+                    const yPos = p.y * height;
+
+                    ctx.globalAlpha = p.opacity;
+                    ctx.beginPath();
+                    ctx.arc(xPos, yPos, p.radius, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#222';
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+            });
+            resizeCanvas();
+            initParticles();
+            drawParticles();
+
+            // subtle shift of particles on mousemove (elegant interaction)
+            window.addEventListener('mousemove', (e) => {
+                if (!particles.length) return;
+                const mouseX = e.clientX / width;
+                const mouseY = e.clientY / height;
+                // gently influence nearest particles
+                particles.forEach(p => {
+                    const dx = mouseX - p.x;
+                    const dy = mouseY - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 0.2) {
+                        p.x -= dx * 0.002;
+                        p.y -= dy * 0.002;
+                    }
+                });
+            });
+
+            // ---------- DOWN ARROW smooth scroll ----------
+            document.getElementById('down-arrow').addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.getElementById('start');
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+
+            // ---------- REVEAL ON SCROLL (intersection observer) ----------
+            const sections = document.querySelectorAll('.section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' });
+
+            sections.forEach(section => observer.observe(section));
+
+            // minor hover effect for cards via css already
+        })();
+    </script>
+
+    <!-- ensure any dynamic icon replacement also runs after load -->
+    <script>
+        // re-run feather for safety (if icons added later)
+        window.addEventListener('load', function() {
+            feather.replace({ width: '1.2em', height: '1.2em', 'stroke-width': 1.5 });
+        });
+    </script>
+
+</body>
+</html>
+All done!
+```

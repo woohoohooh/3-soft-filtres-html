@@ -1,0 +1,552 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>helix • ambient compute</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f7f9fc;
+      color: #101214;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.3;
+      overflow-x: hidden;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* canvas background */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* sections */
+    section {
+      position: relative;
+      width: 100%;
+      padding: 6rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero {
+      height: 100vh;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: transparent;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 1280px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 12vw, 6rem);
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      color: #0b0c0e;
+      white-space: nowrap;
+      margin: 0 auto;
+      width: fit-content;
+      max-width: 100%;
+      overflow: visible;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      background-color: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(2px);
+      padding: 0.1em 0.5em;
+      border-radius: 2rem;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.02);
+    }
+
+    .down-arrow {
+      position: absolute;
+      bottom: 2.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #1f2937;
+      width: 3rem;
+      height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.25s ease;
+      opacity: 0.7;
+      animation: float 3s infinite ease-in-out;
+    }
+
+    .down-arrow:hover {
+      opacity: 1;
+    }
+
+    @keyframes float {
+      0% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(8px); }
+      100% { transform: translateX(-50%) translateY(0); }
+    }
+
+    /* container */
+    .container {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* section headers */
+    .section-title {
+      font-size: 3rem;
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      text-align: center;
+      width: 100%;
+    }
+
+    /* feature grid */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 3rem 4rem;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .card {
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.2rem;
+    }
+
+    .icon-symbol {
+      color: #181c24;
+      stroke-width: 1.5;
+      width: 2.4rem;
+      height: 2.4rem;
+      margin-bottom: 0.25rem;
+      transition: transform 0.2s ease;
+    }
+
+    .card:hover .icon-symbol {
+      transform: scale(1.02);
+    }
+
+    .card h3 {
+      font-size: 1.8rem;
+      font-weight: 520;
+      letter-spacing: -0.01em;
+    }
+
+    .card p {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      color: #2e3740;
+      max-width: 38ch;
+    }
+
+    .step-item, .use-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .big-number {
+      font-size: 2.2rem;
+      font-weight: 400;
+      color: #8d9ca8;
+      margin-bottom: 0.5rem;
+    }
+
+    .cta-box {
+      background: #1b1f27;
+      color: white;
+      border-radius: 3rem;
+      padding: 5rem 3rem;
+      text-align: center;
+      width: 100%;
+      margin-top: 2rem;
+    }
+
+    .cta-box h2 {
+      font-size: 4rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: white;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-button {
+      background: white;
+      border: none;
+      color: #1b1f27;
+      font-size: 1.5rem;
+      font-weight: 480;
+      padding: 1rem 3.2rem;
+      border-radius: 4rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+      margin-top: 1.8rem;
+    }
+
+    .cta-button:hover {
+      background: #eef2f6;
+      transform: scale(0.98);
+    }
+
+    hr.sep {
+      margin: 2rem 0;
+      border: 0;
+      border-top: 1px solid #dce3eb;
+      width: 100%;
+    }
+
+    /* reveal on scroll (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsive */
+    @media (max-width: 850px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+      .hero h1 {
+        font-size: clamp(2.5rem, 8vw, 5rem);
+        white-space: normal;   /* fallback, but we force one line via js if needed */
+      }
+      .cta-box h2 { font-size: 3rem; }
+    }
+
+    @media (max-width: 480px) {
+      section { padding: 4rem 1.5rem; }
+      .section-title { font-size: 2.5rem; }
+      .card h3 { font-size: 1.6rem; }
+    }
+
+    /* feather icons */
+    .i {
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* one‑line insurance (headline word break) */
+    .hero h1 {
+      overflow-wrap: normal;
+      word-break: keep-all;
+      white-space: nowrap;
+    }
+    @media (max-width: 480px) {
+      .hero h1 {
+        font-size: 2.8rem;
+        white-space: nowrap;
+      }
+    }
+  </style>
+  <!-- feather icons (lightweight, cdn) -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body>
+  <canvas id="heroCanvas"></canvas>
+
+  <!-- HERO (section 0) -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <h1 class="main-headline">ambient compute is here</h1>
+    </div>
+    <a class="down-arrow" href="#features" aria-label="scroll down">
+      <i data-feather="arrow-down" width="44" height="44"></i>
+    </a>
+  </section>
+
+  <!-- section 1 – features -->
+  <section id="features" class="reveal">
+    <div class="container">
+      <h2 class="section-title reveal">beyond the screen</h2>
+      <div class="grid-2">
+        <div class="card reveal">
+          <i data-feather="cpu" class="icon-symbol"></i>
+          <h3>ambient core</h3>
+          <p>Always‑aware processor that fades into the background — no wake, no wait.</p>
+        </div>
+        <div class="card reveal">
+          <i data-feather="eye" class="icon-symbol"></i>
+          <h3>zero‑presence UI</h3>
+          <p>Information surfaces only when you look. No pings, no interruptions.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 – how it works (3 steps) -->
+  <section id="howitworks" class="reveal">
+    <div class="container">
+      <h2 class="section-title reveal">three gestures</h2>
+      <div class="grid-3">
+        <div class="step-item reveal">
+          <span class="big-number">01</span>
+          <i data-feather="radio" class="icon-symbol"></i>
+          <h3>sense</h3>
+          <p>Ultra‑wideband radar maps the room silently.</p>
+        </div>
+        <div class="step-item reveal">
+          <span class="big-number">02</span>
+          <i data-feather="zap" class="icon-symbol"></i>
+          <h3>infer</h3>
+          <p>On‑device models understand intent without cloud.</p>
+        </div>
+        <div class="step-item reveal">
+          <span class="big-number">03</span>
+          <i data-feather="bell-off" class="icon-symbol"></i>
+          <h3>disappear</h3>
+          <p>No notification — just a subtle glow when needed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3 – advantages (2 columns) -->
+  <section id="advantages" class="reveal">
+    <div class="container">
+      <h2 class="section-title reveal">pure utility</h2>
+      <div class="grid-2">
+        <div class="card reveal">
+          <i data-feather="battery-charging" class="icon-symbol"></i>
+          <h3>weeks on end</h3>
+          <p>E‑ink secondary display + event‑driven wake‑up. Charge once a month.</p>
+        </div>
+        <div class="card reveal">
+          <i data-feather="shield" class="icon-symbol"></i>
+          <h3>local by design</h3>
+          <p>All inference stays on device. Your presence never leaves the edge.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4 – use cases (grid-3) -->
+  <section id="usecases" class="reveal">
+    <div class="container">
+      <h2 class="section-title reveal">invisible intelligence</h2>
+      <div class="grid-3">
+        <div class="card reveal">
+          <i data-feather="home" class="icon-symbol"></i>
+          <h3>quiet study</h3>
+          <p>Desk lights dim when you leave, brighten as you return — no switch.</p>
+        </div>
+        <div class="card reveal">
+          <i data-feather="watch" class="icon-symbol"></i>
+          <h3>wrist‑free flow</h3>
+          <p>Meetings resume the instant you sit down. calendar glance on wall.</p>
+        </div>
+        <div class="card reveal">
+          <i data-feather="wind" class="icon-symbol"></i>
+          <h3>microclimate</h3>
+          <p>Fan follows your position, silent when you're still.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 – CTA -->
+  <section id="cta" class="reveal">
+    <div class="container">
+      <div class="cta-box reveal">
+        <h2>ambient helix<br>now in shadow</h2>
+        <i data-feather="feather" class="icon-symbol" style="color:white; width:3rem; height:3rem; margin:1rem auto;"></i>
+        <button class="cta-button">request access</button>
+        <p style="color:#b8c7dd; margin-top:2.5rem; font-size:1.1rem;">limited preview · spring equinox</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- feather replacement -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      feather.replace({ width: '1.3em', height: '1.3em', strokeWidth: 1.5 });
+    });
+  </script>
+
+  <!-- background canvas animation (subtle elegant) -->
+  <script>
+    (function() {
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      const initParticles = () => {
+        particles = [];
+        const particleCount = 55;
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 1.8 + 0.5,
+            speedX: (Math.random() - 0.5) * 0.2,
+            speedY: (Math.random() - 0.5) * 0.15,
+            opacity: Math.random() * 0.3 + 0.1
+          });
+        }
+      };
+
+      const resizeCanvas = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      };
+
+      const drawParticles = () => {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#9aaebf';
+        for (let p of particles) {
+          ctx.globalAlpha = p.opacity * 0.7;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#778b9e';
+          ctx.fill();
+
+          // very faint connecting lines (elegant)
+          ctx.globalAlpha = 0.06;
+          ctx.beginPath();
+          for (let other of particles) {
+            const dx = p.x - other.x;
+            const dy = p.y - other.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 140 && dist > 20) {
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(other.x, other.y);
+            }
+          }
+          ctx.strokeStyle = '#2c3e50';
+          ctx.lineWidth = 0.4;
+          ctx.stroke();
+        }
+
+        // move particles
+        for (let p of particles) {
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around softly
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+
+        requestAnimationFrame(drawParticles);
+      };
+
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+      drawParticles();
+    })();
+  </script>
+
+  <!-- intersection observer (reveal) & smooth down arrow, ensure one line headline -->
+  <script>
+    (function() {
+      // one‑line headline fix (if any browser wraps)
+      const headline = document.querySelector('.hero h1');
+      if (headline) {
+        // force nowrap (already in css) + adjust font-size on extreme small?
+        const checkWrap = () => {
+          if (window.innerWidth < 380) {
+            headline.style.fontSize = '2.2rem';
+          } else {
+            headline.style.fontSize = ''; // fallback to clamp
+          }
+        };
+        checkWrap();
+        window.addEventListener('resize', checkWrap);
+      }
+
+      // smooth scroll for down arrow
+      const downArrow = document.querySelector('.down-arrow');
+      if (downArrow) {
+        downArrow.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = document.querySelector('#features');
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      }
+
+      // reveal on scroll observer
+      const reveals = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          } else {
+            // optional remove class to re-hide? we keep active, but can be removed for out animations
+            // entry.target.classList.remove('active'); // would hide when leaving — but not typical
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -30px 0px' });
+
+      reveals.forEach(r => observer.observe(r));
+
+      // manually trigger first section (hero doesn't need reveal, but we still observe features etc)
+      // ensure first section (features) gets active quickly
+      setTimeout(() => {
+        document.querySelectorAll('#features .reveal').forEach(el => el.classList.add('active'));
+      }, 200);
+    })();
+  </script>
+
+  <!-- ensure feather icons re-run after dynamic content? they already run once, but fine -->
+  <script>
+    (function secondFeather(){
+       setTimeout(() => { try { feather.replace(); } catch(e){}}, 400);
+    })();
+  </script>
+  <!-- All done! (line will be at the end, below) -->
+</body>
+</html>
+All done!
+```

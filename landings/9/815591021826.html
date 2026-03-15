@@ -1,0 +1,533 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helix · ambient compute</title>
+    <!-- Feather icons (lightweight, outline, modern) -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        /* reset + base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f6f7f9;
+            font-family: system-ui, -apple-system, 'Inter', 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            color: #1b1f26;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* hero full screen */
+        .hero {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f2f5;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        /* canvas background – subtle animated grain + movement */
+        #heroCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            width: 100%;
+            padding: 0 24px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: clamp(3.5rem, 15vw, 8rem);
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            color: #161b22;
+            line-height: 1.1;
+            white-space: nowrap;
+            text-transform: uppercase;
+            word-break: keep-all;
+            margin: 0;
+            transform: translateY(-2vh);
+        }
+
+        /* down arrow */
+        .scroll-down {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            color: #2e353f;
+            background: transparent;
+            border: 1.5px solid #2e353f22;
+            backdrop-filter: blur(2px);
+            width: 48px;
+            height: 48px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s ease;
+            cursor: pointer;
+        }
+
+        .scroll-down:hover {
+            background: #1b1f2610;
+            border-color: #1b1f26aa;
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        .scroll-down i {
+            width: 24px;
+            height: 24px;
+            stroke: #1b1f26;
+            stroke-width: 1.8;
+        }
+
+        /* sections general */
+        section {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 120px 32px;
+            border-bottom: 1px solid #dde0e5;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-header h2 {
+            font-size: 3.5rem;
+            font-weight: 550;
+            letter-spacing: -0.02em;
+            color: #101318;
+        }
+
+        /* feature grid — modern, clean */
+        .grid-3, .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 64px 48px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .card {
+            background: none;
+            padding: 8px 0;
+        }
+
+        .card .icon {
+            width: 48px;
+            height: 48px;
+            stroke: #232932;
+            stroke-width: 1.5;
+            margin-bottom: 24px;
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover .icon {
+            transform: translateY(-4px);
+        }
+
+        .card h3 {
+            font-size: 2rem;
+            font-weight: 520;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+            color: #13171f;
+        }
+
+        .card p, .text-large {
+            font-size: 1.3rem;
+            line-height: 1.5;
+            color: #2f3848;
+            max-width: 500px;
+            font-weight: 380;
+        }
+
+        .use-case-item, .advantage-item {
+            display: flex;
+            gap: 32px;
+            align-items: flex-start;
+            margin-bottom: 48px;
+        }
+
+        .use-case-item .icon {
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            stroke: #1f2937;
+            stroke-width: 1.5;
+        }
+
+        .large-quote {
+            font-size: 2rem;
+            font-weight: 420;
+            line-height: 1.3;
+            color: #1a212d;
+        }
+
+        .cta-box {
+            background: #1a1f27;
+            color: white;
+            padding: 80px 64px;
+            border-radius: 48px;
+            text-align: center;
+        }
+
+        .cta-box h3 {
+            font-size: 4rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            color: white;
+            margin-bottom: 24px;
+        }
+
+        .cta-box p {
+            font-size: 1.6rem;
+            color: #ccd2dc;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: white;
+            color: #1a1f27;
+            padding: 20px 60px;
+            border-radius: 60px;
+            font-size: 1.4rem;
+            font-weight: 520;
+            text-decoration: none;
+            transition: 0.15s ease;
+            border: none;
+        }
+
+        .btn:hover {
+            background: #ebeff5;
+            transform: scale(1.02);
+        }
+
+        /* reveal on scroll – intersection observer */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.7s cubic-bezier(0.15, 0.8, 0.25, 1), transform 0.7s cubic-bezier(0.15, 0.8, 0.25, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* responsive */
+        @media (max-width: 680px) {
+            .hero h1 {
+                font-size: 16vw;   /* keeps one line on mobile */
+                letter-spacing: -0.02em;
+            }
+            section {
+                padding: 80px 24px;
+            }
+            .section-header h2 {
+                font-size: 2.8rem;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .use-case-item {
+                flex-direction: column;
+                gap: 16px;
+            }
+            .cta-box {
+                padding: 48px 24px;
+            }
+            .cta-box h3 {
+                font-size: 3rem;
+            }
+        }
+
+        /* hide canvas on very old, but fine */
+        canvas {
+            display: block;
+        }
+
+        /* footer (tiny) */
+        .footer-note {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px;
+            text-align: center;
+            color: #5c6675;
+            font-size: 1rem;
+            border-top: 1px solid #d0d6df;
+        }
+    </style>
+</head>
+<body>
+    <!-- hero section -->
+    <div class="hero" id="home">
+        <canvas id="heroCanvas"></canvas>
+        <div class="hero-content">
+            <h1>HELIX<span style="font-weight:300;">·</span>OS</h1>
+        </div>
+        <a href="#features" class="scroll-down" aria-label="scroll down">
+            <i data-feather="arrow-down"></i>
+        </a>
+    </div>
+
+    <!-- sections -->
+    <section id="features" class="reveal">
+        <div class="section-header">
+            <h2>Ambient · edge fabric</h2>
+        </div>
+        <div class="grid-3">
+            <div class="card">
+                <i data-feather="cpu" class="icon"></i>
+                <h3>Zero‑latency</h3>
+                <p>Distributed inference runs within 5ms of any interaction — no cloud, no delay.</p>
+            </div>
+            <div class="card">
+                <i data-feather="hard-drive" class="icon"></i>
+                <h3>Ephemeral core</h3>
+                <p>Stateless by design. Data exists only while you need it, then dissolves.</p>
+            </div>
+            <div class="card">
+                <i data-feather="shield" class="icon"></i>
+                <h3>Homomorphic shell</h3>
+                <p>End‑to‑end encrypted compute. Not even Helix can see your payloads.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="how-it-works" class="reveal">
+        <div class="section-header">
+            <h2>One protocol, infinite reach</h2>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <i data-feather="zap" class="icon"></i>
+                <h3>1. Discover</h3>
+                <p>Your devices form a mesh. Helix finds the nearest idle core automatically.</p>
+            </div>
+            <div class="card">
+                <i data-feather="repeat" class="icon"></i>
+                <h3>2. Offload</h3>
+                <p>Fragments of the task spread across the mesh, execute, and reassemble.</p>
+            </div>
+            <div class="card">
+                <i data-feather="check-circle" class="icon"></i>
+                <h3>3. Forget</h3>
+                <p>After execution the mesh flushes all traces — ready for the next burst.</p>
+            </div>
+            <div class="card">
+                <i data-feather="layers" class="icon"></i>
+                <h3>4. Synchronise</h3>
+                <p>State is eventually consistent across your personal edge.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="advantages" class="reveal">
+        <div class="section-header">
+            <h2>Uncompromised</h2>
+        </div>
+        <div class="advantage-item">
+            <i data-feather="wind" class="icon"></i>
+            <div>
+                <h3>Silent power</h3>
+                <p class="text-large">No fans, no spinning drives — the mesh uses only existing device idle cycles.</p>
+            </div>
+        </div>
+        <div class="advantage-item">
+            <i data-feather="droplet" class="icon"></i>
+            <div>
+                <h3>Fluid topology</h3>
+                <p class="text-large">Nodes join and leave mid‑operation. The fabric heals in milliseconds.</p>
+            </div>
+        </div>
+        <div class="advantage-item">
+            <i data-feather="eye-off" class="icon"></i>
+            <div>
+                <h3>Zero telemetry</h3>
+                <p class="text-large">We collect nothing. Not even crash reports. Your mesh is yours.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="use-cases" class="reveal">
+        <div class="section-header">
+            <h2>From edge to extreme</h2>
+        </div>
+        <div class="use-case-item">
+            <i data-feather="radio" class="icon"></i>
+            <div>
+                <h3>Autonomous drones</h3>
+                <p class="text-large">Real‑time obstacle avoidance without offloading to ground — mesh between drones.</p>
+            </div>
+        </div>
+        <div class="use-case-item">
+            <i data-feather="mic" class="icon"></i>
+            <div>
+                <h3>On‑device agents</h3>
+                <p class="text-large">Voice assistants that never touch the cloud. Everything runs inside your mesh.</p>
+            </div>
+        </div>
+        <div class="use-case-item">
+            <i data-feather="activity" class="icon"></i>
+            <div>
+                <h3>Medical wearables</h3>
+                <p class="text-large">Instant anomaly detection. Zero latency, full privacy, even in remote areas.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="cta" class="reveal">
+        <div class="cta-box">
+            <h3>Enter the mesh</h3>
+            <p>Developer kit · early access · open SDK</p>
+            <a href="#" class="btn">Reserve node</a>
+        </div>
+    </section>
+
+    <div class="footer-note">
+        HELIX · ambient compute · 2025
+    </div>
+
+    <!-- feather icons replacement -->
+    <script>
+        feather.replace({ width: '100%', height: '100%', stroke: 'currentColor' });
+    </script>
+
+    <script>
+        (function() {
+            // --- canvas animation (subtle grain + drift) ---
+            const canvas = document.getElementById('heroCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initParticles() {
+                const count = 70;
+                particles = [];
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random(),
+                        y: Math.random(),
+                        radius: 0.8 + Math.random() * 3,
+                        speedX: (Math.random() - 0.5) * 0.0012,
+                        speedY: (Math.random() - 0.5) * 0.0012,
+                        opacity: 0.08 + Math.random() * 0.12,
+                    });
+                }
+            }
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            function drawParticles() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#3b424d'; // soft grey dots
+                
+                for (let p of particles) {
+                    // update position slowly
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    // wrap around very gently (so density remains)
+                    if (p.x < 0) p.x = 1;
+                    if (p.x > 1) p.x = 0;
+                    if (p.y < 0) p.y = 1;
+                    if (p.y > 1) p.y = 0;
+
+                    const xPos = p.x * width;
+                    const yPos = p.y * height;
+
+                    ctx.globalAlpha = p.opacity;
+                    ctx.beginPath();
+                    ctx.arc(xPos, yPos, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#1e2632';
+                    ctx.fill();
+                }
+
+                // extra faint fog/wash
+                ctx.globalAlpha = 0.25;
+                ctx.fillStyle = '#e1e5ec';
+                ctx.fillRect(0, 0, width, height);
+
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+            });
+
+            resizeCanvas();
+            initParticles();
+            drawParticles();
+
+            // --- reveal on scroll (intersection observer) ---
+            const revealElements = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // optional: keep visible after first reveal (no remove)
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -30px 0px' });
+
+            revealElements.forEach(el => observer.observe(el));
+
+            // manual active for first section in case already visible
+            setTimeout(() => {
+                document.querySelector('#features')?.classList.add('active');
+            }, 200);
+        })();
+    </script>
+
+    <!-- ensure hero headline stays one line (extra safety) -->
+    <style>
+        /* guarantee one-line headline on narrow */
+        @media (max-width: 460px) {
+            .hero h1 {
+                font-size: 14vw;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,596 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lumina · silent analytics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            line-height: 1.5;
+            color: #1a1e2b;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* ---------- hero canvas background (subtle animated) ---------- */
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ---------- hero section ---------- */
+        .hero {
+            position: relative;
+            height: 100vh;
+            min-height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f7fa;  /* base, canvas sits above */
+            isolation: isolate;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            width: 100%;
+            padding: 0 1.5rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 15vw, 7rem);
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            color: #121520;
+            white-space: nowrap;          /* force one line */
+            margin: 0;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        /* down arrow (hero) */
+        .scroll-down {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: #2d3240;
+            opacity: 0.7;
+            transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+            padding: 0.5rem;
+            line-height: 0;
+        }
+
+        .scroll-down:hover {
+            opacity: 1;
+            transform: translateX(-50%) translateY(6px);
+        }
+
+        .scroll-down svg {
+            width: 32px;
+            height: 32px;
+            stroke-width: 1.8;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        /* ---------- general section layout ---------- */
+        .section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 6rem 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .section:last-of-type {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            margin-bottom: 4rem;
+            color: #1a1e2b;
+            line-height: 1.2;
+        }
+
+        .section-title span {
+            font-weight: 300;
+            color: #6b7280;
+        }
+
+        /* feature grid / cards */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4rem 3rem;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 0.7s ease forwards;
+        }
+
+        .feature-card:nth-child(2) { animation-delay: 0.1s; }
+        .feature-card:nth-child(3) { animation-delay: 0.2s; }
+        .feature-card:nth-child(4) { animation-delay: 0.3s; }
+
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .icon-outline {
+            flex-shrink: 0;
+            color: #2f3a4a;
+            background: transparent;
+            border-radius: 0;
+            padding: 0.2rem;
+        }
+
+        .icon-outline svg {
+            width: 36px;
+            height: 36px;
+            stroke-width: 1.5;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .card-text h3 {
+            font-size: 1.7rem;
+            font-weight: 450;
+            margin-bottom: 0.6rem;
+            letter-spacing: -0.02em;
+        }
+
+        .card-text p {
+            font-size: 1.2rem;
+            color: #3e4a5a;
+            max-width: 450px;
+        }
+
+        /* how it works / numbered */
+        .steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2.5rem;
+            justify-content: space-between;
+        }
+
+        .step-item {
+            flex: 1 1 200px;
+            opacity: 0;
+            animation: fadeUp 0.6s ease forwards;
+            animation-delay: calc(0.1s * var(--i, 1));
+        }
+
+        .step-marker {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: #8996a6;
+            margin-bottom: 1rem;
+            letter-spacing: 0.02em;
+        }
+
+        .step-item h4 {
+            font-size: 1.8rem;
+            font-weight: 450;
+            margin-bottom: 0.75rem;
+        }
+
+        .step-item p {
+            font-size: 1.1rem;
+            color: #495561;
+        }
+
+        /* advantages (small cards) */
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+
+        .advantage-card {
+            background: #ffffffd2;
+            backdrop-filter: blur(2px);
+            padding: 2rem 1.8rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -12px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.25s ease;
+            border: 1px solid #ffffff50;
+            opacity: 0;
+            animation: fadeUp 0.5s ease forwards;
+        }
+
+        .advantage-card:hover {
+            transform: scale(1.01) translateY(-6px);
+            box-shadow: 0 24px 40px -16px rgba(18, 21, 32, 0.12);
+            border-color: #dbdfe6;
+        }
+
+        .advantage-card .icon-outline svg {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 1.5rem;
+            stroke-width: 1.6;
+        }
+
+        .advantage-card h5 {
+            font-size: 1.5rem;
+            font-weight: 470;
+            margin-bottom: 0.5rem;
+        }
+
+        .advantage-card p {
+            font-size: 1rem;
+            color: #4b5565;
+        }
+
+        /* use cases — large text + icons */
+        .use-case-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3rem 4rem;
+            margin-top: 2rem;
+        }
+
+        .use-case-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 2rem;
+            font-weight: 400;
+            color: #191e2b;
+            opacity: 0;
+            animation: fadeUp 0.5s ease forwards;
+        }
+
+        .use-case-item .icon-outline svg {
+            width: 44px;
+            height: 44px;
+            stroke-width: 1.3;
+        }
+
+        /* CTA */
+        .cta-section {
+            text-align: center;
+            background: #f0f2f6;
+            border-radius: 36px;
+            padding: 5rem 2rem;
+            margin-top: 2rem;
+            box-shadow: inset 0 2px 8px rgba(255,255,255,0.8), 0 12px 24px -12px #d0d9e6;
+        }
+
+        .cta-title {
+            font-size: 3.2rem;
+            font-weight: 430;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: #1a1e2b;
+            color: white;
+            padding: 1.2rem 3.5rem;
+            border-radius: 60px;
+            font-size: 1.3rem;
+            font-weight: 470;
+            text-decoration: none;
+            transition: background 0.2s, transform 0.15s;
+            margin-top: 2rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        }
+
+        .cta-button:hover {
+            background: #2f364b;
+            transform: scale(1.02);
+        }
+
+        /* reveal on scroll (simple intersection) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* responsiveness */
+        @media (max-width: 700px) {
+            .hero h1 {
+                font-size: clamp(2.5rem, 10vw, 5rem);
+                white-space: normal;      /* fallback only if extreme narrow, but design stays 1 line */
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+            }
+            .section-title {
+                font-size: 2.2rem;
+            }
+            .cta-title {
+                font-size: 2.2rem;
+            }
+            .use-case-item {
+                font-size: 1.8rem;
+                flex-wrap: wrap;
+            }
+        }
+
+        /* additional whitespace touches */
+        hr {
+            border: none;
+            border-top: 1px solid #e2e6ec;
+            max-width: 200px;
+            margin: 4rem auto;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #8c96a3;
+            font-size: 0.9rem;
+        }
+
+        /* feather (via cdn) */
+        .icon-outline i {
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+        }
+    </style>
+    <!-- feather icons replacement (lightweight) -->
+    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+</head>
+<body>
+
+    <!-- hero with canvas background (animated particles) -->
+    <section class="hero" id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <h1>lumina intelligence</h1>
+        </div>
+        <button class="scroll-down" id="scrollDownBtn" aria-label="scroll down">
+            <i data-feather="arrow-down"></i>
+        </button>
+    </section>
+
+    <!-- sections (5) -->
+    <div class="section">
+        <h2 class="section-title reveal"><span>✦</span> silent precision</h2>
+        <div class="grid-2">
+            <div class="feature-card">
+                <div class="icon-outline"><i data-feather="eye"></i></div>
+                <div class="card-text">
+                    <h3>Zero‑noise capture</h3>
+                    <p>Environment‑aware signal filtering, pure data without artifacts.</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="icon-outline"><i data-feather="cpu"></i></div>
+                <div class="card-text">
+                    <h3>On‑device inference</h3>
+                    <p>All processing stays local. your information never leaves.</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="icon-outline"><i data-feather="shield"></i></div>
+                <div class="card-text">
+                    <h3>Private by design</h3>
+                    <p>Zero telemetry, no logs. built for sensitive environments.</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="icon-outline"><i data-feather="zap"></i></div>
+                <div class="card-text">
+                    <h3>Sub‑millisecond response</h3>
+                    <p>latency as low as 0.3ms from sensor to insight.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title reveal"><span>⸻</span> how it works</h2>
+        <div class="steps">
+            <div class="step-item" style="--i:1">
+                <div class="step-marker">001</div>
+                <h4>whisper SDK</h4>
+                <p>embed a 12kb agent into your application.</p>
+            </div>
+            <div class="step-item" style="--i:2">
+                <div class="step-marker">002</div>
+                <h4>silent inference</h4>
+                <p>pattern detection runs on‑chip, no data transfer.</p>
+            </div>
+            <div class="step-item" style="--i:3">
+                <div class="step-marker">003</div>
+                <h4>signal relay</h4>
+                <p>only abstracted insights leave the secure enclave.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title reveal"><span>⎯</span> advantages</h2>
+        <div class="mini-grid">
+            <div class="advantage-card reveal">
+                <div class="icon-outline"><i data-feather="thermometer"></i></div>
+                <h5>thermal efficiency</h5>
+                <p>no cloud means no hot servers, no cooling overhead.</p>
+            </div>
+            <div class="advantage-card reveal">
+                <div class="icon-outline"><i data-feather="radio"></i></div>
+                <h5>air‑gapped ready</h5>
+                <p>operates without any network, ideal for remote field hubs.</p>
+            </div>
+            <div class="advantage-card reveal">
+                <div class="icon-outline"><i data-feather="globe"></i></div>
+                <h5>sovereign by design</h5>
+                <p>your data follows your jurisdiction — always.</p>
+            </div>
+            <div class="advantage-card reveal">
+                <div class="icon-outline"><i data-feather="hexagon"></i></div>
+                <h5>modular stack</h5>
+                <p>add or remove capability without vendor lock‑in.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title reveal"><span>⋯</span> use cases</h2>
+        <div class="use-case-row">
+            <div class="use-case-item reveal"><div class="icon-outline"><i data-feather="mic-off"></i></div> silent command centers</div>
+            <div class="use-case-item reveal"><div class="icon-outline"><i data-feather="activity"></i></div> medical edge</div>
+            <div class="use-case-item reveal"><div class="icon-outline"><i data-feather="compass"></i></div> autonomous systems</div>
+        </div>
+        <div class="use-case-row">
+            <div class="use-case-item reveal"><div class="icon-outline"><i data-feather="shield-off"></i></div> defense & infrastructure</div>
+            <div class="use-case-item reveal"><div class="icon-outline"><i data-feather="wind"></i></div> environmental monitoring</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="cta-section reveal">
+            <h3 class="cta-title">still listening?</h3>
+            <p style="font-size: 1.3rem; color:#475569;">join the silent preview · no spam, only signal</p>
+            <a href="#" class="cta-button">request access</a>
+        </div>
+    </div>
+
+    <footer>
+        lumina intelligence · zero footprint analytics
+    </footer>
+
+    <script>
+        (function() {
+            // smooth scroll down
+            document.getElementById('scrollDownBtn').addEventListener('click', function() {
+                const nextSection = document.querySelector('.section');
+                if (nextSection) {
+                    nextSection.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+
+            // feather icons init
+            feather.replace({ width: '1em', height: '1em', 'stroke-width': 1.5 });
+
+            // canvas animation (subtle particle field)
+            const canvas = document.getElementById('hero-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initParticles() {
+                const count = 50;
+                particles = [];
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 2.2 + 0.6,
+                        speedX: (Math.random() - 0.5) * 0.35,
+                        speedY: (Math.random() - 0.5) * 0.2,
+                        opacity: Math.random() * 0.3 + 0.1,
+                    });
+                }
+            }
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                initParticles();
+            }
+
+            function drawParticles() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#a0b2c9'; // very light grey-blue
+                for (let p of particles) {
+                    ctx.globalAlpha = p.opacity * 0.7;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // subtle drift
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    // wrap around / reset
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+                }
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+            });
+
+            resizeCanvas();
+            drawParticles();
+
+            // reveal on scroll (intersection observer)
+            const revealElements = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '20px' });
+
+            revealElements.forEach(el => observer.observe(el));
+
+            // fix one-line headline for extreme small widths? but we keep one line.
+            // we trust clamp + white-space nowrap, but in very tiny screen fallback to normal is okay.
+            // additional: ensure no manual split
+        })();
+    </script>
+
+    <!-- feather replacement again for any dynamic content -->
+    <script>
+        feather.replace({ width: '1em', height: '1em' });
+    </script>
+</body>
+</html>
+All done!
+```

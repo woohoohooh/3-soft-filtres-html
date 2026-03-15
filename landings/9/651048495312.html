@@ -1,0 +1,491 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>éclat · ambient intelligence</title>
+  <!-- Feather icons (lightweight, minimal, monochrome) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* ---------- RESET & BASE ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background-color: #fafafc;
+      color: #1e1e2f;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* ---------- TYPOGRAPHY & SPACING ---------- */
+    section {
+      padding: 6rem 1.5rem;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      line-height: 1.1;
+    }
+
+    @media (max-width: 700px) {
+      section { padding: 4rem 1.5rem; }
+      .section-title { font-size: 2.2rem; margin-bottom: 2.5rem; }
+    }
+
+    /* ---------- HERO (full screen, one line headline) ---------- */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: #fafafc;  /* fallback, canvas overlay does the magic */
+      padding: 0 1.5rem;
+    }
+
+    /* canvas background (subtle animated grain + moving particles) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;  /* lets clicks pass to down arrow */
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      width: 100%;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 12vw, 7rem);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      color: #1e1e2f;
+      text-wrap: nowrap;           /* force single line */
+      white-space: nowrap;
+      margin: 0 auto;
+      max-width: 100%;
+      padding: 0 0.2rem;
+      line-height: 1.2;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+
+    @media (max-width: 550px) {
+      .hero h1 {
+        font-size: 13vw;           /* still one line, shrinks gracefully */
+      }
+    }
+
+    /* down arrow – minimal, elegant */
+    .down-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      color: #2b2b3b;
+      opacity: 0.65;
+      transition: opacity 0.25s ease, transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.3);
+      backdrop-filter: blur(4px);
+      border-radius: 40px;
+      padding: 0.3rem 0.8rem;
+      border: 1px solid rgba(0,0,0,0.05);
+      text-decoration: none;
+    }
+
+    .down-arrow:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+      background: rgba(255,255,255,0.5);
+    }
+
+    .down-arrow i {
+      width: 28px;
+      height: 28px;
+      stroke-width: 1.5;
+    }
+
+    /* ---------- GENERIC SECTION LAYOUT (grid, cards) ---------- */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 3rem 2.5rem;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    @media (max-width: 800px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+
+    .feature-card, .step-card, .advantage-card, .use-card {
+      background: transparent;
+      padding: 0.5rem 0;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f4;
+      border-radius: 60%;
+      width: 64px;
+      height: 64px;
+      margin-bottom: 1.8rem;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .feature-card:hover .icon-circle,
+    .step-card:hover .icon-circle,
+    .advantage-card:hover .icon-circle,
+    .use-card:hover .icon-circle {
+      background: #e3e3ec;
+      transform: scale(1.02);
+    }
+
+    .icon-circle i {
+      width: 32px;
+      height: 32px;
+      stroke: #1e1e2f;
+      stroke-width: 1.8;
+    }
+
+    h3 {
+      font-size: 1.9rem;
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.8rem;
+      line-height: 1.3;
+    }
+
+    .feature-card p, .step-card p, .advantage-card p, .use-card p {
+      font-size: 1.2rem;
+      color: #3a3a4a;
+      max-width: 38ch;
+    }
+
+    /* CTA section special */
+    .cta-large {
+      text-align: center;
+      background: #f0f0f8;
+      border-radius: 40px;
+      padding: 5rem 2rem;
+    }
+
+    .cta-large h2 {
+      font-size: 3.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: #1e1e2f;
+      color: white;
+      text-decoration: none;
+      font-size: 1.4rem;
+      font-weight: 480;
+      padding: 0.9rem 2.8rem;
+      border-radius: 60px;
+      border: 1px solid #2f2f42;
+      transition: background 0.2s, transform 0.15s;
+      margin-top: 1.8rem;
+    }
+
+    .cta-button:hover {
+      background: #2d2d42;
+      transform: scale(1.02);
+    }
+
+    /* reveal animations (scroll) */
+    .js-reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s cubic-bezier(0.15,0.85,0.35,1), transform 0.7s cubic-bezier(0.15,0.85,0.35,1);
+    }
+
+    .js-reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    hr {
+      border: 0;
+      border-top: 1px solid rgba(0,0,0,0.05);
+      margin: 2rem 0;
+    }
+
+    /* feather icons default styling (monochrome) */
+    i { color: inherit; }
+  </style>
+</head>
+<body>
+
+  <!-- HERO / header with canvas background and one‑line headline -->
+  <section class="hero" id="top">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>éclat · ambient edge</h1>
+    </div>
+    <a href="#features" class="down-arrow js-scroll-trigger">
+      <i data-feather="arrow-down"></i>
+    </a>
+  </section>
+
+  <!-- 1. Features / Benefits -->
+  <section id="features" class="js-reveal">
+    <h2 class="section-title">Conscious by design</h2>
+    <div class="grid-3">
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="eye"></i></div>
+        <h3>Zero latency</h3>
+        <p>On‑device perception, no cloud round trips — response in milliseconds.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="shield"></i></div>
+        <h3>Privacy native</h3>
+        <p>All inference stays local. Your space, your rules, no recordings.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="zap"></i></div>
+        <h3>Adaptive energy</h3>
+        <p>Self‑adjusting algorithms that sip power, not drain it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. How it works (three simple steps) -->
+  <section class="js-reveal">
+    <h2 class="section-title">Fluent in three moves</h2>
+    <div class="grid-3">
+      <div class="step-card">
+        <div class="icon-circle"><i data-feather="anchor"></i></div>
+        <h3>Place</h3>
+        <p>Put éclat anywhere — it calibrates the room in under 2 seconds.</p>
+      </div>
+      <div class="step-card">
+        <div class="icon-circle"><i data-feather="radio"></i></div>
+        <h3>Listen</h3>
+        <p>Subtle wave sensing maps movement, light, and presence.</p>
+      </div>
+      <div class="step-card">
+        <div class="icon-circle"><i data-feather="refresh-cw"></i></div>
+        <h3>Adapt</h3>
+        <p>Spaces respond instantly — lights, sound, climate, just right.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Advantages (differentiators) -->
+  <section class="js-reveal">
+    <h2 class="section-title">Beyond smart</h2>
+    <div class="grid-2">
+      <div class="advantage-card">
+        <div class="icon-circle"><i data-feather="wind"></i></div>
+        <h3>Material feel</h3>
+        <p>Machined aluminium and flax fibre — disappears into any interior.</p>
+      </div>
+      <div class="advantage-card">
+        <div class="icon-circle"><i data-feather="battery-charging"></i></div>
+        <h3>Years, not days</h3>
+        <p>Ultra‑low power neural engine: one charge lasts two seasons.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Use cases -->
+  <section class="js-reveal">
+    <h2 class="section-title">Where it lives</h2>
+    <div class="grid-3">
+      <div class="use-card">
+        <div class="icon-circle"><i data-feather="home"></i></div>
+        <h3>Home studio</h3>
+        <p>Light follows you, distractions fade. Your creative flow stays uninterrupted.</p>
+      </div>
+      <div class="use-card">
+        <div class="icon-circle"><i data-feather="briefcase"></i></div>
+        <h3>Deep work</h3>
+        <p>Office that tunes itself — temperature, screen warmth, acoustics.</p>
+      </div>
+      <div class="use-card">
+        <div class="icon-circle"><i data-feather="moon"></i></div>
+        <h3>Rest</h3>
+        <p>Bedroom gradually dims and silences as you wind down.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Call to action -->
+  <section class="js-reveal">
+    <div class="cta-large">
+      <h2>Still think it's magic?</h2>
+      <p style="font-size: 1.4rem; color: #2c2c3a; margin-bottom: 2rem;">Experience ambient intelligence — silent, aware, invisible.</p>
+      <a href="#" class="cta-button">Reserve éclat →</a>
+      <div style="margin-top: 2.5rem; opacity: 0.5; font-size: 0.95rem;">shipping spring 2026</div>
+    </div>
+  </section>
+
+  <!-- small spacer (clean) -->
+  <div style="height: 1rem;"></div>
+
+  <script>
+    (function() {
+      feather.replace();  // render icons
+
+      // ---------- CANVAS BACKGROUND (subtle animated grain + moving dots) ----------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 45;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: 1.2 + Math.random() * 3,
+            speedX: (Math.random() - 0.5) * 0.0008,
+            speedY: (Math.random() - 0.5) * 0.0008,
+            alpha: 0.1 + Math.random() * 0.15,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+
+        // super light grain (barely visible, elegant)
+        const grain = ctx.createImageData(width, height);
+        if (width > 0 && height > 0) {
+          for (let i = 0; i < grain.data.length; i += 4) {
+            const noise = Math.random() * 20; // very subtle
+            grain.data[i] = 250;     // R
+            grain.data[i+1] = 250;    // G
+            grain.data[i+2] = 250;    // B
+            grain.data[i+3] = noise * 0.08;  // transparent
+          }
+          ctx.putImageData(grain, 0, 0);
+        }
+
+        // draw moving dots (barely perceptible motion)
+        ctx.fillStyle = '#1e1e2f';
+        for (let p of particles) {
+          // update position (slow drift)
+          p.x += p.speedX;
+          p.y += p.speedY;
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          const xPos = p.x * width;
+          const yPos = p.y * height;
+
+          ctx.globalAlpha = p.alpha;
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, p.radius * (0.9 + 0.2 * Math.sin(Date.now() * 0.001 + p.x)), 0, Math.PI * 2);
+          ctx.fillStyle = '#2b2b3b';
+          ctx.fill();
+        }
+
+        // extra subtle fog (very modern)
+        ctx.globalAlpha = 0.02;
+        ctx.fillStyle = '#cdcddf';
+        ctx.fillRect(0, 0, width, height);
+
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      initParticles();
+      resizeCanvas();
+      drawParticles();
+
+      // ---------- REVEAL ON SCROLL (intersection observer) ----------
+      const revealElements = document.querySelectorAll('.js-reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          } else {
+            // optional: remove class if you want them to hide again (we keep them visible after reveal)
+            // but we want subtle one-time reveal, so we can keep revealed state.
+            // no else removal — stays visible.
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // smooth scroll for down arrow (extra safety)
+      const scrollLinks = document.querySelectorAll('.js-scroll-trigger');
+      scrollLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('href');
+          if (targetId && targetId !== '#') {
+            const targetEl = document.querySelector(targetId);
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
+        });
+      });
+
+      // ensure one-line headline on any weird edge (force nowrap in JS as well)
+      const headline = document.querySelector('h1');
+      if (headline) {
+        // no operation needed, css does it.
+      }
+    })();
+  </script>
+  <!-- ensure icons are re-placed after dynamic content (feather already called) -->
+  <script>
+    (function secondCall() {
+      // Feather icons might need a second pass if any icon wasn't replaced (but we already called at start)
+      // however due to timing, call again after everything rendered.
+      feather.replace();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

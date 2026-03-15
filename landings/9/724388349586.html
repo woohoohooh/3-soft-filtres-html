@@ -1,0 +1,433 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nimbus · edge compute</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f6f7f9;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #121212;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* sections */
+    section:not(.hero) {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    /* typography */
+    h2 {
+      font-size: 3.5rem;
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      line-height: 1.1;
+    }
+
+    p {
+      font-size: 1.3rem;
+      color: #2e2e2e;
+      max-width: 36rem;
+    }
+
+    /* hero ———————————————————— */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: #f6f7f9;
+      overflow: hidden;
+    }
+
+    /* canvas background (animated) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      width: 100%;
+      padding: 0 2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 16vw, 9rem);
+      font-weight: 580;
+      letter-spacing: -0.03em;
+      color: #111111;
+      line-height: 1;           /* keep one line */
+      white-space: nowrap;
+      margin: 0 auto;
+      width: fit-content;
+      border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+
+    /* down arrow */
+    .scroll-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #1f1f1f;
+      transition: opacity 0.2s;
+      padding: 0.5rem;
+    }
+    .scroll-arrow svg {
+      width: 2.2rem;
+      height: 2.2rem;
+      stroke-width: 1.2;
+      opacity: 0.5;
+      transition: opacity 0.2s, transform 0.3s ease;
+    }
+    .scroll-arrow:hover svg {
+      opacity: 1;
+      transform: translateY(6px);
+    }
+
+    /* sections common */
+    .section-flex {
+      display: flex;
+      gap: 5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .section-flex.reverse {
+      flex-direction: row-reverse;
+    }
+    .text-block {
+      flex: 1 1 300px;
+    }
+    .icon-block {
+      flex: 1 1 200px;
+      display: flex;
+      justify-content: center;
+    }
+    .icon-block svg {
+      width: 5rem;
+      height: 5rem;
+      stroke: #1f1f1f;
+      stroke-width: 1.2;
+      color: #1f1f1f;
+      transition: stroke 0.2s, transform 0.2s;
+    }
+    .icon-block svg:hover {
+      transform: scale(1.02);
+    }
+
+    /* feature grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 4rem 3rem;
+      margin-top: 2rem;
+    }
+    .grid-item {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .grid-item svg {
+      width: 2.8rem;
+      height: 2.8rem;
+      stroke: #222;
+      stroke-width: 1.2;
+      margin-bottom: 0.5rem;
+    }
+    .grid-item h3 {
+      font-size: 1.8rem;
+      font-weight: 520;
+      letter-spacing: -0.01em;
+    }
+    .grid-item p {
+      font-size: 1.2rem;
+      color: #3a3a3a;
+    }
+
+    /* reveal animation (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.8s cubic-bezier(0.15, 0.85, 0.25, 1), transform 0.8s cubic-bezier(0.15, 0.85, 0.25, 1);
+    }
+    .reveal.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* CTA */
+    .cta-block {
+      background: #111;
+      color: white;
+      border-radius: 2rem;
+      padding: 4rem 3rem;
+      text-align: center;
+    }
+    .cta-block h2 {
+      color: white;
+      margin-bottom: 1.5rem;
+    }
+    .cta-block p {
+      color: #ccc;
+      margin: 0 auto 2.5rem;
+    }
+    .cta-button {
+      background: white;
+      color: #111;
+      border: none;
+      padding: 1.2rem 3rem;
+      font-size: 1.4rem;
+      font-weight: 520;
+      border-radius: 3rem;
+      cursor: default;  /* minimalist, not interactive demo */
+      transition: box-shadow 0.2s;
+      display: inline-block;
+    }
+    .cta-button:hover {
+      box-shadow: 0 8px 20px rgba(255,255,255,0.1);
+    }
+
+    /* responsive */
+    @media (max-width: 700px) {
+      section:not(.hero) { padding: 4rem 1.5rem; }
+      h2 { font-size: 2.8rem; }
+      .hero h1 { font-size: clamp(2.8rem, 12vw, 5rem); white-space: normal; } /* fallback if too tiny, but still one line ideally */
+      .section-flex { gap: 2.5rem; }
+    }
+
+    /* hide canvas on ultra narrow, but fine */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #5e5e5e;
+      border-top: 1px solid #e0e0e0;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- hero section -->
+  <section class="hero" id="home">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>edge® fabric</h1>
+    </div>
+    <button class="scroll-arrow" id="downArrow" aria-label="scroll down">
+      <i data-lucide="arrow-down-circle"></i>
+    </button>
+  </section>
+
+  <!-- section 1 – features / benefits -->
+  <section class="reveal">
+    <h2>zero‑latency fabric</h2>
+    <div class="grid-3">
+      <div class="grid-item">
+        <i data-lucide="globe"></i>
+        <h3>global mesh</h3>
+        <p>75+ regions, anycast routing, 4 ms p95 — edge distribution built for real‑time.</p>
+      </div>
+      <div class="grid-item">
+        <i data-lucide="cpu"></i>
+        <h3>bare metal speed</h3>
+        <p>no cold starts, dedicated cores, and direct hardware access on every node.</p>
+      </div>
+      <div class="grid-item">
+        <i data-lucide="lock"></i>
+        <h3>confidential compute</h3>
+        <p>hardware‑enforced trusted execution environments, always encrypted.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 – how it works (large visual + text) -->
+  <section class="section-flex reverse reveal">
+    <div class="text-block">
+      <h2>one API, any edge.</h2>
+      <p>Write once – deploy to every point of presence. Our GraphQL inference layer compiles down to WASM and runs inside nanoVMs.</p>
+    </div>
+    <div class="icon-block">
+      <i data-lucide="workflow"></i>
+    </div>
+  </section>
+
+  <!-- section 3 – advantages (different angle) -->
+  <section class="section-flex reveal">
+    <div class="text-block">
+      <h2>deterministic pricing.</h2>
+      <p>No surprise bills. $0.50 per million requests, flat global bandwidth, and volume discounts that actually scale.</p>
+    </div>
+    <div class="icon-block">
+      <i data-lucide="trending-up"></i>
+    </div>
+  </section>
+
+  <!-- section 4 – use cases (grid style) -->
+  <section class="reveal">
+    <h2>built for live systems</h2>
+    <div class="grid-3">
+      <div class="grid-item">
+        <i data-lucide="video"></i>
+        <h3>real‑time streaming</h3>
+        <p>Live transcoding, multi‑CDN steering, and just-in-time packaging.</p>
+      </div>
+      <div class="grid-item">
+        <i data-lucide="bot"></i>
+        <h3>AI inference</h3>
+        <p>Run Llama 3, Stable Diffusion, or Whisper within 10ms of your users.</p>
+      </div>
+      <div class="grid-item">
+        <i data-lucide="database"></i>
+        <h3>edge sync</h3>
+        <p>Distributed KV with causal consistency, conflict-free replicated data types.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 – call to action (soft) -->
+  <section class="reveal">
+    <div class="cta-block">
+      <h2>deploy on the edge.</h2>
+      <p>Join 12,000+ teams running low‑latency workloads on nimbus fabric.</p>
+      <span class="cta-button">start free →</span>
+    </div>
+  </section>
+
+  <!-- tiny footer -->
+  <footer>
+    <span>nimbus edge • 2025</span>
+  </footer>
+
+  <script>
+    (function() {
+      // lucide icons
+      lucide.createIcons();
+
+      // canvas background (subtle animated particles)
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 55;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: Math.random() * 1.2 + 0.5,
+            speedX: (Math.random() - 0.5) * 0.001,
+            speedY: (Math.random() - 0.5) * 0.0008,
+            opacity: Math.random() * 0.3 + 0.1,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        if (!particles.length) return;
+
+        ctx.fillStyle = '#1a1a1a';
+        for (let p of particles) {
+          // update
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around softly
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          const xPos = p.x * width;
+          const yPos = p.y * height;
+
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, p.radius, 0, 2 * Math.PI);
+          ctx.fillStyle = `rgba(30, 30, 30, ${p.opacity})`;
+          ctx.fill();
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // subtle reinit on resize? keep same particles, fine
+
+      // down arrow smooth scroll
+      document.getElementById('downArrow').addEventListener('click', () => {
+        const nextSection = document.querySelector('section:not(.hero)');
+        if (nextSection) {
+          nextSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // reveal animation on scroll (intersection observer)
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('show');
+          } else {
+            // optional remove class if you want re-hide? but keep visible after first reveal (clean)
+            // we keep visible — but remove if you want re-trigger (more modern to keep)
+            // entry.target.classList.remove('show'); // one-way reveal looks smoother
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ensure hero h1 stays one line (already nowrap, but if extremely small fallback to not break)
+      // no extra needed
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

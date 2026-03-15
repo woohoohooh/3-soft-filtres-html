@@ -1,0 +1,489 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helix • ambient computing</title>
+  <!-- Feather icons (lightweight, outline) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* ----- RESET & BASE ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #fafafc;
+      color: #1e1e2f;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* ----- HELPER / LAYOUT ----- */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    section {
+      padding: 6rem 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+    }
+
+    /* ----- TYPOGRAPHY (large, strong hierarchy) ----- */
+    h2 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 3rem;
+      color: #111;
+    }
+
+    h3 {
+      font-size: 1.8rem;
+      font-weight: 450;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.75rem;
+    }
+
+    .p-large {
+      font-size: 1.25rem;
+      color: #3a3a4a;
+      max-width: 42rem;
+    }
+
+    /* ----- HERO (ONLY headline, one line, centered) ----- */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      background-color: transparent;
+      overflow: hidden;
+      border-bottom: none;
+      padding: 0;
+    }
+
+    /* canvas for background effect */
+    #bg-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      padding: 0 2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 15vw, 8rem);
+      font-weight: 550;
+      letter-spacing: -0.03em;
+      color: #111;
+      line-height: 1;           /* ensures one-line height */
+      white-space: nowrap;       /* force one line */
+      margin: 0 auto;
+      max-width: 100%;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    /* down arrow (hero) */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #222;
+      opacity: 0.6;
+      transition: opacity 0.25s ease, transform 0.2s ease;
+      padding: 0.5rem;
+    }
+    .scroll-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+    .scroll-down i {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.5;
+    }
+
+    /* ----- SECTIONS modern grid / whitespace ----- */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 3rem 4rem;
+    }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .card {
+      background: transparent;
+      padding: 0.5rem 0;
+    }
+    .card-icon {
+      margin-bottom: 1.5rem;
+      color: #1e1e2f;
+    }
+    .card-icon i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.2;         /* thin modern outline */
+    }
+    .card p {
+      font-size: 1.2rem;
+      color: #3e3e4e;
+    }
+
+    /* use cases – small list */
+    .use-case-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 1.3rem;
+    }
+    .use-case-item i {
+      width: 28px;
+      height: 28px;
+      stroke-width: 1.2;
+      flex-shrink: 0;
+    }
+
+    /* CTA */
+    .cta-block {
+      background: #f0f0f5;
+      border-radius: 2rem;
+      padding: 4rem 3rem;
+      text-align: center;
+    }
+    .button {
+      display: inline-block;
+      background: #1e1e2f;
+      color: white;
+      text-decoration: none;
+      font-size: 1.3rem;
+      font-weight: 450;
+      padding: 1rem 2.8rem;
+      border-radius: 60px;
+      margin-top: 2rem;
+      border: 1px solid transparent;
+      transition: background 0.2s, transform 0.15s;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.02);
+    }
+    .button:hover {
+      background: #2b2b40;
+      transform: scale(1.02);
+    }
+
+    /* reveal on scroll (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.15, 0.85, 0.35, 1), transform 0.8s cubic-bezier(0.15, 0.85, 0.35, 1);
+    }
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsiveness */
+    @media (max-width: 800px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+      section {
+        padding: 4rem 0;
+      }
+      h2 { margin-bottom: 2rem; }
+      .hero h1 {
+        font-size: clamp(3rem, 12vw, 6rem);  /* safe but still one line */
+        white-space: normal;   /* fallback if too narrow: wrap, but we set clamp so desktop stays one line */
+      }
+    }
+    /* force one-line on large screens */
+    @media (min-width: 801px) {
+      .hero h1 {
+        white-space: nowrap;
+      }
+    }
+
+    /* feather icons default */
+    i {
+      stroke: currentColor;
+      fill: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO SECTION: minimalist, only headline + background effect + arrow -->
+  <section class="hero" id="top">
+    <canvas id="bg-canvas"></canvas>
+    <div class="hero-content">
+      <h1>Ambient.<span style="font-weight:300;">edge</span></h1>
+    </div>
+    <a class="scroll-down" href="#features" aria-label="scroll down">
+      <i data-feather="arrow-down"></i>
+    </a>
+  </section>
+
+  <!-- FEATURES / BENEFITS -->
+  <section id="features" class="reveal">
+    <div class="container">
+      <h2>invisible · intelligent</h2>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-icon"><i data-feather="radio"></i></div>
+          <h3>Zero‑touch presence</h3>
+          <p class="p-large">Your space responds before you lift a finger. Ultra‑wideband awareness.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i data-feather="shield"></i></div>
+          <h3>Privacy by design</h3>
+          <p class="p-large">All inference happens on‑device. No cloud, no compromise.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS (two columns, large text) -->
+  <section class="reveal">
+    <div class="container">
+      <h2>one fluid layer</h2>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-icon"><i data-feather="cpu"></i></div>
+          <h3>1. Spatial fusion</h3>
+          <p class="p-large">Fuses sensor data into a real‑time 3D skeleton — no cameras.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i data-feather="zap"></i></div>
+          <h3>2. Instant intent</h3>
+          <p class="p-large">Tiny neural nets predict what you need, with sub‑millisecond latency.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADVANTAGES (3 column icons / minimal) -->
+  <section class="reveal">
+    <div class="container">
+      <h2>silent advantages</h2>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon"><i data-feather="maximize"></i></div>
+          <h3>100° coverage</h3>
+          <p class="p-large">One hub fills an entire room. No dead zones.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i data-feather="battery-charging"></i></div>
+          <h3>years, not days</h3>
+          <p class="p-large">Ultra‑low power mesh — sensors last multiple seasons.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><i data-feather="wifi-off"></i></div>
+          <h3>offline first</h3>
+          <p class="p-large">Runs fully air‑gapped. Your space stays responsive.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES (clean, bullet-style with icons) -->
+  <section class="reveal">
+    <div class="container">
+      <h2>lives in the background</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 4rem; justify-content: space-between;">
+        <div style="flex: 1; min-width: 220px;">
+          <div class="use-case-item">
+            <i data-feather="home"></i>
+            <span class="p-large">adaptive lighting & climate</span>
+          </div>
+          <div class="use-case-item">
+            <i data-feather="monitor"></i>
+            <span class="p-large">workplace focus mode</span>
+          </div>
+        </div>
+        <div style="flex: 1; min-width: 220px;">
+          <div class="use-case-item">
+            <i data-feather="music"></i>
+            <span class="p-large">spatial audio follow</span>
+          </div>
+          <div class="use-case-item">
+            <i data-feather="bell-off"></i>
+            <span class="p-large">elderly care, no wearables</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="reveal" style="border-bottom: none;">
+    <div class="container">
+      <div class="cta-block">
+        <h2 style="margin-bottom: 1rem;">designed for now</h2>
+        <p class="p-large" style="margin: 0 auto; max-width: 550px;">Join the ambient shift. Early access ships Q4.</p>
+        <a href="#" class="button">get early access →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- subtle footer (optional minimal) -->
+  <footer style="text-align: center; padding: 3rem 2rem; color: #6b6b7c; border-top: 1px solid #eee;">
+    <span style="font-size: 0.95rem;">© Helix edge · ambient computing</span>
+  </footer>
+
+  <script>
+    (function() {
+      // ------ FEATHER ICONS -----
+      feather.replace();
+
+      // ------ REVEAL ON SCROLL (intersection observer) -----
+      const reveals = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional keep visible after reveal
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+      reveals.forEach(el => observer.observe(el));
+
+      // ------ BACKGROUND CANVAS (subtle animated particles / wave) -----
+      const canvas = document.getElementById('bg-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 28;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: 1.2 + Math.random() * 3,
+            speedX: 0.0001 + Math.random() * 0.0004,
+            speedY: 0.0001 + Math.random() * 0.0003,
+            phase: Math.random() * 2 * Math.PI,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        if (!particles.length) return;
+
+        ctx.fillStyle = '#1e1e2f';
+        ctx.globalAlpha = 0.11;   // extremely subtle, elegant
+
+        for (let p of particles) {
+          // gentle drift
+          let xPos = (p.x + p.speedX * 0.05 * Date.now()) % 1;
+          let yPos = (p.y + p.speedY * 0.05 * Date.now()) % 1;
+
+          // small sine wiggle
+          let wiggleX = Math.sin(Date.now() * 0.002 + p.phase) * 0.008;
+          let wiggleY = Math.cos(Date.now() * 0.0023 + p.phase) * 0.008;
+
+          let screenX = (xPos + wiggleX) * width;
+          let screenY = (yPos + wiggleY) * height;
+
+          ctx.beginPath();
+          ctx.arc(screenX, screenY, p.radius, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+
+        // extra faint connecting lines between some points? (even more subtle)
+        ctx.globalAlpha = 0.02;
+        ctx.strokeStyle = '#1e1e2f';
+        ctx.lineWidth = 0.7;
+        for (let i = 0; i < particles.length; i+=2) {
+          let p1 = particles[i];
+          let p2 = particles[(i+3) % particles.length];
+          let x1 = (p1.x + p1.speedX * 0.05 * Date.now() + Math.sin(Date.now()*0.002 + p1.phase)*0.008) * width;
+          let y1 = (p1.y + p1.speedY * 0.05 * Date.now() + Math.cos(Date.now()*0.002 + p1.phase)*0.008) * height;
+          let x2 = (p2.x + p2.speedX * 0.05 * Date.now() + Math.sin(Date.now()*0.0025 + p2.phase)*0.008) * width;
+          let y2 = (p2.y + p2.speedY * 0.05 * Date.now() + Math.cos(Date.now()*0.0028 + p2.phase)*0.008) * height;
+
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      initParticles();
+      resizeCanvas();
+      requestAnimationFrame(drawParticles);
+
+      // small change: re-init particles if needed but not necessary
+
+      // smooth arrow scroll (already using href=#features, but prevent default if needed)
+      document.querySelector('.scroll-down')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // also ensure any external links with hash are smooth
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+          const target = document.querySelector(targetId);
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+
+    })();
+  </script>
+
+  <!-- ensure icons are replaced even if script runs after dom (already) -->
+  <script>if (feather) feather.replace();</script>
+</body>
+</html>
+All done!
+```

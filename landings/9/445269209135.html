@@ -1,0 +1,539 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nimbus · ambient intelligence</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f8fafc;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: #0b1c2f;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* hero full viewport */
+        .hero {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8fafc;
+            overflow: hidden;
+        }
+
+        /* canvas background (animated, subtle) */
+        #bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            width: 100%;
+            padding: 0 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 15vw, 8rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #0f2b3d;
+            line-height: 1.1;
+            white-space: nowrap;
+            max-width: 100%;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        /* down arrow */
+        .arrow-down {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: #2b4b6f;
+            transition: opacity 0.25s ease, transform 0.2s ease;
+            padding: 0.5rem;
+        }
+        .arrow-down:hover {
+            opacity: 0.55;
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        /* general section styling */
+        section {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 7rem 2rem;
+        }
+
+        .section-header {
+            font-size: 2.8rem;
+            font-weight: 550;
+            letter-spacing: -0.02em;
+            margin-bottom: 4rem;
+            color: #102b3f;
+            line-height: 1.2;
+        }
+
+        /* cards / grids */
+        .grid-3, .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 4rem 3rem;
+        }
+
+        .feature-item, .step-item, .advantage-item, .use-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1.2rem;
+        }
+
+        .icon-circle {
+            background-color: #eef3f8;
+            border-radius: 30px;
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1d3b5c;
+            transition: background-color 0.2s, transform 0.15s;
+        }
+
+        .feature-item:hover .icon-circle,
+        .step-item:hover .icon-circle,
+        .advantage-item:hover .icon-circle,
+        .use-item:hover .icon-circle {
+            background-color: #dde7f0;
+            transform: scale(1.02);
+        }
+
+        .icon-circle i {
+            width: 32px;
+            height: 32px;
+            stroke-width: 1.8;
+        }
+
+        h3 {
+            font-size: 1.8rem;
+            font-weight: 530;
+            letter-spacing: -0.01em;
+            color: #103247;
+        }
+
+        p {
+            font-size: 1.3rem;
+            color: #385b78;
+            max-width: 45ch;
+            font-weight: 380;
+            line-height: 1.5;
+        }
+
+        /* big text for how it works */
+        .big-stat {
+            font-size: 2.2rem;
+            font-weight: 440;
+            color: #264e6e;
+            margin-top: 0.5rem;
+        }
+
+        .step-item p {
+            font-size: 1.25rem;
+        }
+
+        /* cta */
+        .cta-card {
+            background-color: #eaf0f6;
+            padding: 4rem 3rem;
+            border-radius: 48px;
+            text-align: left;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 3rem;
+        }
+
+        .cta-left h2 {
+            font-size: 3rem;
+            font-weight: 560;
+            letter-spacing: -0.02em;
+            color: #08212e;
+            margin-bottom: 0.5rem;
+        }
+
+        .cta-left p {
+            font-size: 1.4rem;
+            color: #315e7c;
+        }
+
+        .cta-button {
+            background: transparent;
+            border: 2px solid #1a3d58;
+            border-radius: 60px;
+            padding: 1.2rem 3.5rem;
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #1a3d58;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .cta-button:hover {
+            background-color: #1a3d58;
+            color: white;
+            transform: scale(1.02);
+        }
+
+        /* reveal animation (intersection observer) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(34px);
+            transition: opacity 0.8s cubic-bezier(0.15, 0.85, 0.35, 1), transform 0.8s cubic-bezier(0.15, 0.85, 0.35, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* mobile fine-tune */
+        @media (max-width: 680px) {
+            .hero h1 {
+                font-size: clamp(2.8rem, 14vw, 6rem);
+                white-space: normal; /* but we respect 'stay on one line' for hero, but clamp prevents overflow */
+                word-break: keep-all;
+            }
+            section {
+                padding: 5rem 1.5rem;
+            }
+            .section-header {
+                font-size: 2.2rem;
+                margin-bottom: 3rem;
+            }
+            h3 {
+                font-size: 1.6rem;
+            }
+            p {
+                font-size: 1.2rem;
+            }
+            .cta-card {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 2.5rem 2rem;
+            }
+            .cta-button {
+                white-space: normal;
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        /* extra tiny screens */
+        @media (max-width: 420px) {
+            .hero h1 {
+                white-space: normal; /* fallback: but original request is 1 line; we prevent overflow with smaller clamp */
+                font-size: 4rem;
+            }
+        }
+
+        /* hide arrow on really small height */
+        @media (max-height: 500px) {
+            .arrow-down {
+                display: none;
+            }
+        }
+
+        /* feather icons config */
+        i {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #5d7f9c;
+            border-top: 1px solid #dfeaf3;
+            background: #f8fafc;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- hero with canvas background & down arrow -->
+    <div class="hero" id="hero">
+        <canvas id="bg-canvas"></canvas>
+        <div class="hero-content">
+            <h1>nimbus · ambient</h1>
+        </div>
+        <div class="arrow-down" id="scroll-down">
+            <i data-lucide="chevron-down" width="48" height="48" stroke-width="1.2"></i>
+        </div>
+    </div>
+
+    <!-- sections (all reveal) -->
+    <section class="reveal" id="features">
+        <h2 class="section-header">invisible · intelligent · intuitive</h2>
+        <div class="grid-3">
+            <div class="feature-item">
+                <div class="icon-circle"><i data-lucide="eye"></i></div>
+                <h3>zero interface</h3>
+                <p>Ambient sensors anticipate needs — no screens, no taps, just presence.</p>
+            </div>
+            <div class="feature-item">
+                <div class="icon-circle"><i data-lucide="cpu"></i></div>
+                <h3>on‑device cortex</h3>
+                <p>All inference runs locally on dedicated neural engines. privacy first.</p>
+            </div>
+            <div class="feature-item">
+                <div class="icon-circle"><i data-lucide="wind"></i></div>
+                <h3>lightwave comms</h3>
+                <p>Sub‑millimeter radar and optical steering, invisible to the user.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="reveal" id="how-it-works">
+        <h2 class="section-header">how it works · three layers</h2>
+        <div class="grid-3">
+            <div class="step-item">
+                <div class="icon-circle"><i data-lucide="radio"></i></div>
+                <h3>sense</h3>
+                <p>60 GHz radar + micro‑phononics capture spatial intent within 0.1° accuracy.</p>
+                <div class="big-stat">0.1° precision</div>
+            </div>
+            <div class="step-item">
+                <div class="icon-circle"><i data-lucide="brain"></i></div>
+                <h3>reason</h3>
+                <p>Temporal fusion engine predicts next action with 99.2% confidence.</p>
+                <div class="big-stat">99.2% &mu;aware</div>
+            </div>
+            <div class="step-item">
+                <div class="icon-circle"><i data-lucide="waves"></i></div>
+                <h3>adapt</h3>
+                <p>Environment morphs – light, sound, airflow adjust without latency.</p>
+                <div class="big-stat">sub‑8ms response</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="reveal" id="advantages">
+        <h2 class="section-header">beyond smart · ambient grade</h2>
+        <div class="grid-2">
+            <div class="advantage-item">
+                <div class="icon-circle"><i data-lucide="shield"></i></div>
+                <h3>zero data cloud</h3>
+                <p>Every inference stays inside your perimeter. no logs, no uploads.</p>
+            </div>
+            <div class="advantage-item">
+                <div class="icon-circle"><i data-lucide="battery-charging"></i></div>
+                <h3>harvest energy</h3>
+                <p>Milliwatt radar and edge AI run on harvested RF and vibration.</p>
+            </div>
+            <div class="advantage-item">
+                <div class="icon-circle"><i data-lucide="infinity"></i></div>
+                <h3>self‑healing mesh</h3>
+                <p>Nodes reroute around interference, always available.</p>
+            </div>
+            <div class="advantage-item">
+                <div class="icon-circle"><i data-lucide="fingerprint"></i></div>
+                <h3>spatial signatures</h3>
+                <p>Recognizes inhabitants by gait, not cameras.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="reveal" id="use-cases">
+        <h2 class="section-header">use cases · augment everywhere</h2>
+        <div class="grid-3">
+            <div class="use-item">
+                <div class="icon-circle"><i data-lucide="home"></i></div>
+                <h3>silent sanctuary</h3>
+                <p>Homes that dim, cool, and prepare for your arrival — no wearables.</p>
+            </div>
+            <div class="use-item">
+                <div class="icon-circle"><i data-lucide="car"></i></div>
+                <h3>cockpit consciousness</h3>
+                <p>Vehicles that adjust ergonomics before you sit.</p>
+            </div>
+            <div class="use-item">
+                <div class="icon-circle"><i data-lucide="bed"></i></div>
+                <h3>care without contact</h3>
+                <p>Elder care with fall detection & privacy, no camera.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="reveal" id="cta">
+        <div class="cta-card">
+            <div class="cta-left">
+                <h2>nimbus core™</h2>
+                <p>for architects, builders & OEMs</p>
+            </div>
+            <button class="cta-button" id="cta-click">reserve evaluation</button>
+        </div>
+    </section>
+
+    <footer>
+        <span>© nimbus systems · ambient intelligence</span>
+    </footer>
+
+    <script>
+        (function() {
+            // --- init lucide icons ---
+            lucide.createIcons();
+
+            // --- down arrow smooth scroll ---
+            document.getElementById('scroll-down').addEventListener('click', function() {
+                document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+            });
+
+            // subtle hover / feedback on CTA (just console)
+            document.getElementById('cta-click').addEventListener('click', function() {
+                console.log('nimbus eval request (simulated)');
+                alert('demo request sent (simulated) — thank you.');
+            });
+
+            // --- canvas animation (subtle moving particles) ---
+            const canvas = document.getElementById('bg-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initParticles() {
+                const count = 35;
+                particles = [];
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random(),
+                        y: Math.random(),
+                        radius: 2 + Math.random() * 4,
+                        speedX: (Math.random() - 0.5) * 0.002,
+                        speedY: (Math.random() - 0.5) * 0.002,
+                        opacity: 0.1 + Math.random() * 0.2,
+                    });
+                }
+            }
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, width, height);
+                if (!particles.length) return;
+
+                ctx.fillStyle = '#2b4b6f'; // monochrome dark blue-gray
+                for (let p of particles) {
+                    // update position (drift very slow)
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    // wrap around gently
+                    if (p.x < 0) p.x = 1;
+                    if (p.x > 1) p.x = 0;
+                    if (p.y < 0) p.y = 1;
+                    if (p.y > 1) p.y = 0;
+
+                    const xPos = p.x * width;
+                    const yPos = p.y * height;
+
+                    ctx.globalAlpha = p.opacity * 0.7;
+                    ctx.beginPath();
+                    ctx.arc(xPos, yPos, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                // extra faint lines between some particles (very light)
+                ctx.globalAlpha = 0.08;
+                ctx.strokeStyle = '#1a3d58';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < particles.length; i += 3) {
+                    let p1 = particles[i];
+                    let p2 = particles[(i + 7) % particles.length];
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x * width, p1.y * height);
+                    ctx.lineTo(p2.x * width, p2.y * height);
+                    ctx.stroke();
+                }
+                ctx.globalAlpha = 1.0;
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+            });
+
+            resizeCanvas();
+            initParticles();
+            drawParticles();
+
+            // --- reveal on scroll (intersection observer) ---
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // optional unobserve after first reveal (clean)
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+            reveals.forEach(el => observer.observe(el));
+
+            // force re-check after font stuff etc
+            setTimeout(() => {
+                reveals.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < window.innerHeight * 0.85) {
+                        el.classList.add('visible');
+                        observer.unobserve(el);
+                    }
+                });
+            }, 300);
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

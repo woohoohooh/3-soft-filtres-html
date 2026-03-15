@@ -1,0 +1,551 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nimbus • edge compute</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f6f7f9;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #14171f;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* ---- hero section ---- */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f6f7f9;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    /* canvas background (animated) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      max-width: 1200px;
+      padding: 2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 15vw, 8rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #14171f;
+      white-space: nowrap;           /* keep on one line */
+      line-height: 1.1;
+      margin: 0;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 {
+        font-size: 13vw;            /* still one line, scaled down */
+        letter-spacing: -0.01em;
+      }
+    }
+
+    /* down arrow */
+    .hero-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #2c313a;
+      transition: opacity 0.2s, transform 0.3s ease;
+      padding: 0.5rem;
+      line-height: 0;
+    }
+
+    .hero-arrow svg {
+      width: 2.25rem;
+      height: 2.25rem;
+      stroke-width: 1.6;
+      stroke: currentColor;
+      fill: none;
+      transition: transform 0.25s ease;
+    }
+
+    .hero-arrow:hover {
+      opacity: 0.6;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    /* ---- sections general ---- */
+    .section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 7rem 2rem;
+    }
+
+    .section:first-of-type {
+      padding-top: 5rem;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      margin-bottom: 3.5rem;
+      color: #1e232b;
+      line-height: 1.2;
+    }
+
+    @media (max-width: 600px) {
+      .section {
+        padding: 4rem 1.5rem;
+      }
+      .section-title {
+        font-size: 2.2rem;
+        margin-bottom: 2.5rem;
+      }
+    }
+
+    /* grids & cards */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem 2.5rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 3rem 3.5rem;
+    }
+
+    @media (max-width: 800px) {
+      .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+    }
+
+    .card {
+      background: transparent;
+      padding: 0.25rem 0;
+    }
+
+    .icon-box {
+      margin-bottom: 1.75rem;
+    }
+
+    .icon-box svg {
+      width: 2.5rem;
+      height: 2.5rem;
+      stroke: #1f2937;
+      stroke-width: 1.5;
+      fill: none;
+      transition: stroke 0.2s, transform 0.2s;
+    }
+
+    .card:hover .icon-box svg {
+      stroke: #5b687b;
+      transform: translateY(-2px);
+    }
+
+    .card h3 {
+      font-size: 1.8rem;
+      font-weight: 520;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.01em;
+    }
+
+    .card p {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      color: #374151;
+      max-width: 42ch;
+    }
+
+    /* use case block */
+    .use-case-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.5rem;
+    }
+
+    .use-case-item .icon-box {
+      flex-shrink: 0;
+      margin-bottom: 0;
+    }
+
+    .use-case-item .content h4 {
+      font-size: 1.8rem;
+      font-weight: 520;
+      margin-bottom: 0.3rem;
+    }
+
+    .use-case-item .content p {
+      font-size: 1.2rem;
+      color: #3b4452;
+    }
+
+    /* cta */
+    .cta-card {
+      background-color: #ffffff;
+      padding: 4rem 3.5rem;
+      border-radius: 32px;
+      box-shadow: 0 20px 35px -8px rgba(0,0,0,0.05);
+      text-align: center;
+    }
+
+    .cta-card h2 {
+      font-size: 3.2rem;
+      font-weight: 540;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: #14171f;
+      color: white;
+      text-decoration: none;
+      font-size: 1.4rem;
+      font-weight: 470;
+      padding: 1rem 3rem;
+      border-radius: 60px;
+      border: 1px solid #14171f;
+      transition: all 0.2s;
+      letter-spacing: -0.01em;
+    }
+
+    .cta-button:hover {
+      background: #2b313d;
+      border-color: #2b313d;
+      transform: scale(1.02);
+    }
+
+    /* reveal animations (intersection observer) */
+    .reveal-item {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.8s cubic-bezier(0.15, 0.75, 0.2, 1), transform 0.8s cubic-bezier(0.15, 0.75, 0.2, 1);
+    }
+
+    .reveal-item.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* footer / small */
+    .footer-note {
+      text-align: center;
+      font-size: 0.95rem;
+      color: #7f8a9c;
+      border-top: 1px solid #e0e4ea;
+      padding: 2rem;
+      margin-top: 0;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #e2e6ed;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+  </style>
+
+  <!-- feather icons (lightweight, outline) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <section class="hero" id="top">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>edge first.</h1>
+    </div>
+    <!-- down arrow: links to first section -->
+    <a href="#section-1" class="hero-arrow" aria-label="scroll down">
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </a>
+  </section>
+
+  <!-- section 1: Features -->
+  <section id="section-1" class="section">
+    <h2 class="section-title reveal-item">built for speed & scale</h2>
+    <div class="grid-3">
+      <div class="card reveal-item">
+        <div class="icon-box" data-lucide="zap"></div>
+        <h3>sub‑10ms latency</h3>
+        <p>globally distributed functions — your code runs where your users are.</p>
+      </div>
+      <div class="card reveal-item">
+        <div class="icon-box" data-lucide="globe"></div>
+        <h3>35+ regions</h3>
+        <p>deploy to edge locations with zero config. automatic, fast, reliable.</p>
+      </div>
+      <div class="card reveal-item">
+        <div class="icon-box" data-lucide="cpu"></div>
+        <h3>no cold starts</h3>
+        <p>keep functions warm with predictive execution. consistent performance.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2: How it works -->
+  <section class="section">
+    <h2 class="section-title reveal-item">workflow · three moves</h2>
+    <div class="grid-3">
+      <div class="card reveal-item">
+        <div class="icon-box" data-lucide="code-2"></div>
+        <h3>1. write</h3>
+        <p>standard JavaScript or TypeScript. import any npm module.</p>
+      </div>
+      <div class="card reveal-item">
+        <div class="icon-box" data-lucide="upload-cloud"></div>
+        <h3>2. deploy</h3>
+        <p>git push or cli — instantly deployed to the edge.</p>
+      </div>
+      <div class="card reveal-item">
+        <div class="icon-box" data-lucide="bar-chart-3"></div>
+        <h3>3. monitor</h3>
+        <p>real‑time logs, metrics and traces per request.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3: Advantages -->
+  <section class="section">
+    <h2 class="section-title reveal-item">technical advantage</h2>
+    <div class="grid-2">
+      <div class="card reveal-item">
+        <div class="icon-box" data-lucide="shield"></div>
+        <h3>zero‑trust by default</h3>
+        <p>every execution isolated via microVMs. no shared memory, no side‑channels.</p>
+      </div>
+      <div class="card reveal-item">
+        <div class="icon-box" data-lucide="gauge"></div>
+        <h3>smart caching</h3>
+        <p>key‑value cache at edge with 5ms consistency. no more origin round‑trips.</p>
+      </div>
+      <div class="card reveal-item">
+        <div class="icon-box" data-lucide="layers"></div>
+        <h3>state sync</h3>
+        <p>durable objects replicated across regions — strong consistency, low latency.</p>
+      </div>
+      <div class="card reveal-item">
+        <div class="icon-box" data-lucide="terminal"></div>
+        <h3>full node.js API</h3>
+        <p>use any package, native crypto, fs, and Web standard APIs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4: Use cases -->
+  <section class="section">
+    <h2 class="section-title reveal-item">purpose built</h2>
+    <div class="grid-2">
+      <div class="use-case-item reveal-item">
+        <div class="icon-box" data-lucide="video"></div>
+        <div class="content">
+          <h4>real‑time video</h4>
+          <p>thumbnails, transcoding, and packaging at the edge – 250ms faster.</p>
+        </div>
+      </div>
+      <div class="use-case-item reveal-item">
+        <div class="icon-box" data-lucide="shopping-cart"></div>
+        <div class="content">
+          <h4>flash sales</h4>
+          <p>in‑memory rate limiting and queues handle 1M+ concurrent users.</p>
+        </div>
+      </div>
+      <div class="use-case-item reveal-item">
+        <div class="icon-box" data-lucide="bot"></div>
+        <div class="content">
+          <h4>AI inference</h4>
+          <p>run small models (LoRA, embeddings) close to your chat users.</p>
+        </div>
+      </div>
+      <div class="use-case-item reveal-item">
+        <div class="icon-box" data-lucide="lock"></div>
+        <div class="content">
+          <h4>authentication</h4>
+          <p>JWT validation, OAuth, and geo‑IP checks in <5ms.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5: CTA -->
+  <section class="section">
+    <div class="cta-card reveal-item">
+      <h2>start deploying<br>at the edge.</h2>
+      <a href="#" class="cta-button">get early access →</a>
+      <p style="margin-top: 2rem; font-size: 1.1rem; color: #5b6a7f;">no credit card · 50GB free monthly</p>
+    </div>
+  </section>
+
+  <hr>
+  <div class="footer-note">
+    nimbus edge — 2025
+  </div>
+
+  <script>
+    (function() {
+      // ---- canvas background (elegant moving particles) ----
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      const initParticles = () => {
+        particles = [];
+        const count = 70;
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: Math.random() * 2.2 + 0.6,
+            speedX: (Math.random() - 0.5) * 0.002,
+            speedY: (Math.random() - 0.5) * 0.0018,
+            opacity: Math.random() * 0.3 + 0.1,
+          });
+        }
+      };
+
+      const resizeCanvas = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      };
+
+      const drawParticles = () => {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#9aa7b9'; // monochrome subtle dots
+
+        for (let p of particles) {
+          let x = p.x * width;
+          let y = p.y * height;
+
+          // movement
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around gently
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          ctx.globalAlpha = p.opacity * 0.9;
+          ctx.beginPath();
+          ctx.arc(x, y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // extra floating thin line connections (very subtle)
+        ctx.globalAlpha = 0.06;
+        ctx.strokeStyle = '#2e3f53';
+        ctx.lineWidth = 1.0;
+        for (let i = 0; i < particles.length; i += 5) {
+          const p1 = particles[i];
+          if (!p1) continue;
+          for (let j = i + 3; j < particles.length; j += 7) {
+            const p2 = particles[j];
+            if (!p2) continue;
+            const x1 = p1.x * width, y1 = p1.y * height;
+            const x2 = p2.x * width, y2 = p2.y * height;
+            const dist = Math.hypot(x2 - x1, y2 - y1);
+            if (dist < 150) {
+              ctx.beginPath();
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x2, y2);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.globalAlpha = 1.0;
+        requestAnimationFrame(drawParticles);
+      };
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // ---- lucide icons ----
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+
+      // ---- intersection observer for reveal animations ----
+      const revealElements = document.querySelectorAll('.reveal-item');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional: unobserve after reveal
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ---- smooth arrow scroll (already uses href, but we ensure prevent default if needed) ----
+      document.querySelector('.hero-arrow')?.addEventListener('click', (e) => {
+        const targetId = e.currentTarget.getAttribute('href'); // #section-1
+        if (targetId && targetId !== '#') {
+          e.preventDefault();
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      });
+    })();
+  </script>
+
+  <!-- re-run lucide after dynamic content if needed, but it's already called above -->
+  <script>
+    (function secondCall() {
+      // ensure icons after everything is rendered
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

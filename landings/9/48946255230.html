@@ -1,0 +1,547 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nucleus · flow</title>
+    <!-- Feather icons (lightweight, outline) -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background-color: #fafafa;
+            color: #111;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* ---- hero section (full screen, minimal) ---- */
+        .hero {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #fafafa; /* fallback */
+        }
+
+        /* canvas background (animated, subtle) */
+        #heroCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none; /* allows clicking down arrow */
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            max-width: 1200px;
+            padding: 0 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 15vw, 8rem);
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            color: #111;
+            text-transform: none;
+            white-space: nowrap;         /* keep on one line */
+        }
+
+        /* down arrow (minimal, smooth scroll) */
+        .scroll-down {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: #333;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            padding: 0.5rem;
+            line-height: 0;
+            border-radius: 100%;
+        }
+        .scroll-down:hover {
+            opacity: 0.6;
+            transform: translateX(-50%) translateY(4px);
+        }
+        .scroll-down i {
+            width: 40px;
+            height: 40px;
+            stroke-width: 1.2;
+        }
+
+        /* ---- general sections styling ---- */
+        .section {
+            padding: 7rem 2rem;
+            max-width: 1280px;
+            margin: 0 auto;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+        }
+        .section:last-of-type {
+            border-bottom: none;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        .section-header h2 {
+            font-size: 3rem;
+            font-weight: 550;
+            letter-spacing: -0.02em;
+            color: #111;
+        }
+        .section-header p {
+            font-size: 1.4rem;
+            color: #555;
+            max-width: 700px;
+            margin: 1rem auto 0;
+        }
+
+        /* grid layouts */
+        .grid-3, .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3rem 2rem;
+        }
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        /* card / feature item */
+        .feature-item {
+            text-align: center;
+            padding: 1.5rem 0.5rem;
+            transition: transform 0.3s ease, opacity 0.6s ease;
+            opacity: 0;
+            transform: translateY(24px);
+        }
+        .feature-item.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .feature-item:hover {
+            transform: translateY(-6px);
+        }
+        .feature-item:hover i {
+            stroke: #000; /* subtle darken */
+        }
+
+        .feature-icon {
+            margin-bottom: 1.8rem;
+        }
+        .feature-icon i {
+            width: 56px;
+            height: 56px;
+            stroke: #333;
+            stroke-width: 1.2;
+            transition: stroke 0.2s;
+        }
+
+        .feature-item h3 {
+            font-size: 1.9rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
+        }
+        .feature-item p {
+            font-size: 1.2rem;
+            color: #444;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        /* advantage list (monochrome, large) */
+        .advantage-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+        .advantage-row {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            font-size: 2rem;
+            font-weight: 440;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .advantage-row.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .advantage-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .advantage-icon i {
+            width: 48px;
+            height: 48px;
+            stroke: #222;
+            stroke-width: 1.2;
+        }
+        .advantage-text {
+            flex: 1;
+        }
+
+        /* CTA section (clean) */
+        .cta-card {
+            background: #111;
+            color: #fff;
+            padding: 5rem 3rem;
+            text-align: center;
+            border-radius: 32px;
+            margin-top: 2rem;
+            opacity: 0;
+            transform: scale(0.98);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .cta-card.revealed {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .cta-card h2 {
+            font-size: 4rem;
+            font-weight: 550;
+            letter-spacing: -0.02em;
+            color: #fff;
+        }
+        .cta-card p {
+            font-size: 1.8rem;
+            margin: 1.5rem 0 3rem;
+            color: #ccc;
+        }
+        .cta-btn {
+            background: transparent;
+            border: 2px solid #fff;
+            color: #fff;
+            font-size: 1.6rem;
+            padding: 1rem 3.5rem;
+            border-radius: 60px;
+            cursor: default;  /* static demonstration */
+            transition: background 0.2s, color 0.2s;
+        }
+        .cta-btn:hover {
+            background: #fff;
+            color: #111;
+        }
+
+        /* use cases (grid layout) */
+        .use-case-item {
+            background: #fff;
+            padding: 2.8rem 2rem;
+            border-radius: 40px;
+            box-shadow: 0 20px 30px -20px rgba(0,0,0,0.1);
+            text-align: left;
+            transition: all 0.2s ease;
+            opacity: 0;
+            transform: translateY(24px);
+        }
+        .use-case-item.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .use-case-item i {
+            width: 44px;
+            height: 44px;
+            stroke: #111;
+            margin-bottom: 1.5rem;
+        }
+        .use-case-item h3 {
+            font-size: 2.2rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        .use-case-item p {
+            font-size: 1.2rem;
+            color: #444;
+        }
+
+        /* footer note (tiny) */
+        .foot-note {
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 2rem;
+            color: #888;
+            border-top: 1px solid #eee;
+        }
+
+        /* responsive */
+        @media (max-width: 800px) {
+            .hero h1 {
+                font-size: clamp(2.6rem, 13vw, 5rem);
+                white-space: normal;  /* keep one line only if possible, but safe */
+            }
+            .section {
+                padding: 5rem 1.5rem;
+            }
+            .grid-3, .grid-2 {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            .section-header h2 {
+                font-size: 2.5rem;
+            }
+            .advantage-row {
+                font-size: 1.6rem;
+                gap: 1.2rem;
+            }
+            .cta-card h2 {
+                font-size: 2.8rem;
+            }
+        }
+
+        /* reveal initial state (handled by js) */
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .reveal-item.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HERO (minimal, large typography, one line) -->
+    <section class="hero" id="top">
+        <canvas id="heroCanvas"></canvas>
+        <div class="hero-content">
+            <h1>resilient OS</h1>
+        </div>
+        <button class="scroll-down" id="scrollDownBtn" aria-label="scroll down">
+            <i data-feather="chevron-down"></i>
+        </button>
+    </section>
+
+    <!-- SECTION 1 – Features / Benefits -->
+    <section class="section" id="features">
+        <div class="section-header reveal-item">
+            <h2>built differently</h2>
+            <p>minimal, secure, and infinitely adaptable</p>
+        </div>
+        <div class="grid-3">
+            <div class="feature-item reveal-item">
+                <div class="feature-icon"><i data-feather="shield"></i></div>
+                <h3>zero‑trust core</h3>
+                <p>every layer verified — no black boxes</p>
+            </div>
+            <div class="feature-item reveal-item">
+                <div class="feature-icon"><i data-feather="zap"></i></div>
+                <h3>lightning swift</h3>
+                <p>under 50ms response, always</p>
+            </div>
+            <div class="feature-item reveal-item">
+                <div class="feature-icon"><i data-feather="layers"></i></div>
+                <h3>modular by design</h3>
+                <p>activate only what you need</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2 – How it works (clean steps) -->
+    <section class="section" id="how-it-works">
+        <div class="section-header reveal-item">
+            <h2>flow, three steps</h2>
+            <p>from kernel to userland — human‑readable</p>
+        </div>
+        <div class="grid-3">
+            <div class="feature-item reveal-item">
+                <div class="feature-icon"><i data-feather="code"></i></div>
+                <h3>1. audit</h3>
+                <p>every line of code is transparent</p>
+            </div>
+            <div class="feature-item reveal-item">
+                <div class="feature-icon"><i data-feather="anchor"></i></div>
+                <h3>2. isolate</h3>
+                <p>processes run in lightweight capsules</p>
+            </div>
+            <div class="feature-item reveal-item">
+                <div class="feature-icon"><i data-feather="radio"></i></div>
+                <h3>3. connect</h3>
+                <p>intent‑based api mesh</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3 – Advantages (list style) -->
+    <section class="section" id="advantages">
+        <div class="section-header reveal-item">
+            <h2>why choose nucleus</h2>
+            <p>engineered for the next decade</p>
+        </div>
+        <div class="advantage-list">
+            <div class="advantage-row reveal-item">
+                <span class="advantage-icon"><i data-feather="clock"></i></span>
+                <span class="advantage-text">99.999% uptime — self‑healing fabric</span>
+            </div>
+            <div class="advantage-row reveal-item">
+                <span class="advantage-icon"><i data-feather="key"></i></span>
+                <span class="advantage-text">post‑quantum crypto, built‑in</span>
+            </div>
+            <div class="advantage-row reveal-item">
+                <span class="advantage-icon"><i data-feather="cpu"></i></span>
+                <span class="advantage-text">hardware agnostic / bare‑metal ready</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4 – Use cases -->
+    <section class="section" id="usecases">
+        <div class="section-header reveal-item">
+            <h2>use cases</h2>
+            <p>from edge to exascale</p>
+        </div>
+        <div class="grid-2">
+            <div class="use-case-item reveal-item">
+                <i data-feather="globe"></i>
+                <h3>edge mesh</h3>
+                <p>deploy on satellites, drones, or remote sensors — identical stack.</p>
+            </div>
+            <div class="use-case-item reveal-item">
+                <i data-feather="database"></i>
+                <h3>confidential cloud</h3>
+                <p>multi‑tenant with hardware memory isolation.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5 – Call to action -->
+    <section class="section" id="cta">
+        <div class="cta-card reveal-item">
+            <h2>adopt the kernel</h2>
+            <p>join the private preview →</p>
+            <span class="cta-btn">request access</span>
+        </div>
+    </section>
+
+    <div class="foot-note">
+        <span>nucleus flow · zero compromises</span>
+    </div>
+
+    <script>
+        // Feather icons replacement
+        feather.replace({ strokeWidth: 1.2, width: '100%', height: '100%' });
+
+        // ---------- canvas background (subtle animated) ----------
+        const canvas = document.getElementById('heroCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function initParticles() {
+            const count = 35;
+            particles = [];
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 2.2 + 0.6,
+                    speedX: (Math.random() - 0.5) * 0.15,
+                    speedY: (Math.random() - 0.5) * 0.1,
+                    opacity: Math.random() * 0.2 + 0.1
+                });
+            }
+        }
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            initParticles();
+        }
+
+        function drawParticles() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#111'; // monochrome dots
+            for (let p of particles) {
+                ctx.globalAlpha = p.opacity * 0.7;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // subtle movement
+                p.x += p.speedX;
+                p.y += p.speedY;
+
+                // wrap around softly (invisible edges)
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+            }
+            requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+
+        resizeCanvas();
+        drawParticles();
+
+        // ---------- smooth scroll down ----------
+        document.getElementById('scrollDownBtn').addEventListener('click', () => {
+            document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // ---------- reveal on scroll (Intersection Observer) ----------
+        const revealItems = document.querySelectorAll('.reveal-item');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+        revealItems.forEach(item => observer.observe(item));
+
+        // additional manual class for advantage rows / feature items that use same class
+        // (already included via reveal-item)
+        // also handle use-case items etc.
+
+        // ensure canvas stays behind content
+        const hero = document.querySelector('.hero');
+        if (hero) {
+            const canvasElement = document.getElementById('heroCanvas');
+            // make sure canvas is first child (background)
+            hero.insertBefore(canvasElement, hero.firstChild);
+        }
+
+        // minor: if any icon didn't render (feather), call again after slight delay
+        setTimeout(() => feather.replace({ strokeWidth: 1.2 }), 100);
+    </script>
+    <!-- ensure one-line headline on large screens, fallback -->
+    <noscript>JavaScript not required but makes things nice</noscript>
+</body>
+</html>
+All done!
+```

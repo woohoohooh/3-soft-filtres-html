@@ -1,0 +1,521 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>reflect · ambient computing</title>
+  <style>
+    /* reset & base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f6f7f9;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      color: #1a1e2b;
+      overflow-x: hidden;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* sections common */
+    section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-title {
+      font-size: 2.2rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      color: #1e2434;
+    }
+
+    /* ----- hero ----- */
+    .hero {
+      height: 100vh;
+      max-width: none;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: #f6f7f9;
+      overflow: hidden;
+    }
+
+    /* canvas background (animated) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none; /* lets clicks pass to arrow */
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      width: 100%;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 14vw, 7rem);
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #171c28;
+      white-space: nowrap;
+      margin: 0 auto;
+      max-width: 100%;
+      display: inline-block;
+      padding: 0 0.5rem;
+      background-color: rgba(246, 247, 249, 0.4);
+      backdrop-filter: blur(2px);
+      box-decoration-break: clone;
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      padding: 0.8rem;
+      border-radius: 100px;
+      transition: opacity 0.2s ease;
+      color: #2d3648;
+      opacity: 0.7;
+    }
+
+    .scroll-down:hover {
+      opacity: 1;
+    }
+
+    .scroll-down svg {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.5;
+      stroke: currentColor;
+      fill: none;
+      transition: transform 0.25s ease;
+    }
+
+    .scroll-down:hover svg {
+      transform: translateY(5px);
+    }
+
+    /* ----- sections layout + cards ----- */
+    .features-grid, .steps-grid, .advantages-grid, .cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 3rem 2.5rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: transparent;
+      padding: 1.2rem 0.2rem;
+    }
+
+    .card-icon {
+      margin-bottom: 1.5rem;
+      color: #1e2434;
+    }
+
+    .card-icon svg {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.5;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .card h3 {
+      font-size: 1.5rem;
+      font-weight: 480;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.75rem;
+      color: #1a1e2b;
+    }
+
+    .card p {
+      font-size: 1.1rem;
+      color: #3c4359;
+      max-width: 36ch;
+    }
+
+    /* special for how-it-works (step numbers) */
+    .step-card {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .step-marker {
+      font-size: 1rem;
+      font-weight: 450;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #5c647b;
+      margin-bottom: 1rem;
+    }
+
+    /* CTA section */
+    .cta-section {
+      text-align: center;
+      background-color: #eef0f4;
+      border-radius: 32px;
+      margin: 4rem auto 6rem;
+      padding: 5rem 2rem;
+    }
+
+    .cta-title {
+      font-size: 2.8rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: #1e2434;
+      color: white;
+      text-decoration: none;
+      font-size: 1.2rem;
+      font-weight: 450;
+      padding: 1rem 3rem;
+      border-radius: 60px;
+      border: 1px solid #2f374b;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 1.2rem;
+    }
+
+    .cta-button:hover {
+      background: #2d3448;
+      transform: scale(0.98);
+    }
+
+    /* reveal animations (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.7s cubic-bezier(0.15, 0.85, 0.35, 1), transform 0.7s cubic-bezier(0.15, 0.85, 0.35, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* small hover for cards */
+    .card {
+      transition: transform 0.15s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+    }
+
+    /* responsiveness */
+    @media (max-width: 640px) {
+      section {
+        padding: 4rem 1.5rem;
+      }
+      .hero h1 {
+        white-space: normal;      /* fallback if extremely small, but we keep one line via clamp */
+        font-size: clamp(2.6rem, 12vw, 4rem);
+      }
+      .section-title {
+        font-size: 1.9rem;
+      }
+      .cta-title {
+        font-size: 2rem;
+      }
+    }
+
+    /* feather icons are outline, perfect – we use them via inline sprite (simple) */
+    .icon {
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    /* footer (tiny) */
+    .footer-note {
+      text-align: center;
+      padding: 2rem 1rem 3rem;
+      font-size: 0.9rem;
+      color: #8f97ae;
+      border-top: 1px solid #dadfea;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO with canvas animation -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>Surface · sound intelligence</h1>
+    </div>
+    <a class="scroll-down" href="#features" aria-label="scroll down">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </a>
+  </section>
+
+  <!-- FEATURES section (1) -->
+  <section id="features" class="reveal">
+    <h2 class="section-title">Unobtrusive by design</h2>
+    <div class="features-grid">
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg></div>
+        <h3>Ambient sync</h3>
+        <p>Zero interaction — devices adapt to your presence, no tapping needed.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18"></rect><line x1="8" y1="2" x2="8" y2="22"></line></svg></div>
+        <h3>Private core</h3>
+        <p>All inference runs locally. Your environment never leaves the edge.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"></circle><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"></path><line x1="12" y1="2" x2="12" y2="4"></line></svg></div>
+        <h3>Always calibrated</h3>
+        <p>Adaptive filters learn from daily patterns, fading into the background.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS (2) -->
+  <section id="how-it-works" class="reveal">
+    <h2 class="section-title">Quiet intelligence · three steps</h2>
+    <div class="steps-grid">
+      <div class="card step-card">
+        <span class="step-marker">/ 01</span>
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+        <h3>Listen to space</h3>
+        <p>Short-range sensors map room activity without cameras.</p>
+      </div>
+      <div class="card step-card">
+        <span class="step-marker">/ 02</span>
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg></div>
+        <h3>subtle signal</h3>
+        <p>Minimal latency pattern detection — presence, gesture, gaze.</p>
+      </div>
+      <div class="card step-card">
+        <span class="step-marker">/ 03</span>
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
+        <h3>fade to calm</h3>
+        <p>Light, sound, climate respond — you barely notice the shift.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADVANTAGES (3) -->
+  <section id="advantages" class="reveal">
+    <h2 class="section-title">Beyond smart‑home noise</h2>
+    <div class="advantages-grid">
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M20 12H4M12 4v16"></path></svg></div>
+        <h3>No dashboards</h3>
+        <p>No app to open. Space just flows with you, naturally.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
+        <h3>privacy first</h3>
+        <p>Everything encrypted on‑device, no cloud dependency.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M2 20L22 20"></path><path d="M4 16L20 16"></path><path d="M8 12L16 12"></path></svg></div>
+        <h3>layered calm</h3>
+        <p>Interactions become invisible. No beeps, no blaring lights.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
+        <h3>timeless materials</h3>
+        <p>Solid aluminum and matte glass — disappears visually.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES (4) -->
+  <section id="usecases" class="reveal">
+    <h2 class="section-title">Where it lives</h2>
+    <div class="cases-grid">
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></div>
+        <h3>Home studio</h3>
+        <p>Light follows your focus. No switches, just flow.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18"></rect><path d="M8 2v20M16 2v20"></path></svg></div>
+        <h3>Micro‑offices</h3>
+        <p>Desk knows when you sit — warms floor, lowers blinds.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"></circle><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"></path></svg></div>
+        <h3>quiet lounge</h3>
+        <p>Music fades in as you enter, then disappears again.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"></rect><line x1="9" y1="4" x2="9" y2="20"></line></svg></div>
+        <h3>library mode</h3>
+        <p>Absolute silence until you whisper — then soft light.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION (5) -->
+  <section class="cta-section reveal">
+    <h2 class="cta-title">Experience calm technology</h2>
+    <p style="font-size: 1.3rem; color: #2f374b; max-width: 580px; margin: 0 auto 2rem;">首批设备 2025 ・ early access</p>
+    <a href="#" class="cta-button">Request invite</a>
+  </section>
+
+  <footer class="footer-note">
+    <span>© reflect — ambient intelligence</span>
+  </footer>
+
+  <!-- VANILLA JavaScript: canvas animation + reveal observer -->
+  <script>
+    (function() {
+      // ---------- canvas animation (subtle moving particles/waves) ----------
+      const canvas = document.getElementById('heroCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let width, height;
+      let particles = [];
+
+      const initParticles = () => {
+        const count = 70;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: 0.7 + Math.random() * 2.2,
+            speedX: (Math.random() - 0.5) * 0.0012,
+            speedY: (Math.random() - 0.5) * 0.0012,
+            opacity: 0.08 + Math.random() * 0.1,
+          });
+        }
+      };
+
+      const resizeCanvas = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      };
+
+      const drawParticles = () => {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#8b95aa';  // monochrome subtle
+        
+        for (let p of particles) {
+          // update position (very slow drift)
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around gently
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          const x = p.x * width;
+          const y = p.y * height;
+          ctx.globalAlpha = p.opacity * 0.9;
+          ctx.beginPath();
+          ctx.arc(x, y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // extra faint vertical line (modern architectural feel)
+        ctx.globalAlpha = 0.12;
+        ctx.strokeStyle = '#6f7a95';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(width * 0.2, 0);
+        ctx.lineTo(width * 0.2, height);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(width * 0.8, 0);
+        ctx.lineTo(width * 0.8, height);
+        ctx.stroke();
+
+        requestAnimationFrame(drawParticles);
+      };
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // subtle mouse interaction (very light shift)
+      window.addEventListener('mousemove', (e) => {
+        const mouseX = e.clientX / width;
+        const mouseY = e.clientY / height;
+        particles.forEach(p => {
+          // tiny extra influence
+          p.x += (mouseX - 0.5) * 0.0002;
+          p.y += (mouseY - 0.5) * 0.0002;
+        });
+      });
+
+      // ------- Intersection Observer (reveal) -------
+      const reveals = document.querySelectorAll('.reveal');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          } else {
+            // optional: remove class to re-hide? but we keep visible after first sight
+            // entry.target.classList.remove('visible'); // (commented: keep visible once shown)
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -20px 0px' });
+
+      reveals.forEach(el => observer.observe(el));
+
+      // manually trigger hero? no need because it's already visible. But we want it to appear instantly
+      // ensure hero content itself not required to reveal, but we reveal sections.
+      // set hero as visible by default (no transition needed)
+      document.querySelector('.hero').style.opacity = 1;
+    })();
+  </script>
+
+  <!-- ensure the first section has reveal, but visible on load? it will be triggered by observer -->
+  <!-- down arrow smooth scroll is native with html (scroll-behavior:smooth) + id link -->
+  
+</body>
+</html>
+All done!
+```

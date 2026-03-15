@@ -1,0 +1,598 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nodus • seamless data fabric</title>
+  <!-- Feather icons (lightweight, outline, monochrome) -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <style>
+    /* ----- RESET & BASE ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: #f8fafc;
+      color: #0a1a2b;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* ----- REVEAL ANIMATION (on scroll) ----- */
+    .section {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.15, 0.75, 0.3, 1), transform 0.7s cubic-bezier(0.15, 0.75, 0.3, 1);
+    }
+
+    .section.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ----- LAYOUT CONTAINERS ----- */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    /* ----- HERO SECTION ----- */
+    .hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background-color: #f8fafc;  /* fallback, canvas background overlays */
+      overflow: hidden;
+    }
+
+    /* canvas for subtle animated background */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;  /* allow click-through to arrow */
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 1200px;
+      padding: 0 20px;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 15vw, 7rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #0e1f33;
+      text-transform: none;
+      line-height: 1.1;
+      white-space: nowrap;        /* keep on one line */
+      margin: 0;
+      animation: fadeIn 1.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* down arrow */
+    .scroll-arrow {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #1e3a5f;
+      opacity: 0.7;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      padding: 12px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .scroll-arrow:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(6px);
+    }
+
+    .scroll-arrow i {
+      width: 44px;
+      height: 44px;
+      stroke-width: 1.5;
+    }
+
+    /* ----- GENERAL SECTION STYLING ----- */
+    .section {
+      padding: 120px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .section:last-of-type {
+      border-bottom: none;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 72px;
+    }
+
+    .section-header h2 {
+      font-size: 3rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #0a1a2b;
+    }
+
+    .section-header p {
+      font-size: 1.5rem;
+      color: #3f556a;
+      max-width: 700px;
+      margin: 16px auto 0;
+      font-weight: 350;
+    }
+
+    /* cards / grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 64px 40px;
+    }
+
+    .feature-card {
+      text-align: center;
+      transition: transform 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px);
+    }
+
+    .feature-icon {
+      margin-bottom: 28px;
+      color: #1e3a5f;
+    }
+
+    .feature-icon i {
+      width: 56px;
+      height: 56px;
+      stroke-width: 1.2;
+    }
+
+    .feature-card h3 {
+      font-size: 1.8rem;
+      font-weight: 470;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-card p {
+      font-size: 1.2rem;
+      color: #2f455b;
+      max-width: 300px;
+      margin: 0 auto;
+      line-height: 1.4;
+    }
+
+    /* use case list (two columns) */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px 48px;
+    }
+
+    .use-case-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      transition: transform 0.2s;
+    }
+
+    .use-case-item:hover {
+      transform: translateX(6px);
+    }
+
+    .use-case-icon i {
+      width: 44px;
+      height: 44px;
+      stroke-width: 1.2;
+      color: #1e3a5f;
+    }
+
+    .use-case-text h4 {
+      font-size: 1.8rem;
+      font-weight: 470;
+      margin-bottom: 4px;
+    }
+
+    .use-case-text p {
+      font-size: 1.2rem;
+      color: #3a5068;
+    }
+
+    /* how it works — large simple steps */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 80px;
+    }
+
+    .step-row {
+      display: flex;
+      align-items: center;
+      gap: 48px;
+    }
+
+    .step-nr {
+      font-size: 4rem;
+      font-weight: 300;
+      color: #b4c6da;
+      line-height: 1;
+      min-width: 100px;
+      text-align: right;
+    }
+
+    .step-desc h3 {
+      font-size: 2.2rem;
+      font-weight: 450;
+      margin-bottom: 10px;
+    }
+
+    .step-desc p {
+      font-size: 1.3rem;
+      color: #2e445e;
+      max-width: 600px;
+    }
+
+    /* CTA */
+    .cta-box {
+      background: #0e1f33;
+      color: white;
+      padding: 80px 64px;
+      border-radius: 48px;
+      text-align: center;
+    }
+
+    .cta-box h2 {
+      font-size: 3.2rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+    }
+
+    .cta-box p {
+      font-size: 1.5rem;
+      color: #b4cbe5;
+      margin-bottom: 40px;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+      font-size: 1.6rem;
+      font-weight: 470;
+      padding: 18px 56px;
+      border-radius: 60px;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .cta-button:hover {
+      background: white;
+      color: #0e1f33;
+    }
+
+    /* footer */
+    .footer-note {
+      text-align: center;
+      color: #a4b7cc;
+      padding: 40px 0 24px;
+      font-size: 1.1rem;
+    }
+
+    /* responsiveness */
+    @media (max-width: 800px) {
+      .hero h1 {
+        font-size: clamp(2.8rem, 12vw, 5rem);
+        white-space: normal;    /* fallback for very small screens: still avoid if possible */
+      }
+      .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 56px;
+      }
+      .two-col {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+      .step-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .step-nr {
+        text-align: left;
+      }
+      .cta-box {
+        padding: 48px 24px;
+      }
+      .section {
+        padding: 90px 0;
+      }
+    }
+
+    /* feather icons default styling */
+    i {
+      stroke: currentColor;
+      fill: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO (with canvas background) -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>Data without friction.</h1>
+    </div>
+    <a class="scroll-arrow" href="#features" id="downArrow">
+      <i data-feather="arrow-down-circle"></i>
+    </a>
+  </section>
+
+  <!-- SECTION 1: FEATURES / BENEFITS -->
+  <section id="features" class="section container">
+    <div class="section-header">
+      <h2>Built for flow</h2>
+      <p>Zero‑copy, real‑time fabric for modern teams</p>
+    </div>
+    <div class="grid-3">
+      <div class="feature-card">
+        <div class="feature-icon"><i data-feather="zap"></i></div>
+        <h3>Instant sync</h3>
+        <p>All sources update in milliseconds — no batching, no lag.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-feather="shield"></i></div>
+        <h3>Zero trust</h3>
+        <p>Every node verified, every packet encrypted end‑to‑end.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-feather="git-branch"></i></div>
+        <h3>Unlimited branches</h3>
+        <p>Isolated workspaces that merge without conflict.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: HOW IT WORKS -->
+  <section id="how-it-works" class="section container">
+    <div class="section-header">
+      <h2>Two‑step weave</h2>
+      <p>No complex setup — just connect and extend</p>
+    </div>
+    <div class="steps">
+      <div class="step-row">
+        <div class="step-nr">01</div>
+        <div class="step-desc">
+          <h3>Drop your sources</h3>
+          <p>Databases, APIs, streams – Nodus normalises them into one semantic layer.</p>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-nr">02</div>
+        <div class="step-desc">
+          <h3>Query any mesh</h3>
+          <p>Use GraphQL, SQL or REST — the fabric responds instantly, globally.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: ADVANTAGES -->
+  <section id="advantages" class="section container">
+    <div class="section-header">
+      <h2>Uncompromising edge</h2>
+      <p>Why teams switch to the fabric</p>
+    </div>
+    <div class="grid-3">
+      <div class="feature-card">
+        <div class="feature-icon"><i data-feather="activity"></i></div>
+        <h3>99.999% uptime</h3>
+        <p>Self‑healing mesh with no single point of failure.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-feather="layers"></i></div>
+        <h3>50x compression</h3>
+        <p>Columnar storage that cuts transfer & storage costs.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-feather="clock"></i></div>
+        <h3>Point‑in‑time</h3>
+        <p>Travel to any second without restoring snapshots.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: USE CASES -->
+  <section id="usecases" class="section container">
+    <div class="section-header">
+      <h2>Any stack, any scale</h2>
+      <p>From edge to cloud — one logical fabric</p>
+    </div>
+    <div class="two-col">
+      <div class="use-case-item">
+        <div class="use-case-icon"><i data-feather="globe"></i></div>
+        <div class="use-case-text">
+          <h4>Global IoT</h4>
+          <p>Millions of devices, sub‑second aggregation.</p>
+        </div>
+      </div>
+      <div class="use-case-item">
+        <div class="use-case-icon"><i data-feather="trending-up"></i></div>
+        <div class="use-case-text">
+          <h4>Real‑time analytics</h4>
+          <p>Streaming joins without throughput limits.</p>
+        </div>
+      </div>
+      <div class="use-case-item">
+        <div class="use-case-icon"><i data-feather="users"></i></div>
+        <div class="use-case-text">
+          <h4>Collaborative apps</h4>
+          <p>Live sync across 10k concurrent editors.</p>
+        </div>
+      </div>
+      <div class="use-case-item">
+        <div class="use-case-icon"><i data-feather="lock"></i></div>
+        <div class="use-case-text">
+          <h4>Confidential computing</h4>
+          <p>Hardware‑enforced enclaves for sensitive data.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: CALL TO ACTION -->
+  <section id="cta" class="section container">
+    <div class="cta-box">
+      <h2>Start weaving.</h2>
+      <p>Join forward‑thinking data teams.</p>
+      <a href="#" class="cta-button">Get early access</a>
+    </div>
+    <div class="footer-note">
+      Nodus — seamless data fabric
+    </div>
+  </section>
+
+  <script>
+    (function() {
+      feather.replace({ width: '1em', height: '1em' });  // default size via css later
+
+      // ----- REVEAL ON SCROLL (intersection observer) -----
+      const sections = document.querySelectorAll('.section');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '20px' });
+
+      sections.forEach(sec => observer.observe(sec));
+
+      // down arrow smooth scroll
+      document.getElementById('downArrow').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // ----- subtle canvas animation (hero background) -----
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        particles = [];
+        const particleCount = 25;
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 1.8 + 0.6,
+            speedX: (Math.random() - 0.5) * 0.2,
+            speedY: (Math.random() - 0.5) * 0.12,
+            opacity: Math.random() * 0.3 + 0.1,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#b8ccdd';   // very soft, elegant blue-grey
+        for (let p of particles) {
+          ctx.globalAlpha = p.opacity * 0.6;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // move
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around very gently
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      drawParticles();
+
+      // feather re-run for icons added via innerHTML? (they are static, but safe)
+      feather.replace();
+    })();
+  </script>
+
+  <!-- ensure icons are sized consistently -->
+  <style>
+    i {
+      width: 1.5em;
+      height: 1.5em;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .feature-icon i {
+      width: 3rem;
+      height: 3rem;
+      stroke-width: 1.2;
+    }
+    .use-case-icon i {
+      width: 2.8rem;
+      height: 2.8rem;
+    }
+  </style>
+</body>
+</html>
+All done!
+```

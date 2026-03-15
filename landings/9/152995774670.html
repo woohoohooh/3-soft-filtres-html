@@ -1,0 +1,486 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nuvon · silent sync</title>
+    <!-- Feather icons (lightweight, outline) -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        /* ---------- RESET & BASE ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #fafaf8;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            line-height: 1.5;
+            color: #1e1e1e;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* ---------- REVEAL ANIMATION (on scroll) ---------- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1), transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ---------- SECTIONS LAYOUT ---------- */
+        section:not(.hero) {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 6rem 2rem;
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background-color: #fafaf8;   /* fallback */
+            overflow: hidden;
+        }
+
+        /* canvas for animated background (elegant wave) */
+        #bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 15vw, 8rem);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            color: #1a1a1a;
+            z-index: 2;
+            text-align: center;
+            padding: 0 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            white-space: nowrap;
+        }
+
+        /* down arrow */
+        .arrow-down {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            color: #2b2b2b;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: transform 0.2s ease;
+        }
+
+        .arrow-down:hover {
+            transform: translateX(-50%) translateY(4px);
+            color: #000;
+        }
+
+        .arrow-down i {
+            width: 36px;
+            height: 36px;
+            stroke-width: 1.2;
+        }
+
+        /* section headings */
+        h2 {
+            font-size: 3.2rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            margin-bottom: 3.5rem;
+            line-height: 1.1;
+            color: #111;
+        }
+
+        .section-subhead {
+            font-size: 1.4rem;
+            font-weight: 380;
+            color: #5b5b5b;
+            max-width: 620px;
+            margin-top: -1rem;
+            margin-bottom: 3rem;
+        }
+
+        /* feature grid */
+        .grid-3, .grid-2 {
+            display: grid;
+            gap: 4rem 2.5rem;
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .card {
+            background: transparent;
+            padding: 0;
+        }
+
+        .card i {
+            width: 40px;
+            height: 40px;
+            stroke-width: 1.3;
+            color: #1f1f1f;
+            margin-bottom: 1.5rem;
+            transition: transform 0.25s ease;
+        }
+
+        .card:hover i {
+            transform: scale(1.04);
+        }
+
+        .card h3 {
+            font-size: 1.9rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.01em;
+        }
+
+        .card p {
+            font-size: 1.2rem;
+            color: #3e3e3e;
+            max-width: 320px;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .step-marker {
+            font-size: 2.2rem;
+            font-weight: 400;
+            color: #aaa;
+            line-height: 1;
+            min-width: 50px;
+        }
+
+        .use-case-line {
+            border-bottom: 1px solid #d4d4d4;
+            padding: 2rem 0;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .use-case-line:last-child {
+            border-bottom: none;
+        }
+
+        .use-case-line i {
+            width: 32px;
+            height: 32px;
+            stroke-width: 1.2;
+            color: #222;
+        }
+
+        .cta-box {
+            background: #ffffff;
+            border: 1px solid #eaeaea;
+            padding: 4rem 3.5rem;
+            border-radius: 36px;
+            box-shadow: 0 10px 25px -10px rgba(0,0,0,0.05);
+            transition: box-shadow 0.3s;
+        }
+
+        .cta-box:hover {
+            box-shadow: 0 20px 30px -12px rgba(0,0,0,0.08);
+        }
+
+        .button {
+            display: inline-block;
+            background: #1e1e1e;
+            color: #fff;
+            padding: 1.2rem 3rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 460;
+            font-size: 1.3rem;
+            letter-spacing: 0.3px;
+            margin-top: 2rem;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.2s;
+        }
+
+        .button:hover {
+            background: #3a3a3a;
+            transform: scale(1.02);
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #e2e2e2;
+            margin: 0;
+        }
+
+        /* footer note */
+        .fine {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #aaa;
+            padding: 2rem;
+            border-top: 1px solid #ececec;
+        }
+
+        /* ---------- RESPONSIVE ---------- */
+        @media (max-width: 900px) {
+            section:not(.hero) { padding: 4rem 2rem; }
+            h2 { font-size: 2.8rem; }
+            .grid-3 { grid-template-columns: 1fr; gap: 3rem; }
+            .grid-2 { grid-template-columns: 1fr; gap: 3rem; }
+            .hero h1 { white-space: normal; }  /* fallback only if extremely narrow, but we keep one-line with clamp */
+        }
+
+        @media (max-width: 550px) {
+            .hero h1 { font-size: 4.2rem; white-space: normal; }  /* last resort — but design tries to keep one line */
+            .step-item { flex-direction: column; gap: 0.5rem; }
+            .cta-box { padding: 2.5rem 1.5rem; }
+        }
+
+        /* keep one line as long as possible */
+        @media (min-width: 551px) and (max-width: 860px) {
+            .hero h1 { font-size: 7vw; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HERO SECTION with canvas background -->
+<section class="hero" id="home">
+    <canvas id="bgCanvas"></canvas>
+    <h1 class="reveal visible">horizon·AI · live</h1>   <!-- one line, strong seo -->
+    <a href="#features" class="arrow-down" id="scrollDown">
+        <i data-feather="chevron-down"></i>
+    </a>
+</section>
+
+<!-- FEATURES / BENEFITS -->
+<section id="features" class="reveal">
+    <h2>works with silence.</h2>
+    <div class="section-subhead">ambient intelligence, zero friction.</div>
+    <div class="grid-3">
+        <div class="card">
+            <i data-feather="eye"></i>
+            <h3>glanceable</h3>
+            <p>information arrives without sound — pure visual hierarchy.</p>
+        </div>
+        <div class="card">
+            <i data-feather="wind"></i>
+            <h3>ambient</h3>
+            <p>it fades into your periphery until you need it.</p>
+        </div>
+        <div class="card">
+            <i data-feather="anchor"></i>
+            <h3>grounded</h3>
+            <p>no buzz, no alerts — just calm presence.</p>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="reveal">
+    <h2>one line · three moves.</h2>
+    <div class="grid-2" style="margin-top: 2rem;">
+        <div class="step-item">
+            <span class="step-marker">01</span>
+            <div>
+                <h3 style="font-size:2rem; font-weight:440;">place</h3>
+                <p style="font-size:1.2rem; color:#3e3e3e;">set the horizon puck anywhere — it maps the room.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <span class="step-marker">02</span>
+            <div>
+                <h3 style="font-size:2rem; font-weight:440;">sync</h3>
+                <p style="font-size:1.2rem; color:#3e3e3e;">silent connection via light pulse, no pairing noise.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <span class="step-marker">03</span>
+            <div>
+                <h3 style="font-size:2rem; font-weight:440;">flow</h3>
+                <p style="font-size:1.2rem; color:#3e3e3e;">ambient data appears only when you look.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ADVANTAGES -->
+<section id="advantages" class="reveal">
+    <h2>less is more.</h2>
+    <div class="grid-3">
+        <div class="card">
+            <i data-feather="battery-charging"></i>
+            <h3>months, not days</h3>
+            <p>ultra‑low power e‑ink philosophy, even on OLED.</p>
+        </div>
+        <div class="card">
+            <i data-feather="shield"></i>
+            <h3>local first</h3>
+            <p>no cloud, no mic — everything stays on device.</p>
+        </div>
+        <div class="card">
+            <i data-feather="droplet"></i>
+            <h3>water & dust</h3>
+            <p>sealed unibody, rated IP57, take it anywhere.</p>
+        </div>
+    </div>
+</section>
+
+<!-- USE CASES -->
+<section id="usecases" class="reveal">
+    <h2>lives in the margins.</h2>
+    <div style="max-width: 800px;">
+        <div class="use-case-line">
+            <i data-feather="book-open"></i>
+            <div><strong style="font-size:1.5rem; font-weight:460;">deep work</strong><span style="color:#4f4f4f; margin-left:1.5rem;">timer & intention — no distraction</span></div>
+        </div>
+        <div class="use-case-line">
+            <i data-feather="home"></i>
+            <div><strong style="font-size:1.5rem; font-weight:460;">quiet home</strong><span style="color:#4f4f4f; margin-left:1.5rem;">glance at air quality, light, motion</span></div>
+        </div>
+        <div class="use-case-line">
+            <i data-feather="compass"></i>
+            <div><strong style="font-size:1.5rem; font-weight:460;">studio</strong><span style="color:#4f4f4f; margin-left:1.5rem;">silent metronome, subtle vibe shifts</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- CALL TO ACTION -->
+<section id="cta" class="reveal">
+    <div class="cta-box">
+        <h2 style="margin-bottom: 1rem;">silent·sync</h2>
+        <p style="font-size: 1.5rem; color: #464646; max-width: 550px;">join the quiet shift — early 2025</p>
+        <a href="#" class="button">get notified</a>
+        <p style="margin-top: 2rem; font-size: 1rem; color:#b1b1b1;">no spam, just one ping.</p>
+    </div>
+</section>
+
+<footer class="fine">
+    <span>horizon·AI — silent companion</span>
+</footer>
+
+<script>
+    // ---- smooth scroll (down arrow) ----
+    document.getElementById('scrollDown').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // ---- feather icons ----
+    feather.replace();
+
+    // ---- reveal on scroll (intersection observer) ----
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.15, rootMargin: '40px' });
+    reveals.forEach(r => observer.observe(r));
+
+    // ---- animated background (canvas, subtle wave) ----
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let time = 0;
+
+    function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawWave() {
+        ctx.clearRect(0, 0, width, height);
+        
+        const amplitude = 20;
+        const wavelength = 0.02;
+        const speed = 0.02;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, height/2);
+
+        for (let x = 0; x <= width; x += 20) {
+            let y = height/2 
+                + Math.sin(x * wavelength + time) * amplitude 
+                + Math.sin(x * 0.01 + time * 0.5) * 6;  // secondary low freq
+            ctx.lineTo(x, y);
+        }
+
+        ctx.strokeStyle = '#b8b8b8';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // second softer layer
+        ctx.beginPath();
+        ctx.moveTo(0, height/2 + 20);
+        for (let x = 0; x <= width; x += 20) {
+            let y = height/2 + 20 
+                + Math.cos(x * 0.015 + time * 1.3) * 12 
+                + Math.sin(x * 0.03) * 4;
+            ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = '#d4d4d4';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        time += speed;
+        requestAnimationFrame(drawWave);
+    }
+
+    drawWave();
+
+    // optional: hover micro-interactions (icons handled by css)
+</script>
+
+<!-- extra smooth scroll behavior for anchor links (native) -->
+<style>
+    /* native smooth scroll for all anchor links, but we already use js for arrow */
+    html {
+        scroll-behavior: smooth;
+    }
+    /* one line headline insurance */
+    @media (min-width:400px) and (max-width:860px){
+        .hero h1 { font-size: clamp(3.8rem, 11vw, 7rem); }
+    }
+</style>
+</body>
+</html>
+All done!
+```

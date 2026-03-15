@@ -1,0 +1,536 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>helix • silent precision</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f6f7f9;
+            font-family: system-ui, -apple-system, 'Inter', 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.4;
+            color: #1a1e2b;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* sections base */
+        section {
+            position: relative;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 7rem 2rem;
+        }
+
+        /* hero */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1.5rem;
+            max-width: 100%;
+            background-color: #f6f7f9;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* canvas background (animated) */
+        #bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: clamp(3.5rem, 15vw, 8rem);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            color: #11131f;
+            white-space: nowrap;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 4.2rem;  /* still one line, scales down */
+                letter-spacing: -0.01em;
+            }
+        }
+
+        /* down arrow */
+        .scroll-down {
+            position: absolute;
+            bottom: 2.4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0.6rem;
+            border-radius: 40px;
+            transition: opacity 0.2s ease;
+            opacity: 0.7;
+        }
+
+        .scroll-down:hover {
+            opacity: 1;
+        }
+
+        .scroll-down svg {
+            width: 32px;
+            height: 32px;
+            stroke: #1f2330;
+            stroke-width: 1.7;
+            fill: none;
+            transition: transform 0.3s ease;
+        }
+
+        .scroll-down:hover svg {
+            transform: translateY(6px);
+        }
+
+        /* ----- section headers & text ----- */
+        .section-title {
+            font-size: 3rem;
+            font-weight: 550;
+            letter-spacing: -0.02em;
+            margin-bottom: 3.5rem;
+            color: #0b0d15;
+        }
+
+        @media (max-width: 700px) {
+            .section-title {
+                font-size: 2.4rem;
+                margin-bottom: 2.5rem;
+            }
+        }
+
+        /* feature grid */
+        .grid-3, .grid-2 {
+            display: grid;
+            gap: 3rem;
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 800px) {
+            .grid-3, .grid-2 {
+                grid-template-columns: 1fr;
+                gap: 2.2rem;
+            }
+        }
+
+        /* cards / blocks */
+        .feature-card, .step-card, .advantage-item, .use-case-card {
+            background: transparent;
+            padding: 0.2rem 0;
+        }
+
+        .icon-circle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1.8px solid #1e2434;
+            border-radius: 100px;
+            width: 56px;
+            height: 56px;
+            margin-bottom: 1.6rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .feature-card:hover .icon-circle,
+        .step-card:hover .icon-circle,
+        .advantage-item:hover .icon-circle,
+        .use-case-card:hover .icon-circle {
+            background: #11131f10;
+            border-color: #11131f;
+        }
+
+        .icon-circle svg {
+            width: 28px;
+            height: 28px;
+            stroke: #1a1e2b;
+            stroke-width: 1.7;
+            fill: none;
+        }
+
+        h3 {
+            font-size: 1.8rem;
+            font-weight: 530;
+            letter-spacing: -0.01em;
+            margin-bottom: 1rem;
+            color: #121520;
+        }
+
+        .desc {
+            font-size: 1.2rem;
+            line-height: 1.5;
+            color: #2c3040;
+            max-width: 34ch;
+        }
+
+        /* reveal animation base (scroll) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.7s cubic-bezier(0.15, 0.75, 0.3, 1), transform 0.7s cubic-bezier(0.15, 0.75, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* CTA section */
+        .cta-block {
+            background: #121520;
+            color: white;
+            border-radius: 30px;
+            padding: 5rem 4rem;
+            text-align: center;
+        }
+
+        .cta-block .section-title {
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .cta-desc {
+            font-size: 1.4rem;
+            color: #cfd5e6;
+            max-width: 550px;
+            margin: 0 auto 2.8rem;
+        }
+
+        .cta-button {
+            background: transparent;
+            border: 2px solid #ffffff;
+            color: white;
+            padding: 1rem 3.2rem;
+            font-size: 1.3rem;
+            border-radius: 60px;
+            font-weight: 480;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .cta-button:hover {
+            background: #ffffff;
+            color: #121520;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.95rem;
+            color: #5a6072;
+            border-top: 1px solid #e2e5ec;
+            margin-top: 2rem;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #d7dbe6;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        /* general spacing */
+        .extra-margin {
+            margin-top: 2rem;
+        }
+
+        /* theme: carbon / obsidian / silent helix — inspired by data purity */
+    </style>
+
+    <!-- lucide icons (static, outline only) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <!-- canvas background (hero) -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- HERO SECTION -->
+    <section class="hero" id="hero">
+        <div class="hero-content">
+            <h1>obsidian flow</h1>
+        </div>
+        <div class="scroll-down" id="scrollDownBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
+            </svg>
+        </div>
+    </section>
+
+    <!-- FEATURES / BENEFITS (1) -->
+    <section class="reveal" id="features">
+        <h2 class="section-title">Silent precision ·</h2>
+        <div class="grid-3">
+            <div class="feature-card">
+                <div class="icon-circle"><i data-lucide="scan-line"></i></div>
+                <h3>Zero friction</h3>
+                <div class="desc">No config, no clutter.  Instant reactivity without overhead.</div>
+            </div>
+            <div class="feature-card">
+                <div class="icon-circle"><i data-lucide="layers-3"></i></div>
+                <h3>Deep stack</h3>
+                <div class="desc">From edge to core — unified observability, one control plane.</div>
+            </div>
+            <div class="feature-card">
+                <div class="icon-circle"><i data-lucide="fingerprint"></i></div>
+                <h3>Quantum safe</h3>
+                <div class="desc">Post‑quantum primitives. Your architecture, zero trust embedded.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS (2) -->
+    <section class="reveal" id="howitworks">
+        <h2 class="section-title">How it works ·</h2>
+        <div class="grid-3">
+            <div class="step-card">
+                <div class="icon-circle"><i data-lucide="plug-2"></i></div>
+                <h3>Connect</h3>
+                <div class="desc">One line — any stack. Streaming telemetry in seconds.</div>
+            </div>
+            <div class="step-card">
+                <div class="icon-circle"><i data-lucide="workflow"></i></div>
+                <h3>Orchestrate</h3>
+                <div class="desc">Visual DAGs, live traces, and dynamic sharding.</div>
+            </div>
+            <div class="step-card">
+                <div class="icon-circle"><i data-lucide="gauge"></i></div>
+                <h3>Optimize</h3>
+                <div class="desc">Real‑time inference, auto‑tuning without downtime.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ADVANTAGES (3) -->
+    <section class="reveal" id="advantages">
+        <h2 class="section-title">Advantages ·</h2>
+        <div class="grid-2">
+            <div class="advantage-item">
+                <div class="icon-circle"><i data-lucide="infinity"></i></div>
+                <h3>∞ elasticity</h3>
+                <div class="desc">Scale to zero and beyond. No overprovisioning.</div>
+            </div>
+            <div class="advantage-item">
+                <div class="icon-circle"><i data-lucide="badge-check"></i></div>
+                <h3>Deterministic</h3>
+                <div class="desc">Sub‑millisecond latency with formal verification.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- USE CASES (4) -->
+    <section class="reveal" id="usecases">
+        <h2 class="section-title">Use cases ·</h2>
+        <div class="grid-3">
+            <div class="use-case-card">
+                <div class="icon-circle"><i data-lucide="satellite"></i></div>
+                <h3>Edge mesh</h3>
+                <div class="desc">Autonomous fleets, distributed inference at the edge.</div>
+            </div>
+            <div class="use-case-card">
+                <div class="icon-circle"><i data-lucide="banknote"></i></div>
+                <h3>High frequency</h3>
+                <div class="desc">Capital markets, fraud detection, real‑time risk.</div>
+            </div>
+            <div class="use-case-card">
+                <div class="icon-circle"><i data-lucide="dna"></i></div>
+                <h3>Genomic</h3>
+                <div class="desc">Privacy‑preserving computation for research.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CALL TO ACTION (5) -->
+    <section class="reveal" id="cta">
+        <div class="cta-block">
+            <h2 class="section-title">enter the monolith</h2>
+            <div class="cta-desc">Deploy in one command — no credit card, no timewasters.</div>
+            <button class="cta-button">claim your cluster</button>
+        </div>
+    </section>
+
+    <hr>
+    <footer>
+        obsidian flow · silent infrastructure · all rights reserved
+    </footer>
+
+    <script>
+        (function() {
+            // --- canvas background (hero) : subtle animated grid + floating particles ---
+            const canvas = document.getElementById('bgCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                initParticles();
+            }
+
+            function initParticles() {
+                const pCount = 35;
+                particles = [];
+                for (let i = 0; i < pCount; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 1.8 + 0.7,
+                        vx: (Math.random() - 0.5) * 0.15,
+                        vy: (Math.random() - 0.5) * 0.1,
+                    });
+                }
+            }
+
+            function drawGrid() {
+                ctx.clearRect(0, 0, width, height);
+                // ultra light grid
+                ctx.strokeStyle = '#aab2cc';
+                ctx.lineWidth = 0.6;
+                ctx.globalAlpha = 0.28;
+
+                const step = 45;
+                ctx.beginPath();
+                for (let i = 0; i <= width; i += step) {
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, height);
+                }
+                for (let i = 0; i <= height; i += step) {
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(width, i);
+                }
+                ctx.stroke();
+
+                // particles
+                ctx.globalAlpha = 0.4;
+                ctx.fillStyle = '#1a1e2b';
+                for (let p of particles) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+
+                // update particles
+                for (let p of particles) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    // wrap around
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+                }
+
+                ctx.globalAlpha = 1.0;
+                requestAnimationFrame(drawGrid);
+            }
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+            });
+
+            resizeCanvas();
+            drawGrid();
+
+            // --- scroll reveal (intersection observer) ---
+            const revealElements = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    } else {
+                        // optional: remove class if you want re-reveal on scroll up (classy)
+                        // but we keep it active after first appearance
+                        // entry.target.classList.remove('active'); // (commented for permanent reveal)
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+
+            revealElements.forEach(el => observer.observe(el));
+
+            // set all active after short delay to catch any already visible? but observer does that.
+
+            // --- smooth down arrow scroll ---
+            document.getElementById('scrollDownBtn').addEventListener('click', () => {
+                const nextSection = document.getElementById('features');
+                if (nextSection) {
+                    nextSection.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+
+            // --- lucide icons (replace placeholders) ---
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            } else {
+                // fallback manual replace using a small observer?
+                const loadIcons = setInterval(() => {
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                        clearInterval(loadIcons);
+                    }
+                }, 50);
+            }
+
+            // extra touch: manual hover icon effect (already via css)
+        })();
+    </script>
+
+    <!-- ensure lucide replaces dynamic icons (re-run after a tiny delay if needed) -->
+    <script>
+        (function retryIcons() {
+            if (document.querySelector('.icon-circle svg')) return;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            else setTimeout(retryIcons, 30);
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

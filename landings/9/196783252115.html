@@ -1,0 +1,516 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helix · ambient compute</title>
+  <!-- Feather icons (lightweight, outline, monochrome) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f5f7fa;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #1e1e2f;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* sections base */
+    section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: #f5f7fa;
+      overflow: hidden;
+      padding: 0 1.5rem;
+    }
+
+    /* canvas – animated background */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      width: 100%;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 12vw, 6.5rem);
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      color: #1a1a2c;
+      line-height: 1.1;
+      white-space: nowrap;
+      text-rendering: optimizeLegibility;
+      max-width: 100%;
+    }
+
+    @media (max-width: 640px) {
+      .hero h1 {
+        font-size: 3.2rem;   /* keep one line even on mobile */
+        white-space: nowrap;
+      }
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #2c2c3a;
+      opacity: 0.7;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      padding: 0.5rem;
+    }
+
+    .scroll-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    .scroll-down i {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.5;
+    }
+
+    /* section headings */
+    h2 {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      color: #191926;
+    }
+
+    .section-subhead {
+      font-size: 1.3rem;
+      font-weight: 380;
+      color: #4e4e61;
+      max-width: 600px;
+      margin-top: -0.5rem;
+      margin-bottom: 3rem;
+    }
+
+    /* card / grid layouts */
+    .grid-3, .grid-2 {
+      display: grid;
+      grid-gap: 3rem;
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .feature-card {
+      background: transparent;
+      padding: 0.5rem 0;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1.5rem;
+      color: #1f1f2e;
+      border: 1px solid #d0d5dd;
+      border-radius: 20px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .feature-card:hover .icon-circle {
+      background: #ffffff;
+      border-color: #a0a8b8;
+    }
+
+    .icon-circle i {
+      width: 24px;
+      height: 24px;
+      stroke-width: 1.8;
+    }
+
+    h3 {
+      font-size: 1.6rem;
+      font-weight: 460;
+      margin-bottom: 0.75rem;
+      color: #12121c;
+    }
+
+    p {
+      font-size: 1.1rem;
+      color: #3b3b4d;
+      line-height: 1.6;
+      font-weight: 380;
+    }
+
+    /* use case cards */
+    .use-case-item {
+      background: #ffffffd6;
+      backdrop-filter: blur(2px);
+      padding: 2.2rem 2rem;
+      border-radius: 32px;
+      border: 1px solid #eaeef5;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+      transition: transform 0.25s ease, box-shadow 0.3s;
+    }
+
+    .use-case-item:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 18px 30px -10px rgba(20, 20, 30, 0.12);
+      border-color: #cdd6e4;
+    }
+
+    /* CTA */
+    .cta-section {
+      text-align: center;
+      background: #ffffff;
+      border-radius: 48px;
+      margin: 5rem auto;
+      padding: 5rem 3rem;
+      border: 1px solid #dfe5ef;
+    }
+
+    .cta-button {
+      display: inline-block;
+      margin-top: 2.5rem;
+      padding: 1.2rem 3.5rem;
+      font-size: 1.3rem;
+      font-weight: 460;
+      background: #1e1e2c;
+      color: white;
+      border-radius: 60px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.2s;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+      text-decoration: none;
+    }
+
+    .cta-button:hover {
+      background: #2d2d42;
+      transform: scale(1.02);
+    }
+
+    /* reveal on scroll (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.6s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.6s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* divider */
+    hr {
+      border: none;
+      border-top: 1px solid #dce2ec;
+      max-width: 1000px;
+      margin: 2rem auto;
+    }
+
+    /* mobile adjustments */
+    @media (max-width: 800px) {
+      .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+
+      section {
+        padding: 4rem 2rem;
+      }
+
+      h2 {
+        font-size: 2.3rem;
+      }
+
+      .use-case-item {
+        padding: 2rem;
+      }
+
+      .cta-section {
+        padding: 3rem 1.5rem;
+      }
+    }
+
+    /* feather icons size */
+    i {
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* prevent layout shift */
+    .hero h1, .scroll-down {
+      transition: all 0.2s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO – ambient animated canvas + single headline + down arrow -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>ambient intelligence</h1>
+    </div>
+    <button class="scroll-down" id="scrollDownBtn" aria-label="scroll down">
+      <i data-feather="arrow-down"></i>
+    </button>
+  </section>
+
+  <!-- SECTION 1 – features / benefits -->
+  <section class="reveal">
+    <h2>Designed for flow</h2>
+    <div class="section-subhead">Radically simple, invisibly powerful</div>
+    <div class="grid-3">
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="zap"></i></div>
+        <h3>Instant</h3>
+        <p>Zero‑latency response across all surfaces. No waiting, no spinning.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="layers"></i></div>
+        <h3>Context layers</h3>
+        <p>Your devices adapt — automatically switching between focus, leisure, and restore.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="wind"></i></div>
+        <h3>Breathes with you</h3>
+        <p>Subtle ambient interface that fades into the background until needed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 – how it works (two columns) -->
+  <section class="reveal">
+    <h2>Zero setup · infinite edge</h2>
+    <div class="grid-2">
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="radio"></i></div>
+        <h3>1. Sync sense</h3>
+        <p>Your space becomes the interface. No buttons, no menus — just presence.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="activity"></i></div>
+        <h3>2. Learn & adapt</h3>
+        <p>On‑device intelligence builds a silent model of your habits.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="shield"></i></div>
+        <h3>3. Private by design</h3>
+        <p>Everything stays local. Encrypted, anonymous, yours.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="command"></i></div>
+        <h3>4. Ambient orchestration</h3>
+        <p>Lights, audio, schedules — they just work, no configuration.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 – advantages (plain large text / minimal) -->
+  <section class="reveal">
+    <h2>Radical simplicity</h2>
+    <div style="display: flex; flex-direction: column; gap: 2rem; max-width: 880px;">
+      <p style="font-size: 1.8rem; font-weight: 330; line-height: 1.4; color: #20202e;">Legacy devices become obsolete. Helix feels like a sixth sense — silent, calm, present.</p>
+      <p style="font-size: 1.2rem; color: #525266;">No subscriptions. No data mining. No blinking lights.</p>
+    </div>
+    <hr>
+    <div style="display: flex; gap: 3rem; flex-wrap: wrap; margin-top: 2rem;">
+      <div><span style="font-size: 3rem; font-weight: 300;">80%</span> <span style="color: #5d5d77;"> less cognitive load</span></div>
+      <div><span style="font-size: 3rem; font-weight: 300;">0</span> <span style="color: #5d5d77;"> recurring costs</span></div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 – use cases (cards) -->
+  <section class="reveal">
+    <h2>Environments, not screens</h2>
+    <div class="grid-3">
+      <div class="use-case-item">
+        <div class="icon-circle" style="margin-bottom: 1.2rem;"><i data-feather="home"></i></div>
+        <h3>Living space</h3>
+        <p>Music follows you room to room. Lights match your circadian rhythm.</p>
+      </div>
+      <div class="use-case-item">
+        <div class="icon-circle" style="margin-bottom: 1.2rem;"><i data-feather="briefcase"></i></div>
+        <h3>Deep work</h3>
+        <p>Minimal distractions, focus timers that melt into the background.</p>
+      </div>
+      <div class="use-case-item">
+        <div class="icon-circle" style="margin-bottom: 1.2rem;"><i data-feather="moon"></i></div>
+        <h3>Rest mode</h3>
+        <p>Gradual wind‑down, blackout signals, and silent wake.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 – call to action -->
+  <section class="cta-section reveal">
+    <h2 style="margin-bottom: 1rem;">Join the quiet revolution</h2>
+    <p style="font-size: 1.3rem; max-width: 520px; margin: 0 auto; color: #48485c;">Early access ships Q4 2025. No spam, just a single invite.</p>
+    <button class="cta-button" id="ctaNotify">get notified</button>
+    <p style="margin-top: 2rem; font-size: 0.95rem; color: #797994;">⏣ 100% privacy-first · no tracking</p>
+  </section>
+
+  <script>
+    (function() {
+      feather.replace({ width: '1.2em', height: '1.2em', 'stroke-width': 1.8 });
+
+      // -------------------- canvas animation (hero background) --------------------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        particles = [];
+        const particleCount = Math.min(50, Math.floor(width * 0.05));
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 2.2 + 1.2,
+            speedX: (Math.random() - 0.5) * 0.4,
+            speedY: (Math.random() - 0.5) * 0.2,
+            opacity: Math.random() * 0.25 + 0.1,
+          });
+        }
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#c0c8d4';   // muted grey-blue, minimal
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.globalAlpha = p.opacity * 0.7;
+          ctx.fill();
+        }
+
+        // subtle extra lines (elegant)
+        ctx.globalAlpha = 0.15;
+        ctx.strokeStyle = '#9aa3b3';
+        ctx.lineWidth = 1.2;
+        for (let i = 0; i < particles.length; i += 3) {
+          let p1 = particles[i];
+          let p2 = particles[(i + 7) % particles.length];
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1.0;
+      }
+
+      function updateParticles() {
+        for (let p of particles) {
+          p.x += p.speedX;
+          p.y += p.speedY;
+          // wrap around softly
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+        drawParticles();
+        requestAnimationFrame(updateParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        initCanvas();
+        drawParticles();
+      });
+
+      initCanvas();
+      drawParticles();
+      requestAnimationFrame(updateParticles);
+
+      // -------------------- smooth scroll (down arrow) --------------------
+      document.getElementById('scrollDownBtn').addEventListener('click', () => {
+        const firstSection = document.querySelector('section:not(.hero)');
+        if (firstSection) {
+          firstSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // -------------------- reveal on scroll (intersection observer) --------------------
+      const reveals = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          } else {
+            // optional: remove class if you want re-reveal, but keep modern (one time)
+            // entry.target.classList.remove('active'); (one time reveal is cleaner)
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+      reveals.forEach(el => observer.observe(el));
+
+      // light hover animation for cta (vanilla)
+      const ctaBtn = document.getElementById('ctaNotify');
+      if (ctaBtn) {
+        ctaBtn.addEventListener('click', () => {
+          alert('✨ You’ll hear from us. (demo flow)');
+        });
+      }
+    })();
+  </script>
+  <!-- ensure feather replaces dynamic icons -->
+  <script>
+    (function secondPass() {
+      feather.replace();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

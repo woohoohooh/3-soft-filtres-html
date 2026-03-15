@@ -1,0 +1,466 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helix · ambient compute</title>
+  <style>
+    /* RESET & BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f6f6f6;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.5;
+      color: #111;
+      overflow-x: hidden;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* SECTION GENERICS */
+    section:not(.hero) {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 7rem 2rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      margin-bottom: 4rem;
+      line-height: 1.1;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem 4rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4rem 5rem;
+    }
+
+    .card-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .icon-outline {
+      width: 48px;
+      height: 48px;
+      stroke-width: 1.8;
+      stroke: #1f1f1f;
+      fill: none;
+      margin-bottom: 1.8rem;
+    }
+
+    .card-item h3 {
+      font-size: 1.7rem;
+      font-weight: 520;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.01em;
+    }
+
+    .card-item p {
+      font-size: 1.2rem;
+      color: #444;
+      max-width: 38ch;
+    }
+
+    /* HERO */
+    .hero {
+      height: 100vh;
+      max-height: 900px;
+      min-height: 600px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: #f6f6f6;
+      overflow: hidden;
+    }
+
+    /* canvas animation background */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 14vw, 7.5rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #111;
+      line-height: 1;
+      white-space: nowrap;
+      text-align: center;
+      max-width: 100%;
+    }
+
+    .down-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      padding: 0.5rem;
+      transition: opacity 0.2s;
+    }
+
+    .down-arrow svg {
+      width: 44px;
+      height: 44px;
+      stroke: #222;
+      stroke-width: 1.8;
+      fill: none;
+      transition: transform 0.25s ease;
+    }
+
+    .down-arrow:hover svg {
+      transform: translateY(6px);
+      opacity: 0.7;
+    }
+
+    /* reveal on scroll (intersection observer) */
+    .reveal-item {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal-item.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* feature hover */
+    .card-item {
+      transition: transform 0.2s ease;
+    }
+
+    .card-item:hover {
+      transform: translateY(-5px);
+    }
+
+    /* CTA section */
+    .cta-large {
+      text-align: center;
+      border-bottom: none;
+    }
+
+    .cta-large h2 {
+      font-size: 4.2rem;
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.2rem;
+    }
+
+    .cta-large p {
+      font-size: 1.6rem;
+      color: #333;
+      max-width: 700px;
+      margin: 0 auto 3rem;
+    }
+
+    .cta-button {
+      background: #111;
+      color: white;
+      border: none;
+      font-size: 1.6rem;
+      font-weight: 450;
+      padding: 1.2rem 3.5rem;
+      border-radius: 60px;
+      cursor: default;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.03);
+      display: inline-block;
+    }
+
+    .cta-button:hover {
+      background: #2a2a2a;
+      transform: scale(1.02);
+    }
+
+    /* responsiveness */
+    @media (max-width: 900px) {
+      section:not(.hero) { padding: 5rem 2rem; }
+      .section-title { font-size: 2.4rem; margin-bottom: 2.8rem; }
+      .grid-3, .grid-2 { grid-template-columns: 1fr; gap: 2.8rem; }
+      .card-item p { font-size: 1.2rem; max-width: 100%; }
+      .cta-large h2 { font-size: 3.2rem; }
+      .cta-large p { font-size: 1.4rem; }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 4rem; }  /* keep one line even on small */
+      .section-title { font-size: 2.2rem; }
+      .icon-outline { width: 40px; height: 40px; }
+    }
+
+    /* feather icons (fallback) */
+    .icon-outline.feather {
+      stroke: currentColor;
+    }
+
+    /* no gradients, only outlines */
+    hr {
+      border: none;
+    }
+  </style>
+  <!-- Feather icons (lightweight, outline only) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+
+  <!-- HERO with canvas background -->
+  <section class="hero" id="top">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>Helix ambient compute</h1>
+    </div>
+    <a href="#features" class="down-arrow" aria-label="scroll down">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </a>
+  </section>
+
+  <!-- FEATURES / BENEFITS -->
+  <section id="features" class="reveal-item">
+    <h2 class="section-title">Beyond the box.<br>Invisible power.</h2>
+    <div class="grid-3">
+      <div class="card-item">
+        <i data-feather="cpu" class="icon-outline"></i>
+        <h3>Ambient core</h3>
+        <p>Always-on neural engine that fades into the background — zero latency, zero noise.</p>
+      </div>
+      <div class="card-item">
+        <i data-feather="wind" class="icon-outline"></i>
+        <h3>Thermal freedom</h3>
+        <p>Passive cooling architecture. No fans, no moving parts, no distractions.</p>
+      </div>
+      <div class="card-item">
+        <i data-feather="radio" class="icon-outline"></i>
+        <h3>Mesh fabric</h3>
+        <p>Self-healing mesh connects every device. Instant handoff without hubs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="reveal-item">
+    <h2 class="section-title">Simple loop, infinite reach.</h2>
+    <div class="grid-2">
+      <div class="card-item">
+        <i data-feather="hexagon" class="icon-outline"></i>
+        <h3>One surface</h3>
+        <p>Place any device on the Helix mat — it becomes part of your secure ambient net.</p>
+      </div>
+      <div class="card-item">
+        <i data-feather="zap" class="icon-outline"></i>
+        <h3>Instant sync</h3>
+        <p>Data and power flow bi‑directionally. No drivers, no pairing, no delay.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADVANTAGES -->
+  <section class="reveal-item">
+    <h2 class="section-title">Radical simplicity.</h2>
+    <div class="grid-3">
+      <div class="card-item">
+        <i data-feather="shield" class="icon-outline"></i>
+        <h3>Zero trust core</h3>
+        <p>Hardware‑level isolation. Your data never leaves your ambient mesh.</p>
+      </div>
+      <div class="card-item">
+        <i data-feather="battery-charging" class="icon-outline"></i>
+        <h3>Infinite battery</h3>
+        <p>Continuous wireless power while inside the workspace. No more docks.</p>
+      </div>
+      <div class="card-item">
+        <i data-feather="eye" class="icon-outline"></i>
+        <h3>Presence sense</h3>
+        <p>Ultra‑wideband radar. Devices wake only when you’re near.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section class="reveal-item">
+    <h2 class="section-title">Inhabits your space.</h2>
+    <div class="grid-2">
+      <div class="card-item">
+        <i data-feather="monitor" class="icon-outline"></i>
+        <h3>Studio</h3>
+        <p>Creative desks that adapt — switch between sketch, edit, render without cables.</p>
+      </div>
+      <div class="card-item">
+        <i data-feather="home" class="icon-outline"></i>
+        <h3>Living sphere</h3>
+        <p>Ambient nodes follow you from kitchen to balcony. Screens, sound, light.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="cta-large reveal-item">
+    <h2>Conscious computing</h2>
+    <p>Join the private preview.第一批 units ship spring.</p>
+    <span class="cta-button">Request access →</span>
+  </section>
+
+  <!-- scripts -->
+  <script>
+    (function() {
+      // feather icons replace
+      feather.replace({ width: 48, height: 48, 'stroke-width': 1.8, fill: 'none' });
+
+      // ---------- canvas animation (subtle wave/particle field) ----------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 55;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            vx: (Math.random() - 0.5) * 0.0015,
+            vy: (Math.random() - 0.5) * 0.0015,
+            baseSize: 1.2 + Math.random() * 2.5,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#111';
+        ctx.globalAlpha = 0.25;   // subtle, elegant
+
+        for (let p of particles) {
+          // update position (very slow drift)
+          p.x += p.vx;
+          p.y += p.vy;
+          // wrap gently
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          const xPos = p.x * width;
+          const yPos = p.y * height;
+
+          // sometimes small connecting lines between close particles (even more subtle)
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, p.baseSize * 0.9, 0, 2 * Math.PI);
+          ctx.fillStyle = '#1a1a1a';
+          ctx.fill();
+        }
+
+        // draw faint lines between nearby particles (very faint)
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.08;
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = (particles[i].x - particles[j].x) * width;
+            const dy = (particles[i].y - particles[j].y) * height;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 90) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x * width, particles[i].y * height);
+              ctx.lineTo(particles[j].x * width, particles[j].y * height);
+              ctx.strokeStyle = '#2c2c2c';
+              ctx.globalAlpha = 0.03;
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.globalAlpha = 1.0; // reset
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // ---------- smooth scroll (down arrow handled by href) ----------
+      // reveal on scroll (intersection observer)
+      const revealItems = document.querySelectorAll('.reveal-item');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional keep visible
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+      revealItems.forEach(item => observer.observe(item));
+
+      // make sure any visible section on load gets revealed (just in case)
+      window.addEventListener('load', () => {
+        revealItems.forEach(item => {
+          const rect = item.getBoundingClientRect();
+          if (rect.top < window.innerHeight * 0.9) {
+            item.classList.add('revealed');
+          }
+        });
+      });
+    })();
+  </script>
+  <!-- ensure one-line headline even on weird screen sizes: container already uses nowrap -->
+  <noscript>JavaScript not needed for core layout</noscript>
+</body>
+</html>
+All done!
+```

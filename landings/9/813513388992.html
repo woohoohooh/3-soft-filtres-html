@@ -1,0 +1,480 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helix · silent compute</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f6f7f9;
+      font-family: system-ui, -apple-system, 'Inter', 'Helvetica Neue', sans-serif;
+      line-height: 1.4;
+      color: #1e1e2f;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* sections base */
+    section:not(.hero) {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    /* typography */
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 2.5rem;
+      color: #12121c;
+    }
+
+    p {
+      font-size: 1.5rem;
+      font-weight: 350;
+      color: #2d2d3a;
+      max-width: 42rem;
+    }
+
+    /* ---------- hero ---------- */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background-color: #f0f2f5;
+      overflow: hidden;
+    }
+
+    /* canvas background (animated particles) */
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      width: 100%;
+      padding: 0 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.8rem, 18vw, 8.5rem);
+      font-weight: 540;
+      letter-spacing: -0.03em;
+      color: #12121c;
+      line-height: 1.1;
+      white-space: nowrap;
+      text-rendering: optimizeLegibility;
+      margin-bottom: 0;
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #2b2b3b;
+      transition: all 0.25s ease;
+      padding: 0.5rem;
+      border-radius: 100px;
+      opacity: 0.75;
+    }
+
+    .scroll-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+      color: #000;
+    }
+
+    .scroll-down i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.8;
+    }
+
+    /* ----- sections grid / cards ----- */
+    .features-grid, .work-grid, .advantages-grid, .cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 3rem 2.5rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: transparent;
+      padding: 1.5rem 0;
+    }
+
+    .card i {
+      width: 40px;
+      height: 40px;
+      stroke: #1e1e2f;
+      stroke-width: 1.5;
+      margin-bottom: 1.5rem;
+      transition: transform 0.2s ease;
+    }
+
+    .card:hover i {
+      transform: scale(1.02);
+    }
+
+    .card h3 {
+      font-size: 2rem;
+      font-weight: 470;
+      margin-bottom: 0.75rem;
+      color: #12121c;
+    }
+
+    .card p {
+      font-size: 1.2rem;
+      font-weight: 350;
+      color: #3b3b4d;
+      line-height: 1.5;
+    }
+
+    /* how it works (row) */
+    .work-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* advantage extra style */
+    .advantages-grid .card p {
+      font-size: 1.25rem;
+    }
+
+    /* use cases (list-like) */
+    .cases-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 640px) {
+      section:not(.hero) { padding: 4rem 1.5rem; }
+      h2 { font-size: 2.5rem; }
+      p { font-size: 1.3rem; }
+      .work-grid, .cases-grid { grid-template-columns: 1fr; }
+    }
+
+    /* CTA */
+    .cta-box {
+      background: #1e1e2f;
+      color: white;
+      padding: 4rem 3.5rem;
+      border-radius: 2rem;
+      text-align: center;
+    }
+
+    .cta-box h2 {
+      color: white;
+      margin-bottom: 1rem;
+    }
+
+    .cta-box p {
+      color: #ddddee;
+      margin: 0 auto 2.5rem;
+    }
+
+    .cta-button {
+      background: white;
+      border: none;
+      color: #1e1e2f;
+      font-size: 1.6rem;
+      font-weight: 480;
+      padding: 1rem 3.5rem;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: 0.15s ease;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    }
+
+    .cta-button:hover {
+      background: #f0f0f8;
+      transform: scale(0.98);
+    }
+
+    /* reveal animation on scroll */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* feather icons custom */
+    i { display: inline-block; }
+  </style>
+</head>
+<body>
+  <!-- HERO (silent compute) -->
+  <section class="hero" id="top">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <h1>silent helix</h1>
+    </div>
+    <a href="#features" class="scroll-down" id="down-arrow">
+      <i data-lucide="arrow-down-circle"></i>
+    </a>
+  </section>
+
+  <!-- section 1 · features -->
+  <section id="features" class="reveal">
+    <h2>whisper‑thin · zero spin</h2>
+    <div class="features-grid">
+      <div class="card">
+        <i data-lucide="cpu"></i>
+        <h3>passive core</h3>
+        <p>No fans, no coils — entire chassis dissipates heat.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="battery-charging"></i>
+        <h3>72h endurance</h3>
+        <p>Ultra‑efficient silicon, days on a single charge.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="wifi"></i>
+        <h3>mesh fabric</h3>
+        <p>Seamless connectivity, integrated wideband antenna.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="fingerprint"></i>
+        <h3>vapor auth</h3>
+        <p>Biometric instant unlock, no moving parts.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 · how it works -->
+  <section class="reveal">
+    <h2>still · aware · instant</h2>
+    <div class="work-grid">
+      <div class="card">
+        <i data-lucide="layers"></i>
+        <h3>solid state</h3>
+        <p>All memory & storage fused on monolithic die.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="infinity"></i>
+        <h3>ambient cooling</h3>
+        <p>Graphene spreader + micro‑louvered aluminium.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="eye"></i>
+        <h3>zero latency</h3>
+        <p>Predictive scheduler, everything feels instant.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3 · advantages -->
+  <section class="reveal">
+    <h2>beyond silence</h2>
+    <div class="advantages-grid">
+      <div class="card">
+        <i data-lucide="wind"></i>
+        <h3>dustproof</h3>
+        <p>No airflow means zero particle ingress — IP6X certified.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="mic-off"></i>
+        <h3>inaudible</h3>
+        <p>0 dBA at any load. Your workspace becomes a void.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="hexagon"></i>
+        <h3>monocoque</h3>
+        <p>Unibody milled from recycled magnesium alloy.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="sun"></i>
+        <h3>light‑year</h3>
+        <p>1.24kg, 9.2mm thin — disappears in your bag.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4 · use cases -->
+  <section class="reveal">
+    <h2>pure focus</h2>
+    <div class="cases-grid">
+      <div class="card">
+        <i data-lucide="library"></i>
+        <h3>deep work</h3>
+        <p>Zero distraction for writers, coders, thinkers.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="podcast"></i>
+        <h3>recording</h3>
+        <p>No fan noise, perfect for silent studios.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="microscope"></i>
+        <h3>laboratory</h3>
+        <p>No vibration, no EMI — sensitive equipment safe.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="plane"></i>
+        <h3>travel</h3>
+        <p>All‑metal, lightweight, global voltage.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 · call to action -->
+  <section class="reveal">
+    <div class="cta-box">
+      <h2>hear nothing.</h2>
+      <p>First silent production run — order now for Q4 delivery.</p>
+      <button class="cta-button" onclick="alert('reservation preview · thank you')">reserve helix</button>
+    </div>
+  </section>
+
+  <!-- scripts -->
+  <script>
+    (function() {
+      // lucide icons
+      lucide.createIcons();
+
+      // ---------- canvas animation (hero background) ----------
+      const canvas = document.getElementById('hero-canvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 55;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: Math.random() * 2.2 + 0.8,
+            speedX: (Math.random() - 0.5) * 0.002,
+            speedY: (Math.random() - 0.5) * 0.0015,
+            opacity: Math.random() * 0.45 + 0.2
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#1e1e2f'; // very subtle dark dots
+        for (let p of particles) {
+          let x = p.x * width;
+          let y = p.y * height;
+          ctx.globalAlpha = p.opacity * 0.45; // extra gentle
+          ctx.beginPath();
+          ctx.arc(x, y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#2b2b40';
+          ctx.fill();
+          
+          // update position
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around edges
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // ---------- smooth scroll for down arrow ----------
+      document.getElementById('down-arrow').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // ---------- reveal on scroll ----------
+      const reveals = document.querySelectorAll('.reveal');
+      
+      function checkReveal() {
+        for (let el of reveals) {
+          const rect = el.getBoundingClientRect();
+          const windowHeight = window.innerHeight;
+          if (rect.top < windowHeight * 0.85 && rect.bottom > 0) {
+            el.classList.add('active');
+          } else {
+            // optional: remove class to re-hide? we keep visible after first reveal (prettier)
+            // but we want them to stay active once seen: only add, never remove.
+            // however if you want them to hide again when scrolling far up, we can toggle.
+            // for modern subtlety, we keep visible after activation. we just add class once.
+          }
+        }
+      }
+
+      // initially add active to those already visible
+      setTimeout(() => {
+        checkReveal();
+      }, 80);
+      
+      window.addEventListener('scroll', () => {
+        checkReveal();
+      });
+      window.addEventListener('resize', checkReveal);
+
+      // re-check after fonts / layout shift
+      setTimeout(checkReveal, 300);
+      setTimeout(checkReveal, 800);
+    })();
+  </script>
+  <!-- ensure all icons after dynamic canvas load? fine -->
+  <script>
+    (function secondPass() {
+      // ensure icons after any potential late paint (edge cases)
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

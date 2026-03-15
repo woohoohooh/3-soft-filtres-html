@@ -1,0 +1,454 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reverie • spatial computing</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f4f6fa;
+      font-family: system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.4;
+      color: #1a1e2b;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* sections base */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    /* hero */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: #f4f6fa;
+      overflow: hidden;
+    }
+
+    /* canvas background (subtle animated) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      width: 100%;
+      padding: 0 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 15vw, 8rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #1a1e2b;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    /* down arrow */
+    .scroll-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #2d3349;
+      transition: transform 0.2s ease;
+      padding: 0.75rem;
+      border-radius: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .scroll-arrow:hover {
+      transform: translateX(-50%) translateY(4px);
+      color: #000;
+    }
+
+    .scroll-arrow svg {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.5;
+    }
+
+    /* section headings */
+    h2 {
+      font-size: 2.8rem;
+      font-weight: 450;
+      letter-spacing: -0.01em;
+      margin-bottom: 3rem;
+      color: #11131e;
+    }
+
+    @media (max-width: 700px) {
+      h2 {
+        font-size: 2.2rem;
+        margin-bottom: 2.2rem;
+      }
+    }
+
+    /* feature grids */
+    .grid-3, .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem 2rem;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 800px) {
+      .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+    }
+
+    /* card style */
+    .feature-card, .step-card, .advantage-card, .case-card {
+      background: transparent;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      border: 1px solid #cacedb;
+      border-radius: 100px;
+      padding: 0.8rem;
+      color: #1a1e2b;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .feature-card:hover .icon-circle,
+    .step-card:hover .icon-circle,
+    .advantage-card:hover .icon-circle,
+    .case-card:hover .icon-circle {
+      border-color: #7f8aa3;
+      background: #ffffff;
+    }
+
+    .icon-circle svg {
+      width: 28px;
+      height: 28px;
+      stroke-width: 1.4;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    h3 {
+      font-size: 1.6rem;
+      font-weight: 470;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      font-size: 1.2rem;
+      color: #3e445b;
+      max-width: 500px;
+      font-weight: 350;
+      line-height: 1.5;
+    }
+
+    /* how it works steps */
+    .step-card {
+      border-bottom: 1px solid #d7dbe7;
+      padding-bottom: 2rem;
+    }
+
+    /* cta */
+    .cta-section {
+      text-align: center;
+      background: #f4f6fa;
+      padding: 6rem 2rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: #1a1e2b;
+      color: #f4f6fa;
+      font-size: 1.5rem;
+      font-weight: 400;
+      padding: 1rem 3.5rem;
+      border-radius: 60px;
+      text-decoration: none;
+      margin-top: 2.5rem;
+      border: 1px solid #1a1e2b;
+      transition: all 0.25s;
+      letter-spacing: -0.01em;
+    }
+
+    .cta-button:hover {
+      background: #2f354a;
+      border-color: #2f354a;
+      transform: scale(1.02);
+    }
+
+    /* reveal animation (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity 0.7s cubic-bezier(0.15, 0.75, 0.25, 1), transform 0.7s cubic-bezier(0.15, 0.75, 0.25, 1);
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* utility */
+    .mono-line {
+      white-space: nowrap;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.95rem;
+      color: #5e647b;
+      border-top: 1px solid #e0e4f0;
+      background: #f4f6fa;
+    }
+
+    /* down arrow mobile adjust */
+    @media (max-width: 600px) {
+      .hero h1 {
+        font-size: 15vw;  /* keep one line */
+      }
+      section {
+        padding: 3.5rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO / one line headline + canvas bg + arrow -->
+  <section class="hero" id="home">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>Reverie · live spatial</h1>
+    </div>
+    <a class="scroll-arrow" href="#features" aria-label="scroll down">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 4 4 4-4"/><path d="M12 8v8"/></svg>
+    </a>
+  </section>
+
+  <!-- FEATURES / BENEFITS -->
+  <section id="features" class="reveal">
+    <h2>Pure simplicity,<br>infinite space.</h2>
+    <div class="grid-3">
+      <div class="feature-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+        <h3>Ultra light wear</h3>
+        <p>Ergonomic frame, 98g — you forget it’s there. All-day comfort.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M12 2v20"/><path d="m4.93 4.93 14.14 14.14"/><path d="m19.07 4.93-14.14 14.14"/></svg></span>
+        <h3>Panorama 140°</h3>
+        <p>Natural field of view. No tunnel, no distortion — pure immersion.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M22 12h-4"/><path d="M6 12H2"/></svg></span>
+        <h3>Real‑time透视</h3>
+        <p>Zero latency video see‑through. Blends digital with physical.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" class="reveal">
+    <h2>Three gestures.<br>One flow.</h2>
+    <div class="grid-3">
+      <div class="step-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+        <h3>look & pinch</h3>
+        <p>Eyes select, fingers confirm — most intuitive interaction.</p>
+      </div>
+      <div class="step-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 15 4-4 4 4"/></svg></span>
+        <h3>drag & place</h3>
+        <p>Move virtual objects into your room. Stays where you put them.</p>
+      </div>
+      <div class="step-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
+        <h3>whisper</h3>
+        <p>Summon interface with a subtle vocal cue — works even in quiet.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADVANTAGES (minimal monochrome icons) -->
+  <section id="advantages" class="reveal">
+    <h2>Beyond the glass.</h2>
+    <div class="grid-2">
+      <div class="advantage-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span>
+        <h3>No subscriptions</h3>
+        <p>One purchase, full access. No cloud paywall, all compute on‑device.</p>
+      </div>
+      <div class="advantage-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20"/><path d="M17 2v20"/></svg></span>
+        <h3>Open framework</h3>
+        <p>Runs WebXR and native code. Build with three.js, Unity — your call.</p>
+      </div>
+      <div class="advantage-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 22v-4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M19.07 19.07l-2.83-2.83"/><path d="M2 12h4"/><path d="M22 12h-4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M19.07 4.93l-2.83 2.83"/></svg></span>
+        <h3>dual 4K micro‑OLED</h3>
+        <p>Per‑eye 4K, 4000 nits — HDR with true blacks, no screen door.</p>
+      </div>
+      <div class="advantage-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M12 22V12"/><path d="M3.3 7 12 12l8.7-5"/></svg></span>
+        <h3>privacy by design</h3>
+        <p>All sensor data stays local. No eye tracking leaves the device.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section id="usecases" class="reveal">
+    <h2>Where it lives.</h2>
+    <div class="grid-3">
+      <div class="case-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+        <h3>cinema anywhere</h3>
+        <p>Watch a 100ft screen on your ceiling. Theatre mode follows you.</p>
+      </div>
+      <div class="case-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5 22 9l-5.5 5.5"/><path d="M20 12h-9"/><path d="M4 4v16"/></svg></span>
+        <h3>multi‑display work</h3>
+        <p>Three virtual 5K monitors floating. Just connect your Mac/PC.</p>
+      </div>
+      <div class="case-card">
+        <span class="icon-circle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 22v-2"/></svg></span>
+        <h3>spatial design</h3>
+        <p>Mock‑up 3D prototypes in real scale. Collaborate with peers.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="cta-section reveal" id="cta">
+    <h2 style="margin-bottom:1rem;">Order now.<br>Shipping Q4.</h2>
+    <p style="max-width:600px; margin:0 auto 0.5rem; font-size:1.3rem;">Reverie One · $2,499</p>
+    <a href="#" class="cta-button">Reserve yours →</a>
+  </section>
+
+  <footer>
+    <span>© Reverie • silent spatial</span>
+  </footer>
+
+  <!-- VANILLA JS: canvas animation + intersection observer -->
+  <script>
+    (function() {
+      // ---------- canvas background (elegant floating particles) ----------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 45;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 2.2 + 0.8,
+            speedX: (Math.random() - 0.5) * 0.2,
+            speedY: (Math.random() - 0.5) * 0.15,
+            opacity: Math.random() * 0.25 + 0.1,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#8d99b5';
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.globalAlpha = p.opacity * 0.5;   // subtle, elegant
+          ctx.fillStyle = '#4c526c';
+          ctx.fill();
+
+          // move
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap gently
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      drawParticles();
+
+      // ---------- Intersection Observer (reveal) ----------
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // (optional) manual scroll for arrow is handled by href="#features"
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

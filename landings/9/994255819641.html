@@ -1,0 +1,545 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lumina · ambient compute</title>
+  <style>
+    /* RESET & BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #fafbfc;
+      color: #0b1a2b;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* HERO — full screen, ONE LINE headline */
+    .hero {
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-color: #fafbfc; /* fallback */
+    }
+
+    /* canvas background (animated, subtle) */
+    #bgCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none; /* allows click-through */
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 1200px;
+      padding: 0 2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 15vw, 9rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #0f202f;
+      white-space: nowrap;       /* keep on one line */
+      line-height: 1.1;
+      text-shadow: 0 0 6px rgba(0,0,0,0.02);
+    }
+
+    /* down arrow (pure css + icon) */
+    .arrow-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      cursor: pointer;
+      background: none;
+      border: none;
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      color: #2c3e50;
+      opacity: 0.7;
+    }
+
+    .arrow-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+      background: rgba(0,0,0,0.02);
+    }
+
+    .arrow-down svg {
+      width: 2.2rem;
+      height: 2.2rem;
+      stroke-width: 1.5;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* SECTIONS general */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 7rem 2rem;
+      border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .section:last-of-type {
+      border-bottom: none;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 5rem;
+    }
+
+    .section-header h2 {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #102433;
+    }
+
+    .section-header p {
+      font-size: 1.3rem;
+      color: #4a5f73;
+      max-width: 600px;
+      margin: 1rem auto 0;
+    }
+
+    /* grid layouts */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 4rem;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .card {
+      background: transparent;
+      padding: 1.5rem 0;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 3rem;
+      height: 3rem;
+      margin-bottom: 1.8rem;
+      color: #1f3a4b;
+    }
+
+    .icon-circle svg {
+      width: 2.8rem;
+      height: 2.8rem;
+      stroke-width: 1.5;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .card h3 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      color: #0b202f;
+    }
+
+    .card p {
+      font-size: 1.2rem;
+      color: #3b4f60;
+      line-height: 1.5;
+    }
+
+    /* CTA section */
+    .cta-card {
+      background-color: #0f1d29;
+      color: white;
+      border-radius: 3rem;
+      padding: 5rem 4rem;
+      text-align: center;
+    }
+
+    .cta-card h2 {
+      font-size: 3.2rem;
+      font-weight: 480;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: transparent;
+      border: 2px solid rgba(255,255,255,0.3);
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 450;
+      padding: 1rem 3.5rem;
+      border-radius: 60px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      margin-top: 1.5rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .cta-button:hover {
+      border-color: white;
+      background: rgba(255,255,255,0.04);
+      transform: scale(1.02);
+    }
+
+    /* reveal on scroll (js controlled) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsiveness */
+    @media (max-width: 850px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+      .hero h1 {
+        font-size: clamp(2.8rem, 12vw, 7rem);
+        white-space: nowrap;      /* stays one line even on mobile */
+      }
+      .section {
+        padding: 5rem 1.5rem;
+      }
+      .section-header h2 {
+        font-size: 2.2rem;
+      }
+      .cta-card {
+        padding: 3rem 1.5rem;
+      }
+    }
+
+    /* small screens: keep one line (even if tiny) */
+    @media (max-width: 500px) {
+      .hero h1 {
+        font-size: 14vw;          /* relative to width, remains one line */
+        letter-spacing: -0.02em;
+      }
+    }
+
+    /* feather icons replacement (just outline paths) */
+    .icon {
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* misc */
+    hr {
+      border: none;
+      border-top: 1px solid #e5e9f0;
+      max-width: 200px;
+      margin: 2rem auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO SECTION -->
+  <section class="hero" id="hero">
+    <canvas id="bgCanvas"></canvas>
+    <div class="hero-content">
+      <h1>Ambient Edge</h1>   <!-- one line, large headline -->
+    </div>
+    <a class="arrow-down" href="#features" aria-label="scroll down">
+      <svg viewBox="0 0 24 24" class="icon">
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+      </svg>
+    </a>
+  </section>
+
+  <!-- SECTION 1 : FEATURES / BENEFITS -->
+  <section class="section" id="features">
+    <div class="section-header reveal">
+      <h2>Silent power · visible clarity</h2>
+      <p>Invisible infrastructure, tangible performance.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card reveal">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" class="icon">
+            <rect x="2" y="2" width="20" height="20" rx="2.5" />
+            <line x1="8" y1="2" x2="8" y2="22" />
+            <line x1="16" y1="2" x2="16" y2="22" />
+            <line x1="2" y1="8" x2="22" y2="8" />
+            <line x1="2" y1="16" x2="22" y2="16" />
+          </svg>
+        </div>
+        <h3>Zero‑latency fabric</h3>
+        <p>Unified memory mesh across all nodes — data moves like thought.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" class="icon">
+            <circle cx="12" cy="8" r="5" />
+            <path d="M5 20v-2a7 7 0 0 1 14 0v2" />
+          </svg>
+        </div>
+        <h3>Private by design</h3>
+        <p>Local inference, federated context. Your insight never leaves.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 : HOW IT WORKS (3 steps) -->
+  <section class="section" id="how-it-works">
+    <div class="section-header reveal">
+      <h2>One breath · three moves</h2>
+      <p>From ambient to actionable in seconds.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card reveal">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" class="icon">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" />
+          </svg>
+        </div>
+        <h3>Sense</h3>
+        <p>Subtle environmental cues — no explicit input needed.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M2 12h20M12 2v20M4 4l16 16M4 20L20 4" />
+          </svg>
+        </div>
+        <h3>Weave</h3>
+        <p>Lightweight signals merge into coherent intent.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M22 12A10 10 0 0 0 12 2v10l5.2 5.2" />
+            <path d="M16 22v-4h-4" />
+          </svg>
+        </div>
+        <h3>Surface</h3>
+        <p>Minimal, precise response — right where you look.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 : ADVANTAGES (pure icons) -->
+  <section class="section" id="advantages">
+    <div class="section-header reveal">
+      <h2>Edge, redefined</h2>
+      <p>Not faster — instantaneous. Not smarter — ambient.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card reveal">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M20 12H4M12 4v16" />
+            <circle cx="12" cy="12" r="9" stroke="currentColor" fill="none"/>
+          </svg>
+        </div>
+        <h3>Radically thin</h3>
+        <p>No heavy engines, no fans — the device disappears.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+          </svg>
+        </div>
+        <h3>Always aware</h3>
+        <p>Sub‑milliwatt sensing wakes only when you need.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 : USE CASES -->
+  <section class="section" id="use-cases">
+    <div class="section-header reveal">
+      <h2>Inhabited by light</h2>
+      <p>Where ambient meets intent.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card reveal">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" class="icon">
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+          </svg>
+        </div>
+        <h3>Workspace</h3>
+        <p>Your desk responds before you sit. Light, focus, flow.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M4 8h16M4 16h16" />
+            <rect x="2" y="4" width="20" height="16" rx="2" />
+          </svg>
+        </div>
+        <h3>Living space</h3>
+        <p>Invisible comfort — air, sound, light tuned to you.</p>
+      </div>
+      <div class="card reveal">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" class="icon">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82L12 22z" />
+            <path d="M18 2l-2 4h4l-2 4" />
+          </svg>
+        </div>
+        <h3>Retreat</h3>
+        <p>Zero‑distraction zone. Calm technology, deep presence.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 : CALL TO ACTION -->
+  <section class="section" id="cta">
+    <div class="cta-card reveal">
+      <h2>Step into the ambient layer</h2>
+      <a href="#" class="cta-button">Reserve early access</a>
+      <p style="color: rgba(255,255,255,0.6); margin-top: 2rem; font-size: 1rem;">首批名额 · 2026</p>
+    </div>
+  </section>
+
+  <!-- SCRIPTS (canvas + reveal) -->
+  <script>
+    (function() {
+      // 1) subtle animated background (canvas)
+      const canvas = document.getElementById('bgCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 40;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: 1.5 + Math.random() * 3,
+            speedX: (Math.random() - 0.5) * 0.002,
+            speedY: (Math.random() - 0.5) * 0.0015,
+            opacity: 0.15 + Math.random() * 0.1,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#a1b9cf'; // very soft grey-blue, minimal
+        
+        for (let p of particles) {
+          // update positions (subtle drift)
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap gently
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          const x = p.x * width;
+          const y = p.y * height;
+          
+          ctx.globalAlpha = p.opacity * 0.8;
+          ctx.beginPath();
+          ctx.arc(x, y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // 2) smooth scroll for down arrow (already using css scroll-behavior)
+      // but we ensure anchor works
+      document.querySelector('.arrow-down').addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector('#features');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // 3) reveal on scroll (intersection observer)
+      const revealElements = document.querySelectorAll('.reveal');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional: keep revealed after first sight
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // (optional) pre-reveal first elements for instant view
+      // but they will reveal as they appear
+    })();
+  </script>
+  <!-- ensure manual class for elements already visible? observer handles it -->
+</body>
+</html>
+All done!
+```

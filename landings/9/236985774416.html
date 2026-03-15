@@ -1,0 +1,618 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>reflect · modern notes</title>
+  <!-- Feather icons (lightweight, outline, monochrome) -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f6f6f4;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #121212;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+    }
+
+    /* section base */
+    section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    /* hero specific */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      padding: 2rem;
+      scroll-snap-align: start;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 12vw, 7rem);
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      text-align: center;
+      white-space: nowrap;
+      color: #1b1b1b;
+      z-index: 5;
+      user-select: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* canvas background (subtle animated) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    .down-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      color: #2b2b2b;
+      background: rgba(255, 255, 255, 0);
+      border-radius: 100px;
+      padding: 0.25rem;
+      transition: opacity 0.2s ease;
+      cursor: pointer;
+      text-decoration: none;
+      opacity: 0.7;
+      border: 1.5px solid #2b2b2b;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .down-arrow:hover {
+      opacity: 1;
+      background: #1b1b1b0c;
+    }
+
+    /* section headers */
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      color: #1e1e1e;
+    }
+
+    .section-sub {
+      font-size: 1.2rem;
+      color: #3b3b3b;
+      max-width: 600px;
+      margin-top: -1rem;
+      margin-bottom: 3rem;
+    }
+
+    /* card / feature grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 4rem 2.5rem;
+      align-items: start;
+    }
+
+    .feature-item {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .feature-item.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      stroke-width: 1.8;
+      stroke: #1f1f1f;
+      color: #1f1f1f;      /* monochrome */
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-item h3 {
+      font-size: 1.9rem;
+      font-weight: 450;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .feature-item p {
+      color: #3a3a3a;
+      font-size: 1.2rem;
+      max-width: 380px;
+    }
+
+    /* how it works — simple steps */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+    }
+
+    .step-row {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+      flex-wrap: wrap;
+      opacity: 0;
+      transform: translateX(-10px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .step-row.revealed {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .step-marker {
+      font-size: 2.8rem;
+      font-weight: 300;
+      color: #a7a7a7;
+      min-width: 80px;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-content h4 {
+      font-size: 2.2rem;
+      font-weight: 470;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-content p {
+      font-size: 1.2rem;
+      color: #3b3b3b;
+      max-width: 600px;
+    }
+
+    /* advantages: simple icon list */
+    .advantages-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2.5rem 3rem;
+    }
+
+    .advantage {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .advantage.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .advantage-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      stroke: #1e1e1e;
+    }
+
+    .advantage-text h4 {
+      font-size: 1.8rem;
+      font-weight: 470;
+      margin-bottom: 0.25rem;
+    }
+
+    .advantage-text p {
+      font-size: 1.1rem;
+      color: #4a4a4a;
+    }
+
+    /* use cases — minimal cards */
+    .use-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2rem;
+    }
+
+    .case-card {
+      background: #ffffffd0;
+      backdrop-filter: blur(2px);
+      padding: 2.5rem 2rem;
+      border-radius: 36px;
+      box-shadow: 0 10px 30px -15px rgba(0,0,0,0.1);
+      transition: transform 0.25s ease, box-shadow 0.3s;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.5s ease, transform 0.5s ease, box-shadow 0.2s;
+    }
+
+    .case-card.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .case-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 22px 35px -18px rgba(0,0,0,0.15);
+    }
+
+    .case-icon {
+      width: 48px;
+      height: 48px;
+      stroke: #232323;
+      margin-bottom: 1.5rem;
+    }
+
+    .case-card h4 {
+      font-size: 2rem;
+      font-weight: 460;
+      margin-bottom: 0.75rem;
+    }
+
+    .case-card p {
+      color: #3d3d3d;
+      font-size: 1.1rem;
+    }
+
+    /* CTA */
+    .cta-section {
+      text-align: center;
+      max-width: 800px;
+      padding: 7rem 2rem;
+    }
+
+    .cta-title {
+      font-size: 4rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      opacity: 0;
+      transform: scale(0.98);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .cta-title.revealed {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .cta-button {
+      background: #1b1b1b;
+      color: #f0f0f0;
+      border: none;
+      padding: 1.2rem 3.5rem;
+      font-size: 1.6rem;
+      font-weight: 450;
+      border-radius: 120px;
+      cursor: default; /* static dummy, but interactive feel */
+      transition: background 0.15s, transform 0.2s;
+      box-shadow: 0 10px 20px -12px rgba(0,0,0,0.2);
+      margin-top: 1.5rem;
+      border: 1px solid #2d2d2d;
+      display: inline-block;
+    }
+
+    .cta-button:hover {
+      background: #2f2f2f;
+      transform: scale(1.02);
+    }
+
+    /* reveal on scroll observer */
+    .reveal-item {
+      opacity: 0;
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    /* footer — minimal */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #5a5a5a;
+      border-top: 1px solid #dbdbd9;
+      font-size: 0.95rem;
+    }
+
+    /* responsive */
+    @media (max-width: 640px) {
+      section {
+        padding: 3rem 1.5rem;
+      }
+      .hero h1 {
+        white-space: normal; /* fallback, but we use clamp, stays one line if possible */
+        font-size: clamp(2.8rem, 15vw, 5rem);
+      }
+      .section-title {
+        font-size: 2.2rem;
+      }
+      .advantages-list {
+        grid-template-columns: 1fr;
+        gap: 1.8rem;
+      }
+      .step-marker {
+        min-width: 50px;
+        font-size: 2.2rem;
+      }
+      .step-row {
+        gap: 1rem;
+      }
+      .cta-title {
+        font-size: 3rem;
+      }
+      .cta-button {
+        font-size: 1.3rem;
+        padding: 1rem 2.5rem;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .hero h1 {
+        font-size: 14vw; /* keeps one line by scaling down */
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO with canvas animation -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <h1>Think slower.</h1>
+    <a href="#features" class="down-arrow" id="downArrow">
+      <i data-feather="arrow-down" width="32" height="32"></i>
+    </a>
+  </section>
+
+  <!-- SECTION 1: Features / benefits -->
+  <section id="features">
+    <h2 class="section-title">unhurried clarity</h2>
+    <div class="grid-3">
+      <div class="feature-item reveal-item">
+        <i data-feather="wind" class="feature-icon"></i>
+        <h3>calm surface</h3>
+        <p>No notifications, no clutter. Just words and space.</p>
+      </div>
+      <div class="feature-item reveal-item">
+        <i data-feather="layers" class="feature-icon"></i>
+        <h3>structural depth</h3>
+        <p>Outline, connect, expand — your thoughts gain hierarchy.</p>
+      </div>
+      <div class="feature-item reveal-item">
+        <i data-feather="moon" class="feature-icon"></i>
+        <h3>dark & light</h3>
+        <p>Seamless theme that follows your system, minimal eye strain.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: How it works -->
+  <section>
+    <h2 class="section-title">one line · one thought</h2>
+    <div class="steps">
+      <div class="step-row reveal-item">
+        <span class="step-marker">01</span>
+        <div class="step-content">
+          <h4>write freely</h4>
+          <p>Start with a headline, then expand without rules.</p>
+        </div>
+      </div>
+      <div class="step-row reveal-item">
+        <span class="step-marker">02</span>
+        <div class="step-content">
+          <h4>structure silently</h4>
+          <p>Drag, indent, fold — no toolbar, just gestures.</p>
+        </div>
+      </div>
+      <div class="step-row reveal-item">
+        <span class="step-marker">03</span>
+        <div class="step-content">
+          <h4>review slowly</h4>
+          <p>Every word sits with whitespace. Read. Refine. Repeat.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: Advantages -->
+  <section>
+    <h2 class="section-title">less noise, more signal</h2>
+    <div class="advantages-list">
+      <div class="advantage reveal-item">
+        <i data-feather="cpu" class="advantage-icon"></i>
+        <div class="advantage-text">
+          <h4>offline first</h4>
+          <p>Your notes live only on your device.</p>
+        </div>
+      </div>
+      <div class="advantage reveal-item">
+        <i data-feather="archive" class="advantage-icon"></i>
+        <div class="advantage-text">
+          <h4>plain text soul</h4>
+          <p>Markdown‑inspired, future‑proof, simple.</p>
+        </div>
+      </div>
+      <div class="advantage reveal-item">
+        <i data-feather="minimize-2" class="advantage-icon"></i>
+        <div class="advantage-text">
+          <h4>zero config</h4>
+          <p>Open and think. No buttons to learn.</p>
+        </div>
+      </div>
+      <div class="advantage reveal-item">
+        <i data-feather="eye" class="advantage-icon"></i>
+        <div class="advantage-text">
+          <h4>focus mode</h4>
+          <p>One sentence at the center of your screen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Use cases -->
+  <section>
+    <h2 class="section-title">fits anywhere</h2>
+    <div class="use-cases-grid">
+      <div class="case-card reveal-item">
+        <i data-feather="edit-3" class="case-icon"></i>
+        <h4>morning pages</h4>
+        <p>Three pages of consciousness, no judgement.</p>
+      </div>
+      <div class="case-card reveal-item">
+        <i data-feather="trello" class="case-icon"></i>
+        <h4>outline essays</h4>
+        <p>From a core thesis to structured arguments.</p>
+      </div>
+      <div class="case-card reveal-item">
+        <i data-feather="coffee" class="case-icon"></i>
+        <h4>meeting notes</h4>
+        <p>Short, hierarchical, nothing lost.</p>
+      </div>
+      <div class="case-card reveal-item">
+        <i data-feather="anchor" class="case-icon"></i>
+        <h4>quiet ideas</h4>
+        <p>Where product specs start before slides.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: Call to action -->
+  <section class="cta-section">
+    <h2 class="cta-title reveal-item">join the slow lane</h2>
+    <div class="cta-button reveal-item">request invite →</div>
+    <p style="margin-top: 2rem; color:#555; font-size:1rem;">(early access · no spam)</p>
+  </section>
+
+  <footer>
+    <span>© reflect — thoughtful writing</span>
+  </footer>
+
+  <script>
+    (function() {
+      // Feather icons replacement
+      feather.replace({ strokeWidth: 1.8, width: '1em', height: '1em' });
+      // fix icon sizing inside containers (force inherit)
+      document.querySelectorAll('.feature-icon, .advantage-icon, .case-icon').forEach(icon => {
+        icon.setAttribute('width', '1em');
+        icon.setAttribute('height', '1em');
+      });
+
+      // ---------- canvas animation (subtle wave) ----------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let time = 0;
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      function drawWave() {
+        ctx.clearRect(0, 0, width, height);
+        if (width === 0) return;
+
+        const amplitude = 18;
+        const wavelength = 0.015;
+        const speed = 0.02;
+
+        ctx.beginPath();
+        ctx.moveTo(0, height / 2);
+
+        for (let x = 0; x < width; x += 8) {
+          const y = height / 2 
+            + Math.sin(x * wavelength + time) * amplitude 
+            + Math.sin(x * 0.008 + time * 1.3) * 6;
+          ctx.lineTo(x, y);
+        }
+
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = '#3a3a3a';
+        ctx.stroke();
+
+        // second faint line
+        ctx.beginPath();
+        ctx.moveTo(0, height / 2.2);
+        for (let x = 0; x < width; x += 8) {
+          const y = height / 2.2 
+            + Math.cos(x * 0.012 + time * 1.1) * 12 
+            + Math.sin(x * 0.02 + time * 0.7) * 5;
+          ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = '#5f5f5f';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        time += speed;
+        requestAnimationFrame(drawWave);
+      }
+      drawWave();
+
+      // ---------- smooth scroll to features ----------
+      document.getElementById('downArrow').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // ---------- reveal on scroll (intersection observer) ----------
+      const revealItems = document.querySelectorAll('.reveal-item');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+      revealItems.forEach(item => observer.observe(item));
+
+      // also trigger manual check for any items already visible
+      window.dispatchEvent(new Event('scroll'));
+    })();
+  </script>
+  <!-- extra style for icons size coherence -->
+  <style>
+    .feature-icon, .advantage-icon, .case-icon {
+      width: 1.2em;
+      height: 1.2em;
+      stroke-width: 1.8;
+    }
+    .feature-item h3, .step-content h4 { font-weight: 480; }
+    .down-arrow i { width: 32px; height: 32px; }
+  </style>
+</body>
+</html>
+All done!
+```

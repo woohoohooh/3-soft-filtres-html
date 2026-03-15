@@ -1,0 +1,513 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus • edge compute</title>
+  <!-- Feather icons (lightweight, MIT) -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <style>
+    /* RESET & BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f7f9fc;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #111827;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* ----- HERO SECTION (full screen) ----- */
+    .hero {
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f0f3f8;
+      overflow: hidden;
+    }
+
+    /* canvas background (animated) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none; /* so clicks pass through */
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 1200px;
+      margin: 0 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 15vw, 7rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      white-space: nowrap;          /* force single line */
+      color: #0c0f15;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+
+    /* down arrow */
+    .scroll-arrow {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #2d3a4b;
+      opacity: 0.7;
+      transition: opacity 0.25s ease, transform 0.2s ease;
+      padding: 0.5rem 1rem;
+    }
+    .scroll-arrow:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+    .scroll-arrow i {
+      width: 36px;
+      height: 36px;
+      stroke-width: 1.5;
+    }
+
+    /* ----- GENERAL SECTIONS ----- */
+    .section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 3.5rem;
+      color: #111;
+    }
+
+    /* card / grid layouts */
+    .grid-3, .grid-2 {
+      display: grid;
+      gap: 3rem;
+    }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+    .feature-card, .advantage-card, .step-card, .use-card {
+      background: transparent;
+      padding: 1rem 0;
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      background: transparent;
+      border-radius: 50%;
+      border: 1.5px solid #111827;
+      margin-bottom: 1.8rem;
+      transition: all 0.2s ease;
+    }
+    .feature-card:hover .icon-circle,
+    .advantage-card:hover .icon-circle,
+    .step-card:hover .icon-circle,
+    .use-card:hover .icon-circle {
+      background: #111827;
+      color: white;
+    }
+    .icon-circle i {
+      width: 28px;
+      height: 28px;
+      stroke-width: 1.8;
+      transition: stroke 0.2s;
+    }
+    .feature-card:hover .icon-circle i,
+    .advantage-card:hover .icon-circle i,
+    .step-card:hover .icon-circle i,
+    .use-card:hover .icon-circle i {
+      stroke: white;
+    }
+
+    h2 {
+      font-size: 2.2rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.8rem;
+      font-weight: 450;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      font-size: 1.25rem;
+      color: #374151;
+      max-width: 60ch;
+    }
+
+    .large-text {
+      font-size: 1.35rem;
+      color: #4b5563;
+    }
+
+    /* how it works (numbered) */
+    .step-card {
+      counter-increment: step;
+    }
+    .steps-container {
+      counter-reset: step;
+    }
+    .step-marker {
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: #6b7280;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.02em;
+    }
+
+    /* CTA */
+    .cta-block {
+      background: #111;
+      color: white;
+      border-radius: 40px;
+      padding: 4rem 3rem;
+      text-align: center;
+    }
+    .cta-block p {
+      color: #d1d5db;
+      font-size: 1.5rem;
+      margin: 1.5rem 0 2rem;
+    }
+    .cta-button {
+      background: white;
+      color: #111;
+      border: none;
+      font-size: 1.4rem;
+      font-weight: 500;
+      padding: 1rem 3.5rem;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: 0.15s ease;
+      box-shadow: 0 4px 14px rgba(255,255,255,0.1);
+    }
+    .cta-button:hover {
+      background: #f0f0f0;
+      transform: scale(1.02);
+    }
+
+    /* reveal animation (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ----- responsive ----- */
+    @media (max-width: 900px) {
+      .grid-3 { grid-template-columns: repeat(2, 1fr); }
+      .hero h1 { font-size: clamp(2.5rem, 10vw, 5.5rem); }
+    }
+    @media (max-width: 600px) {
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 14vw; }   /* stays one line on mobile */
+      .section { padding: 4rem 1.5rem; }
+      .section-title { font-size: 2.2rem; }
+    }
+
+    /* feather icons config */
+    i {
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* hide canvas if user prefers reduced motion (optional) */
+    @media (prefers-reduced-motion) {
+      #heroCanvas {
+        display: none;
+      }
+    }
+
+    /* separator line (subtle) */
+    .separator {
+      width: 100%;
+      max-width: 200px;
+      height: 1px;
+      background: #d0d7e2;
+      margin: 0 auto 4rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #6b7280;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO with canvas animation & single‑line headline -->
+  <section class="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>edge intelligence</h1>
+    </div>
+    <!-- down arrow -->
+    <button class="scroll-arrow" id="scrollDownBtn" aria-label="scroll down">
+      <i data-feather="arrow-down"></i>
+    </button>
+  </section>
+
+  <!-- SECTION 1 – Features / Benefits -->
+  <section class="section reveal">
+    <h2 class="section-title">built for developers</h2>
+    <div class="grid-3">
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="zap"></i></div>
+        <h3>sub‑millisecond</h3>
+        <p class="large-text">Global edge network, cold starts eliminated — responses in &#60;1ms p99.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="lock"></i></div>
+        <h3>zero‑trust</h3>
+        <p class="large-text">Every request verified, encrypted by default, and isolated per tenant.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon-circle"><i data-feather="code"></i></div>
+        <h3>native workers</h3>
+        <p class="large-text">Write in TypeScript, Rust or Go. Deploy with one CLI command.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 – How it works (3 steps) -->
+  <section class="section reveal">
+    <h2 class="section-title">deploy in three moves</h2>
+    <div class="grid-3 steps-container">
+      <div class="step-card">
+        <div class="step-marker">STEP 01</div>
+        <div class="icon-circle"><i data-feather="terminal"></i></div>
+        <h3>link & build</h3>
+        <p class="large-text">Connect your repo, automatically build with our edge-optimized chain.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-marker">STEP 02</div>
+        <div class="icon-circle"><i data-feather="globe"></i></div>
+        <h3>preview globally</h3>
+        <p class="large-text">Instant staging on 300+ edge locations — test real latency.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-marker">STEP 03</div>
+        <div class="icon-circle"><i data-feather="shield"></i></div>
+        <h3>promote to prod</h3>
+        <p class="large-text">Atomic rollout with automatic rollback & live monitoring.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 – Advantages (comparison style) -->
+  <section class="section reveal">
+    <h2 class="section-title">traditional ≠ edge</h2>
+    <div class="grid-2">
+      <div class="advantage-card">
+        <div class="icon-circle"><i data-feather="cpu"></i></div>
+        <h3>no regions</h3>
+        <p class="large-text">Forget region picking — every request runs on the nearest available node.</p>
+      </div>
+      <div class="advantage-card">
+        <div class="icon-circle"><i data-feather="database"></i></div>
+        <h3>distributed kv</h3>
+        <p class="large-text">Global key‑value storage with strong consistency and zero latency tradeoffs.</p>
+      </div>
+      <div class="advantage-card">
+        <div class="icon-circle"><i data-feather="bar-chart-2"></i></div>
+        <h3>usage‑based</h3>
+        <p class="large-text">No idle costs. Pay only for requests and compute time — literally.</p>
+      </div>
+      <div class="advantage-card">
+        <div class="icon-circle"><i data-feather="layers"></i></div>
+        <h3>cache primitives</h3>
+        <p class="large-text">Smart cache, configurable at the edge — stale‑while‑revalidate included.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 – Use cases -->
+  <section class="section reveal">
+    <h2 class="section-title">purpose‑built for</h2>
+    <div class="grid-3">
+      <div class="use-card">
+        <div class="icon-circle"><i data-feather="radio"></i></div>
+        <h3>real‑time api</h3>
+        <p class="large-text">GraphQL, REST or WebSockets — global aggregation at the edge.</p>
+      </div>
+      <div class="use-card">
+        <div class="icon-circle"><i data-feather="image"></i></div>
+        <h3>image optimization</h3>
+        <p class="large-text">Resize, convert, and serve from the closest edge instantly.</p>
+      </div>
+      <div class="use-card">
+        <div class="icon-circle"><i data-feather="users"></i></div>
+        <h3>personalization</h3>
+        <p class="large-text">Run geo‑aware A/B tests without performance penalty.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 – Call to action (dark) -->
+  <section class="section reveal" style="padding-bottom: 5rem;">
+    <div class="cta-block">
+      <h2 style="color: white; font-size: 3rem;">start shipping</h2>
+      <p>from prototype to planet‑scale — in minutes</p>
+      <button class="cta-button">claim edge preview →</button>
+    </div>
+  </section>
+
+  <!-- minimal footer -->
+  <footer>
+    <span>© 2026 edge intelligence — silent infrastructure</span>
+  </footer>
+
+  <script>
+    (function() {
+      // ------------------------------------
+      // 1) HERO canvas animation (elegant moving particles)
+      // ------------------------------------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 70;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 2.2 + 0.6,
+            speedX: (Math.random() - 0.5) * 0.35,
+            speedY: (Math.random() - 0.5) * 0.2,
+            opacity: Math.random() * 0.25 + 0.1,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#a0b3cc';  // muted grey-blue, minimal
+        for (let p of particles) {
+          ctx.globalAlpha = p.opacity * 0.9;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // subtle drift
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around softly
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      drawParticles();
+
+      // ------------------------------------
+      // 2) smooth scroll down arrow
+      // ------------------------------------
+      document.getElementById('scrollDownBtn').addEventListener('click', () => {
+        const firstSection = document.querySelector('.section');
+        if (firstSection) {
+          firstSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // ------------------------------------
+      // 3) feather icons replacement
+      // ------------------------------------
+      if (window.feather) feather.replace({ width: '1.3em', height: '1.3em' });
+
+      // ------------------------------------
+      // 4) reveal on scroll (intersection observer)
+      // ------------------------------------
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+            // optional: keep visible after first reveal
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ------------------------------------
+      // 5) little extra: hover on cta button triggers smoothness
+      // ------------------------------------
+      // just for fun: no extra code needed, but we ensure icons refresh if any dynamic
+      // (feather already replaced)
+    })();
+  </script>
+
+  <!-- feather icons might need a second call if any icon added later, but all static -->
+  <script>
+    (function secondaryFeather() {
+      if (window.feather) feather.replace();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,593 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helix · smart contract vaults</title>
+  <style>
+    /* reset & base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #fafaf8;
+      color: #1e1e1e;
+      font-family: system-ui, -apple-system, 'Inter', 'Helvetica Neue', sans-serif;
+      line-height: 1.3;
+      overflow-x: hidden;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* sections */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    /* hero */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 0 1.5rem;
+      margin: 0 auto;
+      max-width: 1400px;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 15vw, 7rem);
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      color: #1c1c1c;
+      text-align: center;
+      line-height: 1.1;
+      white-space: nowrap;
+      z-index: 5;
+      position: relative;
+      will-change: transform;
+    }
+
+    /* canvas background */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #2b2b2b;
+      transition: opacity 0.2s ease;
+      padding: 0.5rem;
+    }
+
+    .scroll-down:hover {
+      opacity: 0.55;
+    }
+
+    .arrow-icon {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.8;
+    }
+
+    /* section headers */
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 480;
+      letter-spacing: -0.01em;
+      margin-bottom: 4rem;
+      color: #161616;
+    }
+
+    /* feature grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 3.5rem 2.5rem;
+      align-items: start;
+    }
+
+    .feature-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      opacity: 0;
+      transform: translateY(25px);
+      transition: opacity 0.6s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    .feature-card.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      stroke: #1e1e1e;
+      stroke-width: 1.8;
+      fill: none;
+      margin-bottom: 0.4rem;
+      transition: transform 0.15s ease;
+    }
+
+    .feature-card:hover .feature-icon {
+      transform: scale(1.04);
+    }
+
+    .feature-title {
+      font-size: 1.9rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #1a1a1a;
+    }
+
+    .feature-desc {
+      font-size: 1.3rem;
+      line-height: 1.5;
+      color: #3b3b3b;
+      font-weight: 350;
+    }
+
+    /* how it works — simple row */
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3rem 2rem;
+      justify-content: space-between;
+    }
+
+    .step-item {
+      flex: 1 1 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      opacity: 0;
+      transform: translateY(25px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .step-item.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .step-marker {
+      font-size: 1.4rem;
+      font-weight: 360;
+      color: #7c7c7c;
+      margin-bottom: 0.3rem;
+    }
+
+    .step-item .feature-icon {
+      margin-bottom: 0.1rem;
+    }
+
+    .step-item .feature-title {
+      font-size: 1.7rem;
+    }
+
+    /* advantages (icon left, text) */
+    .advantage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+    }
+
+    .advantage-row {
+      display: flex;
+      gap: 2.5rem;
+      align-items: center;
+      opacity: 0;
+      transform: translateX(-12px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .advantage-row.revealed {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .advantage-icon {
+      width: 52px;
+      height: 52px;
+      stroke: #1e1e1e;
+      stroke-width: 1.5;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    .advantage-text h3 {
+      font-size: 2rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.4rem;
+    }
+
+    .advantage-text p {
+      font-size: 1.3rem;
+      color: #4a4a4a;
+      max-width: 700px;
+    }
+
+    /* use cases — cards with icons */
+    .use-case-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2.5rem;
+    }
+
+    .use-case {
+      background: #ffffff;
+      padding: 2.2rem 2rem;
+      border-radius: 2rem;
+      box-shadow: 0 10px 30px -15px rgba(0,0,0,0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .use-case.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .use-case:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 25px 35px -18px rgba(0,0,0,0.1);
+    }
+
+    .use-case .feature-icon {
+      width: 44px;
+      height: 44px;
+      stroke-width: 1.6;
+      margin-bottom: 1.4rem;
+    }
+
+    .use-case h3 {
+      font-size: 1.8rem;
+      font-weight: 530;
+      margin-bottom: 0.8rem;
+    }
+
+    .use-case p {
+      font-size: 1.2rem;
+      color: #4a4a4a;
+    }
+
+    /* CTA */
+    .cta-section {
+      text-align: center;
+      background: #ffffff;
+      border-radius: 3rem;
+      margin-top: 3rem;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+
+    .cta-content {
+      max-width: 700px;
+      margin: 0 auto;
+      opacity: 0;
+      transform: scale(0.96);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .cta-content.revealed {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .cta-content h2 {
+      font-size: 3.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-content p {
+      font-size: 1.5rem;
+      color: #3d3d3d;
+      margin-bottom: 2.8rem;
+    }
+
+    .cta-button {
+      background: #1e1e1e;
+      color: #ffffff;
+      border: none;
+      padding: 1.2rem 3rem;
+      font-size: 1.5rem;
+      border-radius: 3rem;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+      font-weight: 450;
+      display: inline-block;
+    }
+
+    .cta-button:hover {
+      background: #343434;
+      transform: scale(1.02);
+    }
+
+    /* footer minimal */
+    .footer {
+      text-align: center;
+      padding: 2.5rem 1.5rem;
+      color: #7e7e7e;
+      font-size: 1.1rem;
+      border-top: 1px solid #eaeae8;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* responsive */
+    @media (max-width: 680px) {
+      section { padding: 3rem 1.5rem; }
+      .hero h1 { white-space: normal; } /* fallback only if extremely small, but we keep clamp */
+      .section-title { font-size: 2.2rem; margin-bottom: 2.5rem; }
+      .feature-title { font-size: 1.6rem; }
+      .feature-desc { font-size: 1.1rem; }
+      .advantage-text h3 { font-size: 1.7rem; }
+      .cta-content h2 { font-size: 2.8rem; }
+    }
+
+    @media (max-width: 440px) {
+      .hero h1 { font-size: 3.8rem; white-space: normal; } /* only break on very narrow */
+    }
+
+    /* reveal intersection styling */
+    .reveal-section {
+      opacity: 0;
+      transition: none; /* managed by js class */
+    }
+  </style>
+
+  <!-- feather-like icon set (simple outline only) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+  <!-- HERO (canvas animation) -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <h1>Vaults that evolve.</h1>
+    <button class="scroll-down" id="scrollDownBtn" aria-label="scroll down">
+      <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline>
+      </svg>
+    </button>
+  </section>
+
+  <!-- SECTION 1 – Features / Benefits (helix smart vaults) -->
+  <section class="features reveal-section" id="features">
+    <h2 class="section-title">Built for precision.</h2>
+    <div class="grid-3">
+      <div class="feature-card">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+        <div class="feature-title">Autonomous</div>
+        <div class="feature-desc">No‑trust rebalancing & self‑healing liquidity.</div>
+      </div>
+      <div class="feature-card">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="8" y1="2" x2="8" y2="22"/><line x1="16" y1="2" x2="16" y2="22"/></svg>
+        <div class="feature-title">Modular</div>
+        <div class="feature-desc">Plug‑in strategies – swap, lend, earn.</div>
+      </div>
+      <div class="feature-card">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div class="feature-title">Collective</div>
+        <div class="feature-desc">Shared vaults, individual ownership.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 – How it works (3 steps) -->
+  <section class="reveal-section" id="howitworks">
+    <h2 class="section-title">One integration.</h2>
+    <div class="steps">
+      <div class="step-item">
+        <span class="step-marker">⸻ 01</span>
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <div class="feature-title">Connect</div>
+        <div class="feature-desc">Link wallet & select vault.</div>
+      </div>
+      <div class="step-item">
+        <span class="step-marker">⸻ 02</span>
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <div class="feature-title">Allocate</div>
+        <div class="feature-desc">Set amount, trigger smart deposit.</div>
+      </div>
+      <div class="step-item">
+        <span class="step-marker">⸻ 03</span>
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="feature-title">Evolve</div>
+        <div class="feature-desc">Vault adapts to markets 24/7.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 – Advantages (differential) -->
+  <section class="reveal-section" id="advantages">
+    <h2 class="section-title">Radically simple.</h2>
+    <div class="advantage-list">
+      <div class="advantage-row">
+        <svg class="advantage-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg>
+        <div class="advantage-text"><h3>No management fee</h3><p>Only performance‑based — we grow together.</p></div>
+      </div>
+      <div class="advantage-row">
+        <svg class="advantage-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <div class="advantage-text"><h3>Audited & insured</h3><p>Top tier security with on‑chain coverage.</p></div>
+      </div>
+      <div class="advantage-row">
+        <svg class="advantage-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="8" y1="2" x2="8" y2="22"/><line x1="16" y1="2" x2="16" y2="22"/><line x1="2" y1="8" x2="22" y2="8"/><line x1="2" y1="16" x2="22" y2="16"/></svg>
+        <div class="advantage-text"><h3>Modular by design</h3><p>Combine any DeFi primitive, instantly.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 – Use cases -->
+  <section class="reveal-section" id="usecases">
+    <h2 class="section-title">Works everywhere.</h2>
+    <div class="use-case-grid">
+      <div class="use-case">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 20h.01"/><path d="M7 20h.01"/><path d="M12 20h.01"/><path d="M17 20h.01"/><rect x="4" y="4" width="16" height="4"/><rect x="4" y="12" width="6" height="4"/><rect x="14" y="12" width="6" height="4"/></svg>
+        <h3>DAO treasuries</h3>
+        <p>Automated yield without active management.</p>
+      </div>
+      <div class="use-case">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+        <h3>Stablecoin reserves</h3>
+        <p>Low‑volatility vaults for treasuries.</p>
+      </div>
+      <div class="use-case">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M12 22V12"/><polyline points="9 10 12 13 15 10"/></svg>
+        <h3>L2 cross‑chain</h3>
+        <p>Unified vaults across all major rollups.</p>
+      </div>
+      <div class="use-case">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="5"/><path d="M5.5 20.5 12 17l6.5 3.5L18 13 12 8 6 13l-.5 7.5z"/></svg>
+        <h3>Staking flows</h3>
+        <p>Maximise restaking rewards automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 – Call to action -->
+  <section class="cta-section reveal-section" id="cta">
+    <div class="cta-content">
+      <h2>Evolve your capital.</h2>
+      <p>First vault launch · Q2 2025 · whitelist now open</p>
+      <button class="cta-button">Request early access →</button>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span>© Helix · smart contract vaults · all icons ⚡</span>
+  </footer>
+
+  <!-- JavaScript -->
+  <script>
+    (function() {
+      // ---------- canvas background (hero) ----------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        particles = [];
+        const particleCount = 50;
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            vx: (Math.random() - 0.5) * 0.002,
+            vy: (Math.random() - 0.5) * 0.0015,
+            baseRadius: Math.random() * 1.5 + 0.6,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#c0c0c0';
+        
+        for (let p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+          
+          const xPos = p.x * width;
+          const yPos = p.y * height;
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, p.baseRadius, 0, Math.PI * 2);
+          ctx.fillStyle = '#a1a1a1';
+          ctx.globalAlpha = 0.27;
+          ctx.fill();
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // subtle mousemove influence (optional)
+      document.addEventListener('mousemove', (e) => {
+        const mouseX = e.clientX / width;
+        const mouseY = e.clientY / height;
+        particles.forEach(p => {
+          p.vx += (mouseX - p.x) * 0.00003;
+          p.vy += (mouseY - p.y) * 0.00002;
+          // dampen
+          p.vx *= 0.999;
+          p.vy *= 0.999;
+        });
+      });
+
+      // ---------- smooth scroll down ----------
+      document.getElementById('scrollDownBtn').addEventListener('click', () => {
+        const features = document.getElementById('features');
+        if (features) features.scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // ---------- reveal on scroll (intersection observer) ----------
+      const revealElements = document.querySelectorAll('.feature-card, .step-item, .advantage-row, .use-case, .cta-content');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional unobserve after reveal
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // also observe whole sections children (step-item etc) — already captured
+      // initial check for any visible
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

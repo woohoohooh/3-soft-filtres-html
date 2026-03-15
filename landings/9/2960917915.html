@@ -1,0 +1,485 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>reflect · mindful notes</title>
+  <!-- Feather icons – ultra lightweight, outline only -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* RESET & BASE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* ----- canvas background (hero only) ----- */
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none; /* lets text/clicks through */
+    }
+
+    /* ----- sections common ----- */
+    section {
+      position: relative;
+      width: 100%;
+      padding: 6rem 1.5rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ----- hero ----- */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      background: transparent;  /* canvas shows behind */
+      overflow: hidden;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 900px;
+      padding: 0 1rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 15vw, 7rem);
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #0b1e33;
+      text-shadow: 0 2px 5px rgba(255,255,255,0.3);
+      white-space: nowrap;         /* force one line */
+    }
+
+    /* down arrow */
+    .scroll-arrow {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #1e293b;
+      opacity: 0.7;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      padding: 0.5rem;
+    }
+
+    .scroll-arrow:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    /* ----- section headers / layout ----- */
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 4rem;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .section-title {
+        font-size: 2.2rem;
+        margin-bottom: 2.5rem;
+      }
+    }
+
+    /* feature grid / cards */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 3rem 2rem;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    @media (max-width: 700px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    /* card style */
+    .card {
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(2px);
+      padding: 2rem 1.8rem;
+      border-radius: 36px;
+      box-shadow: 0 10px 25px -10px rgba(0,0,0,0.05);
+      transition: transform 0.25s ease, box-shadow 0.3s ease;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .card:hover {
+      transform: scale(1.02) translateY(-6px);
+      box-shadow: 0 25px 35px -14px rgba(0,0,0,0.1);
+      border-color: rgba(100, 116, 139, 0.25);
+    }
+
+    /* icon styling (monochrome outline) */
+    .icon-large {
+      width: 48px;
+      height: 48px;
+      stroke-width: 1.5;
+      color: #1e293b;
+      margin-bottom: 1.5rem;
+    }
+
+    .card h3 {
+      font-size: 1.8rem;
+      font-weight: 550;
+      margin-bottom: 0.75rem;
+    }
+
+    .card p {
+      font-size: 1.2rem;
+      color: #334155;
+    }
+
+    /* step / how it works */
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.8rem;
+    }
+
+    .step-marker {
+      font-size: 1.3rem;
+      font-weight: 400;
+      background: #e9eef3;
+      padding: 0.2rem 1rem;
+      border-radius: 40px;
+      letter-spacing: 0.3px;
+      color: #1e2b3c;
+    }
+
+    /* reveal animation (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.15,0.85,0.35,1), transform 0.7s cubic-bezier(0.15,0.85,0.35,1);
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* CTA section */
+    .cta-box {
+      background: #ecf1f6;
+      border-radius: 48px;
+      padding: 4rem 3rem;
+      text-align: center;
+    }
+
+    .cta-title {
+      font-size: 3rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: #0f172a;
+      color: white;
+      padding: 1.2rem 3rem;
+      border-radius: 60px;
+      font-size: 1.4rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.2s;
+      box-shadow: 0 10px 20px -8px rgba(0,20,40,0.3);
+      border: none;
+      cursor: pointer;
+    }
+
+    .cta-button:hover {
+      background: #1e2f45;
+      transform: scale(1.02);
+    }
+
+    /* footer / fine print */
+    .footer-note {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.95rem;
+      color: #62748c;
+      border-top: 1px solid #dce3eb;
+    }
+
+    /* feather icons default */
+    svg.feather {
+      stroke: currentColor;
+      fill: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- hero section with canvas background -->
+  <section class="hero" id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <h1 class="hero-headline">slow thoughtful notes</h1>
+    </div>
+    <!-- down arrow (smooth scroll) -->
+    <a class="scroll-arrow" href="#features" aria-label="scroll down">
+      <i data-feather="arrow-down" width="48" height="48"></i>
+    </a>
+  </section>
+
+  <!-- section 1 – features / benefits -->
+  <section id="features" class="container reveal">
+    <h2 class="section-title">less noise, more signal</h2>
+    <div class="grid-2">
+      <div class="card">
+        <i data-feather="eye" class="icon-large"></i>
+        <h3>glanceable</h3>
+        <p>Daily summaries, no endless lists. See what matters in one line.</p>
+      </div>
+      <div class="card">
+        <i data-feather="archive" class="icon-large"></i>
+        <h3>timeless archive</h3>
+        <p>Everything stored in plain text, yours forever. Search instantly.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 – how it works (3 steps) -->
+  <section class="container reveal">
+    <h2 class="section-title">how it flows</h2>
+    <div class="grid-3">
+      <div class="card step-item">
+        <span class="step-marker">⸻ 01</span>
+        <i data-feather="edit-3" class="icon-large"></i>
+        <h3>jot</h3>
+        <p>Open reflect, write a line or a page. No folders, no friction.</p>
+      </div>
+      <div class="card step-item">
+        <span class="step-marker">⸻ 02</span>
+        <i data-feather="hash" class="icon-large"></i>
+        <h3>weave</h3>
+        <p>Add gentle tags — #idea #later — they stay in the background.</p>
+      </div>
+      <div class="card step-item">
+        <span class="step-marker">⸻ 03</span>
+        <i data-feather=" compass" class="icon-large"></i>
+        <h3>rediscover</h3>
+        <p>Random review, or search. See patterns you forgot you had.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3 – advantages / why different -->
+  <section class="container reveal">
+    <h2 class="section-title">built different</h2>
+    <div class="grid-2">
+      <div class="card">
+        <i data-feather="wind" class="icon-large"></i>
+        <h3>zero cognitive load</h3>
+        <p>No folders, no tags required. Your thoughts stay central.</p>
+      </div>
+      <div class="card">
+        <i data-feather="shield" class="icon-large"></i>
+        <h3>local first</h3>
+        <p>Everything saved on your device. Optional encrypted sync.</p>
+      </div>
+      <div class="card">
+        <i data-feather="type" class="icon-large"></i>
+        <h3>typography first</h3>
+        <p>Big, readable text. Your words deserve the space.</p>
+      </div>
+      <div class="card">
+        <i data-feather="moon" class="icon-large"></i>
+        <h3>day & night</h3>
+        <p>Auto dark mode that’s easy on eyes, always minimal.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4 – use cases -->
+  <section class="container reveal">
+    <h2 class="section-title">fits your life</h2>
+    <div class="grid-3">
+      <div class="card">
+        <i data-feather="coffee" class="icon-large"></i>
+        <h3>morning pages</h3>
+        <p>Unload your brain before the day starts. Private.</p>
+      </div>
+      <div class="card">
+        <i data-feather="briefcase" class="icon-large"></i>
+        <h3>meeting notes</h3>
+        <p>Clean summaries, not messy transcripts.</p>
+      </div>
+      <div class="card">
+        <i data-feather="camera" class="icon-large"></i>
+        <h3>sketch & text</h3>
+        <p>Quick image drafts + words, all in one place.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 – call to action -->
+  <section class="container reveal">
+    <div class="cta-box">
+      <h2 class="cta-title">clear mind, clear notes</h2>
+      <a href="#" class="cta-button">get started — it's free</a>
+      <p style="margin-top: 2rem; color: #2f4058;">no account needed · works offline</p>
+    </div>
+  </section>
+
+  <!-- tiny footer -->
+  <div class="footer-note">
+    reflect — mindful notes · 2025
+  </div>
+
+  <!-- feather icons replacement -->
+  <script>
+    feather.replace({ width: 48, height: 48, strokeWidth: 1.5 });
+  </script>
+
+  <!-- VANILLA JS: animated canvas + intersection observer -->
+  <script>
+    (function() {
+      // ----- canvas animation (hero background) -----
+      const canvas = document.getElementById('hero-canvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // create elegant light particles
+        const particleCount = 40;
+        particles = [];
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 3 + 1.2,
+            speedX: (Math.random() - 0.5) * 0.2,
+            speedY: (Math.random() - 0.5) * 0.15,
+            opacity: Math.random() * 0.35 + 0.1,
+          });
+        }
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        
+        // super subtle grey particles
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(100, 120, 140, ${p.opacity})`;
+          ctx.fill();
+
+          // slow drift
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around softly
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        });
+
+        // occasionally connect near particles (very faint)
+        ctx.lineWidth = 0.4;
+        ctx.strokeStyle = 'rgba(130, 150, 170, 0.12)';
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 100) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        initCanvas();
+      });
+
+      initCanvas();
+      drawParticles();
+
+      // ----- REVEAL ON SCROLL (intersection observer) -----
+      const revealElements = document.querySelectorAll('.reveal');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional: keep revealed (no need to unobtrusively remove)
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ----- smooth scroll for arrow (already using css scroll-behavior)
+      // just in case add click prevention if needed
+      document.querySelector('.scroll-arrow')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector('#features');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+    })();
+  </script>
+  <!-- ensure icons re-run after canvas (just in case) -->
+  <script>
+    // re-run feather in case canvas disturbed nothing
+    feather.replace({ width: 48, height: 48, strokeWidth: 1.5 });
+  </script>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,597 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>reflect · silent notes</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f6f7f9;
+      font-family: system-ui, -apple-system, 'Inter', 'SF Pro Display', 'Helvetica Neue', sans-serif;
+      color: #1a1e2b;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+    }
+
+    /* smooth scroll for anchor */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* hero – full screen, one line headline */
+    .hero {
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-color: #f0f2f5;
+    }
+
+    /* canvas background (animated particles) */
+    #bgCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      width: 100%;
+      padding: 0 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 16vw, 7rem);
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      color: #1e2434;
+      white-space: nowrap;
+      line-height: 1.1;
+      text-transform: none;
+      margin: 0;
+      animation: subtleFloat 3s infinite alternate ease-in-out;
+    }
+
+    @keyframes subtleFloat {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-6px); }
+    }
+
+    /* down arrow – hero */
+    .arrow-down {
+      position: absolute;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 12px;
+      transition: transform 0.2s ease;
+      color: #2c3344;
+    }
+
+    .arrow-down svg {
+      width: 32px;
+      height: 32px;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+      transition: stroke 0.2s;
+    }
+
+    .arrow-down:hover {
+      transform: translateX(-50%) translateY(4px);
+      color: #0b0f17;
+    }
+
+    /* general section styling */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 120px 32px;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      margin-bottom: 64px;
+      color: #1e2434;
+      line-height: 1.2;
+    }
+
+    /* card layouts */
+    .grid-3, .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 48px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 64px;
+    }
+
+    /* feature / benefit cards */
+    .feature-card {
+      background: transparent;
+      padding: 8px 0;
+    }
+
+    .feature-icon {
+      margin-bottom: 24px;
+      color: #2d3648;
+    }
+
+    .feature-icon svg {
+      width: 40px;
+      height: 40px;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      fill: none;
+      transition: transform 0.2s ease;
+    }
+
+    .feature-card:hover .feature-icon svg {
+      transform: scale(1.02);
+    }
+
+    .feature-card h3 {
+      font-size: 1.9rem;
+      font-weight: 520;
+      letter-spacing: -0.01em;
+      margin-bottom: 16px;
+      color: #1b212f;
+    }
+
+    .feature-card p {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      color: #3e4559;
+      max-width: 32ch;
+    }
+
+    /* how it works – steps */
+    .step-item {
+      border-bottom: 1px solid #d8dce6;
+      padding: 32px 0;
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1), transform 0.6s ease;
+    }
+
+    .step-item.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .step-number {
+      font-size: 2.2rem;
+      font-weight: 350;
+      color: #9fa6bc;
+      line-height: 1;
+      min-width: 70px;
+    }
+
+    .step-content h3 {
+      font-size: 2rem;
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: #1a1e2b;
+    }
+
+    .step-content p {
+      font-size: 1.25rem;
+      color: #4f566b;
+      max-width: 600px;
+    }
+
+    /* advantage bullets (minimal) */
+    .advantage-item {
+      display: flex;
+      gap: 28px;
+      margin-bottom: 48px;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .advantage-item.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .advantage-icon svg {
+      width: 44px;
+      height: 44px;
+      stroke: #2c3448;
+      stroke-width: 1.2;
+      fill: none;
+    }
+
+    .advantage-text h4 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .advantage-text p {
+      font-size: 1.2rem;
+      color: #4a5166;
+    }
+
+    /* use cases – simple cards */
+    .use-case-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .use-case-item {
+      background: #ffffffd9;
+      backdrop-filter: blur(2px);
+      padding: 36px 24px;
+      border-radius: 32px;
+      box-shadow: 0 10px 25px -12px rgba(0,0,0,0.1);
+      transition: all 0.2s;
+      text-align: center;
+      border: 1px solid #ffffff;
+      opacity: 0;
+      transform: scale(0.96);
+      transition: opacity 0.4s, transform 0.4s, box-shadow 0.2s;
+    }
+
+    .use-case-item.revealed {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .use-case-item:hover {
+      box-shadow: 0 24px 40px -20px #b0b9d4;
+      background: white;
+    }
+
+    .use-case-icon svg {
+      width: 40px;
+      height: 40px;
+      stroke: #212838;
+      stroke-width: 1.2;
+      fill: none;
+      margin-bottom: 24px;
+    }
+
+    .use-case-item p {
+      font-size: 1.25rem;
+      font-weight: 470;
+      color: #1c2332;
+    }
+
+    /* CTA section */
+    .cta-section {
+      background: transparent;
+      text-align: center;
+      padding: 100px 32px 140px;
+    }
+
+    .cta-title {
+      font-size: 4rem;
+      font-weight: 570;
+      letter-spacing: -0.02em;
+      color: #151c2c;
+      margin-bottom: 24px;
+    }
+
+    .cta-sub {
+      font-size: 1.5rem;
+      color: #4f5a73;
+      max-width: 640px;
+      margin: 0 auto 48px;
+    }
+
+    .cta-button {
+      background: none;
+      border: 2px solid #202634;
+      padding: 20px 58px;
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #202634;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+    }
+
+    .cta-button:hover {
+      background: #202634;
+      color: #f6f7f9;
+      border-color: #202634;
+    }
+
+    /* reveal observer – default hidden */
+    .js-reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .js-reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsive */
+    @media (max-width: 900px) {
+      .grid-3, .use-case-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 40px;
+      }
+      .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+      .section-title { font-size: 2.4rem; }
+      .hero h1 { font-size: clamp(3rem, 15vw, 5.2rem); }
+      .cta-title { font-size: 3rem; }
+    }
+
+    @media (max-width: 580px) {
+      .hero h1 { white-space: normal; } /* fallback – but we keep one line normally */
+    }
+    /* one-line guarantee for most viewports */
+    @media (max-width: 420px) {
+      .hero h1 { font-size: 3.2rem; white-space: nowrap; }
+    }
+
+    .section p, .feature-card p { font-weight: 380; }
+  </style>
+  <!-- feather-like icons (simple outline only) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- using font awesome as lightweight outline fallback – but we use svg sprites? no, use <i> with fa-light (but we set own style) -> they are vector, monochrome, outline style. fine. -->
+</head>
+<body>
+  <!-- HERO with canvas background -->
+  <div class="hero" id="hero">
+    <canvas id="bgCanvas"></canvas>
+    <div class="hero-content">
+      <h1>silent pages.</h1>
+    </div>
+    <a href="#features" class="arrow-down" aria-label="scroll down">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- FEATURES / BENEFITS -->
+  <section id="features" class="section">
+    <h2 class="section-title js-reveal">unhurried clarity</h2>
+    <div class="grid-3">
+      <div class="feature-card js-reveal">
+        <div class="feature-icon"><i class="fas fa-feather-alt fa-2x"></i></div>
+        <h3>undisturbed</h3>
+        <p>No notifications, no noise. Your thoughts remain still.</p>
+      </div>
+      <div class="feature-card js-reveal">
+        <div class="feature-icon"><i class="fas fa-wind fa-2x"></i></div>
+        <h3>light as air</h3>
+        <p>Open instantly, zero footprint. Everything stays local.</p>
+      </div>
+      <div class="feature-card js-reveal">
+        <div class="feature-icon"><i class="fas fa-leaf fa-2x"></i></div>
+        <h3>fades with time</h3>
+        <p>Ephemeral notes that dissolve — only essence remains.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS (large typography) -->
+  <section class="section">
+    <h2 class="section-title js-reveal">how it flows</h2>
+    <div class="step-item js-reveal">
+      <span class="step-number">01</span>
+      <div class="step-content">
+        <h3>arrive empty</h3>
+        <p>Open the page — a blank canvas, no login, no setup.</p>
+      </div>
+    </div>
+    <div class="step-item js-reveal">
+      <span class="step-number">02</span>
+      <div class="step-content">
+        <h3>write what matters</h3>
+        <p>One line or many, the page adapts to your rhythm.</p>
+      </div>
+    </div>
+    <div class="step-item js-reveal">
+      <span class="step-number">03</span>
+      <div class="step-content">
+        <h3>let it go</h3>
+        <p>Close the tab — no save, no clutter. Pure flow.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADVANTAGES (monochrome icons) -->
+  <section class="section">
+    <h2 class="section-title js-reveal">designed for depth</h2>
+    <div class="grid-2">
+      <div class="advantage-item js-reveal">
+        <div class="advantage-icon"><i class="fas fa-hourglass-half fa-2x"></i></div>
+        <div class="advantage-text">
+          <h4>timeless</h4>
+          <p>No updates, no subscriptions. Works offline.</p>
+        </div>
+      </div>
+      <div class="advantage-item js-reveal">
+        <div class="advantage-icon"><i class="fas fa-arrow-wide fa-2x"></i></div>
+        <div class="advantage-text">
+          <h4>infinite canvas</h4>
+          <p>Your thought expands, the page quietly follows.</p>
+        </div>
+      </div>
+      <div class="advantage-item js-reveal">
+        <div class="advantage-icon"><i class="fas fa-eye-slash fa-2x"></i></div>
+        <div class="advantage-text">
+          <h4>invisible tech</h4>
+          <p>No buttons, no toolbars — just you and the text.</p>
+        </div>
+      </div>
+      <div class="advantage-item js-reveal">
+        <div class="advantage-icon"><i class="fas fa-moon fa-2x"></i></div>
+        <div class="advantage-text">
+          <h4>soft contrast</h4>
+          <p>Easy on eyes, day or night. No blue light blast.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section class="section">
+    <h2 class="section-title js-reveal">fits anywhere</h2>
+    <div class="use-case-grid">
+      <div class="use-case-item js-reveal">
+        <div class="use-case-icon"><i class="fas fa-pencil-alt fa-2x"></i></div>
+        <p>morning pages</p>
+      </div>
+      <div class="use-case-item js-reveal">
+        <div class="use-case-icon"><i class="fas fa-brain fa-2x"></i></div>
+        <p>mind dump</p>
+      </div>
+      <div class="use-case-item js-reveal">
+        <div class="use-case-icon"><i class="fas fa-code fa-2x"></i></div>
+        <p>draft snippets</p>
+      </div>
+      <div class="use-case-item js-reveal">
+        <div class="use-case-icon"><i class="fas fa-comment-dots fa-2x"></i></div>
+        <p>quiet ideas</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="cta-section">
+    <h2 class="cta-title js-reveal">enter silence</h2>
+    <p class="cta-sub js-reveal">no account, no distraction — just a blank space.</p>
+    <button class="cta-button js-reveal" onclick="document.getElementById('hero').scrollIntoView({behavior:'smooth'});">begin</button>
+  </section>
+
+  <script>
+    (function() {
+      // canvas animation (subtle particles)
+      const canvas = document.getElementById('bgCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 45;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 2.2 + 0.8,
+            speedX: (Math.random() - 0.5) * 0.15,
+            speedY: (Math.random() - 0.5) * 0.1,
+            opacity: Math.random() * 0.3 + 0.1,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#919bb0';
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.globalAlpha = p.opacity * 0.8;
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#2c3547';
+          ctx.fill();
+          
+          // move
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around edges softly
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+      drawParticles();
+
+      // REVEAL ON SCROLL (intersection observer)
+      const revealElements = document.querySelectorAll('.js-reveal');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          } 
+          // (optional: never remove)
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // also reveal step & advantage items that may not have .js-reveal (we already added class)
+      // all good. also manually trigger for any existing ones
+    })();
+  </script>
+  <!-- ensure step items also revealed: they have js-reveal already -->
+  <!-- extra smooth arrow already uses smooth scroll via html -->
+  <script>
+    (function secondary() {
+      // manually reveal any if needed; but observer already covers.
+      // make sure use-case reveal class after scroll
+      const arrow = document.querySelector('.arrow-down');
+      if(arrow) {
+        arrow.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.querySelector('#features').scrollIntoView({behavior: 'smooth'});
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

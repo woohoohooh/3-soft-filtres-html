@@ -1,0 +1,532 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helix · edge compute</title>
+  <!-- Feather Icons – minimal, monochrome, outline -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f5f7fa;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      color: #101214;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll for anchor */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* large typography, clean spacing */
+    h1, h2, p {
+      font-weight: 400;
+    }
+
+    h1 {
+      font-size: clamp(4rem, 14vw, 8rem);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      font-weight: 500;
+    }
+
+    h2 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      letter-spacing: -0.015em;
+      font-weight: 450;
+      margin-bottom: 2rem;
+    }
+
+    .section-sub {
+      font-size: 1.4rem;
+      color: #2c3e50;
+      max-width: 42rem;
+      margin: 1.5rem 0 2.5rem;
+    }
+
+    /* hero */
+    .hero {
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-color: #0a0c0f;  /* deep base for canvas effect */
+    }
+
+    /* canvas – subtle animated background */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      width: 100%;
+      padding: 0 1.5rem;
+    }
+
+    .hero h1 {
+      color: white;
+      text-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      font-weight: 500;
+      max-width: 1400px;
+      margin: 0 auto;
+      /* ensure single line – force nowrap on large screens, but clamp keeps it contained */
+      white-space: nowrap;
+    }
+
+    /* allow wrap only if viewport too small – but clamp + nowrap keeps one line until ~360px */
+    @media (max-width: 700px) {
+      .hero h1 {
+        font-size: clamp(3rem, 13vw, 5rem);
+        white-space: normal;   /* we sacrifice one‑line on very narrow to avoid overflow */
+      }
+    }
+    /* for most phones in landscape: keep one line until 480px width */
+    @media (min-width: 481px) and (max-width: 700px) {
+      .hero h1 {
+        font-size: 5rem;
+        white-space: nowrap;
+      }
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      color: white;
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(4px);
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.2s;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .scroll-down:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateX(-50%) scale(1.05);
+    }
+
+    .scroll-down i {
+      width: 28px;
+      height: 28px;
+      stroke: white;
+      stroke-width: 1.8;
+    }
+
+    /* sections container */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    /* section grid */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 4rem 3rem;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2,1fr); }
+    .grid-3 { grid-template-columns: repeat(3,1fr); }
+
+    /* cards */
+    .feature-card, .step-card, .advantage-card, .use-card {
+      background: white;
+      border-radius: 2rem;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.02);
+      transition: transform 0.25s ease, box-shadow 0.3s;
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .feature-card:hover, .step-card:hover, .advantage-card:hover, .use-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 25px 40px rgba(0,20,40,0.06);
+    }
+
+    /* icons – monochrome, outline, from feather */
+    .icon-large {
+      width: 48px;
+      height: 48px;
+      stroke: #1e2b39;
+      stroke-width: 1.5;
+      margin-bottom: 1.8rem;
+    }
+
+    .card-title {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .card-desc {
+      font-size: 1.2rem;
+      color: #3a4a5a;
+    }
+
+    /* how it works – small steps */
+    .step-num {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #5c6f82;
+      letter-spacing: 0.5px;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+    }
+
+    /* use cases layout */
+    .use-card .icon-large {
+      margin-bottom: 2rem;
+    }
+
+    /* CTA */
+    .cta-section {
+      background: #0f1419;
+      color: white;
+      border-radius: 3rem;
+      padding: 5rem 4rem;
+      text-align: center;
+    }
+
+    .cta-section h2 {
+      color: white;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-section p {
+      font-size: 1.6rem;
+      color: #b0c4d9;
+      max-width: 600px;
+      margin: 0 auto 2.8rem;
+    }
+
+    .cta-button {
+      background: white;
+      border: none;
+      color: #0f1419;
+      padding: 1.2rem 3.5rem;
+      border-radius: 3rem;
+      font-size: 1.5rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+
+    .cta-button:hover {
+      background: #eef4ff;
+      transform: scale(1.02);
+      box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+    }
+
+    /* reveal animations (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.15,0.85,0.35,1), transform 0.7s cubic-bezier(0.15,0.85,0.35,1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* divider */
+    hr {
+      border: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #cdd9e9, transparent);
+      margin: 3rem 0;
+    }
+
+    /* footer */
+    .footer-note {
+      text-align: center;
+      color: #5f6c7a;
+      padding: 3rem 1rem 5rem;
+      font-size: 1.2rem;
+    }
+
+    /* responsive */
+    @media (max-width: 800px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 2rem; }
+      .container { padding: 4rem 1.8rem; }
+      .cta-section { padding: 3rem 2rem; }
+      h2 { font-size: 3rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO section with canvas animation -->
+  <section class="hero" id="top">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>Compute on the edge</h1>
+    </div>
+    <a href="#features" class="scroll-down" aria-label="scroll down">
+      <i data-feather="arrow-down"></i>
+    </a>
+  </section>
+
+  <!-- section 1 / features -->
+  <section id="features" class="container">
+    <div class="reveal">
+      <h2>Low latency · high density</h2>
+      <div class="section-sub">Built for real‑time global workloads.</div>
+    </div>
+    <div class="grid-3">
+      <div class="feature-card reveal">
+        <i data-feather="globe" class="icon-large"></i>
+        <div class="card-title">40+ regions</div>
+        <div class="card-desc">Deploy instantly within 5ms of 95% of internet users.</div>
+      </div>
+      <div class="feature-card reveal">
+        <i data-feather="zap" class="icon-large"></i>
+        <div class="card-title">sub‑10ms cold start</div>
+        <div class="card-desc">WebAssembly microVMs that boot in microseconds.</div>
+      </div>
+      <div class="feature-card reveal">
+        <i data-feather="lock" class="icon-large"></i>
+        <div class="card-title">secure enclaves</div>
+        <div class="card-desc">Hardware isolation with memory encryption.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2 / how it works -->
+  <section class="container">
+    <hr>
+    <div class="reveal">
+      <h2>One model, any region</h2>
+      <div class="section-sub">Deploy in three steps — no config drift.</div>
+    </div>
+    <div class="grid-3">
+      <div class="step-card reveal">
+        <span class="step-num">STEP 001</span>
+        <i data-feather="package" class="icon-large"></i>
+        <div class="card-title">Build once</div>
+        <div class="card-desc">Package your code with our lightweight SDK.</div>
+      </div>
+      <div class="step-card reveal">
+        <span class="step-num">STEP 002</span>
+        <i data-feather="upload-cloud" class="icon-large"></i>
+        <div class="card-title">Push to edge</div>
+        <div class="card-desc">CLI or API – we automatically replicate globally.</div>
+      </div>
+      <div class="step-card reveal">
+        <span class="step-num">STEP 003</span>
+        <i data-feather="activity" class="icon-large"></i>
+        <div class="card-title">Observe & scale</div>
+        <div class="card-desc">Real‑time metrics per region, no ops team needed.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3 / advantages -->
+  <section class="container">
+    <hr>
+    <div class="reveal">
+      <h2>Why developers switch</h2>
+    </div>
+    <div class="grid-2">
+      <div class="advantage-card reveal">
+        <i data-feather="clock" class="icon-large"></i>
+        <div class="card-title">No more cold starts</div>
+        <div class="card-desc">Our keep‑warm inference keeps your functions responsive.</div>
+      </div>
+      <div class="advantage-card reveal">
+        <i data-feather="dollar-sign" class="icon-large"></i>
+        <div class="card-title">Fair use pricing</div>
+        <div class="card-desc">Pay only for compute duration – no egress fees.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4 / use cases -->
+  <section class="container">
+    <hr>
+    <div class="reveal">
+      <h2>Built for modern stacks</h2>
+    </div>
+    <div class="grid-3">
+      <div class="use-card reveal">
+        <i data-feather="video" class="icon-large"></i>
+        <div class="card-title">video transcoding</div>
+        <div class="card-desc">On‑the‑fly AV1 at the edge, sub‑second latency.</div>
+      </div>
+      <div class="use-card reveal">
+        <i data-feather="database" class="icon-large"></i>
+        <div class="card-title">global kv store</div>
+        <div class="card-desc">Strongly consistent, geo‑distributed data.</div>
+      </div>
+      <div class="use-card reveal">
+        <i data-feather="cpu" class="icon-large"></i>
+        <div class="card-title">llm inference</div>
+        <div class="card-desc">Run small language models closer to users.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5 / call to action -->
+  <section class="container">
+    <div class="cta-section reveal">
+      <h2>Start building for free</h2>
+      <p>US$20 credits · no time limit · deploy in 2 minutes</p>
+      <button class="cta-button" onclick="alert('✨ Welcome to Helix edge (demo)')">Create account →</button>
+    </div>
+  </section>
+
+  <footer class="footer-note">
+    <span>© helix compute — edge first</span>
+  </footer>
+
+  <script>
+    (function() {
+      // feather icons replace
+      feather.replace({ width: '1em', height: '1em', strokeWidth: 1.5 });
+
+      // canvas animation (subtle, modern, particle/wave like)
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // create soft particles
+        const particleCount = 35;
+        particles = [];
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: 2 + Math.random() * 5,
+            speedX: (Math.random() - 0.5) * 0.3,
+            speedY: (Math.random() - 0.5) * 0.15,
+            opacity: 0.1 + Math.random() * 0.2,
+          });
+        }
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        
+        // subtle gradient background
+        const gradient = ctx.createLinearGradient(0, 0, width*0.5, height);
+        gradient.addColorStop(0, '#0d1a26');
+        gradient.addColorStop(1, '#1e2f3f');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+
+        // draw particles + faint connections
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+          ctx.fillStyle = `rgba(180, 210, 240, ${p.opacity})`;
+          ctx.fill();
+
+          // update position
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around edges softly
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+
+        // draw faint lines between close particles
+        ctx.strokeStyle = 'rgba(150,190,230,0.12)';
+        ctx.lineWidth = 0.6;
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 120) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(190, 215, 245, ${0.06 * (1 - dist/120)})`;
+              ctx.stroke();
+            }
+          }
+        }
+
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        initCanvas();
+      });
+
+      initCanvas();
+      drawParticles();
+
+      // ---------- intersection observer (reveal) ----------
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            // optional: unobserve after first reveal
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // smooth scroll for down arrow (already using CSS + anchor, but ensure any offset)
+      document.querySelector('.scroll-down').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+      });
+    })();
+  </script>
+  <!-- ensure feather replaces also dynamic elements (already replaced once) -->
+  <script>feather.replace({ width: '1em', height: '1em', strokeWidth: 1.5 });</script>
+</body>
+</html>
+All done!
+```

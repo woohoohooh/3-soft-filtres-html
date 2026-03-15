@@ -1,0 +1,564 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kinetix · ambient compute</title>
+  <!-- Feather icons (lightweight, outline) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* ----- RESET & VARIABLES ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --text-primary: #101214;
+      --text-secondary: #3d4147;
+      --border-light: #e2e5e9;
+      --accent: #1e1f24;
+      --shadow-sm: 0 8px 24px rgba(0,0,0,0.02), 0 2px 4px rgba(0,0,0,0.02);
+      --space-unit: 2rem;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ----- UTILITY / LAYOUT ----- */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      color: var(--text-primary);
+    }
+
+    /* cards / grids */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem 2rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: 2rem;
+      padding: 2.5rem 2rem;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border: 1px solid var(--border-light);
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 32px -8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02);
+    }
+
+    /* icon wrapper */
+    .icon-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 3.5rem;
+      height: 3.5rem;
+      margin-bottom: 2rem;
+      color: var(--text-primary);
+    }
+
+    .icon-wrap i {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.8;
+    }
+
+    h3 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 60ch;
+    }
+
+    /* ----- HERO SECTION (full screen) ----- */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: var(--bg);
+      overflow: hidden;
+    }
+
+    /* canvas background (animated particles) */
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;  /* click through */
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 1200px;
+      padding: 0 2rem;
+      margin-top: -4vh;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 13vw, 8rem);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      line-height: 1.1;
+      white-space: nowrap;           /* keep on one line */
+      margin-bottom: 0;
+    }
+
+    /* down arrow */
+    .scroll-down {
+      position: absolute;
+      bottom: 3rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: var(--surface);
+      border-radius: 100px;
+      width: 3.2rem;
+      height: 3.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.02);
+      border: 1px solid var(--border-light);
+      transition: all 0.2s ease;
+      color: var(--text-primary);
+    }
+
+    .scroll-down:hover {
+      background: var(--text-primary);
+      color: var(--surface);
+      border-color: var(--text-primary);
+    }
+
+    .scroll-down i {
+      width: 24px;
+      height: 24px;
+      stroke-width: 2;
+    }
+
+    /* ----- SECTIONS (content) ----- */
+    .features-grid .card p {
+      font-size: 1.1rem;
+    }
+
+    /* how it works: stacked steps */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 2rem;
+      background: transparent;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .step-item:last-child {
+      border-bottom: none;
+    }
+
+    .step-icon {
+      flex-shrink: 0;
+      color: var(--text-primary);
+    }
+
+    .step-icon i {
+      width: 40px;
+      height: 40px;
+    }
+
+    .step-content h4 {
+      font-size: 2rem;
+      font-weight: 470;
+      margin-bottom: 0.4rem;
+    }
+
+    .step-content p {
+      font-size: 1.2rem;
+    }
+
+    /* advantages / inline list */
+    .advantage-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2.5rem;
+    }
+
+    .advantage-item {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+
+    .advantage-item .icon-wrap {
+      margin-bottom: 0;
+      width: 2.8rem;
+      height: 2.8rem;
+    }
+
+    .advantage-item p {
+      font-size: 1.25rem;
+    }
+
+    /* use cases: simple cards */
+    .use-case-card {
+      background: transparent;
+      border: 1px solid var(--border-light);
+      border-radius: 2rem;
+      padding: 2.2rem;
+    }
+
+    .use-case-card .icon-wrap {
+      margin-bottom: 1.5rem;
+    }
+
+    /* CTA section */
+    .cta-card {
+      background: var(--surface);
+      border-radius: 3rem;
+      padding: 5rem 4rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-light);
+    }
+
+    .cta-card h2 {
+      font-size: 3.5rem;
+      font-weight: 480;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      margin-top: 2rem;
+      background: var(--text-primary);
+      color: var(--surface);
+      border: none;
+      padding: 1.2rem 3.5rem;
+      border-radius: 3rem;
+      font-size: 1.4rem;
+      font-weight: 450;
+      cursor: default;  /* non-interactive for demo */
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: transform 0.2s ease, background 0.1s;
+      border: 1px solid var(--text-primary);
+    }
+
+    .cta-btn:hover {
+      transform: scale(1.02);
+      background: #2b2d33;
+    }
+
+    /* reveal on scroll (simple intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsiveness */
+    @media (max-width: 850px) {
+      .section { padding: 4rem 1.5rem; }
+      .section-title { font-size: 2.4rem; }
+      .grid-3 { grid-template-columns: 1fr; gap: 1.8rem; }
+      .advantage-list { grid-template-columns: 1fr; }
+      .step-item { flex-direction: column; gap: 0.8rem; }
+      .step-content h4 { font-size: 1.8rem; }
+      .cta-card { padding: 3rem 1.5rem; }
+      .cta-card h2 { font-size: 2.4rem; }
+      .hero h1 { white-space: normal; } /* fallback if needed, but we keep one line ideally */
+    }
+
+    /* feather icons init */
+    i {
+      stroke: currentColor;
+      fill: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- hero with canvas animation -->
+  <section class="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <h1>ambient · compute</h1>
+    </div>
+    <div class="scroll-down" id="scrollDownBtn">
+      <i data-feather="arrow-down"></i>
+    </div>
+  </section>
+
+  <!-- section 1: features -->
+  <section class="section reveal" id="features">
+    <h2 class="section-title">designed for the invisible stack</h2>
+    <div class="grid-3 features-grid">
+      <div class="card">
+        <div class="icon-wrap"><i data-feather="cpu"></i></div>
+        <h3>distributed mesh</h3>
+        <p>Low‑latency fabric that spans edge and cloud. No central coordination.</p>
+      </div>
+      <div class="card">
+        <div class="icon-wrap"><i data-feather="shield"></i></div>
+        <h3>zero‑trust primitives</h3>
+        <p>Every node attested, every channel authenticated. Crypto native.</p>
+      </div>
+      <div class="card">
+        <div class="icon-wrap"><i data-feather="zap"></i></div>
+        <h3>sub‑second sync</h3>
+        <p>Real‑time state propagation with CRDTs. No conflict, no lag.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 2: how it works (3 steps) -->
+  <section class="section reveal" id="how-it-works">
+    <h2 class="section-title">works in three moves</h2>
+    <div class="steps">
+      <div class="step-item">
+        <div class="step-icon"><i data-feather="anchor"></i></div>
+        <div class="step-content">
+          <h4>01 · claim namespace</h4>
+          <p>Generate a keypair — your identity is your address. No signup.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-icon"><i data-feather="git-merge"></i></div>
+        <div class="step-content">
+          <h4>02 · connect peers</h4>
+          <p>Share a capability token. Relay‑discovery over webrtc or tor.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-icon"><i data-feather="hard-drive"></i></div>
+        <div class="step-content">
+          <h4>03 · sync state</h4>
+          <p>Data automatically replicates to participating nodes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 3: advantages -->
+  <section class="section reveal" id="advantages">
+    <h2 class="section-title">built different</h2>
+    <div class="advantage-list">
+      <div class="advantage-item">
+        <div class="icon-wrap"><i data-feather="wind"></i></div>
+        <p><strong>ambient</strong> — no always‑on coordinator, pure p2p.</p>
+      </div>
+      <div class="advantage-item">
+        <div class="icon-wrap"><i data-feather="archive"></i></div>
+        <p><strong>ephemeral by design</strong> — data lives where you need it.</p>
+      </div>
+      <div class="advantage-item">
+        <div class="icon-wrap"><i data-feather="key"></i></div>
+        <p><strong>local first</strong> — offline capabable, sync when online.</p>
+      </div>
+      <div class="advantage-item">
+        <div class="icon-wrap"><i data-feather="hexagon"></i></div>
+        <p><strong>morphic security</strong> — capabilities, not permissions.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 4: use cases -->
+  <section class="section reveal" id="usecases">
+    <h2 class="section-title">use cases</h2>
+    <div class="grid-3">
+      <div class="use-case-card">
+        <div class="icon-wrap"><i data-feather="radio"></i></div>
+        <h3>mesh‑native iot</h3>
+        <p>Sensors talking directly, no cloud hub. Firmware updates over dht.</p>
+      </div>
+      <div class="use-case-card">
+        <div class="icon-wrap"><i data-feather="users"></i></div>
+        <h3>collaborative apps</h3>
+        <p>Real‑time editors, whiteboards — peer to peer, zero backend.</p>
+      </div>
+      <div class="use-case-card">
+        <div class="icon-wrap"><i data-feather="globe"></i></div>
+        <h3>offline communities</h3>
+        <p>Local-first wikis, mesh forums, resilient knowledge.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- section 5: call to action -->
+  <section class="section reveal" id="cta">
+    <div class="cta-card">
+      <h2>build on ambient compute</h2>
+      <p style="margin: 0 auto; font-size: 1.4rem;">early access · docs · white paper</p>
+      <span class="cta-btn">request invite →</span>
+    </div>
+  </section>
+
+  <!-- scripts -->
+  <script>
+    (function() {
+      // feather icons replacement
+      feather.replace({ width: '100%', height: '100%', 'stroke-width': 1.8 });
+
+      // ---------- canvas animation (hero background) ----------
+      const canvas = document.getElementById('hero-canvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      const initParticles = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        const particleCount = Math.min(60, Math.floor(width * height / 14000));
+        particles = [];
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.15 + 0.06,
+            radius: Math.random() * 2.2 + 1,
+            opacity: Math.random() * 0.3 + 0.1,
+          });
+        }
+      };
+
+      const drawParticles = () => {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#101214';   // dark graphite dots
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+          ctx.globalAlpha = p.opacity * 0.5;
+          ctx.fill();
+        }
+
+        // draw faint lines between close particles (elegant)
+        ctx.strokeStyle = '#101214';
+        ctx.lineWidth = 0.6;
+        ctx.globalAlpha = 0.07;
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 130) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.globalAlpha = 1.0;
+      };
+
+      const updateParticles = () => {
+        for (let p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          // wrap around gently
+          if (p.x < -20) p.x = width + 20;
+          if (p.x > width + 20) p.x = -20;
+          if (p.y < -20) p.y = height + 20;
+          if (p.y > height + 20) p.y = -20;
+        }
+        drawParticles();
+        requestAnimationFrame(updateParticles);
+      };
+
+      window.addEventListener('resize', () => {
+        initParticles();
+        drawParticles();
+      });
+
+      initParticles();
+      drawParticles();
+      requestAnimationFrame(updateParticles);
+
+      // ---------- smooth scroll (down arrow) ----------
+      const scrollBtn = document.getElementById('scrollDownBtn');
+      const featuresSection = document.getElementById('features');
+      scrollBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (featuresSection) {
+          featuresSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // ---------- reveal on scroll (intersection observer) ----------
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ensure hero headline is one line (even on weird resize, it's fine)
+    })();
+  </script>
+
+  <!-- ensure icons are replaced after dynamic canvas (double call is safe) -->
+  <script>
+    feather.replace({ width: '100%', height: '100%', 'stroke-width': 1.8 });
+  </script>
+</body>
+</html>
+All done!
+```

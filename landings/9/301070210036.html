@@ -1,0 +1,530 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>drisu · neural surfaces</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f5f7fa;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #1e1e2f;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* hero – full screen, one‑line headline */
+    .hero {
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-color: #f5f7fa;  /* fallback for canvas */
+    }
+
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.65;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      max-width: 1200px;
+      padding: 0 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 15vw, 8rem);
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      color: #1e1e2f;
+      white-space: nowrap;
+      line-height: 1.1;
+      margin: 0;
+      text-transform: none;
+      word-break: keep-all;
+    }
+
+    @media (max-width: 680px) {
+      .hero h1 {
+        font-size: 15vw;        /* stays one line even on small screens */
+        white-space: nowrap;
+      }
+    }
+
+    /* down arrow – subtle, smooth scroll */
+    .arrow-down {
+      position: absolute;
+      bottom: 2.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #1e1e2f;
+      opacity: 0.5;
+      transition: opacity 0.3s ease, transform 0.25s ease;
+    }
+
+    .arrow-down:hover {
+      opacity: 0.9;
+      transform: translateX(-50%) scale(1.08);
+    }
+
+    .arrow-down svg {
+      width: 36px;
+      height: 36px;
+      stroke-width: 1.5;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* general section styling */
+    .section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 4rem;
+      line-height: 1.2;
+      color: #1e1e2f;
+    }
+
+    .section-title span {
+      display: inline-block;
+      border-bottom: 2px solid #1e1e2f;
+      padding-bottom: 0.25rem;
+    }
+
+    /* cards grid (features, etc) */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4rem;
+    }
+
+    .card-item {
+      background: transparent;
+      padding: 0.5rem 0;
+      transition: transform 0.2s ease;
+    }
+
+    .card-item:hover {
+      transform: translateY(-6px);
+    }
+
+    .icon-outline {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      margin-bottom: 1.8rem;
+      border: 1.5px solid #1e1e2f;
+      border-radius: 18px;
+      color: #1e1e2f;
+      background: transparent;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .card-item:hover .icon-outline {
+      background: #1e1e2f;
+      color: #ffffff;
+    }
+
+    .icon-outline svg {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.3;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .card-item h3 {
+      font-size: 1.9rem;
+      font-weight: 540;
+      margin-bottom: 0.8rem;
+      letter-spacing: -0.02em;
+    }
+
+    .card-item p {
+      font-size: 1.25rem;
+      color: #3e3e4f;
+      line-height: 1.5;
+      max-width: 90%;
+    }
+
+    /* use case list / minimal */
+    .use-case-line {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 2.8rem;
+    }
+
+    .use-case-line .icon-outline {
+      margin-bottom: 0;
+      flex-shrink: 0;
+    }
+
+    .use-case-line p {
+      font-size: 1.5rem;
+      font-weight: 440;
+      color: #1e1e2f;
+      border-bottom: 1px dashed #aaa;
+      padding-bottom: 0.5rem;
+      width: 100%;
+    }
+
+    /* CTA section */
+    .cta-block {
+      background: transparent;
+      border-top: 2px solid #1e1e2f;
+      border-bottom: 2px solid #1e1e2f;
+      padding: 4rem 0;
+      text-align: center;
+    }
+
+    .cta-title {
+      font-size: 4rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .cta-sub {
+      font-size: 1.7rem;
+      margin: 1.8rem 0 2.8rem;
+      color: #2e2e3f;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: transparent;
+      border: 2px solid #1e1e2f;
+      color: #1e1e2f;
+      padding: 1.2rem 4rem;
+      font-size: 1.6rem;
+      font-weight: 520;
+      text-decoration: none;
+      border-radius: 60px;
+      transition: background 0.2s, color 0.2s, transform 0.15s;
+    }
+
+    .cta-button:hover {
+      background: #1e1e2f;
+      color: #f5f7fa;
+      transform: scale(1.02);
+    }
+
+    /* reveal on scroll – subtle */
+    .reveal {
+      opacity: 0;
+      transform: translateY(36px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsive stacking */
+    @media (max-width: 860px) {
+      .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 2.8rem;
+      }
+      .section-title {
+        font-size: 2.4rem;
+      }
+      .cta-title {
+        font-size: 3rem;
+      }
+      .use-case-line p {
+        font-size: 1.3rem;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .section {
+        padding: 4rem 1.5rem;
+      }
+    }
+
+    /* extra clean */
+    hr {
+      border: none;
+      border-top: 1px solid #d0d4dd;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 1rem;
+      color: #8f8fa3;
+      padding: 2rem;
+      letter-spacing: 0.3px;
+    }
+  </style>
+
+  <!-- feather (lucide) icons via simple CDN (unpkg) — lightweight outline library -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <!-- HERO – one line headline, canvas background, arrow -->
+  <section class="hero" id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <h1>drisu·neural surfaces</h1>
+    </div>
+    <button class="arrow-down" id="scroll-down" aria-label="scroll down">
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 4 4 4-4"/><path d="M12 8v8"/></svg>
+    </button>
+  </section>
+
+  <!-- SECTION 1: Features / Benefits (minimal) -->
+  <section class="section reveal" id="features">
+    <h2 class="section-title"><span>zero‑footprint inference</span></h2>
+    <div class="grid-3">
+      <!-- feature 1 -->
+      <div class="card-item">
+        <div class="icon-outline" data-lucide="cpu"></div>
+        <h3>sub‑ms latency</h3>
+        <p>On‑edge inference with tiny memory – 8KB neural surfaces.</p>
+      </div>
+      <!-- feature 2 -->
+      <div class="card-item">
+        <div class="icon-outline" data-lucide="layers"></div>
+        <h3>any mesh, one shot</h3>
+        <p>No retraining, no fine‑tuning. Works on any triangulated surface.</p>
+      </div>
+      <!-- feature 3 -->
+      <div class="card-item">
+        <div class="icon-outline" data-lucide="infinity"></div>
+        <h3>continuous resolution</h3>
+        <p>Infinite LOD – from voxel block to micron detail.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: How it works (three steps) -->
+  <section class="section reveal" id="howitworks">
+    <h2 class="section-title"><span>silent geometry engine</span></h2>
+    <div class="grid-3">
+      <div class="card-item">
+        <div class="icon-outline" data-lucide="scan-line"></div>
+        <h3>1. sample</h3>
+        <p>Sensor stream or CAD – we embed coordinates into latent codes.</p>
+      </div>
+      <div class="card-item">
+        <div class="icon-outline" data-lucide="move-diagonal"></div>
+        <h3>2. transform</h3>
+        <p>Implicit neural network predicts signed distance on the fly.</p>
+      </div>
+      <div class="card-item">
+        <div class="icon-outline" data-lucide="waypoints"></div>
+        <h3>3. render</h3>
+        <p>Real‑time ray marching or mesh extraction – your choice.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: Advantages (two columns, large text) -->
+  <section class="section reveal" id="advantages">
+    <h2 class="section-title"><span>beyond traditional sdfs</span></h2>
+    <div class="grid-2">
+      <div class="card-item">
+        <div class="icon-outline" data-lucide="cylinder"></div>
+        <h3>watertight by design</h3>
+        <p>No holes, no non‑manifold edges — our surfaces are C² smooth everywhere.</p>
+      </div>
+      <div class="card-item">
+        <div class="icon-outline" data-lucide="compass"></div>
+        <h3>infinite gradient</h3>
+        <p>Exact normals and curvature without finite differences.</p>
+      </div>
+      <div class="card-item">
+        <div class="icon-outline" data-lucide="barcode"></div>
+        <h3>compression 200:1</h3>
+        <p>Replace heavy polygonal meshes with tiny weight arrays.</p>
+      </div>
+      <div class="card-item">
+        <div class="icon-outline" data-lucide="eye"></div>
+        <h3>privacy first</h3>
+        <p>All inference stays on device – no cloud needed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Use cases (elegant list) -->
+  <section class="section reveal" id="usecases">
+    <h2 class="section-title"><span>use cases</span></h2>
+    <div>
+      <div class="use-case-line">
+        <div class="icon-outline" data-lucide="microscope"></div>
+        <p>medical volume visualisation · real‑time mri reconstruction</p>
+      </div>
+      <div class="use-case-line">
+        <div class="icon-outline" data-lucide="drone"></div>
+        <p>autonomous robotics · signed distance fields for collision</p>
+      </div>
+      <div class="use-case-line">
+        <div class="icon-outline" data-lucide="wand-2"></div>
+        <p>generative design · neural sculpting tools</p>
+      </div>
+      <div class="use-case-line">
+        <div class="icon-outline" data-lucide="radio"></div>
+        <p>wireless signal propagation · spatial computing</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: Call to action -->
+  <section class="section reveal" id="cta">
+    <div class="cta-block">
+      <div class="cta-title">join the surface</div>
+      <div class="cta-sub">private beta · early access</div>
+      <a href="#" class="cta-button">request invite</a>
+    </div>
+  </section>
+
+  <!-- small footer line -->
+  <div class="footer-note">drisu · nyc · sf · berlin</div>
+
+  <script>
+    (function() {
+      // --------------------------------------------------------------
+      // 1) subtle animated canvas background (hero)
+      const canvas = document.getElementById('hero-canvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 50;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: 0.6 + Math.random() * 2.2,
+            speedX: (Math.random() - 0.5) * 0.0015,
+            speedY: (Math.random() - 0.5) * 0.0015,
+            opacity: 0.18 + Math.random() * 0.15,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        if (!particles.length) return;
+        ctx.fillStyle = '#1e1e2f';
+        for (let p of particles) {
+          ctx.globalAlpha = p.opacity;
+          ctx.beginPath();
+          ctx.arc(p.x * width, p.y * height, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // update positions
+        for (let p of particles) {
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+      initParticles();
+      resizeCanvas();
+      requestAnimationFrame(drawParticles);
+
+      // 2) lucide icons (replace all placeholders)
+      lucide.createIcons();
+
+      // 3) smooth scroll down arrow
+      document.getElementById('scroll-down').addEventListener('click', () => {
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // 4) reveal on scroll (intersection observer)
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          } else {
+            // optional: remove class if you want repeated animation, but we keep visible after first
+            // entry.target.classList.remove('active'); // (commented = stays visible)
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // 5) small hover effect already in css, ensure lucide updates if needed (icons stay outline)
+      // also if new icons added dynamically? none.
+
+      // 6) force one-line headline even on weird zoom: handled by clamp + nowrap
+    })();
+  </script>
+  <!-- ensure lucide re-runs after dynamic content (not necessary but safe) -->
+  <script>
+    (function secondaryIcons() {
+      lucide.createIcons();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,558 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nucleus • silent compute</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f7f7f9;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #121212;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* sections base */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    /* hero specific */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 2rem;
+      max-width: none;
+      background-color: #f0f2f5;
+      overflow: hidden;
+    }
+
+    /* canvas background (js animated) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 15vw, 7rem);
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      color: #111;
+      z-index: 2;
+      text-align: center;
+      max-width: 90vw;
+      white-space: nowrap;
+      background: rgba(255,255,255,0.3);
+      backdrop-filter: blur(4px);
+      padding: 0.2em 0.8em;
+      border-radius: 2rem;
+      box-shadow: 0 10px 25px -10px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+
+    /* down arrow */
+    .arrow-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 20, 30, 0.9);
+      color: white;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+      transition: all 0.25s ease;
+      border: 1px solid rgba(255,255,255,0.2);
+      z-index: 15;
+      backdrop-filter: blur(8px);
+    }
+
+    .arrow-down:hover {
+      background: #111;
+      transform: translateX(-50%) scale(1.06);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+    }
+
+    /* icons (monochrome outline) */
+    .section-icon {
+      width: 3.5rem;
+      height: 3.5rem;
+      stroke-width: 1.3;
+      stroke: #1f1f2b;
+      fill: none;
+      margin-bottom: 1.5rem;
+      transition: stroke 0.2s;
+    }
+
+    /* section headers */
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+      color: #131313;
+    }
+
+    .section-sub {
+      font-size: 1.3rem;
+      color: #3b3b4a;
+      max-width: 680px;
+      margin-bottom: 3rem;
+      font-weight: 380;
+    }
+
+    /* grids */
+    .grid-3, .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem 2rem;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .card {
+      background: transparent;
+      padding: 1rem 0.2rem;
+    }
+
+    .card p {
+      color: #2c2c38;
+      font-size: 1.2rem;
+      font-weight: 380;
+      max-width: 320px;
+    }
+
+    .card h3 {
+      font-size: 1.8rem;
+      font-weight: 540;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.01em;
+    }
+
+    /* how it works step */
+    .step-item {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      margin-bottom: 2.5rem;
+    }
+
+    .step-num {
+      font-size: 2.2rem;
+      font-weight: 300;
+      color: #a0a0b2;
+      line-height: 1;
+      min-width: 2.5rem;
+    }
+
+    /* use cases tag */
+    .use-case-tile {
+      background: #ffffffd6;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(0,0,0,0.03);
+      padding: 2.2rem 2rem;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.02);
+      transition: transform 0.2s, box-shadow 0.3s;
+    }
+
+    .use-case-tile:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 28px 40px -20px rgba(0,0,0,0.15);
+      background: white;
+    }
+
+    /* cta */
+    .cta-card {
+      background: #191923;
+      color: white;
+      padding: 4rem 3.5rem;
+      border-radius: 3.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .cta-card .section-title {
+      color: white;
+      margin-bottom: 1rem;
+    }
+
+    .cta-card .section-sub {
+      color: #cacad6;
+    }
+
+    .btn {
+      background: white;
+      color: #191923;
+      border: none;
+      padding: 1.2rem 3rem;
+      border-radius: 3rem;
+      font-size: 1.3rem;
+      font-weight: 500;
+      margin-top: 2rem;
+      cursor: default;
+      transition: 0.15s;
+      border: 1px solid transparent;
+    }
+
+    .btn:hover {
+      background: #f0f0f5;
+      box-shadow: 0 12px 25px -10px rgba(255,255,255,0.3);
+    }
+
+    /* reveal animation (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(34px);
+      transition: opacity 0.8s cubic-bezier(0.15,0.85,0.3,1), transform 0.8s cubic-bezier(0.15,0.85,0.3,1);
+    }
+
+    .reveal.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsiveness */
+    @media (max-width: 780px) {
+      .hero h1 {
+        font-size: clamp(2.3rem, 11vw, 5rem);
+        white-space: normal;   /* keep one line? no — but we use NOWRAP, but small screen might overflow -> use media to wrap gracefully */
+      }
+
+      section {
+        padding: 4rem 1.8rem;
+      }
+
+      .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+
+      .section-title {
+        font-size: 2.2rem;
+      }
+
+      .step-item {
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+
+      .cta-card {
+        padding: 3rem 1.8rem;
+      }
+    }
+
+    /* one-line guarantee for hero headline */
+    @media (max-width: 500px) {
+      .hero h1 {
+        font-size: 3.5rem; /* fallback, but still one line if possible */
+        white-space: normal;   /* for very tiny: break but design says must stay one line, but extreme edge -> we allow two because sometimes viewport 320px can't show "Silent Nucleus Compute" in one line? but headline is short  */
+      }
+    }
+
+    /* simple divider */
+    hr {
+      border: none;
+      border-top: 1px solid #e2e2ec;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2.5rem;
+      color: #5a5a6e;
+      font-size: 0.95rem;
+      border-top: 1px solid #eaeaf2;
+      margin-top: 2rem;
+    }
+
+    i[data-lucide] {
+      stroke: currentColor;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO (canvas background) -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <h1 class="reveal show">Silent Nucleus Compute</h1>
+    <div class="arrow-down" id="scrollDownArrow">
+      <i data-lucide="chevron-down" width="32" height="32"></i>
+    </div>
+  </section>
+
+  <!-- SECTION 1 - features / benefits -->
+  <section class="reveal" id="features">
+    <div class="section-icon">
+      <i data-lucide="cpu"></i>
+    </div>
+    <h2 class="section-title">Mineral logic · no fans</h2>
+    <div class="section-sub">Passive quantum‑inspired cores — zero moving parts, infinite focus.</div>
+    <div class="grid-3">
+      <div class="card">
+        <i data-lucide="battery-charging" width="32" height="32" class="section-icon" style="margin-bottom: 1rem;"></i>
+        <h3>0 dB experience</h3>
+        <p>Total silence even under full load. Your ears will forget the box exists.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="zap" width="32" height="32" class="section-icon" style="margin-bottom: 1rem;"></i>
+        <h3>Sub‑millisecond latency</h3>
+        <p>Photonic memory channels react faster than nerve signals.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="wind" width="32" height="32" class="section-icon" style="margin-bottom: 1rem;"></i>
+        <h3>No cooling fins</h3>
+        <p>Solid state thermal diffusion through diamond‑carbon skeleton.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 - how it works (steps) -->
+  <section class="reveal" id="how-it-works">
+    <div class="section-icon">
+      <i data-lucide="workflow"></i>
+    </div>
+    <h2 class="section-title">One architecture, three motions</h2>
+    <div class="section-sub">From raw mineral to thought‑speed execution.</div>
+    <div class="grid-2" style="grid-template-columns: 1.2fr 0.8fr;">
+      <div>
+        <div class="step-item">
+          <span class="step-num">01</span>
+          <div>
+            <h3>Silicon photogate</h3>
+            <p>Light encodes instructions directly onto atomic lattice — no electron friction.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <span class="step-num">02</span>
+          <div>
+            <h3>Graphene shuffle</h3>
+            <p>Data travels through 2D carbon sheets at 1/100 the usual resistance.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <span class="step-num">03</span>
+          <div>
+            <h3>Ambient harvest</h3>
+            <p>Background RF energy tops up the reserve cells — wired optional.</p>
+          </div>
+        </div>
+      </div>
+      <div style="background: #edeef3; border-radius: 2.5rem; padding: 2.5rem; display: flex; align-items: center; justify-content: center; min-height: 260px;">
+        <i data-lucide="radio" width="64" height="64" style="stroke:#1f1f2b; stroke-width:1;"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 - advantages -->
+  <section class="reveal" id="advantages">
+    <div class="section-icon">
+      <i data-lucide="gauge"></i>
+    </div>
+    <h2 class="section-title">Unbreakable advantage</h2>
+    <div class="grid-3">
+      <div class="card">
+        <i data-lucide="shield" width="32" height="32" class="section-icon"></i>
+        <h3>Class V durability</h3>
+        <p>Military grade housing, survives immersion, dust, and drops from 2m.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="infinity" width="32" height="32" class="section-icon"></i>
+        <h3>Decades‐long drift</h3>
+        <p>No electrolytic caps — performance degrades less than 1% per decade.</p>
+      </div>
+      <div class="card">
+        <i data-lucide="cloud-off" width="32" height="32" class="section-icon"></i>
+        <h3>Air‑gap native</h3>
+        <p>Works in faraday environments, under water, or in vacuum chambers.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 - use cases (cards) -->
+  <section class="reveal" id="usecases">
+    <div class="section-icon">
+      <i data-lucide="layout-dashboard"></i>
+    </div>
+    <h2 class="section-title">Where silence computes</h2>
+    <div class="grid-3">
+      <div class="use-case-tile">
+        <i data-lucide="microscope" width="32" height="32" class="section-icon"></i>
+        <h3>Research vessels</h3>
+        <p>No fan noise to interfere with sensitive sonar or cryo labs.</p>
+      </div>
+      <div class="use-case-tile">
+        <i data-lucide="headphones" width="32" height="32" class="section-icon"></i>
+        <h3>Recording studios</h3>
+        <p>Zero electrical hum — direct in‐the‐room compute for producers.</p>
+      </div>
+      <div class="use-case-tile">
+        <i data-lucide="orbit" width="32" height="32" class="section-icon"></i>
+        <h3>Edge satellites</h3>
+        <p>No convection needed, survives launch vibration, works in orbit.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 - call to action (minimal) -->
+  <section class="reveal" id="cta">
+    <div class="cta-card">
+      <div class="section-icon" style="stroke: white;">
+        <i data-lucide="sparkles"></i>
+      </div>
+      <h2 class="section-title">The core is ready</h2>
+      <div class="section-sub" style="color: #bdbdd6;">Join the waitlist — first batch Q4 2025</div>
+      <div class="btn">Notify me</div>
+      <!-- subtle footnote: not functional, just ui -->
+    </div>
+  </section>
+
+  <footer>
+    <span>✦ Nucleus compute · mineral intelligence ✦</span>
+  </footer>
+
+  <script>
+    (function() {
+      // init lucide icons
+      lucide.createIcons();
+
+      // down arrow scroll
+      const arrow = document.getElementById('scrollDownArrow');
+      arrow.addEventListener('click', () => {
+        const features = document.getElementById('features');
+        if (features) {
+          features.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // canvas animation (elegant particle field)
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 60;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: Math.random() * 2.2 + 0.8,
+            speedX: (Math.random() - 0.5) * 0.0012,
+            speedY: (Math.random() - 0.5) * 0.0012,
+            opacity: Math.random() * 0.3 + 0.1,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#8f8fa3'; // soft neutral grey
+
+        for (let p of particles) {
+          // update position (gentle drift)
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around edges softly
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          const xPos = p.x * width;
+          const yPos = p.y * height;
+
+          ctx.globalAlpha = p.opacity;
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+      initParticles();
+      drawParticles();
+
+      // INTERSECTION OBSERVER (reveal animation)
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('show');
+          } else {
+            // optional remove class if you want re-animate? we keep visible after first show
+            // but we can leave it added
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ensure hero is shown already (class show was manually set)
+    })();
+  </script>
+
+  <!-- ensure icons reload after dynamic canvas (if needed) -->
+  <script>
+    (function secondCall() {
+      lucide.createIcons();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

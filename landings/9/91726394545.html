@@ -1,0 +1,568 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexis · Edge</title>
+  <!-- Feather icons (lightweight, outline) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #fafaf8;
+      color: #1e1e1e;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* very minimal structure */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    /* ----- hero (full screen, one line headline) ----- */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: #fafaf8;
+      overflow: hidden;
+      padding: 0 1.5rem;
+    }
+
+    /* canvas for animated background (elegant particle wave) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      width: 100%;
+    }
+
+    /* LARGE TYPOGRAPHY — one line, no break */
+    .hero h1 {
+      font-size: clamp(3.5rem, 15vw, 7rem);
+      font-weight: 550;
+      letter-spacing: -0.02em;
+      color: #1a1a1a;
+      line-height: 1.1;
+      white-space: nowrap;           /* force one line */
+      max-width: 100%;
+      text-rendering: optimizeLegibility;
+      margin: 0 auto;
+      padding: 0 0.2rem;
+    }
+
+    /* down arrow */
+    .arrow-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      color: #2b2b2b;
+      opacity: 0.75;
+      transition: opacity 0.2s, transform 0.3s ease;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+    .arrow-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(6px);
+    }
+    .arrow-down i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.5;
+    }
+
+    /* ----- generic section style ----- */
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 4rem;
+      color: #111;
+    }
+    .section-title.light {
+      color: #fff;
+    }
+
+    /* feature grid (icons + text) */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem 4rem;
+      align-items: start;
+    }
+    .grid-item {
+      text-align: left;
+    }
+    .grid-item i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.2;
+      color: #1e1e1e;
+      margin-bottom: 1.5rem;
+      transition: transform 0.2s ease;
+    }
+    .grid-item:hover i {
+      transform: scale(1.05);
+    }
+    .grid-item h3 {
+      font-size: 1.7rem;
+      font-weight: 450;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+    .grid-item p {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      color: #3e3e3e;
+    }
+
+    /* "how it works" minimal steps (horizontal on desktop, stacked on mobile) */
+    .steps {
+      display: flex;
+      gap: 3rem;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .step {
+      flex: 1 1 200px;
+    }
+    .step .step-num {
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: #8a8a8a;
+      margin-bottom: 0.5rem;
+    }
+    .step i {
+      width: 36px;
+      height: 36px;
+      margin: 1rem 0;
+      stroke-width: 1.2;
+      color: #222;
+    }
+    .step h4 {
+      font-size: 1.8rem;
+      font-weight: 450;
+      margin: 0.5rem 0 1rem;
+    }
+    .step p {
+      font-size: 1.1rem;
+      color: #4a4a4a;
+    }
+
+    /* advantages list (simple monochrome) */
+    .advantage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .advantage-item {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 1.5rem;
+    }
+    .advantage-item i {
+      width: 36px;
+      height: 36px;
+      stroke-width: 1.2;
+      color: #1e1e1e;
+    }
+    .advantage-item span {
+      font-size: 1.7rem;
+      font-weight: 420;
+    }
+
+    /* use cases – card style */
+    .case-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+    .case-card {
+      background: #fff;
+      padding: 2.5rem 2rem;
+      border-radius: 0;
+      box-shadow: 0 10px 25px -8px rgba(0,0,0,0.03);
+      transition: transform 0.25s, box-shadow 0.3s;
+      border: 1px solid #ecece8;
+    }
+    .case-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 30px 40px -20px rgba(0,0,0,0.1);
+    }
+    .case-card i {
+      width: 44px;
+      height: 44px;
+      stroke-width: 1;
+      margin-bottom: 2rem;
+      color: #1a1a1a;
+    }
+    .case-card h3 {
+      font-size: 1.9rem;
+      font-weight: 450;
+      margin-bottom: 0.8rem;
+    }
+    .case-card p {
+      font-size: 1.1rem;
+      color: #4f4f4f;
+    }
+
+    /* cta minimal */
+    .cta-section {
+      text-align: center;
+      background: #f2f2ef;
+      border-radius: 2px;
+      margin: 0 2rem 4rem;
+      padding: 5rem 2rem;
+    }
+    .cta-section h2 {
+      font-size: 3.5rem;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    .cta-section p {
+      font-size: 1.4rem;
+      color: #3b3b3b;
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+    }
+    .cta-btn {
+      background: #1e1e1e;
+      color: #fff;
+      border: none;
+      font-size: 1.4rem;
+      padding: 0.9rem 3rem;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      border-radius: 0;
+    }
+    .cta-btn:hover {
+      background: #3a3a3a;
+      transform: scale(1.02);
+    }
+
+    /* reveal animation on scroll (simple fade-up) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.15, 0.75, 0.3, 1), transform 0.7s cubic-bezier(0.15, 0.75, 0.3, 1);
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* responsiveness */
+    @media (max-width: 800px) {
+      section {
+        padding: 4rem 1.5rem;
+      }
+      .hero h1 {
+        font-size: clamp(3rem, 12vw, 5rem);
+        white-space: normal;      /* fallback if extremely narrow — but we keep one line manually, but clamp keeps large */
+      }
+      .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+      .steps {
+        flex-direction: column;
+        gap: 2.5rem;
+      }
+      .advantage-item {
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .advantage-item span {
+        font-size: 1.4rem;
+      }
+      .cta-section h2 {
+        font-size: 2.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 {
+        font-size: 3.2rem;   /* still one line if possible, but clamp ensures one line */
+        white-space: normal;  /* only breaks if absolutely needed, but it stays one word for typical content */
+      }
+    }
+
+    /* feather icons config */
+    i {
+      display: inline-block;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* down arrow anchor */
+    .scroll-hint {
+      text-decoration: none;
+    }
+
+    /* no gradients, no colorful illustrations — all monochrome outlines */
+  </style>
+</head>
+<body>
+
+  <!-- HERO – one line headline only, canvas background, down arrow -->
+  <div class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>EDGE·OS</h1>                <!-- single line, large, minimal -->
+    </div>
+    <a href="#start" class="arrow-down scroll-hint" id="downArrow">
+      <i data-feather="arrow-down"></i>
+    </a>
+  </div>
+
+  <!-- first section marker for scroll -->
+  <main id="start">
+    <!-- 1. Features / Benefits -->
+    <section class="reveal">
+      <h2 class="section-title">Beyond the expected</h2>
+      <div class="grid-3">
+        <div class="grid-item">
+          <i data-feather="zap"></i>
+          <h3>Instant edge</h3>
+          <p>Low‑latency inference at the device, no round trips. sub‑5ms response.</p>
+        </div>
+        <div class="grid-item">
+          <i data-feather="lock"></i>
+          <h3>Zero‑trust fabric</h3>
+          <p>Hardware‑anchored encryption and attestation out of the box.</p>
+        </div>
+        <div class="grid-item">
+          <i data-feather="wind"></i>
+          <h3>Lightweight core</h3>
+          <p>20MB footprint. Runs on anything from RISC‑V to x86.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. How it works -->
+    <section class="reveal">
+      <h2 class="section-title">Three‑step integration</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <i data-feather="code"></i>
+          <h4>Deploy SDK</h4>
+          <p>One‑line install, no dependency hell.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <i data-feather="git-commit"></i>
+          <h4>Connect nodes</h4>
+          <p>Automatic peer discovery via secure mesh.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <i data-feather="activity"></i>
+          <h4>Observe & scale</h4>
+          <p>Real‑time dashboard with live metrics.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Advantages (clean bullet list with icons) -->
+    <section class="reveal">
+      <h2 class="section-title">Raw advantages</h2>
+      <div class="advantage-list">
+        <div class="advantage-item">
+          <i data-feather="battery-charging"></i>
+          <span>Ultra low power consumption (idle < 0.3W)</span>
+        </div>
+        <div class="advantage-item">
+          <i data-feather="globe"></i>
+          <span>Native multi‑cloud & on‑prem hybrid</span>
+        </div>
+        <div class="advantage-item">
+          <i data-feather="shield"></i>
+          <span>Air‑gapped capable, no telemetry by default</span>
+        </div>
+        <div class="advantage-item">
+          <i data-feather="cpu"></i>
+          <span>Bare‑metal performance, no overhead</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Use cases -->
+    <section class="reveal">
+      <h2 class="section-title">Where it moves</h2>
+      <div class="case-grid">
+        <div class="case-card">
+          <i data-feather="mic"></i>
+          <h3>Voice AI</h3>
+          <p>On‑device assistants with 99% accuracy.</p>
+        </div>
+        <div class="case-card">
+          <i data-feather="eye"></i>
+          <h3>Vision edge</h3>
+          <p>Real‑time defect detection in factories.</p>
+        </div>
+        <div class="case-card">
+          <i data-feather="map"></i>
+          <h3>Logistics</h3>
+          <p>Fleet tracking without cloud dependency.</p>
+        </div>
+        <div class="case-card">
+          <i data-feather="server"></i>
+          <h3>Micro data centers</h3>
+          <p>Unified control plane for remote POPs.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Call to action -->
+    <section class="cta-section reveal">
+      <h2>Deploy on the edge.</h2>
+      <p>No commitments, full access. Start building in minutes.</p>
+      <button class="cta-btn">Get early access →</button>
+    </section>
+  </main>
+
+  <script>
+    (function() {
+      feather.replace({ width: '1.3em', height: '1.3em', 'stroke-width': 1.5 });
+
+      // === subtle canvas background (hero) - animated particles / wave ===
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 55;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            radius: 2 + Math.random() * 3.5,
+            speedX: (Math.random() - 0.5) * 0.0015,
+            speedY: (Math.random() - 0.5) * 0.0015,
+            baseAlpha: 0.3 + Math.random() * 0.25,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#1e1e1e';    // dark dots, very subtle
+        for (let p of particles) {
+          // update position (gentle drift)
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around edges very softly
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          const xPos = p.x * width;
+          const yPos = p.y * height;
+          // alpha slightly variable over time
+          const alpha = p.baseAlpha + 0.1 * Math.sin(Date.now() * 0.001 + p.radius);
+          ctx.globalAlpha = Math.min(alpha, 0.5);
+          ctx.beginPath();
+          ctx.arc(xPos, yPos, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#2b2b2b';
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+      initParticles();
+      resizeCanvas();
+      drawParticles();
+
+      // === smooth scroll on down arrow ===
+      document.getElementById('downArrow').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('start').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // === reveal on scroll (Intersection Observer) ===
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+            // optional: keep visible after first reveal (no un-reveal)
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // also pre-reveal if already visible
+      window.addEventListener('load', () => {
+        revealElements.forEach(el => {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < window.innerHeight - 100) {
+            el.classList.add('active');
+          }
+        });
+      });
+    })();
+  </script>
+
+  <!-- feather auto-replace again (if icons added later) -->
+  <script>
+    (function secondary() {
+      feather.replace({ width: '1.3em', height: '1.3em', 'stroke-width': 1.5 });
+    })();
+  </script>
+
+</body>
+</html>
+All done!
+```

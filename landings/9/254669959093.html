@@ -1,0 +1,503 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lumina Edge · silent compute</title>
+  <!-- Feather icons (lightweight, outline, monochrome) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* -------------------- RESET & GLOBAL -------------------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background-color: #f8fafc;
+      color: #101214;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* -------------------- REUSABLE SECTION STYLES -------------------- */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 3rem;
+      line-height: 1.1;
+    }
+
+    @media (max-width: 640px) {
+      section {
+        padding: 4rem 1.5rem;
+      }
+      .section-title {
+        font-size: 2.2rem;
+      }
+    }
+
+    /* -------------------- HERO SECTION (full screen, minimal) -------------------- */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background-color: #f8fafc; /* base, canvas effect will overlay */
+      overflow: hidden;
+      padding: 2rem;
+    }
+
+    /* canvas background (animated, subtle) */
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none; /* allows clicking through to down arrow */
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.2rem, 15vw, 7.5rem);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      color: #0a0c0f;
+      max-width: 1200px;
+      margin: 0 auto;
+      white-space: nowrap;       /* force one line */
+      line-height: 1.1;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      padding: 0 0.5rem;
+    }
+
+    /* mobile fallback — still one line (scales down) */
+    @media (max-width: 550px) {
+      .hero h1 {
+        font-size: 13vw;
+        white-space: nowrap;
+      }
+    }
+
+    /* down arrow icon (feather) */
+    .scroll-down {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: #1e293b;
+      transition: transform 0.25s ease, opacity 0.2s;
+      opacity: 0.75;
+      padding: 0.5rem;
+    }
+
+    .scroll-down:hover {
+      opacity: 1;
+      transform: translateX(-50%) translateY(5px);
+    }
+
+    .scroll-down i {
+      width: 44px;
+      height: 44px;
+      stroke-width: 1.2;
+    }
+
+    /* -------------------- ICON STYLING (monochrome outline) -------------------- */
+    .feature-icon {
+      margin-bottom: 1.5rem;
+      color: #1e293b; /* neutral dark gray */
+    }
+
+    .feature-icon i {
+      width: 48px;
+      height: 48px;
+      stroke-width: 1.2;
+    }
+
+    /* -------------------- FEATURE GRIDS -------------------- */
+    .features-grid, .work-grid, .advantages-grid, .use-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 3.5rem 2rem;
+      margin-top: 1rem;
+    }
+
+    .feature-item, .work-item, .advantage-item, .use-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .feature-item h3, .work-item h3, .advantage-item h3, .use-item h3 {
+      font-size: 1.8rem;
+      font-weight: 550;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    .feature-item p, .work-item p, .advantage-item p, .use-item p {
+      font-size: 1.2rem;
+      color: #334155;
+      max-width: 42ch;
+    }
+
+    /* advantage specific */
+    .advantage-item .accent {
+      font-size: 2.8rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #0f172a;
+    }
+
+    /* -------------------- CTA SECTION -------------------- */
+    .cta-section {
+      background-color: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 20px 35px -8px rgba(0,0,0,0.03);
+      margin: 3rem 2rem 6rem;
+      padding: 5rem 3rem;
+      text-align: center;
+      border: 1px solid #e9edf2;
+    }
+
+    .cta-title {
+      font-size: 3.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-sub {
+      font-size: 1.4rem;
+      color: #334155;
+      max-width: 600px;
+      margin: 0 auto 2.8rem auto;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: #0f172a;
+      color: white;
+      border: none;
+      border-radius: 60px;
+      padding: 1.2rem 3.2rem;
+      font-size: 1.3rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+      text-decoration: none;
+    }
+
+    .cta-button:hover {
+      background: #1e293b;
+      transform: translateY(-3px);
+    }
+
+    /* reveal animations (intersection observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.8s cubic-bezier(0.15, 0.75, 0.3, 1), transform 0.8s cubic-bezier(0.15, 0.75, 0.3, 1);
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* micro-interactions */
+    .feature-item, .work-item, .advantage-item, .use-item {
+      transition: transform 0.2s;
+    }
+
+    .feature-item:hover, .work-item:hover, .advantage-item:hover, .use-item:hover {
+      transform: translateX(5px);
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #dde2e9;
+      margin: 1rem 2rem;
+    }
+
+    /* footer */
+    .footer-note {
+      text-align: center;
+      padding: 2.5rem 2rem 4rem;
+      font-size: 1rem;
+      color: #4b5b6b;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO with canvas animation + down arrow -->
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1>Neural interfaces are here.</h1>
+    </div>
+    <div class="scroll-down" id="scrollDownArrow">
+      <i data-feather="arrow-down-circle"></i>
+    </div>
+  </section>
+
+  <!-- SECTION 1 — Features / Benefits (monochrome icons) -->
+  <section class="reveal" id="features">
+    <h2 class="section-title">Designed for silence ·<br>engineered for depth.</h2>
+    <div class="features-grid">
+      <div class="feature-item">
+        <div class="feature-icon"><i data-feather="cpu"></i></div>
+        <h3>Zero latency</h3>
+        <p>Real‑time inference at the edge, no cloud dependency. Your data stays local.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon"><i data-feather="eye"></i></div>
+        <h3>Subvocal recognition</h3>
+        <p>Surface thoughts via biosensors — the first silent interface for everyday flow.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon"><i data-feather="battery-charging"></i></div>
+        <h3>All‑day energy</h3>
+        <p>Adaptive micro‑power architecture runs for 48+ hours on a single charge.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon"><i data-feather="shield"></i></div>
+        <h3>Encrypted by design</h3>
+        <p>End‑to‑end hardware encryption. Your neural data belongs to you.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 — How it works (simple steps) -->
+  <section class="reveal" id="howitworks">
+    <h2 class="section-title">Intent. Action. In harmony.</h2>
+    <div class="work-grid">
+      <div class="work-item">
+        <div class="feature-icon"><i data-feather="radio"></i></div>
+        <h3>Sense</h3>
+        <p>Ultra‑thin epidermal sensors read micro‑muscle impulses.</p>
+      </div>
+      <div class="work-item">
+        <div class="feature-icon"><i data-feather="zap"></i></div>
+        <h3>Interpret</h3>
+        <p>On‑device AI translates intent into digital commands.</p>
+      </div>
+      <div class="work-item">
+        <div class="feature-icon"><i data-feather="smartphone"></i></div>
+        <h3>Connect</h3>
+        <p>Seamless link with any Bluetooth device — phone, laptop, glasses.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 — Advantages (key differentiators) -->
+  <section class="reveal" id="advantages">
+    <h2 class="section-title">Beyond voice, beyond touch.</h2>
+    <div class="advantages-grid">
+      <div class="advantage-item">
+        <span class="accent">20x</span>
+        <h3>faster intent capture</h3>
+        <p>No typing, no speaking — just think and execute.</p>
+      </div>
+      <div class="advantage-item">
+        <span class="accent">99.8%</span>
+        <h3>privacy by default</h3>
+        <p>Everything processed on‑chip, nothing leaves your body.</p>
+      </div>
+      <div class="advantage-item">
+        <span class="accent">5µW</span>
+        <h3>ultra‑low power</h3>
+        <p>Revolutionary analog compute — weeks of use.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 — Use cases (specific scenarios) -->
+  <section class="reveal" id="usecases">
+    <h2 class="section-title">Invisible computing, visible impact.</h2>
+    <div class="use-grid">
+      <div class="use-item">
+        <div class="feature-icon"><i data-feather="code"></i></div>
+        <h3>Creators</h3>
+        <p>Code, design & write hands‑free — your flow uninterrupted.</p>
+      </div>
+      <div class="use-item">
+        <div class="feature-icon"><i data-feather="map"></i></div>
+        <h3>Field workers</h3>
+        <p>Access manuals, comms while keeping eyes on task.</p>
+      </div>
+      <div class="use-item">
+        <div class="feature-icon"><i data-feather="accessibility"></i></div>
+        <h3>Accessibility</h3>
+        <p>New pathways for people with motor or speech limitations.</p>
+      </div>
+      <div class="use-item">
+        <div class="feature-icon"><i data-feather="globe"></i></div>
+        <h3>Translators</h3>
+        <p>Subvocal translation — speak any language silently.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 — Call to action (clean, minimal) -->
+  <div class="reveal" id="cta">
+    <div class="cta-section">
+      <h2 class="cta-title">Join the silent revolution.</h2>
+      <div class="cta-sub">Early access for developers & creators.</div>
+      <button class="cta-button" id="ctaBtn">Reserve your unit</button>
+    </div>
+  </div>
+
+  <!-- subtle footer -->
+  <div class="footer-note">
+    <span>© 2026 LUMINA EDGE — NEURAL INTERFACES</span>
+  </div>
+
+  <!-- scripts: feather icons + custom animation + smooth scroll + reveal -->
+  <script>
+    (function() {
+      // ---------- FEATHER ICONS ----------
+      feather.replace();
+
+      // ---------- HERO CANVAS (subtle animated background) ----------
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const particleCount = 65;
+        particles = [];
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 2.2 + 0.6,
+            speedX: (Math.random() - 0.5) * 0.35,
+            speedY: (Math.random() - 0.5) * 0.15,
+            opacity: Math.random() * 0.35 + 0.15
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, width, height);
+        if (!particles.length) return;
+
+        ctx.fillStyle = '#1e2b3c'; // subtle dark dots
+        for (let p of particles) {
+          ctx.globalAlpha = p.opacity * 0.6;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // move
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          // wrap around softly
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+      resizeCanvas();
+      drawParticles();
+
+      // ---------- SMOOTH SCROLL (down arrow) ----------
+      document.getElementById('scrollDownArrow').addEventListener('click', () => {
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // subtle interaction: CTA button hover effect (already in css)
+      // but add small console free feel
+      document.getElementById('ctaBtn').addEventListener('click', () => {
+        alert('✨ Thank you — we’ll contact you shortly. (demo flow)');
+      });
+
+      // ---------- REVEAL ON SCROLL (Intersection Observer) ----------
+      const revealElements = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            // optional: keep observing to avoid flicker, but fine
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '20px 0px 20px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ensure hero canvas doesn't block arrow clicks (pointer-events already none)
+      // Also fix any icon sizing after feather replace
+      setTimeout(() => feather.replace(), 50);
+    })();
+  </script>
+
+  <!-- ensure all icons get stroke & outline style -->
+  <style>
+    /* additional micro fix for feather alignment */
+    i {
+      stroke: currentColor;
+      fill: none;
+    }
+    .feature-icon i {
+      width: 48px;
+      height: 48px;
+    }
+    .scroll-down i {
+      width: 44px;
+      height: 44px;
+    }
+  </style>
+</body>
+</html>
+All done!
+```

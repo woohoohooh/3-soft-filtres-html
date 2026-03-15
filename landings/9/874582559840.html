@@ -1,0 +1,530 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>solara • ambient compute</title>
+    <!-- Feather Icons (lightweight, outline only) -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5f5f7;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.4;
+            color: #1d1d1f;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* ----- hero ----- */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f7;
+            overflow: hidden;
+        }
+
+        /* canvas – subtle animated background */
+        #bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 1200px;
+            padding: 2rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 15vw, 8rem);
+            font-weight: 550;
+            letter-spacing: -0.02em;
+            color: #1d1d1f;
+            line-height: 1.1;
+            white-space: nowrap;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            margin-bottom: 2rem;
+        }
+
+        /* down arrow */
+        .scroll-link {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            color: #2d2d2f;
+            opacity: 0.65;
+            transition: opacity 0.2s ease, transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .scroll-link:hover {
+            opacity: 1;
+            transform: translateX(-50%) translateY(4px);
+        }
+
+        .scroll-link i {
+            width: 36px;
+            height: 36px;
+            stroke-width: 1.2;
+        }
+
+        /* ----- global section style ----- */
+        .section {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 7rem 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .section:last-of-type {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 520;
+            letter-spacing: -0.02em;
+            margin-bottom: 3.5rem;
+            color: #1d1d1f;
+            line-height: 1.1;
+        }
+
+        .grid-2, .grid-3 {
+            display: grid;
+            gap: 4rem 3rem;
+        }
+
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+        /* cards / feature blocks */
+        .feature-item, .advantage-item, .use-case-item {
+            background: transparent;
+            padding: 0.2rem 0;
+        }
+
+        .icon-circle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            border-radius: 60px;
+            width: 72px;
+            height: 72px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.02), 0 2px 6px rgba(0,0,0,0.02);
+            border: 1px solid #e9e9ed;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .feature-item:hover .icon-circle,
+        .advantage-item:hover .icon-circle,
+        .use-case-item:hover .icon-circle {
+            box-shadow: 0 20px 30px -10px rgba(0,0,0,0.08);
+            transform: scale(1.02);
+        }
+
+        .icon-circle i {
+            width: 34px;
+            height: 34px;
+            color: #1d1d1f;
+            stroke-width: 1.5;
+        }
+
+        h3 {
+            font-size: 1.9rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.75rem;
+            color: #1d1d1f;
+        }
+
+        p {
+            font-size: 1.25rem;
+            color: #3a3a3e;
+            max-width: 500px;
+            line-height: 1.5;
+            font-weight: 380;
+        }
+
+        /* how it works – steps */
+        .step-item {
+            counter-increment: step-counter;
+            position: relative;
+            padding-left: 5rem;
+        }
+
+        .steps-container {
+            counter-reset: step-counter;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        .step-item h3::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 2.2rem;
+            font-weight: 430;
+            color: #b1b1b6;
+            line-height: 1;
+        }
+
+        /* CTA */
+        .cta-block {
+            background: #ffffff;
+            border-radius: 48px;
+            padding: 5rem 4rem;
+            text-align: center;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.02);
+            border: 1px solid #eaeaee;
+        }
+
+        .cta-block h2 {
+            font-size: 3.2rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: #1d1d1f;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 450;
+            padding: 1.2rem 3.2rem;
+            border-radius: 60px;
+            text-decoration: none;
+            border: none;
+            transition: background 0.2s, transform 0.15s;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            letter-spacing: 0.2px;
+        }
+
+        .cta-button:hover {
+            background: #2d2d30;
+            transform: scale(1.02);
+        }
+
+        /* reveal animation (on scroll) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(26px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* mobile */
+        @media (max-width: 700px) {
+            .hero h1 {
+                font-size: clamp(2.5rem, 12vw, 5rem);
+                white-space: normal;      /* fallback for very small screens, but we force one line */
+            }
+            /* force one line anyway — use viewport scaling */
+            .hero h1 {
+                white-space: nowrap;
+                font-size: 12vw;
+            }
+            .section {
+                padding: 4rem 1.5rem;
+            }
+            .section-title {
+                font-size: 2.2rem;
+                margin-bottom: 2rem;
+            }
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+            }
+            .cta-block {
+                padding: 3rem 1.5rem;
+            }
+            .cta-block h2 {
+                font-size: 2.2rem;
+            }
+            .icon-circle {
+                width: 64px;
+                height: 64px;
+            }
+            .icon-circle i {
+                width: 30px;
+                height: 30px;
+            }
+            h3 {
+                font-size: 1.7rem;
+            }
+            p {
+                font-size: 1.1rem;
+            }
+            .step-item {
+                padding-left: 3.5rem;
+            }
+        }
+
+        /* extra small devices: still keep headline one line using vw */
+        @media (max-width: 450px) {
+            .hero h1 {
+                font-size: 13vw;   
+            }
+        }
+
+        /* feather icons init */
+        i {
+            stroke: currentColor;
+            fill: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero with canvas background -->
+    <section class="hero" id="home">
+        <canvas id="bgCanvas"></canvas>
+        <div class="hero-content">
+            <h1>ambient intelligence</h1>
+        </div>
+        <a href="#features" class="scroll-link" id="downArrow">
+            <i data-feather="arrow-down"></i>
+        </a>
+    </section>
+
+    <!-- sections -->
+    <section class="section" id="features">
+        <h2 class="section-title reveal">unobtrusive · adaptive</h2>
+        <div class="grid-2">
+            <div class="feature-item reveal">
+                <div class="icon-circle"><i data-feather="cpu"></i></div>
+                <h3>invisible compute</h3>
+                <p>No screens, no wearables — your environment becomes the interface.</p>
+            </div>
+            <div class="feature-item reveal">
+                <div class="icon-circle"><i data-feather="radio"></i></div>
+                <h3>spatial presence</h3>
+                <p>Ultra‑wideband mesh follows you from room to room, zero latency.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="how-it-works">
+        <h2 class="section-title reveal">works in four gestures</h2>
+        <div class="steps-container">
+            <div class="step-item reveal">
+                <div class="icon-circle" style="margin-bottom: 1rem;"><i data-feather="map-pin"></i></div>
+                <h3>anchor</h3>
+                <p>Place the solara pucks anywhere — they self‑locate with millimeter precision.</p>
+            </div>
+            <div class="step-item reveal">
+                <div class="icon-circle" style="margin-bottom: 1rem;"><i data-feather="zap"></i></div>
+                <h3>resonate</h3>
+                <p>Sub‑sonic modulation creates a personal data field around you.</p>
+            </div>
+            <div class="step-item reveal">
+                <div class="icon-circle" style="margin-bottom: 1rem;"><i data-feather="cast"></i></div>
+                <h3>reflect</h3>
+                <p>Intentional micro‑movements trigger actions — lights, sound, haptics.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="advantages">
+        <h2 class="section-title reveal">beyond the screen</h2>
+        <div class="grid-3">
+            <div class="advantage-item reveal">
+                <div class="icon-circle"><i data-feather="battery-charging"></i></div>
+                <h3>years, not days</h3>
+                <p>Energy‑harvesting pucks — no batteries, no wires, no maintenance.</p>
+            </div>
+            <div class="advantage-item reveal">
+                <div class="icon-circle"><i data-feather="shield"></i></div>
+                <h3>local by design</h3>
+                <p>All inference on‑edge. Your spatial patterns never leave your walls.</p>
+            </div>
+            <div class="advantage-item reveal">
+                <div class="icon-circle"><i data-feather="wind"></i></div>
+                <h3>organic materials</h3>
+                <p>Machined ceramic, wool composite — blends into any interior.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="use-cases">
+        <h2 class="section-title reveal">silent interaction</h2>
+        <div class="grid-2">
+            <div class="use-case-item reveal">
+                <div class="icon-circle"><i data-feather="home"></i></div>
+                <h3>deep work</h3>
+                <p>Light shifts as you think, noise cancels adaptively, no switches.</p>
+            </div>
+            <div class="use-case-item reveal">
+                <div class="icon-circle"><i data-feather="users"></i></div>
+                <h3>shared spaces</h3>
+                <p>Multiple inhabitants — each experiences a personal cocoon.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="cta">
+        <div class="cta-block reveal">
+            <h2>feel the shift</h2>
+            <a href="#" class="cta-button">reserve solara →</a>
+            <p style="margin-top: 2rem; font-size: 1rem; color: #86868b;">first units Q1 2026 · private preview</p>
+        </div>
+    </section>
+
+    <script>
+        // initialize feather icons
+        feather.replace();
+
+        // ---------- canvas animation (subtle, elegant) ----------
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+
+        function initParticles() {
+            particles = [];
+            const particleCount = 55;
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 2.2 + 0.6,
+                    speedX: (Math.random() - 0.5) * 0.12,
+                    speedY: (Math.random() - 0.5) * 0.08,
+                    opacity: Math.random() * 0.15 + 0.06,
+                });
+            }
+        }
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            initParticles();
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#c0c0c8'; // very light grey, almost invisible
+            for (let p of particles) {
+                ctx.globalAlpha = p.opacity;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#6e6e73';
+                ctx.fill();
+            }
+
+            // occasional connecting lines (barely visible)
+            ctx.globalAlpha = 0.015;
+            ctx.strokeStyle = '#3d3d44';
+            ctx.lineWidth = 0.6;
+            for (let i = 0; i < particles.length; i += 3) {
+                for (let j = i + 1; j < particles.length; j += 5) {
+                    let dx = particles[i].x - particles[j].x;
+                    let dy = particles[i].y - particles[j].y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 110) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function updateParticles() {
+            for (let p of particles) {
+                p.x += p.speedX;
+                p.y += p.speedY;
+
+                // wrap softly
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+            }
+            drawParticles();
+            requestAnimationFrame(updateParticles);
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+
+        resizeCanvas();
+        requestAnimationFrame(updateParticles);
+
+        // ---------- reveal on scroll ----------
+        const revealElements = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    // optional: keep visible after reveal
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+        revealElements.forEach(el => observer.observe(el));
+
+        // manually trigger a check after load
+        window.addEventListener('load', () => {
+            // tiny delay to ensure layout
+            setTimeout(() => {
+                revealElements.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < window.innerHeight - 100) {
+                        el.classList.add('active');
+                    }
+                });
+            }, 150);
+        });
+
+        // smooth scroll for down arrow
+        document.getElementById('downArrow').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+        });
+    </script>
+</body>
+</html>
+All done!
+```
