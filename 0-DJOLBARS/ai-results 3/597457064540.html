@@ -1,0 +1,523 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VISTA · аудит & консалтинг</title>
+  <!-- Font Awesome 6 (бесплатные иконы) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f6f8fc;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #13294b;
+      scroll-behavior: smooth;
+      line-height: 1.4;
+    }
+
+    /* Подключаем Inter локально (modern fallback) */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+    /* Фиксированная навигация (преображается при скролле) */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.8rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      transition: all 0.25s ease;
+      background: transparent;
+      color: white;
+      mix-blend-mode: exclusion; /* смелый эффект */
+      pointer-events: none;
+    }
+    .navbar a, .logo {
+      pointer-events: auto;
+    }
+    .navbar.scrolled {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(10px);
+      padding: 0.9rem 3rem;
+      box-shadow: 0 8px 30px rgba(0,20,50,0.08);
+      color: #0a1c3a;
+      mix-blend-mode: normal;
+    }
+    .navbar.scrolled .logo,
+    .navbar.scrolled .nav-links a {
+      color: #0a1c3a;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.5px;
+      color: white;
+      transition: color 0.2s;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .navbar.scrolled .logo {
+      text-shadow: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: 2.8rem;
+      font-weight: 500;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: inherit;
+      font-size: 1.1rem;
+      border-bottom: 1.5px solid transparent;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .nav-links a:hover {
+      border-bottom-color: currentColor;
+      transform: translateY(-1px);
+    }
+
+    /* основной контейнер */
+    .block {
+      min-height: 100vh;
+      padding: 5rem 3rem 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* анимация появления при скролле (Intersection Observer) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.19, 1, 0.22, 1), transform 0.9s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* дополнительная задержка для текста */
+    .delay-1 { transition-delay: 0.1s; }
+    .delay-2 { transition-delay: 0.2s; }
+    .delay-3 { transition-delay: 0.3s; }
+
+    /* шапка с js-анимацией (WebGL-подобный градиент) */
+    .header-block {
+      background: #0b142c;
+      color: white;
+      position: relative;
+    }
+    #canvas-gradient {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: block;
+      z-index: 0;
+      opacity: 0.75;
+    }
+    .header-content {
+      position: relative;
+      z-index: 5;
+      max-width: 1100px;
+    }
+    .header-content h1 {
+      font-size: 5.2rem;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -2px;
+      margin-bottom: 1.5rem;
+    }
+    .header-content p {
+      font-size: 1.6rem;
+      opacity: 0.85;
+      max-width: 680px;
+      font-weight: 300;
+      border-left: 4px solid #ffd166;
+      padding-left: 1.5rem;
+    }
+
+    /* остальные блоки */
+    .section-title {
+      font-size: 3rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      letter-spacing: -0.02em;
+    }
+    .title-accent {
+      color: #1f4c8c;
+      border-bottom: 3px solid #ffd166;
+      display: inline-block;
+      padding-bottom: 0.2rem;
+    }
+
+    /* карточки и сетки */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.2rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: white;
+      border-radius: 2.5rem;
+      padding: 2.5rem 1.8rem;
+      box-shadow: 0 25px 40px -18px rgba(0,32,64,0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s;
+      border: 1px solid rgba(0,40,80,0.05);
+    }
+    .card:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 35px 55px -18px rgba(0,20,70,0.25);
+    }
+    .card i {
+      font-size: 2.8rem;
+      color: #1f4c8c;
+      margin-bottom: 1.5rem;
+    }
+    .card h3 {
+      font-size: 1.9rem;
+      margin-bottom: 1rem;
+    }
+    .card p {
+      color: #2c3e50;
+    }
+
+    /* кастомная подсветка текста */
+    .highlight {
+      background: linear-gradient(145deg, #ffd166, #ffbe3f);
+      color: #0b1c2c;
+      padding: 0.1rem 0.4rem;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
+    /* футер */
+    .footer-block {
+      min-height: 35vh;
+      background: #0c1a2f;
+      color: #ccddee;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .footer-block .socials {
+      margin: 2rem 0;
+    }
+    .footer-block .socials a {
+      color: white;
+      margin: 0 1rem;
+      font-size: 2rem;
+      transition: 0.2s;
+      display: inline-block;
+    }
+    .footer-block .socials a:hover {
+      transform: scale(1.2);
+      color: #ffd166;
+    }
+
+    /* кнопки/акции */
+    .btn {
+      background: #13294b;
+      color: white;
+      border: none;
+      padding: 0.8rem 2.8rem;
+      border-radius: 40px;
+      font-size: 1.2rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-block;
+      text-decoration: none;
+      margin-top: 2rem;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .btn:hover {
+      background: #1f4c8c;
+      transform: scale(1.03);
+      box-shadow: 0 15px 30px -10px #0a1e3a;
+    }
+
+    /* якоря */
+    .no-link-style {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* эффект при смене блоков (параллакс-тень) */
+    .block::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: radial-gradient(circle at center, rgba(255,209,102,0.3) 0%, transparent 80%);
+      opacity: 0.4;
+    }
+
+    /* простая адаптация под ПК (остаётся десктоп) */
+    @media (max-width: 1300px) {
+      .grid-3 { gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ФИКСИРОВАННОЕ МЕНЮ (преображается) -->
+  <div class="navbar" id="navbar">
+    <span class="logo">VISTA</span>
+    <div class="nav-links">
+      <a href="#home">Главная</a>
+      <a href="#services">Услуги</a>
+      <a href="#cases">Кейсы</a>
+      <a href="#about">О нас</a>
+      <a href="#contact">Контакты</a>
+    </div>
+  </div>
+
+  <!-- БЛОК 1: ШАПКА (с анимацией canvas) -->
+  <section id="home" class="block header-block">
+    <canvas id="canvas-gradient"></canvas>
+    <div class="header-content fade-up visible"> <!-- сразу видно, без наблюдателя -->
+      <h1>Аудит,<br>который видит <span class="highlight">больше</span></h1>
+      <p>VISTA — финансовый консалтинг и независимый аудит для компаний, готовых к масштабированию.</p>
+      <a href="#contact" class="btn" style="background:#ffd166; color:#0b1c2c;">Стать клиентом</a>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: КЛЮЧЕВЫЕ УСЛУГИ -->
+  <section id="services" class="block" style="background:#f0f5fe;">
+    <div class="fade-up section-title"><span class="title-accent">Компетенции</span> VISTA</div>
+    <div class="grid-3 fade-up delay-1">
+      <div class="card">
+        <i class="fas fa-balance-scale"></i>
+        <h3>Аудит</h3>
+        <p>Полная проверка отчётности, налоговые риски, резервы. <span class="highlight">IAS / IFRS</span>.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-calculator"></i>
+        <h3>Бухгалтерия</h3>
+        <p>Абонентское обслуживание, восстановление учёта, зарплатные проекты.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-chart-line"></i>
+        <h3>Страхование</h3>
+        <p>Аудит страховых портфелей, оптимизация программ для бизнеса.</p>
+      </div>
+    </div>
+    <div class="grid-3 fade-up delay-2" style="margin-top:0.2rem;">
+      <div class="card">
+        <i class="fas fa-file-invoice"></i>
+        <h3>Налоги</h3>
+        <p>Судебная защита, due diligence, налоговое планирование.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-handshake"></i>
+        <h3>Консалтинг</h3>
+        <p>Сделки M&A, финансовая модель, привлечение инвестиций.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-shield-alt"></i>
+        <h3>Комплаенс</h3>
+        <p>Внутренний контроль, антифрод, санкционный комплаенс.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: ЦИФРЫ / ДОВЕРИЕ -->
+  <section class="block" style="background:#ffffff;">
+    <div class="fade-up section-title">Цифры, за которыми <span class="title-accent">стоим</span></div>
+    <div style="display: flex; gap: 6rem; justify-content: center; margin: 3rem 0;">
+      <div class="fade-up delay-1" style="text-align: center;"><i class="fas fa-briefcase" style="font-size: 3rem; color:#1f4c8c;"></i><br><span style="font-size:4rem; font-weight:600;">15+</span><br>лет практике</div>
+      <div class="fade-up delay-2" style="text-align: center;"><i class="fas fa-file-signature" style="font-size: 3rem; color:#1f4c8c;"></i><br><span style="font-size:4rem; font-weight:600;">320</span><br>успешных кейсов</div>
+      <div class="fade-up delay-3" style="text-align: center;"><i class="fas fa-university" style="font-size: 3rem; color:#1f4c8c;"></i><br><span style="font-size:4rem; font-weight:600;">₽4.5B</span><br>активов под опекой</div>
+    </div>
+    <p class="fade-up" style="max-width: 700px; margin: 2rem auto 0; font-size:1.3rem; text-align:center;">Партнёры KPMG, EY alumni. Каждый третий клиент приходит по рекомендации.</p>
+  </section>
+
+  <!-- БЛОК 4: КЕЙСЫ (ПОРТФОЛИО) -->
+  <section id="cases" class="block" style="background:#f6f8fc;">
+    <div class="fade-up section-title">Избранные <span class="title-accent">кейсы</span></div>
+    <div class="grid-3">
+      <div class="card fade-up delay-1" style="background:#e9eff9;">
+        <i class="fas fa-warehouse"></i>
+        <h3>Холдинг «Меридиан»</h3>
+        <p>Выявили скрытые налоговые резервы на 187 млн руб., оптимизировали структуру.</p>
+      </div>
+      <div class="card fade-up delay-2" style="background:#e9eff9;">
+        <i class="fas fa-ship"></i>
+        <h3>Логист-Трейд</h3>
+        <p>Аудит страховых рисков, снижение премии на 34% без потери покрытия.</p>
+      </div>
+      <div class="card fade-up delay-3" style="background:#e9eff9;">
+        <i class="fas fa-laptop-house"></i>
+        <h3>Digital Valley</h3>
+        <p>Подготовка к IPO: трансформация отчётности по МСФО, успешный листинг.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: БЛОГ / ИНСАЙТЫ (подсветка текста оригинальная) -->
+  <section class="block" style="background:#ffffff;">
+    <div class="fade-up section-title">Тренды & <span class="title-accent">инсайты</span></div>
+    <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+      <div class="fade-up delay-1" style="flex: 1; min-width: 250px; border-left: 5px solid #ffd166; padding-left: 2rem;">
+        <h3 style="font-size:2rem;">ESG-аудит</h3>
+        <p style="font-size:1.2rem;">Уже 60% инвесторов требуют нефинансовую отчётность. Мы первыми внедрили верификацию ESG-данных.</p>
+      </div>
+      <div class="fade-up delay-2" style="flex: 1; min-width: 250px; border-left: 5px solid #1f4c8c; padding-left: 2rem;">
+        <h3 style="font-size:2rem;">Автоматизация</h3>
+        <p style="font-size:1.2rem;">Роботизация учёта (RPA) снижает ошибки до <span class="highlight">0,02%</span>. Ваша бухгалтерия будущего.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: КОМАНДА / ЭКСПЕРТЫ -->
+  <section id="about" class="block" style="background:#eaf0fd;">
+    <div class="fade-up section-title">Лица, <span class="title-accent">вдохновляющие</span> доверие</div>
+    <div style="display: flex; gap: 3rem; margin-top: 3rem;">
+      <div class="fade-up delay-1" style="background: white; border-radius: 3rem; padding: 2rem; width: 50%;">
+        <i class="fas fa-user-tie" style="font-size: 3rem;"></i>
+        <h3>Анна Ветрова</h3>
+        <p>Управляющий партнёр, 20 лет в Big4. Член совета ICAEW.</p>
+      </div>
+      <div class="fade-up delay-2" style="background: white; border-radius: 3rem; padding: 2rem; width: 50%;">
+        <i class="fas fa-user-graduate" style="font-size: 3rem;"></i>
+        <h3>Дмитрий Соколов</h3>
+        <p>Руководитель страхового аудита, PhD в экономике.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: FAQ / блиц-ответы -->
+  <section class="block" style="background:#ffffff;">
+    <div class="fade-up section-title">Коротко <span class="title-accent">о главном</span></div>
+    <div style="max-width: 900px;">
+      <div class="fade-up delay-1" style="background: #f3f7ff; border-radius: 60px; padding: 1.8rem 2.2rem; margin-bottom: 1rem;">
+        <i class="fas fa-question-circle" style="color:#1f4c8c;"></i> <strong>Сколько стоит аудит?</strong> — от 180 т.р., но окупается за 2 недели.
+      </div>
+      <div class="fade-up delay-2" style="background: #f3f7ff; border-radius: 60px; padding: 1.8rem 2.2rem; margin-bottom: 1rem;">
+        <i class="fas fa-question-circle" style="color:#1f4c8c;"></i> <strong>Нужно ли приходить в офис?</strong> — работаем полностью удалённо с доступом к вашему контуру.
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: КОНТАКТЫ / ЗАЯВКА -->
+  <section id="contact" class="block" style="background: linear-gradient(115deg, #0b1a32 0%, #1d3557 100%); color: white;">
+    <div class="fade-up section-title" style="color:white;">Готовы <span class="title-accent" style="border-bottom-color: #ffd166;">обсудить</span> задачу?</div>
+    <div class="fade-up delay-1" style="display: flex; gap: 3rem;">
+      <div style="flex: 1;">
+        <p style="font-size: 1.4rem;"><i class="fas fa-map-pin"></i> Москва, Пресненская наб., 12</p>
+        <p style="font-size: 1.4rem;"><i class="fas fa-phone-alt"></i> +7 (495) 225-35-00</p>
+        <p style="font-size: 1.4rem;"><i class="fas fa-envelope"></i> hello@vista.audit</p>
+      </div>
+      <div style="flex: 1;">
+        <div style="background: rgba(255,255,255,0.06); border-radius: 40px; padding: 2rem;">
+          <span style="font-size: 1.6rem;">💬 напишите — ответим в течение часа</span><br>
+          <a href="#" class="btn" style="background:#ffd166; color:#0b1c2c; border: none;">Написать в Telegram</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: ФУТЕР -->
+  <footer class="block footer-block">
+    <div class="fade-up">
+      <span class="logo" style="color:#ffd166;">VISTA</span>
+      <div class="socials">
+        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+        <a href="#"><i class="fab fa-telegram-plane"></i></a>
+        <a href="#"><i class="fab fa-youtube"></i></a>
+      </div>
+      <p>© 2025 VISTA Audit & Consulting. Все позиции защищены.</p>
+      <p style="opacity: 0.6;">Лицензия Минфина РФ на общий аудит № АБ-2025-0012</p>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // ---------- Canvas animation (хитрый градиент) ----------
+      const canvas = document.getElementById('canvas-gradient');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let time = 0;
+
+        function resize() {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = width;
+          canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function draw() {
+          if (!ctx) return;
+          time += 0.002;
+          const imgData = ctx.createImageData(width, height);
+          const data = imgData.data;
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+              const index = (y * width + x) * 4;
+              const r = Math.floor(20 + 15 * Math.sin(x * 0.002 + time * 2));
+              const g = Math.floor(30 + 20 * Math.cos(y * 0.002 + time * 3));
+              const b = Math.floor(70 + 25 * Math.sin((x + y) * 0.002 + time * 4));
+              data[index] = r;       // R
+              data[index + 1] = g;   // G
+              data[index + 2] = b;   // B
+              data[index + 3] = 100; // A (лёгкая прозрачность)
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+          requestAnimationFrame(draw);
+        }
+        draw();
+      }
+
+      // ---------- Navbar shrink on scroll + преображение ----------
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      });
+
+      // ---------- Intersection Observer для fade-up (кроме первого) ----------
+      const fadeElements = document.querySelectorAll('.fade-up:not(.header-block .fade-up)');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          } else {
+            // можно убрать, если хотим чтобы при уходе исчезали — добавим эффект повторного появления
+            // но оставим: убираем класс, чтобы при повторном входе анимировалось (реже, зато эффектно)
+            entry.target.classList.remove('visible');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' }); // срабатывает раньше
+
+      fadeElements.forEach(el => observer.observe(el));
+
+      // якорное меню без скачков (плавно уже есть в css)
+    })();
+  </script>
+  <!-- All done! (в самом конце) -->
+</body>
+</html>
+All done!
+```

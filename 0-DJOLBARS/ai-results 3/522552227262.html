@@ -1,0 +1,483 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avocato · стратегическая защита</title>
+    <!-- только базовый шрифт и минимальный сброс, всё в одном файле -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f3f5f9;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.4;
+            color: #1e1e2f;
+            scroll-behavior: smooth;
+        }
+
+        /* подключаем Inter для чистоты */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* плавающая шапка с анимацией сжатия */
+        .header {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border-radius: 3.5rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 20, 40, 0.25);
+            padding: 1rem 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 999;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        /* компактный вид при скролле */
+        .header.scrolled {
+            top: 10px;
+            left: 20px;
+            right: 20px;
+            padding: 0.65rem 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 18px 35px -12px rgba(0, 0, 0, 0.15);
+            border-radius: 4rem;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: -0.03em;
+            background: linear-gradient(130deg, #1E2C5A, #2B3E7A);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            transition: 0.2s;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2.5rem;
+            font-weight: 500;
+        }
+        .nav a {
+            text-decoration: none;
+            color: #1e293b;
+            font-size: 1.1rem;
+            position: relative;
+            transition: 0.2s;
+        }
+        .nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 0%;
+            height: 2.5px;
+            background: #2B3E7A;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .nav a:hover::after {
+            width: 100%;
+        }
+
+        /* общий контейнер блоков */
+        section {
+            scroll-margin-top: 100px;
+        }
+
+        .block {
+            min-height: 95vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2rem 10% 3rem;
+            position: relative;
+        }
+
+        /* анимация появления при скролле (Intersection Observer) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(35px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .fade-up.appeared {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* фон первого блока с микродвижением */
+        .block-1 {
+            background: radial-gradient(circle at 80% 30%, #e8eefb, #cfd9ed);
+        }
+        .hero-title {
+            font-size: 5.2rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            max-width: 900px;
+        }
+        .hero-title span {
+            color: #20336b;
+            border-bottom: 4px solid #4f6faf;
+        }
+        .hero-desc {
+            font-size: 1.5rem;
+            margin-top: 1.5rem;
+            color: #2d3b5a;
+            max-width: 600px;
+        }
+
+        /* анимированные иконки (самодельные через css) */
+        .icon-grid {
+            display: flex;
+            gap: 2.5rem;
+            margin-top: 4rem;
+        }
+        .icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-weight: 500;
+        }
+        .icon-shield {
+            width: 70px;
+            height: 70px;
+            background: #1e2c5a15;
+            border-radius: 30% 70% 70% 30% / 30% 55% 45% 70%;
+            border: 2px solid #2b3e7a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.8rem;
+            transition: 0.2s;
+            animation: softGlow 3s infinite alternate;
+        }
+        .icon-shield::after {
+            content: "⚖️";
+            font-size: 2.3rem;
+        }
+
+        @keyframes softGlow {
+            0% { box-shadow: 0 0 0 0 rgba(43,62,122,0.2); border-radius: 30% 70% 70% 30% / 30% 55% 45% 70%; }
+            100% { box-shadow: 0 0 0 16px rgba(43,62,122,0.0); border-radius: 50% 50% 40% 60% / 60% 40% 60% 40%; }
+        }
+
+        /* доверие / статистика */
+        .stats-row {
+            display: flex;
+            gap: 5rem;
+            margin: 2.5rem 0;
+        }
+        .stat-num {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #101b3b;
+        }
+        .stat-label {
+            font-size: 1.3rem;
+            color: #3f4b6e;
+        }
+
+        /* карточки услуг */
+        .service-cards {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin: 3rem 0;
+        }
+        .card {
+            background: #ffffffc4;
+            backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            padding: 2rem 1.8rem;
+            flex: 1 1 220px;
+            border: 1px solid #ffffff;
+            transition: all 0.25s;
+            box-shadow: 0 20px 35px -18px #1e293b33;
+        }
+        .card:hover {
+            transform: scale(1.02) translateY(-6px);
+            background: white;
+            border-color: #a6b9da;
+        }
+        .card-icon {
+            font-size: 2.7rem;
+            margin-bottom: 1rem;
+        }
+
+        /* блок с делом / кейсом (имитация) */
+        .case-study {
+            background: #151f2f;
+            color: #eceef5;
+            border-radius: 2.5rem;
+            padding: 3rem;
+            margin-top: 2rem;
+            transition: 0.3s;
+        }
+        .case-study:hover {
+            background: #1b2740;
+        }
+
+        /* футер */
+        .footer {
+            background: #121826;
+            color: #b1c2e0;
+            padding: 2.5rem 10%;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            border-top-left-radius: 3rem;
+            border-top-right-radius: 3rem;
+        }
+
+        /* остальное */
+        h2 {
+            font-size: 3.5rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            color: #0a1330;
+        }
+
+        .btn {
+            background: #1e2c5a;
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            border-radius: 3rem;
+            font-size: 1.3rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            box-shadow: 0 8px 18px #0e1a2f50;
+            display: inline-block;
+            margin-top: 2rem;
+        }
+        .btn:hover {
+            background: #2f4192;
+            transform: scale(1.02);
+            box-shadow: 0 12px 25px #14213d80;
+        }
+
+        /* маленькие адаптивные моменты (только для пк) */
+        @media (max-width: 1100px) {
+            .hero-title { font-size: 4rem; }
+        }
+
+        /* якорное меню + доп. акценты */
+        .badge {
+            background: #dde3f5;
+            color: #1e2c5a;
+            border-radius: 100px;
+            padding: 0.35rem 1.2rem;
+            font-size: 1rem;
+            display: inline-block;
+        }
+        .icon-micro {
+            display: inline-block;
+            width: 48px;
+            height: 48px;
+            background: #dce3fc;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 48px;
+            font-size: 1.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ФИКСИРОВАННАЯ ШАПКА (БЛОК 1 ИЗ 9) -->
+    <header class="header" id="mainHeader">
+        <div class="logo">⚖️ Avocato</div>
+        <div class="nav">
+            <a href="#home">Главная</a>
+            <a href="#about">О нас</a>
+            <a href="#cases">Кейсы</a>
+            <a href="#contact">Контакты</a>
+        </div>
+    </header>
+
+    <!-- БЛОК 2: Герой (home) -->
+    <section id="home" class="block block-1 fade-up">
+        <div class="badge">Юридическая прецизионность</div>
+        <h1 class="hero-title"><span>Защита</span> бизнеса и капитала</h1>
+        <p class="hero-desc">Арбитраж, интеллектуальное право, санкционный консалтинг. Опыт — 15+ лет в интересах крупнейших холдингов.</p>
+        <div class="icon-grid">
+            <div class="icon-item"><div class="icon-shield"></div> <span>Неприкосновенность</span></div>
+            <div class="icon-item"><div class="icon-shield" style="animation-delay:0.5s;"></div> <span>Прецеденты</span></div>
+            <div class="icon-item"><div class="icon-shield" style="animation-delay:1s;"></div> <span>Абсолютная защита</span></div>
+        </div>
+        <button class="btn">Стратегическая консультация</button>
+    </section>
+
+    <!-- БЛОК 3: Цифры доверия (about) -->
+    <section id="about" class="block fade-up">
+        <h2>Доверие измеряется в цифрах</h2>
+        <div class="stats-row">
+            <div><div class="stat-num">₽4.7B</div><div class="stat-label">спорные активы</div></div>
+            <div><div class="stat-num">98%</div><div class="stat-label">выигранных дел</div></div>
+            <div><div class="stat-num">46</div><div class="stat-label">партнёров ex-parte</div></div>
+        </div>
+        <p style="font-size: 1.3rem; max-width: 700px;">Каждый кейс — комбинация аналитики и интуиции. Мы не проигрываем репутацию.</p>
+        <!-- декоративная мини-анимация : пульсирующая точка -->
+        <div style="display: flex; gap: 12px; margin-top: 35px;">
+            <span class="icon-micro">⚡</span>
+            <span class="icon-micro">🛡️</span>
+            <span class="icon-micro">📜</span>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: Практики / услуги -->
+    <section class="block fade-up">
+        <h2>Практики, которые усиливают</h2>
+        <div class="service-cards">
+            <div class="card"><div class="card-icon">🏛️</div><h3>Арбитраж</h3><p>Споры с госорганами, международный коммерческий арбитраж.</p></div>
+            <div class="card"><div class="card-icon">📋</div><h3>Слияния и поглощения</h3><p>Юридический due diligence, структурирование сделок.</p></div>
+            <div class="card"><div class="card-icon">⚙️</div><h3>IP & технологии</h3><p>Патентование, защита софта, товарные знаки.</p></div>
+            <div class="card"><div class="card-icon">🏦</div><h3>Санкционный комплаенс</h3><p>Активы под риском, вторичные санкции.</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: Кейс (громкое дело) - cases -->
+    <section id="cases" class="block fade-up">
+        <span class="badge">недавний прецедент</span>
+        <h2 style="margin-bottom: 0.5rem;">Дело «Волжский химический холдинг»</h2>
+        <div class="case-study">
+            <p style="font-size: 1.7rem; font-weight: 300;">Спор с европейским регулятором на 300 млн евро. Полное снятие обвинений в демпинге, сохранение экспортных контрактов.</p>
+            <div style="display: flex; gap: 2rem; margin-top: 1.5rem; color: #b7cbff">
+                <span>🔹 14 месяцев работы</span>
+                <span>🔹 7 юрисдикций</span>
+                <span>🔹 выигрыш</span>
+            </div>
+        </div>
+        <!-- небольшая карусель иконок (статичная) -->
+        <div style="display: flex; justify-content: center; gap: 1.8rem; margin-top: 3rem;">
+            <div style="font-size: 2rem; opacity: 0.6; transition:0.2s; cursor:default;">🏆</div>
+            <div style="font-size: 2rem; opacity: 0.6;">⚖️</div>
+            <div style="font-size: 2rem; opacity: 0.6;">📜</div>
+            <div style="font-size: 2rem; opacity: 0.6;">🔏</div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: Команда / экспертиза (имитация) -->
+    <section class="block fade-up" style="background: #eef2fc;">
+        <h2>Партнёры с весом в отрасли</h2>
+        <div style="display: flex; gap: 4rem; justify-content: center; margin: 2rem 0;">
+            <div><div style="width:110px;height:110px;background:#1e2c5a; border-radius: 40% 60% 70% 30%/50% 60% 40% 50%;"></div><strong>Дмитрий Ветров</strong><br>управ. партнёр</div>
+            <div><div style="width:110px;height:110px;background:#25386f; border-radius: 70% 30% 50% 50%/40% 60% 40% 60%;"></div><strong>Елена Львова</strong><br>санкционная практика</div>
+            <div><div style="width:110px;height:110px;background:#374d8c; border-radius: 40% 60% 30% 70%/60% 30% 70% 40%;"></div><strong>Марат Шейкин</strong><br>корп. споры</div>
+        </div>
+        <p style="text-align:center;">Экс-судьи, советники министерств, лондонские баристоры в коллаборации.</p>
+    </section>
+
+    <!-- БЛОК 7: Отзывы / реноме (с текстовой анимацией появления) -->
+    <section class="block fade-up">
+        <h2>Реноме без компромиссов</h2>
+        <blockquote style="font-size:2rem; font-weight:350; max-width: 900px; border-left: 5px solid #2b3e7a; padding-left: 2rem;">
+            «Avocato превратили юридическую угрозу в конкурентное преимущество. Такой depth анализа мы не встречали».
+        </blockquote>
+        <p style="margin-top:1rem;">— финансовый директор NLMK</p>
+        <!-- анимированные звёздочки (символ) -->
+        <div style="font-size: 1.8rem; letter-spacing: 6px; margin-top: 2rem;">★★★★★</div>
+    </section>
+
+    <!-- БЛОК 8: призыв / контакты (contact) -->
+    <section id="contact" class="block fade-up" style="background: linear-gradient(125deg, #f0f4ff, #ffffff);">
+        <h2 style="max-width: 800px;">Обсудить стратегию защиты вашего бизнеса</h2>
+        <div style="display: flex; gap: 4rem; align-items: center;">
+            <div>
+                <p>📞 +7 (495) 222-33-44<br> ✉️ protect@avocato.ru<br>📍 Москва, наб. Тараса Шевченко, 23</p>
+                <button class="btn" style="margin-top:1rem;">Запись на аудиенцию</button>
+            </div>
+            <div class="icon-shield" style="width:120px; height:120px; animation: softGlow 4s infinite alternate;"></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: ФУТЕР (footer) -->
+    <footer class="footer">
+        <div>© 2025 Avocato Legal — сохранение репутации и активов</div>
+        <div style="display: flex; gap: 2rem;">
+            <span>LinkedIn</span><span>ТГ-канал</span><span>Политика</span>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // 1. Фиксированная шапка: изменение при скролле
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // 2. Intersection Observer — анимация появления блоков (fade-up)
+            const sections = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appeared');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -10px 0px' }); 
+            sections.forEach(sec => observer.observe(sec));
+
+            // 3. микродополнительная анимация: при наведении на иконки в первом экране меняется фон (эффект)
+            const icons = document.querySelectorAll('.icon-shield');
+            icons.forEach(icon => {
+                icon.addEventListener('mouseenter', (e) => {
+                    e.target.style.backgroundColor = '#1e2c5a30';
+                    e.target.style.transition = '0.2s';
+                });
+                icon.addEventListener('mouseleave', (e) => {
+                    e.target.style.backgroundColor = '#1e2c5a15';
+                });
+            });
+
+            // 4. Плавный скролл якорей (без резких переходов)
+            document.querySelectorAll('.nav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href'); // #home, #about ...
+                    const targetEl = document.querySelector(targetId);
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <!-- дополнительный микро-стиль для плавности -->
+    <style>
+        /* подложка под шапку чтобы не закрывался контент (первый блок имеет отступ) */
+        .block-1 {
+            padding-top: 140px;
+        }
+        /* остальное */
+        .header.scrolled .logo { font-size: 1.6rem; }
+        .header .nav a { font-size: 1rem; }
+        .block { transition: background 0.3s; }
+        /* мелкие тени */
+        .card .card-icon { transition: transform 0.2s; }
+        .card:hover .card-icon { transform: scale(1.1); }
+    </style>
+</body>
+</html>
+All done!
+```

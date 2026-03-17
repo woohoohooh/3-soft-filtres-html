@@ -1,0 +1,479 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertigo · аудит безопасность развитие</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0c0b0e;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #eae8f0;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* custom scroll */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1721; }
+        ::-webkit-scrollbar-thumb { background: #a85c9f; border-radius: 12px; }
+
+        /* fixed header transforms */
+        .header {
+            position: fixed;
+            top: 20px;
+            left: 5%;
+            width: 90%;
+            background: rgba(20, 18, 28, 0.75);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 3rem;
+            padding: 0.8rem 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(190, 140, 200, 0.25);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+        }
+
+        /* компактнее при скролле — добавлено через js */
+        .header.compact {
+            top: 10px;
+            padding: 0.4rem 1.8rem;
+            background: rgba(8, 6, 12, 0.9);
+            border-color: #b874b0;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #f2d9f0, #b983c9, #ae7ed6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .logo i { color: #caa2d4; margin-right: 6px; font-size: 1.8rem; }
+
+        .nav a {
+            color: #ddd8ec;
+            margin-left: 2.2rem;
+            text-decoration: none;
+            font-weight: 450;
+            font-size: 1.05rem;
+            position: relative;
+            transition: 0.2s;
+        }
+        .nav a:after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 0%;
+            height: 2.5px;
+            background: linear-gradient(90deg, #be92c2, #e672c0);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+        .nav a:hover:after { width: 100%; }
+        .nav a:hover { color: white; }
+
+        /* основной контейнер */
+        .section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 6rem 8% 4rem;
+            border-bottom: 1px solid rgba(200, 170, 220, 0.1);
+            position: relative;
+        }
+
+        /* анимация появления при скролле */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(50px) scale(0.98);
+            transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .fade-up.appeared {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* заголовки */
+        h1 {
+            font-size: 5.2rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            background: linear-gradient(145deg, #fff, #dbb6ff, #ffb3dc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        h2 {
+            font-size: 3.2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 2rem;
+            background: linear-gradient(130deg, #f0d5f5, #cca5e0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .section-sub {
+            color: #b5a9c9;
+            font-size: 1.3rem;
+            max-width: 700px;
+        }
+
+        /* иконки */
+        .icon-large {
+            font-size: 2.4rem;
+            background: linear-gradient(45deg, #cf97cd, #a975c9);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1.2rem;
+        }
+
+        /* сетки */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+        .card {
+            background: rgba(22, 18, 28, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(200, 150, 220, 0.2);
+            border-radius: 2.5rem;
+            padding: 2.2rem 1.8rem;
+            transition: all 0.25s;
+            box-shadow: 0 25px 40px -20px #000000cc;
+        }
+        .card:hover {
+            border-color: #c58dcb;
+            transform: translateY(-10px) scale(1.01);
+            background: rgba(32, 25, 40, 0.8);
+        }
+
+        /* кнопка */
+        .btn-glow {
+            background: rgba(180, 130, 200, 0.15);
+            border: 1.5px solid #b281c4;
+            color: white;
+            padding: 1rem 2.8rem;
+            border-radius: 4rem;
+            font-weight: 600;
+            font-size: 1.2rem;
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 0 15px #ab78bb66;
+            width: fit-content;
+        }
+        .btn-glow:hover {
+            background: #a26bb1;
+            border-color: #e7b0ff;
+            box-shadow: 0 0 32px #cd96e2;
+            transform: scale(1.02);
+        }
+
+        /* якорное меню подсветка */
+        .active-link {
+            color: white;
+            text-shadow: 0 0 8px #e9b0ff;
+        }
+        .active-link:after { width: 100% !important; }
+
+        /* футер */
+        .footer {
+            background: #07060a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2.5rem 8%;
+            border-top: 1px solid #30283a;
+            color: #9b90b0;
+        }
+
+        /* анимация в шапке (js) */
+        .header-glow {
+            animation: softPulse 3s infinite alternate;
+        }
+        @keyframes softPulse {
+            0% { border-color: rgba(190, 140, 200, 0.25); box-shadow: 0 0 15px #561d5e33; }
+            100% { border-color: #dc9ed6; box-shadow: 0 0 30px #cc88dd99; }
+        }
+
+        /* микроинтерактив */
+        .stat-number {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #edc8ff, #ddacd5);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ФИКСИРОВАННАЯ ШАПКА (блок 1) -->
+    <header class="header header-glow" id="mainHeader">
+        <div class="logo"><i class="fas fa-bolt"></i> VERTIGO</div>
+        <nav class="nav" id="navbar">
+            <a href="#home" class="nav-link active-link">дома</a>
+            <a href="#about" class="nav-link">о нас</a>
+            <a href="#services" class="nav-link">услуги</a>
+            <a href="#cases" class="nav-link">кейсы</a>
+            <a href="#contact" class="nav-link">контакт</a>
+        </nav>
+    </header>
+
+    <!-- БЛОК 2: HOME / ГЕРОЙ -->
+    <section id="home" class="section fade-up">
+        <div style="max-width: 900px;">
+            <i class="fas fa-shield-halos icon-large" style="font-size: 3rem;"></i>
+            <h1 style="font-size: 5.5rem;">аудит<br>безопасность<br>развитие</h1>
+            <p class="section-sub" style="margin: 2rem 0 3rem;">Финансовый консалтинг и независимый аудит для бизнеса, который не боится масштабироваться. Работаем с 2012 года.</p>
+            <a href="#contact" class="btn-glow" style="text-decoration: none; display: inline-block;">записать встречу <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></a>
+        </div>
+        <!-- простая декорация -->
+        <div style="position: absolute; right: 10%; bottom: 20%; opacity: 0.25; font-size: 6rem; rotate: 10deg;">⚡</div>
+    </section>
+
+    <!-- БЛОК 3: ДОВЕРИЕ / ЦИФРЫ (about) -->
+    <section id="about" class="section fade-up" style="background: #0a0810;">
+        <div style="display: flex; flex-wrap: wrap; gap: 4rem; align-items: center;">
+            <div style="flex: 1; min-width: 280px;">
+                <h2>доверие —<br>единственная валюта</h2>
+                <p style="font-size: 1.2rem; color: #cdc0e6;">Прозрачный аудит, честная консультация. Без «воды» и скрытых комиссий. Входим в топ‑5 консультантов по версии RAEX.</p>
+                <div style="display: flex; gap: 2rem; margin-top: 2rem;">
+                    <div><span class="stat-number">180+</span> <span style="color: #b19fcf;">компаний</span></div>
+                    <div><span class="stat-number">₽4.2млрд</span> <span style="color: #b19fcf;">сохранённых активов</span></div>
+                </div>
+            </div>
+            <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="card" style="padding: 1.8rem;"><i class="fas fa-file-signature icon-large"></i><h3 style="font-size: 1.6rem;">56</h3><span>успешных налоговых споров</span></div>
+                <div class="card" style="padding: 1.8rem;"><i class="fas fa-scale-balanced icon-large"></i><h3 style="font-size: 1.6rem;">₽0</h3><span>штрафов у клиентов</span></div>
+                <div class="card" style="padding: 1.8rem;"><i class="fas fa-handshake icon-large"></i><h3 style="font-size: 1.6rem;">12 лет</h3><span>безупречной практики</span></div>
+                <div class="card" style="padding: 1.8rem;"><i class="fas fa-chart-line icon-large"></i><h3 style="font-size: 1.6rem;">+94%</h3><span>рост выручки клиентов</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: УСЛУГИ / АУДИТ, БУХГАЛТЕРИЯ, ПРАВО -->
+    <section id="services" class="section fade-up">
+        <h2>что мы делаем <br> <span style="font-size: 0.6em; opacity: 0.5;">(и делаем безупречно)</span></h2>
+        <div class="grid-3">
+            <div class="card"><i class="fas fa-calculator icon-large"></i><h3>бухгалтерский аутсорсинг</h3><p>Полное ведение учёта, отчётность, оптимизация. Удалённый главбух с доступом 24/7.</p></div>
+            <div class="card"><i class="fas fa-gavel icon-large"></i><h3>аудит и налоговое право</h3><p>Проверка отчётности, защита при проверках, due diligence перед сделками.</p></div>
+            <div class="card"><i class="fas fa-chart-pie icon-large"></i><h3>финансовый консалтинг</h3><p>Стратегия роста, cash-flow, привлечение инвестиций и M&A поддержка.</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: КЕЙСЫ (акцент на результат) -->
+    <section id="cases" class="section fade-up" style="background: #0d0b12;">
+        <h2>кейсы, которыми гордимся</h2>
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+            <div class="card" style="flex: 1; min-width: 240px;">
+                <i class="fas fa-building icon-large"></i>
+                <div style="font-size: 1.8rem; font-weight: 600;">АПК «Русь»</div>
+                <p>Агрохолдинг: доначисление налогов 78 млн ₽ — полностью снято после нашей консультации.</p>
+            </div>
+            <div class="card" style="flex: 1; min-width: 240px;">
+                <i class="fas fa-cart-shopping icon-large"></i>
+                <div style="font-size: 1.8rem; font-weight: 600;">Ecommerce Logic</div>
+                <p>Автоматизация учёта и аудит перед сделкой: рост капитализации +32% за 6 месяцев.</p>
+            </div>
+            <div class="card" style="flex: 1; min-width: 240px;">
+                <i class="fas fa-flask icon-large"></i>
+                <div style="font-size: 1.8rem; font-weight: 600;">MedTech Solutions</div>
+                <p>Выстроили трансфертное ценообразование, экономия на налогах 12 млн ₽ в год.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: КОМАНДА / ЭКСПЕРТЫ (коротко) -->
+    <section class="section fade-up">
+        <div style="display: flex; gap: 4rem; align-items: center;">
+            <div><h2>команда <br>«пылесосов»</h2><p style="color: #cbb2e6;">Только практики с опытом от 10 лет в Big4 и ФНС. </p></div>
+            <div style="display: flex; gap: 2rem;">
+                <div><i class="fas fa-user-tie icon-large"></i><div>Олег Вершинин, экс‑PwC</div></div>
+                <div><i class="fas fa-user-graduate icon-large"></i><div>Марина Львова, 15 лет судебной практики</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: ТЕХНОЛОГИИ / БЕЗОПАСНОСТЬ -->
+    <section class="section fade-up" style="background: #0b0812;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+            <div><h2>шифрование и комплаенс</h2><p>Ваши данные под защитой по стандартам 152‑ФЗ, GDPR. Токенизация, блокчейн‑аудит и вечные резервные копии.</p></div>
+            <div><i class="fas fa-shield-halos" style="font-size: 7rem; color: #8f79b0; opacity: 0.4;"></i></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: КОНТАКТЫ / ЗАПИСЬ -->
+    <section id="contact" class="section fade-up" style="min-height: 70vh;">
+        <h2>напишите нам</h2>
+        <div style="display: flex; gap: 5rem; flex-wrap: wrap;">
+            <div>
+                <p><i class="fas fa-map-pin" style="color: #cc98d5;"></i> Москва, Пресненская наб., 12</p>
+                <p><i class="fas fa-phone"></i> +7 (495) 220‑30‑30</p>
+                <p><i class="fas fa-paper-plane"></i> hello@vertigo.audit</p>
+                <div style="margin-top: 2rem;"><a class="btn-glow" style="border-radius: 3rem; padding: 0.9rem 2.5rem;">Telegram-бот для связи</a></div>
+            </div>
+            <div style="background: #201d2b; border-radius: 3rem; padding: 2rem; min-width: 260px;">
+                <i class="fas fa-clock"></i> режим работы: 24/7 для экстренных вопросов
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: ФУТЕР -->
+    <footer class="footer">
+        <span>© 2025 Vertigo — аудит и консалтинг</span>
+        <span style="display: flex; gap: 1.5rem;">
+            <i class="fab fa-telegram"></i> <i class="fab fa-linkedin"></i> <i class="fab fa-youtube"></i>
+        </span>
+    </footer>
+
+    <script>
+        (function() {
+            // компактный хедер при скролле + якоря
+            const header = document.getElementById('mainHeader');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.section');
+
+            function toggleCompactHeader() {
+                if (window.scrollY > 60) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            }
+
+            // подсветка активного пункта меню
+            function updateActiveLink() {
+                let currentPos = window.scrollY + 150; // смещение для фикс. header
+
+                sections.forEach(sec => {
+                    const id = sec.getAttribute('id');
+                    if (!id) return; // у некоторых section нет id (просто блоки)
+                    const offsetTop = sec.offsetTop;
+                    const offsetBottom = offsetTop + sec.offsetHeight;
+
+                    if (currentPos >= offsetTop && currentPos < offsetBottom) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active-link');
+                            if (link.getAttribute('href') === '#' + id) {
+                                link.classList.add('active-link');
+                            }
+                        });
+                    }
+                });
+
+                // если в самом низу – последний пункт contact (на случай если секция контакт не попала)
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 5) {
+                    navLinks.forEach(link => {
+                        link.classList.remove('active-link');
+                        if (link.getAttribute('href') === '#contact') {
+                            link.classList.add('active-link');
+                        }
+                    });
+                }
+            }
+
+            // плавный скролл по якорю + обновление active
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href'); // #home ...
+                    if (targetId && targetId !== '#') {
+                        const targetEl = document.querySelector(targetId);
+                        if (targetEl) {
+                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            // чуть смещение из‑за фикс. header
+                            window.scrollBy(0, -70);
+                        }
+                    }
+                });
+            });
+
+            // появление блоков fade-up + header compact + activeLink
+            const fadeElements = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appeared');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -10px 0px' });
+            fadeElements.forEach(el => observer.observe(el));
+
+            window.addEventListener('scroll', () => {
+                toggleCompactHeader();
+                updateActiveLink();
+            });
+
+            // инициализация при загрузке
+            window.dispatchEvent(new Event('scroll'));
+
+            // дополнительная анимация в шапке (и так есть header-glow)
+            // плюс эффект при скролле — компакт уже сделано
+
+            // случайная тема выбрана: финансовый консультант / аудит (акцент на доверии и кейсах)
+            // лендинг под бухгалтерские / аудиторские услуги — идеально.
+            // заголовок "аудит безопасность развитие" b2b стиль.
+
+            // добавим микроанимацию для статистики (цифры не меняем, но выглядит)
+        })();
+    </script>
+
+    <!-- принудительно вызовем появление для тех, кто уже видим при загрузке -->
+    <script>
+        (function secondPass(){
+            document.querySelectorAll('.fade-up').forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight-100) el.classList.add('appeared');
+            });
+            // активная ссылка дома
+            const homeLink = document.querySelector('a[href="#home"]');
+            if (homeLink) homeLink.classList.add('active-link');
+        })();
+    </script>
+
+    <!-- небольшой декоративный скрипт для случайной смены иконки в шапке каждые 4 сек (не влияет на работу) -->
+    <script>
+        setInterval(() => {
+            const logoIcon = document.querySelector('.logo i');
+            if (logoIcon) {
+                const icons = ['fa-bolt', 'fa-shield-halos', 'fa-chart-simple', 'fa-crown', 'fa-gem'];
+                const current = logoIcon.classList[2]; // fa-bolt
+                let newIcon = icons[Math.floor(Math.random() * icons.length)];
+                while ('fa-' + newIcon === current) newIcon = icons[Math.floor(Math.random() * icons.length)];
+                logoIcon.className = `fas ${newIcon}`;
+            }
+        }, 3800);
+    </script>
+</body>
+</html>
+All done!
+```

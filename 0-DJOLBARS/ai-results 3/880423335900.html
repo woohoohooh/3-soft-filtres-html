@@ -1,0 +1,569 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUMINA · ателье цифрового света</title>
+    <!-- Font Awesome 6 (стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f8fafc;
+            color: #0b1a2e;
+            line-height: 1.5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* плавный выход / вход блоков при скролле */
+        .reveal-section {
+            opacity: 0;
+            transform: translateY(40px) scale(0.98);
+            transition: opacity 0.9s cubic-bezier(0.25, 0.1, 0.15, 1), transform 0.9s cubic-bezier(0.25, 0.1, 0.15, 1);
+            will-change: opacity, transform;
+        }
+
+        .reveal-section.revealed {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* кастомный скролл-эффект подсветки (динамический бордер) */
+        .section-highlight {
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .section-highlight.active-section {
+            border-left-color: #b473e0;
+            box-shadow: -10px 0 30px -15px rgba(150, 90, 210, 0.5);
+        }
+
+        /* фиксированное меню с эффектом схлопывания */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(10, 25, 45, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 35px -8px rgba(0,0,0,0.3);
+            z-index: 999;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .navbar.compact {
+            top: 15px;
+            padding: 0.4rem 1.2rem;
+            background: rgba(5, 15, 30, 0.85);
+            border-color: rgba(180, 115, 224, 0.5);
+        }
+
+        .navbar ul {
+            display: flex;
+            gap: 2.2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #fff;
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: 0.02em;
+            transition: color 0.2s, text-shadow 0.2s;
+            padding: 0.3rem 0;
+            border-bottom: 2px solid transparent;
+        }
+
+        .navbar a:hover {
+            color: #c49bff;
+            border-bottom-color: #c49bff;
+        }
+
+        .logo-icon {
+            color: #e2c7ff;
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        /* header с анимацией (волна) */
+        .header-block {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle at 30% 30%, #1c3144, #0a121f);
+            color: white;
+            position: relative;
+            isolation: isolate;
+            padding: 0 2rem;
+        }
+
+        .animated-bg {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        #canvas-bg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            opacity: 0.5;
+        }
+
+        .header-content h1 {
+            font-size: clamp(3rem, 12vw, 5.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(120deg, #fff, #ddbaff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-content p {
+            font-size: 1.4rem;
+            margin-top: 1.2rem;
+            max-width: 650px;
+            opacity: 0.85;
+        }
+
+        .scroll-hint {
+            margin-top: 4rem;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+            color: #b0c7e9;
+        }
+
+        .footer-block {
+            background: #0f1a29;
+            color: #b3c2d1;
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 2px solid #2e3b4e;
+        }
+
+        /* общие стили блоков */
+        .block {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 5rem 2rem;
+        }
+
+        .block h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(145deg, #1e293b, #2d3b52);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .block h2 i {
+            color: #8b5cf6;
+            margin-right: 0.7rem;
+            -webkit-text-fill-color: initial;
+            background: none;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2.2rem 1.8rem;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -15px rgba(0, 20, 30, 0.15);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid rgba(180, 115, 224, 0.1);
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 45px -15px #b48bd1;
+        }
+
+        .card i {
+            font-size: 2.8rem;
+            color: #8b5cf6;
+            margin-bottom: 1.2rem;
+        }
+
+        .badge-icon {
+            display: inline-block;
+            background: #ede9fe;
+            border-radius: 100px;
+            padding: 0.4rem 1.2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #6240b0;
+        }
+
+        .testimonial-grid {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .testimonial {
+            background: #f1f5f9;
+            border-radius: 2rem;
+            padding: 2rem;
+            flex: 1 1 280px;
+            font-style: italic;
+            border-left: 6px solid #b373e0;
+        }
+
+        /* адаптация без моб/планшет — только ПК */
+        @media (max-width: 1100px) {
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 700px) {
+            .grid-3 { grid-template-columns: 1fr; }
+            .navbar { display: none; } /* навигация только для пк */
+        }
+
+        .stat-number {
+            font-size: 3.2rem;
+            font-weight: 800;
+            color: #1e293b;
+            line-height: 1;
+        }
+
+        .pricing-plan {
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .pricing-plan.featured {
+            border: 3px solid #b373e0;
+            transform: scale(1.03);
+        }
+
+        .contact-form input, .contact-form textarea {
+            border: 1px solid #cfddee;
+            border-radius: 60px;
+            padding: 1rem 1.8rem;
+            width: 100%;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        .contact-form input:focus, .contact-form textarea:focus {
+            border-color: #9f7aea;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(159, 122, 234, 0.15);
+        }
+        .btn {
+            background: #0b1a2e;
+            border: none;
+            color: white;
+            padding: 1rem 2.8rem;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn:hover {
+            background: #2d1b4b;
+            box-shadow: 0 12px 25px -10px #b373e0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- фиксированное нав меню (якорное) -->
+<nav class="navbar" id="navbar">
+    <ul>
+        <li><i class="fas fa-crown logo-icon"></i></li>
+        <li><a href="#home">Главная</a></li>
+        <li><a href="#services">Услуги</a></li>
+        <li><a href="#projects">Кейсы</a></li>
+        <li><a href="#about">О нас</a></li>
+        <li><a href="#contact">Контакты</a></li>
+    </ul>
+</nav>
+
+<!-- БЛОК 1: ШАПКА (header) -->
+<header id="home" class="header-block section-highlight">
+    <div class="animated-bg">
+        <canvas id="canvas-bg"></canvas>
+    </div>
+    <div class="header-content">
+        <span class="badge-icon" style="background:#262f49; color:#dbbaff;"><i class="fas fa-bolt"></i> цифровой свет</span>
+        <h1>LUMINA</h1>
+        <p>Ателье продающих лендингов. Мы создаём пространства, которые говорят вместо вас.</p>
+        <div class="scroll-hint">
+            <i class="fas fa-chevron-down"></i>
+            <span>листай вниз</span>
+        </div>
+    </div>
+</header>
+
+<!-- БЛОК 2: услуги / специализация -->
+<section id="services" class="block reveal-section section-highlight">
+    <h2><i class="fas fa-star"></i> возможности, которые работают</h2>
+    <div class="grid-3">
+        <div class="card"><i class="fas fa-bezier-curve"></i><h3>Дизайн с душой</h3><p>WOW-эффект, микроанимации, трендовые сетки. Не останетесь незамеченным.</p></div>
+        <div class="card"><i class="fas fa-chart-line"></i><h3>Маркетинг-копия</h3><p>Тексты на основе триггеров доверия и конверсионных структур.</p></div>
+        <div class="card"><i class="fas fa-rocket"></i><h3>Скорость + seo-друже</h3><p>Код без тормозов, базовый семантический слой для топ-10.</p></div>
+    </div>
+</section>
+
+<!-- БЛОК 3: достижения / статистика -->
+<section class="block reveal-section section-highlight">
+    <h2><i class="fas fa-medal"></i> факты без прикрас</h2>
+    <div style="display: flex; gap: 3rem; justify-content: space-around; flex-wrap: wrap;">
+        <div><span class="stat-number">98%</span> <p>клиентов возвращаются</p></div>
+        <div><span class="stat-number">124</span> <p>успешных проекта</p></div>
+        <div><span class="stat-number">5+</span> <p>лет опыта команды</p></div>
+    </div>
+</section>
+
+<!-- БЛОК 4: портфолио / кейсы (с иконками) -->
+<section id="projects" class="block reveal-section section-highlight">
+    <h2><i class="fas fa-briefcase"></i> свежие кейсы</h2>
+    <div class="grid-3">
+        <div class="card"><i class="fas fa-gavel" style="color:#a78bfa;"></i><h3>Юрист «Фемида»</h3><p>➕58% лидов через сайт с кейсами и доверительной анимацией.</p></div>
+        <div class="card"><i class="fas fa-seedling" style="color:#6d9e6d;"></i><h3>ферма “Эко-дача”</h3><p>доставка здорового питания — оформление за 2 минуты.</p></div>
+        <div class="card"><i class="fas fa-camera-retro"></i><h3>фотограф Kira</h3><p>лендинг-портфолио с плавным переходом между сетами.</p></div>
+    </div>
+</section>
+
+<!-- БЛОК 5: отзывы (соцдок) -->
+<section class="block reveal-section section-highlight">
+    <h2><i class="fas fa-comment-dots"></i> голоса клиентов</h2>
+    <div class="testimonial-grid">
+        <div class="testimonial">«Lumina сделала нам сайт за 5 дней. Телефон разрывается. Отдел продаж счастлив». <br> — А. Мельник, адвокат</div>
+        <div class="testimonial">«Давно искал дизайн с интеллектом. Ребята попали в tone-of-voice, спасибо за метафоры». <br>— Г. Ли, бизнес-коуч</div>
+        <div class="testimonial">«Мои украшения теперь видно. Магия света и макетов. Броней больше!» <br>— Катя, бренд авторских украшений</div>
+    </div>
+</section>
+
+<!-- БЛОК 6: процесс / как работаем (с иконками) -->
+<section class="block reveal-section section-highlight">
+    <h2><i class="fas fa-code-branch"></i> магия создания</h2>
+    <div style="display: flex; gap: 1.8rem; justify-content: center; flex-wrap: wrap;">
+        <div class="card" style="flex: 1 1 180px;"><i class="fas fa-hand-sparkles"></i><h4>Брифинг</h4></div>
+        <div class="card" style="flex: 1 1 180px;"><i class="fas fa-drafting-compass"></i><h4>Прототип</h4></div>
+        <div class="card" style="flex: 1 1 180px;"><i class="fas fa-laptop-code"></i><h4>Вёрстка+JS</h4></div>
+        <div class="card" style="flex: 1 1 180px;"><i class="fas fa-check-double"></i><h4>Релиз</h4></div>
+    </div>
+</section>
+
+<!-- БЛОК 7: тарифы / услуги (выбор темы абстрактный) -->
+<section class="block reveal-section section-highlight">
+    <h2><i class="fas fa-tags"></i> прозрачные пакеты</h2>
+    <div style="display: flex; gap: 2rem; justify-content: center;">
+        <div class="pricing-plan"><i class="fas fa-paper-plane" style="font-size:2.5rem;"></i><h3>Базовый</h3><p>от 890 Br</p><small>лендинг 5 блоков</small></div>
+        <div class="pricing-plan featured"><i class="fas fa-crown" style="font-size:2.5rem;"></i><h3>Премиум</h3><p>от 1790 Br</p><small>индивидуальные анимации, 9+ блоков</small></div>
+        <div class="pricing-plan"><i class="fas fa-infinity"></i><h3>Абонемент</h3><p>490 Br/мес</p><small>поддержка и доработки</small></div>
+    </div>
+</section>
+
+<!-- БЛОК 8: КОНТАКТЫ (с формой и иконками) -->
+<section id="contact" class="block reveal-section section-highlight">
+    <h2><i class="fas fa-paper-plane"></i> напишите нам</h2>
+    <div style="display: flex; gap: 4rem; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 260px;">
+            <p><i class="fas fa-phone-alt"></i> +375 (29) 777-11-22</p>
+            <p><i class="fas fa-envelope"></i> hello@lumina.by</p>
+            <p><i class="fas fa-map-pin"></i> Минск, ул. Светлая 4</p>
+            <p><i class="fab fa-telegram"></i> @lumina_support</p>
+        </div>
+        <div style="flex: 2;">
+            <form class="contact-form" onsubmit="event.preventDefault(); alert('Спасибо, мы скоро свяжемся!')">
+                <input type="text" placeholder="Ваше имя" required style="margin-bottom: 1rem;">
+                <input type="email" placeholder="Email" required style="margin-bottom: 1rem;">
+                <textarea rows="3" placeholder="Расскажите о проекте..." style="border-radius: 30px; margin-bottom: 1.2rem;"></textarea>
+                <button class="btn"><i class="fas fa-paper-plane"></i> отправить</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 9: ФУТЕР -->
+<footer class="footer-block">
+    <p><i class="fas fa-copyright"></i> 2025 LUMINA — ателье цифрового света. Все права защищены.</p>
+    <p style="margin-top: 1rem; opacity:0.5;">сделано для портфолио · wow-лендинг с душой</p>
+</footer>
+
+<script>
+    (function() {
+        // --- 1. header canvas (волна / частицы) - стильная анимация ---
+        const canvas = document.getElementById('canvas-bg');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+
+                // создадим частицы
+                particles = [];
+                for (let i = 0; i < 60; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        size: Math.random() * 3 + 1.5,
+                        speedX: (Math.random() - 0.5) * 0.3,
+                        speedY: (Math.random() - 0.5) * 0.2,
+                        color: `rgba(200, 170, 255, ${Math.random() * 0.3 + 0.1})`
+                    });
+                }
+            }
+
+            function draw() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+
+                // мягкие линии (градиент)
+                let gradient = ctx.createLinearGradient(0, 0, width, height);
+                gradient.addColorStop(0, '#2b1b3a');
+                gradient.addColorStop(0.5, '#152b3c');
+                gradient.addColorStop(1, '#0d1b28');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+
+                // частицы
+                for (let p of particles) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+
+                    // легкое мерцание
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+                }
+
+                // дополнительная динамическая волна (синусоида)
+                ctx.beginPath();
+                ctx.moveTo(0, height / 2);
+                for (let i = 0; i < width; i += 20) {
+                    let yWave = height / 2 + Math.sin(i * 0.008 + Date.now() * 0.002) * 30 + Math.cos(i * 0.004 + Date.now() * 0.001) * 15;
+                    ctx.lineTo(i, yWave);
+                }
+                ctx.lineTo(width, height);
+                ctx.lineTo(0, height);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(150, 110, 200, 0.04)';
+                ctx.fill();
+
+                requestAnimationFrame(draw);
+            }
+
+            window.addEventListener('resize', () => {
+                initCanvas();
+            });
+
+            initCanvas();
+            draw();
+        }
+
+        // --- 2. ОБНАРУЖЕНИЕ БЛОКОВ (reveal + активная подсветка) ---
+        const sections = document.querySelectorAll('.reveal-section');
+        const highlightSections = document.querySelectorAll('.section-highlight');
+
+        function checkReveal() {
+            const viewportHeight = window.innerHeight;
+            const threshold = 0.2;
+
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                const visiblePart = Math.min(1, (Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0)) / rect.height);
+                if (visiblePart > threshold && !section.classList.contains('revealed')) {
+                    section.classList.add('revealed');
+                } else if (visiblePart <= 0 && section.classList.contains('revealed')) {
+                    // можно оставить как есть, но можно и не убирать (однократно)
+                }
+            });
+
+            // подсветка левого бордера у текущего блока (активный)
+            let bestSection = null;
+            let bestVisible = 0;
+            highlightSections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                const visible = Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0);
+                if (visible > bestVisible && rect.top < viewportHeight * 0.6) {
+                    bestVisible = visible;
+                    bestSection = section;
+                }
+                section.classList.remove('active-section');
+            });
+            if (bestSection) bestSection.classList.add('active-section');
+        }
+
+        window.addEventListener('scroll', checkReveal);
+        window.addEventListener('resize', checkReveal);
+        checkReveal(); // сразу
+
+        // --- 3. navbar компакт-эффект ---
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 120) {
+                navbar.classList.add('compact');
+            } else {
+                navbar.classList.remove('compact');
+            }
+        });
+
+        // --- 4. якорный скролл плавный (без изменения стандартного поведения) ---
+        document.querySelectorAll('.navbar a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const target = document.getElementById(targetId);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+    })();
+</script>
+
+<!-- для красоты добавим небольшой инициализатор для первого блока-->
+</body>
+</html>
+All done!
+```

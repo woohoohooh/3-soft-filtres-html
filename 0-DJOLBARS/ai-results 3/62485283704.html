@@ -1,0 +1,525 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinBeat · брокер deadlined-аренды</title>
+  <!-- Font Awesome 6 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* СБРОС И БАЗОВЫЙ СТИЛЬ — дерзкий, современный, без картинок */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f4f7fc;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      color: #0b1e32;
+      scroll-behavior: smooth;
+    }
+
+    /* Подключаем Inter через fallback */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+    /* Хедер с фиксированной магией */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(11, 30, 50, 0.85);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2);
+    }
+
+    /* компакт-режим при скролле — добавляется через js */
+    header.scroll-compact {
+      padding: 0.4rem 2rem;
+      background: rgba(11, 30, 50, 0.95);
+      box-shadow: 0 8px 20px rgba(0,20,40,0.3);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: white;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    .logo i {
+      background: linear-gradient(145deg, #ffe57f, #ffb74d);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-size: 2.2rem;
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 2.2rem;
+      font-weight: 500;
+    }
+
+    .nav-menu a {
+      text-decoration: none;
+      color: #f0f4fa;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      transition: 0.2s;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 4px;
+    }
+
+    .nav-menu a:hover {
+      border-bottom-color: #ffb347;
+      color: #ffffff;
+    }
+
+    /* основной контейнер */
+    section {
+      scroll-margin-top: 80px;
+    }
+
+    /* анимация при появлении блоков (Intersection Observer) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(35px);
+      transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .fade-up.appear {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* блоки */
+    .block {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    /* hero — с анимированной сеткой через js canvas (шапка спецэффект) */
+    .hero {
+      background: #0b1e32;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      min-height: 85vh;
+      display: flex;
+      align-items: center;
+      border-bottom: 4px solid #ffb347;
+    }
+
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 700px;
+      margin-left: 5%;
+    }
+
+    .hero h1 {
+      font-size: 4.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #fff, #ffde9e);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      font-size: 1.3rem;
+      color: #cfdbea;
+      margin-bottom: 2rem;
+      max-width: 550px;
+    }
+
+    .cta-button {
+      background: #ffb347;
+      border: none;
+      color: #0b1e32;
+      font-weight: 700;
+      font-size: 1.2rem;
+      padding: 1rem 3rem;
+      border-radius: 60px;
+      cursor: pointer;
+      box-shadow: 0 20px 35px -10px rgba(255, 180, 70, 0.4);
+      transition: all 0.2s;
+      display: inline-block;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .cta-button:hover {
+      background: #ffa01e;
+      transform: scale(1.03);
+      box-shadow: 0 25px 35px -8px #f90;
+    }
+
+    /* блоки с иконками */
+    h2 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(145deg, #0b1e32, #2c4058);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .grid-3, .grid-4 {
+      display: grid;
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .grid-3 { grid-template-columns: repeat(3,1fr); }
+    .grid-4 { grid-template-columns: repeat(4,1fr); }
+
+    .card {
+      background: white;
+      padding: 2.2rem 1.8rem;
+      border-radius: 32px;
+      box-shadow: 0 20px 35px -12px rgba(0,0,0,0.05);
+      transition: 0.2s;
+      border: 1px solid rgba(0,0,0,0.02);
+      text-align: center;
+    }
+
+    .card i {
+      font-size: 3rem;
+      background: linear-gradient(145deg, #2c4058, #ffb347);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 1.2rem;
+    }
+
+    .card h3 {
+      font-size: 1.7rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .card p {
+      color: #3f5069;
+    }
+
+    /* кастомный блок статистики */
+    .stats {
+      background: #ffffffd9;
+      backdrop-filter: blur(8px);
+      border-radius: 60px;
+      padding: 3rem 2rem;
+      box-shadow: 0 25px 45px -20px #0b1e32;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-number {
+      font-size: 3.8rem;
+      font-weight: 800;
+      background: linear-gradient(145deg, #ffb347, #f57c00);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    /* меню-футер */
+    footer {
+      background: #0b1e32;
+      color: #b7c7dd;
+      padding: 2rem;
+      text-align: center;
+      border-top: 3px solid #ffb347;
+    }
+
+    .footer-icons i {
+      font-size: 1.8rem;
+      margin: 0 0.7rem;
+      color: #ffb347;
+      transition: 0.2s;
+    }
+    .footer-icons i:hover { color: white; transform: translateY(-5px); }
+
+    /* якорь / кнопка вверх */
+    #top-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #ffb347;
+      border: none;
+      width: 55px;
+      height: 55px;
+      border-radius: 30px;
+      font-size: 1.8rem;
+      color: #0b1e32;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      opacity: 0;
+      transition: 0.2s;
+      pointer-events: none;
+      z-index: 99;
+    }
+    #top-btn.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- ФИКСИРОВАННАЯ ШАПКА -->
+  <header id="main-header">
+    <div class="logo">
+      <i class="fas fa-chart-line"></i> 
+      <span>Fin<span style="color:#ffb347;">Beat</span></span>
+    </div>
+    <nav class="nav-menu">
+      <a href="#services">услуги</a>
+      <a href="#cases">кейсы</a>
+      <a href="#about">оценка</a>
+      <a href="#contact">контакт</a>
+    </nav>
+  </header>
+
+  <!-- БЛОК 1: HERO с canvas анимацией (шапка) -->
+  <section class="hero" id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <h1>Деньги работают<br>даже в dead-лайн</h1>
+      <p>Антикризисный брокер · переговоры с банками · реструктуризация за 24ч</p>
+      <a href="#contact" class="cta-button">получить выкуп</a>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: услуги / карточки (иконки стильные) -->
+  <section class="block fade-up" id="services">
+    <h2><i class="fas fa-bolt" style="color:#ffb347;"></i> ликвидные решения</h2>
+    <div class="grid-3">
+      <div class="card"><i class="fas fa-hand-holding-usd"></i><h3>Досудебка</h3><p>Блокировка пеней, мировые с кредиторами под 0% комиссии</p></div>
+      <div class="card"><i class="fas fa-chart-pie"></i><h3>Аудит долга</h3><p>Проверка на исковую давность, скрытые резервы</p></div>
+      <div class="card"><i class="fas fa-file-invoice"></i><h3>Тендерный займ</h3><p>Оборотный кредит под обеспечение контракта за 4 часа</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: кейсы / портфолио (иконка + цитата) -->
+  <section class="block fade-up" id="cases" style="background:#eef3f9; border-radius: 80px 0 0 80px;">
+    <h2><i class="fas fa-briefcase"></i> сделки, о которых говорят</h2>
+    <div class="grid-4">
+      <div class="card"><i class="fas fa-building"></i><h3>Стройтрест</h3><p>реструктуризация 350 млн ₽ · сохранено 12 объектов</p></div>
+      <div class="card"><i class="fas fa-truck"></i><h3>Логист+</h3><p>выкуп долга со скидкой 63% за 2 дня</p></div>
+      <div class="card"><i class="fas fa-store"></i><h3>Ритейл парк</h3><p>снятие ареста со счетов за 5 часов</p></div>
+      <div class="card"><i class="fas fa-user-tie"></i><h3>Адвокатское бюро</h3><p>тендерный займ под 9% годовых</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: бухгалтерский / аудит (иконки цифры) -->
+  <section class="block fade-up stats" id="audit">
+    <h2 style="text-align:center;"><i class="fas fa-calculator"></i> аудит & налоговые риски</h2>
+    <div class="grid-3" style="margin-top:2rem;">
+      <div class="stat-item"><span class="stat-number">0₽</span><span>скрытых штрафов после нашей проверки</span></div>
+      <div class="stat-item"><span class="stat-number">43</span><span>успешных доначисления в пользу клиента</span></div>
+      <div class="stat-item"><span class="stat-number">>9%</span><span>экономия на налоге на прибыль</span></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: недвижимость / агентский блок -->
+  <section class="block fade-up" id="property">
+    <h2><i class="fas fa-home"></i> активы под ключ</h2>
+    <div class="grid-3">
+      <div class="card"><i class="fas fa-search-location"></i><h3>торги</h3><p>подбор лотов с дисконтом до 70%</p></div>
+      <div class="card"><i class="fas fa-handshake"></i><h3>рассрочка</h3><p>от собственника без банка, первый взнос 10%</p></div>
+      <div class="card"><i class="fas fa-key"></i><h3>юрклининг</h3><p>снятие обременений перед сделкой</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: бизнес-коуч / финансовый консультант -->
+  <section class="block fade-up" style="background:#ffffffb3; border-radius: 40px 40px 0 0;">
+    <h2><i class="fas fa-chess-queen"></i> стратегия ликвидности</h2>
+    <div style="display:flex; gap:3rem; align-items:center;">
+      <div><i class="fas fa-quote-right" style="font-size:6rem; color:#ffb347; opacity:0.4;"></i></div>
+      <div><p style="font-size:1.8rem; font-weight:500;">«Мы не продаём отчёты — мы встраиваемся в финансовую модель»</p><span>— Артур Ветров, финдиректор года</span></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: b2b аутсорсинг (клининг / персонал) метафора -->
+  <section class="block fade-up" id="b2b">
+    <h2><i class="fas fa-users"></i> аутсорсинг «чистый лист»</h2>
+    <div class="grid-3">
+      <div class="card"><i class="fas fa-user-clock"></i><h3>временный персонал</h3><p>для инвентаризации, склада, замены</p></div>
+      <div class="card"><i class="fas fa-broom"></i><h3>клининг PRO</h3><p>уборка после пожаров/заливов, химчистка</p></div>
+      <div class="card"><i class="fas fa-file-signature"></i><h3>кадровый аутсорсинг</h3><p>расчёт ЗП, налоги, воинский учёт</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: короткий контакт / обратный звонок -->
+  <section class="block fade-up" id="contact" style="background:#0b1e32; color:white; border-radius: 50px 50px 0 0;">
+    <h2 style="color:white;"> <i class="fas fa-paper-plane" style="color:#ffb347;"></i> назначить встречу</h2>
+    <div style="display:flex; gap:4rem; flex-wrap:wrap;">
+      <div style="flex:1">
+        <p><i class="fas fa-phone-alt"></i> +7 495 888-32-22</p>
+        <p><i class="fas fa-clock"></i> 24/7 приём экстренных кейсов</p>
+        <div style="margin-top:2rem; display:flex; gap:1rem;">
+          <i class="fab fa-telegram" style="font-size:2rem; color:#ffb347;"></i>
+          <i class="fab fa-whatsapp" style="font-size:2rem; color:#ffb347;"></i>
+        </div>
+      </div>
+      <div style="flex:1; background:#1b314b; padding:2rem; border-radius: 40px;">
+        <p style="font-size:1.5rem;">Оставьте задачу — решим за 1 час</p>
+        <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+          <input type="text" placeholder="телефон" style="padding:1rem; border-radius:40px; border:none; flex:2; background:white; color:#0b1e32;">
+          <button class="cta-button" style="padding:1rem 2rem;">отправить</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: ФУТЕР (с соц иконками) -->
+  <footer>
+    <p>FinBeat — антикризисный брокеридж / аудит / реструктуризация</p>
+    <div class="footer-icons">
+      <i class="fab fa-linkedin"></i>
+      <i class="fab fa-youtube"></i>
+      <i class="fab fa-instagram"></i>
+      <i class="fab fa-tiktok"></i>
+    </div>
+    <p style="margin-top:2rem;">© 2025 все сделки защищены</p>
+  </footer>
+
+  <!-- КНОПКА ВВЕРХ -->
+  <button id="top-btn"><i class="fas fa-arrow-up"></i></button>
+
+  <script>
+    (function() {
+      // 1. АНИМАЦИЯ ШАПКИ (canvas волны/сетка) — абстрактный пульс
+      const canvas = document.getElementById('hero-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        function resizeCanvas() {
+          width = canvas.clientWidth;
+          height = canvas.clientHeight;
+          canvas.width = width;
+          canvas.height = height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // рисуем динамичные линии
+        let time = 0;
+        function draw() {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          const step = 45;
+          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = 'rgba(255, 200, 100, 0.25)';
+          for (let i = 0; i < width; i += step) {
+            ctx.beginPath();
+            ctx.moveTo(i, 0);
+            for (let j = 0; j < height; j += 18) {
+              let offset = Math.sin(i * 0.02 + time + j * 0.02) * 12;
+              ctx.lineTo(i + offset, j);
+            }
+            ctx.strokeStyle = `rgba(255, ${170 + Math.sin(time + i)*30}, 70, 0.18)`;
+            ctx.stroke();
+          }
+          time += 0.02;
+          requestAnimationFrame(draw);
+        }
+        draw();
+      }
+
+      // 2. компактный хедер по скроллу + кнопка вверх
+      const header = document.getElementById('main-header');
+      const topBtn = document.getElementById('top-btn');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+          header.classList.add('scroll-compact');
+        } else {
+          header.classList.remove('scroll-compact');
+        }
+        if (window.scrollY > 400) {
+          topBtn.classList.add('show');
+        } else {
+          topBtn.classList.remove('show');
+        }
+      });
+
+      topBtn.addEventListener('click', (e) => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      // 3. Intersection Observer — появление блоков fade-up
+      const faders = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('appear');
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -20px 0px' });
+
+      faders.forEach(el => observer.observe(el));
+
+      // 4. ЯКОРЯ (плавный скролл)
+      document.querySelectorAll('.nav-menu a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          const target = document.querySelector(targetId);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+    })();
+  </script>
+  <!-- изначально все блоки fade-up не видны, observer добавит appear -->
+  <script>
+    (function secondary() {
+      // маленький хак: сразу проверить видимые блоки
+      const appearObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => e.target.classList.toggle('appear', e.isIntersecting));
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.fade-up').forEach(el => appearObs.observe(el));
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

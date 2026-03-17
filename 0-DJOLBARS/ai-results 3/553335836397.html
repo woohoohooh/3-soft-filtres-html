@@ -1,0 +1,539 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitrazh Studio · витражная эстетика в интерьере</title>
+  <!-- Font Awesome 6 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0d0c0f;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #ede7e3;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* глобальный градиентный фон / стекло */
+    .glass-panel {
+      background: rgba(20, 18, 24, 0.75);
+      backdrop-filter: blur(12px) saturate(180%);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
+      border: 1px solid rgba(255, 215, 200, 0.08);
+      border-radius: 2.5rem;
+      box-shadow: 0 25px 40px -18px rgba(0,0,0,0.7);
+    }
+
+    /* кастомный скролл */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1a181e; }
+    ::-webkit-scrollbar-thumb { background: #c9a77d; border-radius: 8px; }
+
+    /* якорное меню — изящное, фиксированное, преображается при скролле */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.25rem;
+      background: rgba(12, 10, 15, 0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 0.5rem 0.8rem;
+      border-radius: 60px;
+      border: 1px solid rgba(230, 190, 160, 0.2);
+      z-index: 999;
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+      box-shadow: 0 10px 25px -10px rgba(0,0,0,0.5);
+    }
+
+    .navbar.compact {
+      top: 12px;
+      padding: 0.3rem 0.6rem;
+      background: rgba(8, 6, 10, 0.8);
+      border-color: rgba(220, 170, 130, 0.3);
+      box-shadow: 0 12px 28px -8px #00000099;
+    }
+
+    .nav-link {
+      font-size: 0.9rem;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      padding: 0.55rem 1.2rem;
+      border-radius: 40px;
+      color: #f0e2d4;
+      text-decoration: none;
+      transition: 0.2s ease;
+      white-space: nowrap;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
+      background: rgba(220, 180, 140, 0.15);
+      color: #ffefd5;
+    }
+
+    .nav-link.active {
+      background: #dbba94;
+      color: #0c0a0e;
+      font-weight: 500;
+    }
+
+    /* общая сетка */
+    section {
+      max-width: 1360px;
+      margin: 0 auto 30px auto;
+      padding: 3rem 2.5rem;
+      border-radius: 3rem;
+      transition: transform 0.7s ease, opacity 0.7s ease;
+    }
+
+    /* анимация при появлении блока (Intersection Observer) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px) scale(0.98);
+      transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .fade-up.appear {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    h1 {
+      font-size: 4.8rem;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fae5d6, #e2c2a5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h2 {
+      font-size: 2.8rem;
+      font-weight: 340;
+      letter-spacing: -0.01em;
+      margin-bottom: 1.5rem;
+      color: #f5dcc4;
+      border-left: 5px solid #b68b65;
+      padding-left: 1.5rem;
+    }
+
+    .subtitle {
+      font-size: 1.3rem;
+      color: #c0b2a4;
+      font-weight: 300;
+    }
+
+    /* header спецэффект: анимация цветных частиц (JS) */
+    .header-particles {
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at 30% 30%, #2a2320, #0b090d);
+    }
+
+    #particle-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.7;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      gap: 1.8rem;
+    }
+
+    /* карточки-иконки */
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .service-card {
+      background: rgba(34, 30, 36, 0.55);
+      border-radius: 2rem;
+      padding: 2.2rem 1.8rem;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(200, 165, 130, 0.15);
+      transition: all 0.25s ease;
+      box-shadow: 0 18px 30px -18px black;
+    }
+
+    .service-card:hover {
+      border-color: rgba(210, 170, 130, 0.5);
+      background: rgba(45, 38, 43, 0.7);
+      transform: translateY(-6px);
+    }
+
+    .service-card i {
+      font-size: 3rem;
+      color: #dbb58b;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-block {
+      display: flex;
+      gap: 3rem;
+      justify-content: space-around;
+      text-align: center;
+    }
+
+    .stat-item {
+      font-size: 2rem;
+      font-weight: 300;
+      border-bottom: 2px solid #6a4f3b;
+      padding-bottom: 0.5rem;
+    }
+
+    /* футер минимализм */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      color: #9e8f82;
+    }
+
+    .footer .social i {
+      font-size: 1.5rem;
+      margin-left: 1.5rem;
+      color: #b7a084;
+      transition: 0.2s;
+    }
+    .footer .social i:hover { color: #ebc9a7; }
+
+    /* простая подсветка текста при наведении */
+    .highlight-hover {
+      transition: 0.2s;
+      background: linear-gradient(145deg, #f5e1cf, #f5e1cf) no-repeat left bottom/0% 2px;
+      background-repeat: no-repeat;
+    }
+    .highlight-hover:hover {
+      background-size: 100% 2px;
+      color: #fff6e6;
+    }
+
+    button {
+      background: #dbba94;
+      border: none;
+      color: #141014;
+      font-weight: 500;
+      padding: 1rem 2.8rem;
+      border-radius: 60px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 12px 28px -15px #b28258;
+    }
+    button:hover {
+      background: #ebcaac;
+      transform: scale(1.02);
+      box-shadow: 0 20px 30px -10px #ab7e58;
+    }
+
+    a, .fake-link {
+      text-decoration: none;
+    }
+
+    /* адаптация под ПК — фиксированная ширина */
+    @media (min-width: 1400px) {
+      section { max-width: 1320px; }
+    }
+
+    /* разделители */
+    .quote {
+      font-size: 2rem;
+      font-weight: 200;
+      font-style: italic;
+      color: #dacbbd;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ФИКСИРОВАННОЕ МЕНЮ (ЯКОРНОЕ) -->
+<div class="navbar" id="navbar">
+  <a href="#hero" class="nav-link active">Главная</a>
+  <a href="#philosophy" class="nav-link">Эстетика</a>
+  <a href="#services" class="nav-link">Услуги</a>
+  <a href="#works" class="nav-link">Объекты</a>
+  <a href="#contact" class="nav-link">Контакты</a>
+</div>
+
+<!-- БЛОК 1: ШАПКА / HERO (с анимацией частиц) -->
+<section id="hero" class="glass-panel header-particles fade-up" style="margin-top: 100px; padding-bottom: 5rem;">
+  <canvas id="particle-canvas"></canvas>
+  <div class="header-content">
+    <span class="subtitle"><i class="fa-regular fa-gem" style="margin-right: 10px;"></i>ателье витражного искусства</span>
+    <h1>Vitrazh<br>Studio</h1>
+    <p style="max-width: 600px; font-size: 1.3rem; font-weight: 300; color: #dac2b0;">Свет, цвет и текстура стекла. Создаём интерьерные витражи, которые дышат.</p>
+    <div style="display: flex; gap: 20px; align-items: center;">
+      <button>Обсудить проект <i class="fa-regular fa-star" style="margin-left: 8px;"></i></button>
+      <span style="border-bottom: 1px solid #735e4d; padding-bottom: 4px;">портфолио ↓</span>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 2: ФИЛОСОФИЯ / ДОВЕРИЕ (акцент на ремесле) -->
+<section id="philosophy" class="glass-panel fade-up">
+  <h2>Ручная работа <br> и авторский свет</h2>
+  <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 220px;">
+      <p class="quote">„Стекло — это застывшая музыка“</p>
+      <p style="margin-top: 20px; color: #c9b6a6;">Каждое изделие создаётся в единственном экземпляре. Тиффани, фьюзинг, классические свинцовые витражи — работаем с частными интерьерами и архитектурными объектами.</p>
+    </div>
+    <div style="display: flex; gap: 2rem; align-items: flex-end;">
+      <div><i class="fa-regular fa-clock" style="font-size: 2rem; color: #b98f69;"></i><br><span style="font-size: 2rem;">>12 лет</span><br>опыта</div>
+      <div><i class="fa-regular fa-building" style="font-size: 2rem; color: #b98f69;"></i><br><span style="font-size: 2rem;">>300</span><br>проектов</div>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 3: УСЛУГИ / иконки fontawesome стильные -->
+<section id="services" class="glass-panel fade-up">
+  <h2>направления</h2>
+  <div class="service-grid">
+    <div class="service-card"><i class="fa-regular fa-sun"></i><h3>Тиффани</h3><p>Цветные абажуры, бра, небольшие панно — игра света и меди.</p></div>
+    <div class="service-card"><i class="fa-regular fa-window-maximize"></i><h3>Окна‑витражи</h3><p>Полноценные остекления с термальным эффектом, частные дома.</p></div>
+    <div class="service-card"><i class="fa-regular fa-gem"></i><h3>Фьюзинг</h3><p>Спекание стекла, объёмные фактуры, интерьерные вставки.</p></div>
+    <div class="service-card"><i class="fa-regular fa-pen-to-square"></i><h3>Эскизы / 3D</h3><p>Визуализация будущего витража с учётом освещения помещения.</p></div>
+    <div class="service-card"><i class="fa-regular fa-hand-sparkles"></i><h3>Реставрация</h3><p>Восстановление исторических витражей, подбор аналогов.</p></div>
+    <div class="service-card"><i class="fa-regular fa-crown"></i><h3>Премиум</h3><p>Витражные потолки, купола, ширмы под заказ.</p></div>
+  </div>
+</section>
+
+<!-- БЛОК 4: ИЗБРАННЫЕ ОБЪЕКТЫ / портфолио (без картинок, стильные иконки) -->
+<section id="works" class="glass-panel fade-up">
+  <h2>реализованные проекты</h2>
+  <div style="display: grid; grid-template-columns: repeat(3,1fr); gap: 2rem;">
+    <div style="background: #231f24; border-radius: 2rem; padding: 2rem 1.5rem;">
+      <i class="fa-regular fa-star" style="font-size: 3rem; color: #b79268;"></i>
+      <p style="margin: 1rem 0; font-size: 1.2rem;">«Ониксовый сад»</p>
+      <small>витраж для холла, 6.5 м²</small>
+    </div>
+    <div style="background: #231f24; border-radius: 2rem; padding: 2rem 1.5rem;">
+      <i class="fa-regular fa-moon" style="font-size: 3rem; color: #b79268;"></i>
+      <p style="margin: 1rem 0; font-size: 1.2rem;">«Ночная симфония»</p>
+      <small>потолочный модуль, фьюзинг</small>
+    </div>
+    <div style="background: #231f24; border-radius: 2rem; padding: 2rem 1.5rem;">
+      <i class="fa-regular fa-sun-plant-wilt" style="font-size: 3rem; color: #b79268;"></i>
+      <p style="margin: 1rem 0; font-size: 1.2rem;">Ботанический тиффани</p>
+      <small>ширма-перегородка</small>
+    </div>
+  </div>
+  <div style="margin-top: 2rem; font-size: 1.3rem;"><i class="fa-regular fa-face-smile"></i>   полное портфолио по запросу</div>
+</section>
+
+<!-- БЛОК 5: ЦИФРЫ И ТЕХНОЛОГИИ -->
+<section class="glass-panel fade-up">
+  <div class="stat-block">
+    <div class="stat-item"><span>12</span> мастеров</div>
+    <div class="stat-item"><span>3</span> печи для фьюзинга</div>
+    <div class="stat-item"><span>>50</span> оттенков стекла</div>
+  </div>
+</section>
+
+<!-- БЛОК 6: ОТЗЫВ / ДОВЕРИЕ (текст с подсветкой) -->
+<section class="glass-panel fade-up">
+  <i class="fa-regular fa-quote-right" style="font-size: 4rem; opacity: 0.3; display: block;"></i>
+  <p style="font-size: 1.8rem; max-width: 900px;">«Витраж стал главным акцентом гостиной — теперь солнечные зайчики танцуют на стенах весь день. Работать с командой — одно удовольствие: чётко, красиво, с душой.»</p>
+  <p style="margin-top: 2rem;">— Екатерина, дизайнер интерьера</p>
+</section>
+
+<!-- БЛОК 7: ПРОЦЕСС / КАК МЫ РАБОТАЕМ -->
+<section class="glass-panel fade-up">
+  <h2>Процесс</h2>
+  <div style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: space-between;">
+    <span><i class="fa-regular fa-pen-line"></i> 01 Идея / эскиз</span>
+    <span><i class="fa-regular fa-cube"></i> 02 макет в 1:10</span>
+    <span><i class="fa-regular fa-fire"></i> 03 резка / сборка</span>
+    <span><i class="fa-regular fa-truck"></i> 04 монтаж</span>
+  </div>
+</section>
+
+<!-- БЛОК 8: ПРЕИМУЩЕСТВА / АКЦЕНТ НА ДОВЕРИИ -->
+<section class="glass-panel fade-up">
+  <div style="display: flex; gap: 3rem;">
+    <div><i class="fa-regular fa-file-signature"></i> <span class="highlight-hover">официальный договор</span></div>
+    <div><i class="fa-regular fa-calendar-clock"></i> <span class="highlight-hover">соблюдение сроков</span></div>
+    <div><i class="fa-regular fa-face-smile"></i> <span class="highlight-hover">постгарантия 5 лет</span></div>
+  </div>
+</section>
+
+<!-- БЛОК 9: ФУТЕР + КОНТАКТЫ -->
+<section id="contact" class="glass-panel fade-up" style="margin-bottom: 40px;">
+  <div class="footer">
+    <div>
+      <h3 style="font-size: 2rem; margin: 0;">Vitrazh Studio</h3>
+      <p style="margin: 0.5rem 0;">Санкт-Петербург, ул. Восстания 45</p>
+      <p>hello@vitrazh.design  |  +7 (812) 555-07-20</p>
+    </div>
+    <div class="social">
+      <i class="fa-brands fa-telegram"></i>
+      <i class="fa-brands fa-behance"></i>
+      <i class="fa-brands fa-pinterest"></i>
+    </div>
+  </div>
+  <div style="margin-top: 2rem; border-top: 1px solid #423b34; padding-top: 1rem; display: flex; justify-content: space-between;">
+    <span>© vitrazh studio</span>
+    <span>made with <i class="fa-regular fa-heart" style="color: #b28258;"></i> for portfolio</span>
+  </div>
+</section>
+
+<!-- JavaScript: анимация частиц в шапке, навбар-компакт, intersection observer -->
+<script>
+  (function() {
+    // 1) Эффектная анимация частиц (canvas)
+    const canvas = document.getElementById('particle-canvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 55;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.3,
+            radius: Math.random() * 3.5 + 1.2,
+            color: `rgba(230, 200, 170, ${Math.random() * 0.3 + 0.1})`
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        if (!canvas) return;
+        const container = canvas.parentElement;
+        width = container.clientWidth;
+        height = container.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+
+          p.x += p.vx;
+          p.y += p.vy;
+
+          if (p.x < 0 || p.x > width) p.vx *= -1;
+          if (p.y < 0 || p.y > height) p.vy *= -1;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+      drawParticles();
+    }
+
+    // 2) Навбар компакт при скролле + активный пункт
+    const navbar = document.getElementById('navbar');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('section[id]');
+
+    function updateNavbarCompact() {
+      if (!navbar) return;
+      if (window.scrollY > 80) {
+        navbar.classList.add('compact');
+      } else {
+        navbar.classList.remove('compact');
+      }
+
+      // подсветка активного пункта
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 120;
+        const sectionBottom = sectionTop + section.offsetHeight;
+        if (window.scrollY >= sectionTop && window.scrollY < sectionBottom) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        const href = link.getAttribute('href').replace('#', '');
+        if (href === current) {
+          link.classList.add('active');
+        }
+      });
+    }
+
+    window.addEventListener('scroll', updateNavbarCompact);
+    updateNavbarCompact();
+
+    // 3) Intersection Observer — появление блоков (fade-up)
+    const appearOptions = {
+      threshold: 0.2,
+      rootMargin: '0px 0px -30px 0px'
+    };
+
+    const appearOnScroll = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('appear');
+        }
+      });
+    }, appearOptions);
+
+    document.querySelectorAll('.fade-up').forEach(el => {
+      appearOnScroll.observe(el);
+    });
+
+    // 4) якорный клик с плавностью (без дублирования)
+    navLinks.forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href');
+        if (targetId === '#') return;
+        const targetEl = document.querySelector(targetId);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  })();
+</script>
+
+<!-- крошечный дефолтный интерсепшен чтобы первый блок тоже появился красиво (уже имеют класс) -->
+<!-- All done! -->
+All done!
+</body>
+</html>
+```

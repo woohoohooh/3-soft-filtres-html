@@ -1,0 +1,437 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vox Aeterna · иммерсивный аудио-портрет</title>
+  <!-- Font Awesome 6 (бесплатные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #f7f5f0;
+      color: #1e1b18;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* кастомный скролл */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #eae7e0; }
+    ::-webkit-scrollbar-thumb { background: #b7aa9d; border-radius: 4px; }
+
+    /* навбар — фиксированный, эластичный */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; width: 100%;
+      padding: 1.6rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+      background: transparent;
+      mix-blend-mode: difference;
+      color: white;
+      pointer-events: none;
+    }
+    .navbar a, .navbar .logo {
+      pointer-events: auto;
+      color: currentColor;
+      text-decoration: none;
+      font-weight: 450;
+      letter-spacing: -0.01em;
+    }
+    .navbar .logo {
+      font-size: 1.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      backdrop-filter: blur(4px);
+      padding: 0.2rem 1rem 0.2rem 0.8rem;
+      border-radius: 40px;
+      background: rgba(0,0,0,0.1);
+      transition: background 0.2s;
+    }
+    .navbar .logo i { font-size: 2rem; }
+    .nav-links {
+      display: flex;
+      gap: 3rem;
+      font-size: 1.1rem;
+      backdrop-filter: blur(4px);
+      padding: 0.6rem 1.8rem;
+      border-radius: 60px;
+      background: rgba(0,0,0,0.1);
+    }
+    .nav-links a { border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    .nav-links a:hover { border-bottom-color: currentColor; }
+
+    /* сжатая версия при скролле */
+    .navbar.scrolled {
+      padding: 1rem 3rem;
+      background: rgba(247, 245, 240, 0.85);
+      backdrop-filter: blur(16px);
+      mix-blend-mode: normal;
+      color: #1e1b18;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
+    }
+    .navbar.scrolled .logo { background: rgba(255,255,255,0.5); }
+    .navbar.scrolled .nav-links { background: rgba(255,255,255,0.4); }
+
+    /* общий контейнер */
+    section { position: relative; }
+    .block {
+      min-height: 100vh;
+      padding: 7rem 4rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* заголовки */
+    h1 { font-size: 5.5rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.0; }
+    h2 { font-size: 3.2rem; font-weight: 550; letter-spacing: -0.015em; margin-bottom: 1.5rem; }
+    h2 i { margin-right: 0.7rem; color: #b55a3b; }
+
+    /* анимация появления при скролле (fade + slide) */
+    .fadeup {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 1s ease, transform 1s ease;
+    }
+    .fadeup.appear {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* кастомная задержка */
+    .delay-1 { transition-delay: 0.1s; }
+    .delay-2 { transition-delay: 0.2s; }
+    .delay-3 { transition-delay: 0.3s; }
+
+    /* шапка (block-1) с живой анимацией частиц */
+    .hero {
+      background: #141311;
+      color: #f0e7de;
+      position: relative;
+      overflow: hidden;
+    }
+    #particles {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+    }
+    .hero .subhead {
+      font-size: 1.5rem;
+      opacity: 0.75;
+      margin: 1.8rem 0 3rem;
+      max-width: 600px;
+      border-left: 4px solid #b55a3b;
+      padding-left: 2rem;
+    }
+
+    /* кнопки */
+    .btn {
+      display: inline-block;
+      padding: 1rem 2.8rem;
+      background: #b55a3b;
+      color: white;
+      text-decoration: none;
+      font-weight: 550;
+      border-radius: 40px;
+      letter-spacing: 0.3px;
+      border: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 15px 25px -10px rgba(181, 90, 59, 0.4);
+    }
+    .btn i { margin-left: 0.6rem; }
+    .btn:hover { transform: scale(1.02); box-shadow: 0 20px 30px -8px #b55a3b; }
+
+    /* карточки / иконки */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .service-card {
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(8px);
+      padding: 2.2rem 2rem;
+      border-radius: 2rem;
+      box-shadow: 0 20px 35px -15px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255,255,255,0.5);
+      transition: all 0.3s;
+    }
+    .service-card:hover { background: white; transform: translateY(-8px); }
+    .service-card i { font-size: 2.8rem; color: #b55a3b; margin-bottom: 1.5rem; }
+
+    /* цифры */
+    .stat-grid {
+      display: flex;
+      gap: 3rem;
+      justify-content: space-between;
+      margin: 2rem 0;
+    }
+    .stat-item h3 { font-size: 3rem; font-weight: 600; color: #b55a3b; }
+
+    /* отзывы */
+    .testimonial {
+      background: #fffcf8;
+      border-radius: 2.5rem;
+      padding: 2.5rem;
+      box-shadow: 0 30px 40px -25px #cfb7a8;
+      border: 1px solid #fff0e6;
+    }
+
+    /* футер */
+    .footer {
+      background: #1e1b18;
+      color: #c7bcb2;
+      min-height: auto;
+      padding: 2.5rem 4rem;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+    .footer a { color: #e2cfc0; text-decoration: none; border-bottom: 1px dotted; }
+
+    /* блоки с фонами */
+    .block-2 { background: #f0eae2; }
+    .block-3 { background: #fff9f3; }
+    .block-4 { background: #e9e0d5; }
+    .block-5 { background: #fcf7f2; }
+    .block-6 { background: #e5dbd1; }
+    .block-7 { background: #f2ede7; }
+    .block-8 { background: #e1d7cd; }
+
+    /* якоря */
+    .anchor { scroll-margin-top: 80px; }
+
+    /* адаптация под пк (широкие) */
+    @media (min-width: 1600px) {
+      .block { padding: 8rem 10rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- фиксированное меню -->
+  <nav class="navbar" id="navbar">
+    <a href="#" class="logo"><i class="fas fa-wave-square"></i> Vox Aeterna</a>
+    <div class="nav-links">
+      <a href="#story">история</a>
+      <a href="#work">процесс</a>
+      <a href="#stats">цифры</a>
+      <a href="#contact">контакт</a>
+    </div>
+  </nav>
+
+  <!-- БЛОК 1: Хиро с анимацией частиц -->
+  <section class="block hero anchor" id="hero">
+    <canvas id="particles"></canvas>
+    <div class="hero-content fadeup appear"> <!-- appear чтобы сразу было видно -->
+      <h1 style="max-width: 1000px;">Звуковой портрет<br>на стыке памяти и эмоций</h1>
+      <div class="subhead">Иммерсивные аудио-истории для брендов, артистов и частных архивов. Работаю с тишиной так же искусно, как со звуком.</div>
+      <a href="#" class="btn">записать сессию <i class="fas fa-arrow-right"></i></a>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: Услуги / специализация -->
+  <section class="block block-2 anchor fadeup" id="story">
+    <h2><i class="fas fa-microphone-lines"></i> Голос — главный инструмент</h2>
+    <div class="grid-3">
+      <div class="service-card"><i class="fas fa-podcast"></i><h3>Подкасты & аудиореклама</h3><p>Запись, монтаж, звуковой дизайн — под ключ. Работаю с голосами первого эшелона.</p></div>
+      <div class="service-card"><i class="fas fa-head-side-vr"></i><h3>VR / AR звук</h3><p>Амбиофония и бинаурал для метавселенных. Полное присутствие.</p></div>
+      <div class="service-card"><i class="fas fa-film"></i><h3>Музыка для кино</h3><p>Оригинальные саундтреки и аудио-брендинг для короткого метра.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: Как это работает (процесс) -->
+  <section class="block block-3 anchor fadeup" id="work">
+    <h2><i class="fas fa-sliders-h"></i> Бесшовный процесс</h2>
+    <div style="display: flex; gap: 4rem; align-items: center; flex-wrap: wrap;">
+      <div style="flex: 2; min-width: 280px;">
+        <div style="margin: 2rem 0;"><span style="background:#b55a3b; color:white; padding:0.5rem 1.3rem; border-radius:40px;">01</span><p style="display:inline-block; margin-left:1.5rem; font-weight:500;">Интервью / погружение — ловим вайб и референсы.</p></div>
+        <div style="margin: 2rem 0;"><span style="background:#b55a3b; color:white; padding:0.5rem 1.3rem; border-radius:40px;">02</span><p style="display:inline-block; margin-left:1.5rem; font-weight:500;">Полевая запись или студия — чистый звук высшей пробы.</p></div>
+        <div style="margin: 2rem 0;"><span style="background:#b55a3b; color:white; padding:0.5rem 1.3rem; border-radius:40px;">03</span><p style="display:inline-block; margin-left:1.5rem; font-weight:500;">Монтаж, сведение, мастеринг — возвращаем историю.</p></div>
+      </div>
+      <div style="flex: 1; background: #e0cfc0; border-radius: 3rem; padding: 2rem; text-align:center; box-shadow: 0 10px 20px rgba(0,0,0,0.1);">
+        <i class="fas fa-ear-listen" style="font-size: 5rem; color:#8f4f33;"></i>
+        <p style="margin-top:1rem;">«Слышать невидимое»</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: Цифры и факты (доверие) -->
+  <section class="block block-4 anchor fadeup" id="stats">
+    <h2><i class="fas fa-chart-line"></i> Сухие метры эмоций</h2>
+    <div class="stat-grid">
+      <div class="stat-item"><h3>400+</h3><p>часов записей</p></div>
+      <div class="stat-item"><h3>64</h3><p>канала чистого звука</p></div>
+      <div class="stat-item"><h3>12</h3><p>наград в аудиодизайне</p></div>
+    </div>
+    <p style="margin-top: 2rem; max-width: 700px; opacity:0.8;">Работал с лейблами: Erased Tapes, 130701, частными кинокомпаниями.</p>
+  </section>
+
+  <!-- БЛОК 5: Кейс / пример работы (акцент на доверии) -->
+  <section class="block block-5 anchor fadeup">
+    <h2><i class="fas fa-scroll"></i> Кейс: «Голос города»</h2>
+    <div style="display: flex; gap: 3rem; background: #ffffffaa; border-radius: 2.5rem; padding: 2.5rem; backdrop-filter: blur(5px);">
+      <div style="flex:1;"><i class="fas fa-city" style="font-size: 4rem; color:#b55a3b;"></i></div>
+      <div style="flex:3;"><p>Аудиоинсталляция для музея современного искусства. 48 каналов, пространственный звук, 6 месяцев препадакшена. Посетители оставались в среднем на 11 минут дольше.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: Отзыв / testimonial -->
+  <section class="block block-6 anchor fadeup">
+    <h2><i class="fas fa-quote-right"></i> Слова, сказанные вслух</h2>
+    <div class="testimonial">
+      <i class="fas fa-star" style="color:#b55a3b; margin-right:4px;"></i><i class="fas fa-star" style="color:#b55a3b;"></i><i class="fas fa-star" style="color:#b55a3b;"></i><i class="fas fa-star" style="color:#b55a3b;"></i><i class="fas fa-star" style="color:#b55a3b;"></i>
+      <p style="font-size:1.5rem; margin: 1rem 0;">«Vox Aeterna сделал невозможное — записал монолог моей бабушки так, будто она сидит в кресле напротив. Слёзы и мурашки у всей семьи». </p>
+      <p>— А. Ветрова, куратор архива устных историй</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: Команда / экспертность (один мастер) -->
+  <section class="block block-7 anchor fadeup">
+    <h2><i class="fas fa-user-astronaut"></i> Кто стоит за пультом</h2>
+    <div style="display: flex; gap: 3rem; align-items:center;">
+      <div style="width: 120px; height: 120px; border-radius: 50%; background: #bc8f74; display: flex; justify-content: center; align-items: center;"><i class="fas fa-headphones" style="font-size: 3rem; color:#2c241e;"></i></div>
+      <div style="flex:1;"><p>15 лет записи на студии и в поле. Инженер мастеринга с опытом в Abbey Road (стажировка). Работаю с шепотом и индустриальным шумом одинаково бережно.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: Контакт / CTA -->
+  <section class="block block-8 anchor fadeup" id="contact">
+    <h2><i class="fas fa-paper-plane"></i> Начать проект</h2>
+    <div style="max-width: 600px;">
+      <p style="font-size: 1.4rem;">Обсудим звучание вашей истории? Заполните форму — я отвечу в течение суток и пришлю демо-диск.</p>
+      <div style="margin: 2.5rem 0; background: #fff; border-radius: 60px; display: flex; padding: 0.5rem;">
+        <input type="email" placeholder="ваш email" style="flex: 1; padding: 1.2rem 2rem; border: none; background: transparent; font-size:1.2rem; outline:none;">
+        <button class="btn" style="border-radius: 60px; padding: 1rem 2.5rem; cursor: pointer;">Отправить <i class="fas fa-arrow-right"></i></button>
+      </div>
+      <p><i class="fas fa-mobile-alt"></i> +49 176 12345678  (только Signal / WhatsApp)</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: Футер -->
+  <footer class="footer">
+    <p style="margin-bottom: 0.5rem;">© 2025 Vox Aeterna — звуковой продакшн и аудиопортреты</p>
+    <p><a href="#">Instagram</a> · <a href="#">SoundCloud</a> · <a href="#">LinkedIn</a></p>
+    <p style="margin-top: 1rem; opacity:0.5;"><i class="fas fa-dharmachakra"></i> вся музыка в уме</p>
+  </footer>
+
+  <script>
+    (function() {
+      // 1) Навбар сжимается при скролле
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 30) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      });
+
+      // 2) Анимация появления блоков (Intersection Observer)
+      const faders = document.querySelectorAll('.fadeup');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('appear');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+      faders.forEach(el => observer.observe(el));
+
+      // 3) Частицы в шапке (живая анимация)
+      const canvas = document.getElementById('particles');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function initParticles() {
+          width = canvas.clientWidth;
+          height = canvas.clientHeight;
+          canvas.width = width;
+          canvas.height = height;
+
+          particles = [];
+          const num = 70;
+          for (let i = 0; i < num; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              radius: Math.random() * 2.5 + 0.8,
+              speedX: (Math.random() - 0.5) * 0.4,
+              speedY: (Math.random() - 0.5) * 0.15,
+              opacity: Math.random() * 0.6 + 0.2,
+            });
+          }
+        }
+
+        function drawParticles() {
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = '#e6c9b5'; // тёплый свет
+
+          for (let p of particles) {
+            ctx.beginPath();
+            ctx.globalAlpha = p.opacity;
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // медленное движение
+            p.x += p.speedX;
+            p.y += p.speedY;
+
+            // границы
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+          }
+          requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', () => {
+          initParticles();
+        });
+
+        initParticles();
+        drawParticles();
+      }
+
+      // 4) дополнительная плавность якорей
+      document.querySelectorAll('.nav-links a, .logo').forEach(link => {
+        link.addEventListener('click', function(e) {
+          const href = this.getAttribute('href');
+          if (href && href.startsWith('#')) {
+            e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

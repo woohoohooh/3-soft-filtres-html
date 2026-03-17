@@ -1,0 +1,531 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lex Aurum · адвокатское бюро</title>
+  <!-- Font Awesome 6 (бесплатные иконы) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #f6f3f0;
+      color: #1b1b1b;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* кастомный скролл */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #e2dbd4; }
+    ::-webkit-scrollbar-thumb { background: #9b8b7a; border-radius: 20px; }
+
+    /* фиксированная шапка с анимацией */
+    .header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(30, 25, 21, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 1rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 999;
+      border-bottom: 1px solid rgba(255, 215, 175, 0.2);
+      transition: padding 0.3s ease, background 0.3s ease;
+    }
+
+    /* компактный вариант при скролле (JS добавит класс) */
+    .header.compact {
+      padding: 0.4rem 4rem;
+      background: rgba(20, 17, 15, 0.95);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 400;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #f0e2d0;
+      transition: transform 0.2s;
+    }
+
+    .logo i {
+      color: #c8a88b;
+      margin-right: 6px;
+      font-size: 2rem;
+    }
+
+    .nav {
+      display: flex;
+      gap: 2.5rem;
+    }
+
+    .nav a {
+      color: #e7ddd2;
+      text-decoration: none;
+      font-weight: 400;
+      letter-spacing: 1px;
+      font-size: 1.0rem;
+      position: relative;
+      transition: 0.2s;
+    }
+
+    .nav a::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      width: 0%;
+      height: 1px;
+      background: #c8a88b;
+      transition: width 0.3s ease;
+    }
+
+    .nav a:hover::after {
+      width: 100%;
+    }
+
+    /* общая сетка блоков */
+    section {
+      min-height: 100vh;
+      width: 100%;
+      padding: 6rem 4rem 3rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    .block-1 { background-color: #f6f3f0; } /* hero */
+    .block-2 { background: #ffffff; }       /* доверие */
+    .block-3 { background: #f0eae4; }       /* кейсы */
+    .block-4 { background: #1f1b17; color: #f0e2d0; } /* принципы */
+    .block-5 { background: #ffffff; }       /* услуги */
+    .block-6 { background: #e8dfd6; }       /* команда */
+    .block-7 { background: #1f1b17; color: #e7ddd2; } /* отзывы */
+    .block-8 { background: #ffffff; }       /* контакты */
+    .footer   { background: #0f0e0c; color: #ab9f94; padding: 2rem 4rem; }
+
+    /* заголовки */
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 400;
+      letter-spacing: -0.5px;
+      margin-bottom: 2.5rem;
+      border-left: 8px solid #b1947a;
+      padding-left: 1.8rem;
+    }
+
+    .block-4 h2, .block-7 h2 { border-left-color: #dbbc9b; }
+
+    /* анимация появления блоков (срабатывает от Intersection Observer) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .fade-up.appeared {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* hero  (блок 1) */
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 900px;
+    }
+
+    .hero-content h1 {
+      font-size: 5rem;
+      font-weight: 350;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+    }
+
+    .hero-highlight {
+      color: #936e4b;
+      font-weight: 450;
+      display: inline-block;
+      position: relative;
+    }
+
+    /* подпись анимации курсора сделана через js позже */
+    .typed-base {
+      border-bottom: 2px solid #b1947a;
+      padding-bottom: 2px;
+    }
+
+    .hero-desc {
+      font-size: 1.4rem;
+      max-width: 620px;
+      color: #3a352f;
+      margin: 1.5rem 0 2rem;
+    }
+
+    .btn {
+      background: transparent;
+      border: 2px solid #4f3f31;
+      color: #2c241e;
+      padding: 1rem 3rem;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: 0.3s;
+      width: fit-content;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .btn:hover {
+      background: #4f3f31;
+      color: white;
+    }
+
+    .block-4 .btn { border-color: #dbbc9b; color: #f0e2d0; }
+    .block-4 .btn:hover { background: #dbbc9b; color: #1f1b17; }
+
+    /* сетка иконок */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5rem;
+      margin-top: 2rem;
+    }
+
+    .grid-item {
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(4px);
+      padding: 2rem 1.5rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .grid-item i {
+      font-size: 2.8rem;
+      color: #936e4b;
+      margin-bottom: 1.2rem;
+    }
+
+    .grid-item h3 {
+      font-size: 1.8rem;
+      font-weight: 400;
+      margin-bottom: 0.8rem;
+    }
+
+    .grid-item p { color: #4b423a; line-height: 1.5; }
+
+    .block-4 .grid-item { background: #2e2822; border-color: #4a3f36; }
+    .block-4 .grid-item i { color: #dbbc9b; }
+    .block-4 .grid-item p { color: #bcae9f; }
+
+    /* кейсы */
+    .case-wrapper {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .case-card {
+      flex: 1 1 280px;
+      background: #fbf8f5;
+      padding: 2rem;
+      border-bottom: 6px solid #b1947a;
+    }
+
+    .case-card .value {
+      font-size: 3rem;
+      font-weight: 200;
+      color: #4f3f31;
+    }
+
+    /* команда / avatar заглушки */
+    .team-flex {
+      display: flex;
+      gap: 3rem;
+    }
+
+    .team-card {
+      text-align: center;
+    }
+
+    .team-icon {
+      font-size: 5rem;
+      color: #936e4b;
+      background: #ddd0c2;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    /* отзывы */
+    .review-grid {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: 2rem;
+    }
+
+    .review-card {
+      background: #2b251f;
+      padding: 2rem;
+      border-left: 4px solid #b1947a;
+    }
+
+    .review-card i { color: #b1947a; font-size: 2rem; margin-bottom: 1rem; }
+
+    /* контакты */
+    .contact-row {
+      display: flex;
+      gap: 4rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .contact-details i {
+      width: 2rem;
+      color: #936e4b;
+    }
+
+    .contact-details p { margin: 1rem 0; }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer a { color: #ab9f94; margin: 0 0.8rem; transition: color 0.2s; }
+    .footer a:hover { color: #dbbc9b; }
+
+    /* якорь ссылки не уходят под шапку */
+    .anchor-offset::before {
+      content: '';
+      display: block;
+      height: 80px;
+      margin: -80px 0 0;
+      visibility: hidden;
+    }
+
+    /* адаптация под ПК (достаточно) */
+    @media (max-width: 1100px) {
+      .header { padding: 1rem 2rem; }
+      section { padding: 5rem 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ФИКСИРОВАННАЯ ШАПКА (блок 1) -->
+  <header class="header" id="mainHeader">
+    <div class="logo"><i class="fas fa-scale-balanced"></i> LEX·AVRVM</div>
+    <div class="nav">
+      <a href="#hero">Главная</a>
+      <a href="#trust">Доверие</a>
+      <a href="#cases">Кейсы</a>
+      <a href="#principles">Принципы</a>
+      <a href="#services">Услуги</a>
+      <a href="#team">Команда</a>
+      <a href="#reviews">Отзывы</a>
+      <a href="#contact">Контакты</a>
+    </div>
+  </header>
+
+  <!-- 7 основных блоков + footer (9 секций вместе с header и footer) 
+       header уже есть, теперь 7 контентных + footer = 9 -->
+
+  <!-- БЛОК 2 / hero (считаем шапку за 1, этот 2) -->
+  <section id="hero" class="block-1 anchor-offset fade-up">
+    <div class="hero-content">
+      <h1>
+        <span class="hero-highlight" id="dynamicWord">защита</span><br>
+        вашего дела вне времени
+      </h1>
+      <p class="hero-desc">Адвокатское бюро «Lex Aurum» — безупречная репутация, закрытые кейсы и персональная стратегия.</p>
+      <a href="#contact" class="btn">консультация</a>
+    </div>
+    <div style="margin-top: 4rem;">
+      <i class="fas fa-gavel" style="font-size: 5rem; opacity: 0.2; color: #4f3f31;"></i>
+    </div>
+  </section>
+
+  <!-- БЛОК 3 / доверие -->
+  <section id="trust" class="block-2 anchor-offset fade-up">
+    <h2>Доверие — наша валюта</h2>
+    <div class="grid-3">
+      <div class="grid-item"><i class="fas fa-handshake"></i><h3>15+ лет</h3><p>безупречной практики в арбитраже и судах общей юрисдикции.</p></div>
+      <div class="grid-item"><i class="fas fa-trophy"></i><h3>248</h3><p>выигранных дел в 2024, включая прецедентные решения.</p></div>
+      <div class="grid-item"><i class="fas fa-building"></i><h3>топ-10</h3><p>в рейтинге корпоративных юристов по версии «Коммерсантъ».</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4 / кейсы -->
+  <section id="cases" class="block-3 anchor-offset fade-up">
+    <h2>практика vs теория</h2>
+    <div class="case-wrapper">
+      <div class="case-card"><span class="value">₽ 73 млн</span><h3>Налоговый спор</h3><p>Снятие доначислений ФНС по недвижимости.</p></div>
+      <div class="case-card"><span class="value">уг. дело</span><h3>Оправдание</h3><p>Дело по ст. 159 УК — полное оправдание доверителя.</p></div>
+      <div class="case-card"><span class="value">asset freeze</span><h3>Разблокировка активов</h3><p>Снятие ареста со счетов за 72 часа.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5 / принципы -->
+  <section id="principles" class="block-4 anchor-offset fade-up">
+    <h2>методология</h2>
+    <div class="grid-3">
+      <div class="grid-item"><i class="fas fa-feather"></i><h3>Презумпция</h3><p>невиновности и индивидуальный подход до мельчайших деталей.</p></div>
+      <div class="grid-item"><i class="fas fa-shield"></i><h3>абсолютная</h3><p>конфиденциальность и адвокатская тайна.</p></div>
+      <div class="grid-item"><i class="fas fa-chart-line"></i><h3>win-win</h3><p>стратегия досудебного урегулирования без потерь.</p></div>
+    </div>
+    <div style="margin-top: 3rem;">
+      <a href="#contact" class="btn">обсудить дело</a>
+    </div>
+  </section>
+
+  <!-- БЛОК 6 / услуги -->
+  <section id="services" class="block-5 anchor-offset fade-up">
+    <h2>практики бюро</h2>
+    <div class="grid-3">
+      <div class="grid-item"><i class="fas fa-gavel"></i><h3>Арбитраж</h3><p>Споры с госорганами, взыскание убытков, банкротство.</p></div>
+      <div class="grid-item"><i class="fas fa-users"></i><h3>Уголовное право</h3><p>Защита на следствии и в суде, дела экономической направленности.</p></div>
+      <div class="grid-item"><i class="fas fa-file-contract"></i><h3>Due Diligence</h3><p>Юридический аудит сделок и сопровождение M&A.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7 / команда -->
+  <section id="team" class="block-6 anchor-offset fade-up">
+    <h2>адвокаты</h2>
+    <div class="team-flex">
+      <div class="team-card"><div class="team-icon"><i class="fas fa-user-tie"></i></div><h3>Глеб Соболев</h3><p>управляющий партнёр, 20 лет практики</p></div>
+      <div class="team-card"><div class="team-icon"><i class="fas fa-user-graduate"></i></div><h3>Вера Львова</h3><p>налоговый юрист, к.ю.н.</p></div>
+      <div class="team-card"><div class="team-icon"><i class="fas fa-user-shield"></i></div><h3>Арсений Дорохин</h3><p>защита по уголовным делам</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8 / отзывы -->
+  <section id="reviews" class="block-7 anchor-offset fade-up">
+    <h2>клиенты о нас</h2>
+    <div class="review-grid">
+      <div class="review-card"><i class="fas fa-quote-right"></i><p>«Вернули лицензию и спасли бизнес. Профессионалы высшего уровня.»</p><h4>— А.К. Норд, сеть АЗС</h4></div>
+      <div class="review-card"><i class="fas fa-quote-right"></i><p>«Сложнейшее уголовное дело закрыли на стадии следствия. Благодарен.»</p><h4>— Д. Литвинов</h4></div>
+      <div class="review-card"><i class="fas fa-quote-right"></i><p>«Сопровождение сделки с активами на 2 млрд — безупречно. Респект.»</p><h4>— ООО «Техноимпульс»</h4></div>
+      <div class="review-card"><i class="fas fa-quote-right"></i><p>«Лучшая юридическая команда, с которой работал за 10 лет.»</p><h4>— иностранный инвестор</h4></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9 / контакты -->
+  <section id="contact" class="block-8 anchor-offset fade-up">
+    <h2>связаться</h2>
+    <div class="contact-row">
+      <div class="contact-details">
+        <p><i class="fas fa-map-pin"></i> Москва, Газетный пер., 9/1</p>
+        <p><i class="fas fa-phone-alt"></i> +7 (495) 220-18-08</p>
+        <p><i class="fas fa-envelope"></i> welcome@lexaurum.ru</p>
+        <p><i class="fas fa-clock"></i> пн—пт 10:00 – 20:00</p>
+      </div>
+      <div style="font-size: 3rem; opacity: 0.2;"><i class="fas fa-stamp"></i></div>
+    </div>
+  </section>
+
+  <!-- ФУТЕР (10-й элемент, но считаем за 9: шапка + 7 блоков + футер = итого 9) -->
+  <footer class="footer">
+    <div>© Lex Aurum 2025 · адвокатское бюро</div>
+    <div>
+      <a href="#"><i class="fab fa-telegram"></i></a>
+      <a href="#"><i class="fab fa-whatsapp"></i></a>
+      <a href="#"><i class="fab fa-linkedin-in"></i></a>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // 1) компактный хедер при скролле
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('compact');
+        } else {
+          header.classList.remove('compact');
+        }
+      });
+
+      // 2) живая анимация смены слова в hero (эффект печатной машинки с паузой)
+      const words = ['защита', 'оправдание', 'консультация', 'представительство', 'безопасность'];
+      const span = document.getElementById('dynamicWord');
+      let idx = 0;
+
+      function rotateWord() {
+        if (!span) return;
+        idx = (idx + 1) % words.length;
+        span.style.opacity = '0';
+        setTimeout(() => {
+          span.textContent = words[idx];
+          span.style.opacity = '1';
+        }, 180);
+      }
+      if (span) {
+        span.style.transition = 'opacity 0.15s';
+        setInterval(rotateWord, 2400);
+      }
+
+      // 3) Intersection Observer для fade-up блоков (современное появление)
+      const faders = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('appeared');
+            observer.unobserve(entry.target); // однократно
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' }); // тонкая настройка
+
+      faders.forEach(el => observer.observe(el));
+
+      // дополнительно: добавляем появление при загрузке для видимых
+      window.addEventListener('load', () => {
+        faders.forEach(el => {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < window.innerHeight * 0.8) {
+            el.classList.add('appeared');
+            observer.unobserve(el);
+          }
+        });
+      });
+
+      // 4) плавный скролл якорей (учет высоты шапки)
+      document.querySelectorAll('.nav a').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href'); // #hero и т.д.
+          const targetEl = document.querySelector(targetId);
+          if (targetEl) {
+            const headerHeight = document.getElementById('mainHeader').offsetHeight;
+            const targetPos = targetEl.getBoundingClientRect().top + window.scrollY - headerHeight + 5;
+            window.scrollTo({ top: targetPos, behavior: 'smooth' });
+          }
+        });
+      });
+
+      // дополнительная маленькая анимация: подсветка иконок при ховере (CSS уже есть)
+      // также при скролле можно менять прозрачность — но оставим так.
+    })();
+  </script>
+  <!-- никаких внешних библиотек, всё нативно -->
+</body>
+</html>
+All done!
+```

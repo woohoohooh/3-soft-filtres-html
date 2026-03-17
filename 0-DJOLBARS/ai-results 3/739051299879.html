@@ -1,0 +1,492 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lenscape · архитектура света</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #f8fafc;
+      color: #0b1a2e;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* custom smooth scroll + section snap (subtle) */
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 80px;
+    }
+
+    /* animated gradient header */
+    .header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      padding: 1.5rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 25, 45, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 215, 160, 0.15);
+      z-index: 1000;
+      transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+      box-shadow: 0 20px 30px -20px rgba(0,0,0,0.4);
+    }
+
+    /* compact menu on scroll (JS will toggle) */
+    .header.compact {
+      padding: 0.7rem 4rem;
+      background: rgba(0, 8, 18, 0.9);
+      border-bottom-color: #c9a46c;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .logo i {
+      font-size: 2rem;
+      color: #e6b17e;
+      filter: drop-shadow(0 0 8px #e6b17e55);
+      animation: softGlow 3s infinite alternate;
+    }
+
+    @keyframes softGlow {
+      0% { filter: drop-shadow(0 0 2px #e6b17e); }
+      100% { filter: drop-shadow(0 0 15px #f5c6a0); }
+    }
+
+    .logo span {
+      font-size: 1.4rem;
+      font-weight: 500;
+      background: linear-gradient(120deg, #ffffff, #e0d6c9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav a {
+      color: #eaeef2;
+      text-decoration: none;
+      margin-left: 2.4rem;
+      font-weight: 400;
+      font-size: 1.1rem;
+      transition: 0.2s;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 4px;
+    }
+
+    .nav a:hover {
+      color: #f5cf9f;
+      border-bottom-color: #f5cf9f;
+    }
+
+    /* main container */
+    .content {
+      margin-top: 85px; /* space for fixed header */
+    }
+
+    section {
+      min-height: 100vh;
+      width: 100%;
+      padding: 6rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+      border-bottom: 1px solid rgba(0,30,50,0.1);
+    }
+
+    section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* different background rhythm */
+    section:nth-child(odd) {
+      background: #ffffff;
+    }
+    section:nth-child(even) {
+      background: #f2f5f9;
+    }
+
+    h2 {
+      font-size: 3.8rem;
+      font-weight: 550;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 2rem;
+      background: linear-gradient(145deg, #142b44, #213e5e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .section-subhead {
+      font-size: 1.4rem;
+      color: #3a506b;
+      max-width: 700px;
+      margin-bottom: 3rem;
+      border-left: 6px solid #e6b17e;
+      padding-left: 2rem;
+    }
+
+    .grid-3, .grid-2 {
+      display: grid;
+      gap: 2.5rem;
+      margin-top: 2rem;
+    }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+    .card {
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(6px);
+      padding: 2.5rem 2rem;
+      border-radius: 42px 16px 42px 16px;
+      box-shadow: 0 30px 40px -30px #0b1f33;
+      border: 1px solid rgba(230, 177, 126, 0.2);
+      transition: transform 0.25s ease, box-shadow 0.4s;
+    }
+
+    .card:hover {
+      transform: translateY(-12px) scale(1.01);
+      box-shadow: 0 40px 50px -25px #a57848;
+      border-color: #e6b17e70;
+    }
+
+    .card i {
+      font-size: 3rem;
+      color: #d2935b;
+      margin-bottom: 1.8rem;
+    }
+
+    .stat-number {
+      font-size: 3.2rem;
+      font-weight: 650;
+      color: #0b2b44;
+      line-height: 1.2;
+    }
+
+    .footer {
+      background: #0b1a2e;
+      color: #cbd5e0;
+      padding: 3rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      border-top: 3px solid #c09a6b;
+    }
+
+    .footer a {
+      color: #e6b17e;
+      text-decoration: none;
+      margin-left: 2rem;
+    }
+
+    /* floating micro interactions */
+    .floating-shape {
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle at 30% 30%, #fff3e0, #e6b17e20);
+      border-radius: 50%;
+      filter: blur(70px);
+      z-index: 1;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+      animation: floatMove 14s infinite alternate ease-in-out;
+    }
+
+    @keyframes floatMove {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(5%, 8%) scale(1.2); }
+    }
+
+    /* icons animation */
+    .pulse-icon {
+      animation: pulse 4s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.1); text-shadow: 0 0 10px #e6b17e; }
+    }
+
+    /* responsive (PC only — but fine) */
+    @media (max-width: 1200px) {
+      section { padding: 5rem 2.5rem; }
+      h2 { font-size: 3rem; }
+    }
+
+    /* custom scrollbar */
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: #e0d6c9; }
+    ::-webkit-scrollbar-thumb { background: #a56f3e; border-radius: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- fixed header with JS behaviour -->
+  <header class="header" id="mainHeader">
+    <div class="logo">
+      <i class="fas fa-camera-lens"></i>
+      <span>LENSCAPE</span>
+    </div>
+    <nav class="nav">
+      <a href="#home">home</a>
+      <a href="#story">craft</a>
+      <a href="#folio">folio</a>
+      <a href="#approach">approach</a>
+      <a href="#connect">connect</a>
+    </nav>
+  </header>
+
+  <div class="content">
+    <!-- section 1: hero / home (block 1) -->
+    <section id="home" class="visible">
+      <div class="floating-shape" style="top: 10%; right: 5%;"></div>
+      <div style="max-width: 900px; position: relative; z-index: 5;">
+        <h2 style="font-size: 5rem; margin-bottom: 1rem;">light · shadow<br>your story</h2>
+        <div class="section-subhead" style="border-left-color: #c09a6b; max-width: 600px;">архитектурный подход к репортажной и интерьерной съёмке. не просто кадры — атмосфера.</div>
+        <div style="display: flex; gap: 2rem; font-size: 1.8rem; font-weight: 300; color: #36536b;">
+          <span><i class="fa-regular fa-compass" style="color: #ca8f53;"></i> 12+ лет</span>
+          <span><i class="fa-regular fa-star" style="color: #ca8f53;"></i> 430+ проектов</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- section 2: story / about (block 2) -->
+    <section id="story">
+      <div class="floating-shape" style="bottom: 0; left: 0; background: #d4b48c40;"></div>
+      <h2>между строк</h2>
+      <div class="grid-2">
+        <div class="card">
+          <i class="fas fa-eye"></i>
+          <h3 style="font-size: 2rem; margin-bottom: 1.2rem;">визуальный код</h3>
+          <p style="color: #1e2f41;">Не снимаем «как все» — ищем уникальный свет, текстуру и геометрию. Для брендов, отелей, частных историй.</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-clapperboard"></i>
+          <h3 style="font-size: 2rem; margin-bottom: 1.2rem;">кино-подход</h3>
+          <p style="color: #1e2f41;">Работаем с референсами, цветокоррекцией и композицией. Каждый кадр — самостоятельная фотокартина.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- section 3: folio (block 3) -> стилизованное портфолио без картинок (иконки) -->
+    <section id="folio">
+      <h2>избранные кадры</h2>
+      <div class="section-subhead">несколько проектов, где свет стал главным героем</div>
+      <div class="grid-3">
+        <div class="card" style="text-align: center;">
+          <i class="fas fa-mountain-sun" style="font-size: 4rem;"></i>
+          <div class="stat-number">'21</div>
+          <p>Löyly сауна · Хельсинки</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <i class="fas fa-building" style="font-size: 4rem;"></i>
+          <div class="stat-number">'23</div>
+          <p>KOD офис · архитектурная серия</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <i class="fas fa-ring" style="font-size: 4rem;"></i>
+          <div class="stat-number">'24</div>
+          <p>wedding story · усадьба Голицыных</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- section 4: approach / услуги (block 4) акцент на доверии и кейсах -->
+    <section id="approach">
+      <h2>кадр = актив</h2>
+      <div class="grid-2">
+        <div class="card">
+          <i class="fas fa-scale-balanced"></i>
+          <h3 style="font-size: 1.8rem;">архитектура & интерьеры</h3>
+          <p>для бюро, отелей и девелоперов — съёмка с дронов, планировочный свет, подача для международных конкурсов.</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-handshake"></i>
+          <h3 style="font-size: 1.8rem;">репортаж / бэкстейдж</h3>
+          <p>живые эмоции, съёмка мероприятий «без постановки» — 15 лет опыта в закрытых клубах и модных показах.</p>
+        </div>
+      </div>
+      <div style="margin-top: 4rem; background: #0b1a2e10; padding: 2.5rem; border-radius: 40px;">
+        <i class="fas fa-briefcase" style="font-size: 2.5rem; color: #bc8f60;"></i>
+        <p style="font-size: 1.3rem; max-width: 800px;">«Доверие складывается из деталей: ни одного сорванного дедлайна, 98% клиентов возвращаются за второй съёмкой.»</p>
+      </div>
+    </section>
+
+    <!-- section 5: процесс / как работаем (block 5) -->
+    <section>
+      <h2>бесшовно</h2>
+      <div class="grid-3">
+        <div class="card"><i class="fas fa-pen"></i> брифинг & референсы</div>
+        <div class="card"><i class="fas fa-location-dot"></i> рекогносцировка света</div>
+        <div class="card"><i class="fas fa-wand-magic-sparkles"></i> постпродакшн / тонирование</div>
+      </div>
+    </section>
+
+    <!-- section 6: признание / статистика (block 6) -->
+    <section>
+      <h2>в сухих числах</h2>
+      <div class="grid-3" style="margin-bottom: 3rem;">
+        <div class="card"><i class="fas fa-trophy"></i> <span class="stat-number">24</span><br>международных наград</div>
+        <div class="card"><i class="fas fa-globe"></i> <span class="stat-number">9</span><br>стран для съёмок</div>
+        <div class="card"><i class="fas fa-film"></i> <span class="stat-number">100+</span><br>тыс. кадров в архиве</div>
+      </div>
+    </section>
+
+    <!-- section 7: партнёры / клиенты (block 7) бренд-айдика -->
+    <section>
+      <h2>выбирают</h2>
+      <div style="display: flex; gap: 3rem; flex-wrap: wrap; font-size: 2.4rem; font-weight: 300; color: #916f4b;">
+        <span><i class="fa-regular fa-building"></i> YIT</span>
+        <span><i class="fa-regular fa-registered"></i> KOD</span>
+        <span><i class="fa-regular fa-copyright"></i> LÖYLY</span>
+        <span><i class="fa-regular fa-star"></i> AYNA</span>
+      </div>
+    </section>
+
+    <!-- section 8: коллаборации / контакты (block 8) -->
+    <section id="connect">
+      <h2>давайте снимем</h2>
+      <div style="display: flex; gap: 5rem; align-items: center; flex-wrap: wrap;">
+        <div style="flex: 1;">
+          <p style="font-size: 2rem; margin-bottom: 1rem;"><i class="fas fa-envelope" style="color: #b5804b;"></i> hello@lenscape.studio</p>
+          <p style="font-size: 1.8rem;"><i class="fas fa-phone-alt"></i> +7 916 330 22 44</p>
+          <p style="margin-top: 2rem;"><i class="fab fa-instagram"></i> <i class="fab fa-behance"></i> <i class="fab fa-vimeo-v"></i></p>
+        </div>
+        <div class="card" style="flex: 1;">
+          <i class="fas fa-calendar-check pulse-icon"></i> напишите — отвечаем в течение часа в рабочее время.
+        </div>
+      </div>
+    </section>
+
+    <!-- footer (block 9) -->
+    <footer class="footer">
+      <div style="display: flex; gap: 1.5rem; align-items: center;">
+        <i class="fas fa-camera" style="font-size: 2rem; color: #c09a6b;"></i>
+        <span>© lenscape 2025 · all rights reserved</span>
+      </div>
+      <div>
+        <a href="#home">наверх</a>
+        <a href="#"><i class="fab fa-telegram"></i></a>
+        <a href="#"><i class="fab fa-whatsapp"></i></a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    (function() {
+      // 1) header compact on scroll
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('compact');
+        } else {
+          header.classList.remove('compact');
+        }
+      });
+
+      // 2) Intersection Observer — section reveal animation + active link highlight (modern)
+      const sections = document.querySelectorAll('section');
+      const navLinks = document.querySelectorAll('.nav a');
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            // update active nav (simple)
+            const id = entry.target.getAttribute('id');
+            navLinks.forEach(link => {
+              link.style.color = '#eaeef2';
+              link.style.borderBottomColor = 'transparent';
+              if (link.getAttribute('href') === `#${id}`) {
+                link.style.color = '#f5cf9f';
+                link.style.borderBottomColor = '#f5cf9f';
+              }
+            });
+          } else {
+            // optional: keep visible after first appearance? we prefer stay visible.
+            // but to be safe, we don't remove class.
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px' });
+
+      sections.forEach(section => observer.observe(section));
+
+      // 3) make first section visible anyway (already has class visible from HTML)
+      // but also manual initial check
+      if (sections.length) sections[0].classList.add('visible');
+
+      // 4) floating name effect: subtle interactive movement for logo icon?
+      const logoIcon = document.querySelector('.logo i');
+      document.addEventListener('mousemove', (e) => {
+        // micro interaction: move icon slightly based on mouse – but only on PC
+        const x = (e.clientX / window.innerWidth - 0.5) * 8;
+        const y = (e.clientY / window.innerHeight - 0.5) * 8;
+        if (logoIcon) {
+          logoIcon.style.transform = `translate(${x}px, ${y}px) rotate(${x*0.5}deg)`;
+        }
+      });
+
+      // 5) random "theme" comment — we did photographer portfolio (wedding + architecture mix) – not needed, just for logic
+
+      // 6) extra smooth scroll for anchor (fine anyway)
+
+      // 7) ensure header links highlight on manual hash change
+      window.addEventListener('hashchange', () => {
+        const currentId = window.location.hash.substring(1);
+        navLinks.forEach(link => {
+          link.style.color = '#eaeef2';
+          link.style.borderBottomColor = 'transparent';
+          if (link.getAttribute('href') === `#${currentId}`) {
+            link.style.color = '#f5cf9f';
+            link.style.borderBottomColor = '#f5cf9f';
+          }
+        });
+      });
+    })();
+  </script>
+
+  <!-- extra micro animation: floating shape moves on scroll (just decorative) -->
+  <style>
+    .floating-shape { transition: transform 0.1s linear; }
+  </style>
+  <script>
+    (function subtleParallax(){
+      const shapes = document.querySelectorAll('.floating-shape');
+      window.addEventListener('scroll', ()=>{
+        const scrollY = window.scrollY;
+        shapes.forEach((shape, idx)=>{
+          const speed = 0.1 + idx * 0.05;
+          shape.style.transform = `translateY(${scrollY * speed * 0.2}px) scale(${1 + Math.sin(scrollY*0.002)*0.05})`;
+        });
+      });
+    })();
+  </script>
+
+</body>
+</html>
+All done!
+```

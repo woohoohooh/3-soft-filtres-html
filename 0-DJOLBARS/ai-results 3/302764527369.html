@@ -1,0 +1,594 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MASTER MIX | эксклюзивный саунд-продюсер</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #0b0c10;
+            color: #eaeef2;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* кастомный скролл — ненавязчивый */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1f2128; }
+        ::-webkit-scrollbar-thumb { background: #c89b5e; border-radius: 20px; }
+
+        /* ГЛОБАЛЬНАЯ АНИМАЦИЯ ПОЯВЛЕНИЯ БЛОКОВ */
+        .section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+            will-change: opacity, transform;
+        }
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* контейнер */
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* фиксированная шапка с анимацией сжатия */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 28px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            background: rgba(11, 12, 16, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(200, 155, 94, 0.15);
+        }
+        .header.scrolled {
+            padding: 14px 50px;
+            background: rgba(11, 12, 16, 0.95);
+            backdrop-filter: blur(15px);
+            border-bottom-color: #c89b5e;
+            box-shadow: 0 10px 30px -10px #0b0c10;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, #fff 0%, #c89b5e 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: 0.2s;
+        }
+        .nav a {
+            color: #ddd;
+            text-decoration: none;
+            margin-left: 40px;
+            font-weight: 400;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            position: relative;
+            transition: 0.2s;
+        }
+        .nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: #c89b5e;
+            transition: width 0.3s;
+        }
+        .nav a:hover {
+            color: #fff;
+        }
+        .nav a:hover::after {
+            width: 100%;
+        }
+
+        /* hero */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at 30% 40%, #1e212a, #0a0b0e 70%);
+            margin-top: 0;
+            border-bottom: 1px solid #2a2c34;
+        }
+        .hero-content {
+            max-width: 750px;
+        }
+        .hero-sub {
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            color: #c89b5e;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeUp 1s forwards 0.2s;
+        }
+        .hero-title {
+            font-size: 80px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: fadeUp 1s forwards 0.4s;
+        }
+        .hero-title span {
+            color: #c89b5e;
+            display: inline-block;
+            filter: drop-shadow(0 0 12px rgba(200,155,94,0.4));
+        }
+        .hero-desc {
+            font-size: 20px;
+            color: #b0b5c0;
+            margin-bottom: 40px;
+            max-width: 600px;
+            opacity: 0;
+            animation: fadeUp 1s forwards 0.6s;
+        }
+        .btn {
+            display: inline-block;
+            padding: 18px 48px;
+            background: transparent;
+            border: 2px solid #c89b5e;
+            color: white;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-decoration: none;
+            transition: 0.4s;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            opacity: 0;
+            animation: fadeUp 1s forwards 0.8s;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: #c89b5e;
+            transition: left 0.4s;
+            z-index: -1;
+        }
+        .btn:hover::before {
+            left: 0;
+        }
+        .btn:hover {
+            color: #0b0c10;
+            border-color: transparent;
+        }
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* JS-анимация в шапке — абстрактные полосы */
+        .header-animation {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .bar {
+            position: absolute;
+            bottom: 0;
+            width: 4px;
+            height: 0%;
+            background: linear-gradient(to top, #c89b5e, transparent);
+            opacity: 0.4;
+            animation: barPulse 4s infinite alternate;
+        }
+        @keyframes barPulse {
+            0% { opacity: 0.2; height: 20%; }
+            100% { opacity: 0.7; height: 90%; }
+        }
+
+        /* общие блоки */
+        .section {
+            padding: 120px 0;
+            border-bottom: 1px solid #1e2028;
+        }
+        .section-title {
+            font-size: 48px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            position: relative;
+            display: inline-block;
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -10px;
+            width: 80px;
+            height: 3px;
+            background: #c89b5e;
+        }
+        .section-sub {
+            font-size: 18px;
+            color: #a0a8b5;
+            margin-bottom: 60px;
+        }
+
+        /* иконки */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 40px;
+        }
+        .service-card {
+            background: #16181f;
+            padding: 40px 30px;
+            border-radius: 30px;
+            border: 1px solid #2e313c;
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
+        }
+        .service-card i {
+            font-size: 52px;
+            color: #c89b5e;
+            margin-bottom: 25px;
+        }
+        .service-card h3 {
+            font-size: 26px;
+            margin-bottom: 15px;
+        }
+        .service-card p {
+            color: #9fa6b5;
+            line-height: 1.6;
+        }
+        .service-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 30px 40px -20px #c89b5e40;
+            border-color: #c89b5e;
+        }
+
+        /* портфолио-сетка (для фотографа/артиста) */
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        .port-item {
+            background: #1b1d26;
+            aspect-ratio: 1/1.2;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 25px;
+            border: 1px solid #333844;
+            transition: 0.2s;
+            background-size: cover;
+            background-position: center;
+        }
+        .port-item:nth-child(1) { background-image: linear-gradient(180deg, transparent 40%, #0b0c10), url('https://placehold.co/800x1000/2e2e3a/bbbbcc?text=session'); }
+        .port-item:nth-child(2) { background-image: linear-gradient(180deg, transparent 40%, #0b0c10), url('https://placehold.co/800x1000/2e2e3a/bbbbcc?text=artist'); }
+        .port-item:nth-child(3) { background-image: linear-gradient(180deg, transparent 40%, #0b0c10), url('https://placehold.co/800x1000/2e2e3a/bbbbcc?text=remix'); }
+        .port-item span {
+            font-size: 24px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 2px 10px black;
+        }
+        .port-item p {
+            color: #c89b5e;
+            font-size: 16px;
+        }
+
+        /* Треки / работы */
+        .track-list {
+            margin: 50px 0;
+        }
+        .track-row {
+            display: flex;
+            align-items: center;
+            padding: 18px 0;
+            border-bottom: 1px solid #282c36;
+            transition: 0.2s;
+            cursor: default;
+        }
+        .track-row:hover {
+            background: rgba(200, 155, 94, 0.1);
+            padding-left: 20px;
+            border-bottom-color: #c89b5e;
+        }
+        .track-row i {
+            font-size: 28px;
+            color: #c89b5e;
+            width: 60px;
+        }
+        .track-info {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+        }
+        .track-name {
+            font-weight: 600;
+            font-size: 20px;
+        }
+        .track-year {
+            color: #999;
+        }
+
+        /* клиенты / логотипы */
+        .marquee {
+            background: #12141c;
+            padding: 40px 0;
+            border-radius: 60px;
+            margin: 40px 0;
+            display: flex;
+            gap: 60px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .marquee i {
+            font-size: 48px;
+            color: #c89b5e;
+            opacity: 0.7;
+            transition: 0.2s;
+        }
+        .marquee i:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        /* cta */
+        .cta-block {
+            background: #12141c;
+            border-radius: 60px;
+            padding: 80px 60px;
+            text-align: center;
+            border: 1px solid #c89b5e30;
+        }
+        .cta-block h2 {
+            font-size: 52px;
+            margin-bottom: 20px;
+        }
+        .cta-block .btn {
+            margin-top: 40px;
+            animation: none;
+            opacity: 1;
+        }
+
+        /* футер */
+        .footer {
+            background: #07080c;
+            padding: 60px 0 40px;
+            border-top: 1px solid #c89b5e20;
+        }
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .socials i {
+            font-size: 28px;
+            margin-left: 30px;
+            color: #aaa;
+            transition: 0.2s;
+        }
+        .socials i:hover {
+            color: #c89b5e;
+            transform: translateY(-3px);
+        }
+
+        /* якорное меню плавно */
+        html {
+            scroll-padding-top: 100px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ФИКСИРОВАННАЯ ШАПКА -->
+    <header class="header" id="header">
+        <div class="logo">MASTER MIX</div>
+        <nav class="nav">
+            <a href="#about">о нас</a>
+            <a href="#services">услуги</a>
+            <a href="#works">портфолио</a>
+            <a href="#contact">контакт</a>
+        </nav>
+        <!-- JS анимация в шапке: абстрактные движущиеся полосы -->
+        <div class="header-animation" id="headerBars"></div>
+    </header>
+
+    <!-- HERO (блок 1) -->
+    <section class="hero section" id="hero">
+        <div class="container hero-content">
+            <div class="hero-sub">SAINT-P / BERLIN</div>
+            <h1 class="hero-title">звук,<br>который <span>останавливает</span> время</h1>
+            <p class="hero-desc">Сведение, мастеринг, аранжировка. Работа с артистами первой величины. Попадаем в тренды, сохраняя душу.</p>
+            <a href="#contact" class="btn">обсудить трек</a>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: about / философия -->
+    <section class="section" id="about">
+        <div class="container">
+            <h2 class="section-title">кто мы</h2>
+            <div class="section-sub">не просто студия — лаборатория саунда</div>
+            <div style="display: flex; gap: 60px; align-items: center;">
+                <p style="font-size: 22px; line-height: 1.6; max-width: 700px; color: #ccd2dc;">За последние 5 лет свели более 200 треков, от инди до поп-мейджоров. Наш резиденты — музыканты с особой эстетикой. Мы не делаем шаблонно, мы ищем характер.</p>
+                <i class="fas fa-headphones-alt" style="font-size: 160px; color: #c89b5e20; transform: rotate(12deg);"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: услуги (иконки) -->
+    <section class="section" id="services">
+        <div class="container">
+            <h2 class="section-title">что делаем</h2>
+            <div class="section-sub">полный цикл продакшна</div>
+            <div class="grid-3">
+                <div class="service-card"><i class="fas fa-sliders-h"></i><h3>сведение</h3><p>От 24 до 128 дорожек. Аналоговое тепло + цифровая точность.</p></div>
+                <div class="service-card"><i class="fas fa-magic"></i><h3>мастеринг</h3><p>Подготовка для Spotify, Apple Music, vinyl. Громко, чисто, детально.</p></div>
+                <div class="service-card"><i class="fas fa-piano"></i><h3>аранжировка</h3><p>Создадим живое звучание или электронный минимализм — под ваш стиль.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: портфолио / визуал (для фотографа/музыканта) -->
+    <section class="section" id="works">
+        <div class="container">
+            <h2 class="section-title">последние сессии</h2>
+            <div class="section-sub">каждый проект — отдельная вселенная</div>
+            <div class="portfolio-grid">
+                <div class="port-item"><span>luna mora</span><p>сингл “невесомость”</p></div>
+                <div class="port-item"><span>трип хаус</span><p>ep “поля”</p></div>
+                <div class="port-item"><span>марк тишман</span><p>мастеринг альбома</p></div>
+            </div>
+
+            <!-- треклист с иконками (интерактив) -->
+            <div class="track-list">
+                <div class="track-row"><i class="fas fa-play-circle"></i><div class="track-info"><span class="track-name">доводчиков — рассвет</span><span class="track-year">2025</span></div></div>
+                <div class="track-row"><i class="fas fa-play-circle"></i><div class="track-info"><span class="track-name">эрика лунд — мало</span><span class="track-year">2024</span></div></div>
+                <div class="track-row"><i class="fas fa-play-circle"></i><div class="track-info"><span class="track-name">the dumbphones — run</span><span class="track-year">2024</span></div></div>
+                <div class="track-row"><i class="fas fa-play-circle"></i><div class="track-info"><span class="track-name">maya dv — кислород</span><span class="track-year">2025</span></div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: статистика / клиенты (иконки марок) -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">доверие артистов</h2>
+            <div class="marquee">
+                <i class="fab fa-spotify"></i>
+                <i class="fab fa-apple"></i>
+                <i class="fas fa-microphone-alt"></i>
+                <i class="fas fa-gem"></i>
+                <i class="fab fa-soundcloud"></i>
+                <i class="fas fa-headphones"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: для b2b / лицензирование -->
+    <section class="section" id="b2b">
+        <div class="container">
+            <h2 class="section-title">синх & лицензии</h2>
+            <div class="section-sub">музыка для кино, рекламы, брендов</div>
+            <div style="background: #1b1d26; border-radius: 40px; padding: 40px; display: flex; gap: 40px; align-items: center; flex-wrap: wrap;">
+                <i class="fas fa-film" style="font-size: 90px; color: #c89b5e;"></i>
+                <p style="font-size: 20px; max-width: 700px;">Более 50 треков размещены в библиотеках. Поможем подобрать музыку под визуал или напишем оригинальный саундтрек.</p>
+                <a href="#" style="color:#c89b5e; font-weight: 600;">каталог →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: команда / коучи (иконки) -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">кто делает звук</h2>
+            <div class="grid-3">
+                <div class="service-card"><i class="fas fa-user-tie"></i><h3>антон ветров</h3><p>саунд-продюсер, 15 лет стажа. работал с lobster, summer.</p></div>
+                <div class="service-card"><i class="fas fa-user-graduate"></i><h3>ева литвина</h3><p>мастеринг-инженер, академия лондон.</p></div>
+                <div class="service-card"><i class="fas fa-user-musician"></i><h3>дэн shum</h3><p>аранжировщик, электроника/оркестр.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: яркий CTA / консультация -->
+    <section class="section" id="contact">
+        <div class="container cta-block">
+            <h2>готовы записаться?</h2>
+            <p style="font-size: 22px; max-width: 600px; margin: 0 auto;">Пришлите демо, получите обратную связь от продюсера в течение 24 часов.</p>
+            <a href="#" class="btn">отправить демо</a>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: футер -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div style="font-size: 14px; letter-spacing: 1px;">© master mix 2025 / студия звукозаписи</div>
+            <div class="socials">
+                <i class="fab fa-telegram"></i>
+                <i class="fab fa-instagram"></i>
+                <i class="fab fa-youtube"></i>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // 1. анимация шапки при скролле
+            const header = document.getElementById('header');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // 2. появление секций (Intersection Observer)
+            const sections = document.querySelectorAll('.section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px' });
+            sections.forEach(sec => observer.observe(sec));
+
+            // 3. анимация в шапке: динамические полосы (эффект эквалайзера)
+            const barsContainer = document.getElementById('headerBars');
+            if (barsContainer) {
+                for (let i = 0; i < 18; i++) {
+                    let bar = document.createElement('div');
+                    bar.className = 'bar';
+                    // случайное смещение слева
+                    bar.style.left = Math.random() * 100 + '%';
+                    // случайная задержка и длительность
+                    let dur = (Math.random() * 2 + 2).toFixed(2); // 2-4 сек
+                    let delay = Math.random() * 2;
+                    bar.style.animation = `barPulse ${dur}s infinite alternate ${delay}s`;
+                    // разная ширина
+                    bar.style.width = Math.floor(Math.random() * 6 + 2) + 'px';
+                    barsContainer.appendChild(bar);
+                }
+            }
+
+            // 4. дополнительный эффект свечения при наведении на якоря (опционально)
+            // небольшой interactive фон для hero
+        })();
+    </script>
+
+    <!-- простая инициализация без комментариев -->
+</body>
+</html>
+All done!
+```

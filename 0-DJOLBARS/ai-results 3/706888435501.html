@@ -1,0 +1,516 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LENS RENTAL · премиальная оптика</title>
+  <!-- Font Awesome 6 (бесплатные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ===== БАЗА ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #0b0c10;
+      color: #eaeef2;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* кастомный скролл */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1f232a; }
+    ::-webkit-scrollbar-thumb { background: #c89f5e; border-radius: 20px; }
+
+    /* ===== ЯКОРНОЕ МЕНЮ (ФИКСИРОВАННОЕ С АНИМАЦИЕЙ) ===== */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: auto;
+      background: rgba(15, 20, 28, 0.75);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(200, 159, 94, 0.25);
+      border-radius: 60px;
+      padding: 0.7rem 2rem;
+      z-index: 999;
+      display: flex;
+      gap: 2.5rem;
+      justify-content: center;
+      box-shadow: 0 20px 35px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(200,159,94,0.1) inset;
+      transition: all 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    /* компактное меню при скролле вниз */
+    .navbar.compact {
+      top: 10px;
+      padding: 0.4rem 1.5rem;
+      background: rgba(8, 12, 18, 0.9);
+      border-color: rgba(200, 159, 94, 0.4);
+      box-shadow: 0 15px 30px -10px #00000099;
+    }
+
+    .navbar a {
+      color: #f0f3f7;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1rem;
+      letter-spacing: 0.3px;
+      padding: 6px 0;
+      border-bottom: 2px solid transparent;
+      transition: 0.25s ease;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+
+    .navbar a i { margin-right: 6px; color: #c89f5e; }
+
+    .navbar a:hover { color: #c89f5e; border-bottom-color: #c89f5e; }
+
+    /* ===== БЛОКИ ===== */
+    section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5rem 2rem;
+      position: relative;
+      will-change: transform, opacity;
+    }
+
+    .container {
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* заголовки */
+    h2 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+    }
+
+    h2 .accent {
+      color: #c89f5e;
+      border-bottom: 3px solid currentColor;
+      padding-bottom: 6px;
+    }
+
+    /* универсальные карточки / сетка */
+    .grid-2, .grid-3, .grid-4 {
+      display: grid;
+      gap: 2rem;
+    }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    /* иконки */
+    .icon-box {
+      background: rgba(20, 27, 36, 0.7);
+      backdrop-filter: blur(4px);
+      border: 1px solid #2b3543;
+      border-radius: 2rem;
+      padding: 2rem 1.5rem;
+      transition: 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+    .icon-box i {
+      font-size: 2.8rem;
+      color: #c89f5e;
+      margin-bottom: 1.5rem;
+    }
+    .icon-box:hover {
+      border-color: #c89f5e;
+      transform: translateY(-12px) scale(1.02);
+      box-shadow: 0 30px 40px -25px #c89f5e40;
+    }
+
+    /* ===== АНИМАЦИИ ПОЯВЛЕНИЯ ПРИ СКРОЛЛЕ (с Intersection Observer) ===== */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(45px);
+      transition: opacity 1s cubic-bezier(0.25, 0.45, 0, 1), transform 1s cubic-bezier(0.25, 0.45, 0, 1);
+    }
+    .fade-up.appear {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* подсветка текста при скролле — оригинальный эффект glow */
+    .highlight-glow {
+      transition: text-shadow 0.4s, color 0.3s;
+    }
+    .highlight-glow.in-view {
+      color: #ffffff;
+      text-shadow: 0 0 12px #c89f5e, 0 0 30px #b37b3a;
+    }
+
+    /* ===== ШАПКА ===== */
+    #hero {
+      background: radial-gradient(ellipse at 70% 40%, #1f2833, #0a0c10);
+      text-align: center;
+      align-items: center;
+    }
+    #hero h1 {
+      font-size: clamp(3rem, 10vw, 6rem);
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 1.2rem;
+    }
+    #hero .dynamic-word {
+      color: #c89f5e;
+      border-bottom: 4px solid;
+      display: inline-block;
+      transition: all 0.2s;
+    }
+    #hero .glass-tag {
+      display: inline-block;
+      background: rgba(255,255,255,0.03);
+      backdrop-filter: blur(8px);
+      border: 1px solid #c89f5e30;
+      border-radius: 100px;
+      padding: 0.5rem 1.8rem;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+    }
+
+    /* футер */
+    footer {
+      background: #0f131a;
+      border-top: 1px solid #2d333d;
+      padding: 3rem 2rem;
+      color: #8f9aa8;
+    }
+
+    /* ===== СПЕЦИАЛЬНЫЕ БЛОКИ ===== */
+    .price-tag {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #c89f5e;
+    }
+
+    .btn {
+      display: inline-block;
+      background: transparent;
+      border: 1.5px solid #c89f5e;
+      color: #c89f5e;
+      padding: 1rem 2.8rem;
+      border-radius: 40px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-decoration: none;
+      transition: 0.3s;
+      margin-top: 1rem;
+    }
+    .btn:hover {
+      background: #c89f5e;
+      color: #0b0c10;
+      box-shadow: 0 0 30px #c89f5e;
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c89f5e, transparent);
+      margin: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ФИКСИРОВАННОЕ МЕНЮ (ЯКОРНОЕ) -->
+<nav class="navbar" id="navbar">
+  <a href="#hero"><i class="fas fa-crown"></i>LENS</a>
+  <a href="#catalog"><i class="fas fa-camera"></i>Каталог</a>
+  <a href="#why"><i class="fas fa-star"></i>Почему мы</a>
+  <a href="#reviews"><i class="fas fa-comment"></i>Отзывы</a>
+  <a href="#pricing"><i class="fas fa-tag"></i>Прайс</a>
+  <a href="#contact"><i class="fas fa-location-dot"></i>Контакты</a>
+</nav>
+
+<!-- 1. HERO (ШАПКА) с анимацией JS смены слов -->
+<section id="hero">
+  <div class="container fade-up" style="transition-delay: 0.1s;">
+    <span class="glass-tag"><i class="fas fa-film" style="margin-right: 8px;"></i>кинокастинг / студия</span>
+    <h1>
+      АРЕНДА ОПТИКИ <br>
+      <span class="dynamic-word" id="changingWord">ZEISS</span>
+    </h1>
+    <p style="font-size: 1.4rem; max-width: 700px; margin: 1.5rem auto 2rem; opacity: 0.8;">Объективы, которые меняют кадр. Для профессионалов и энтузиастов.</p>
+    <a href="#catalog" class="btn">смотреть каталог <i class="fas fa-arrow-right-long"></i></a>
+  </div>
+</section>
+
+<!-- 2. КАТАЛОГ / ТЕХНИКА -->
+<section id="catalog">
+  <div class="container">
+    <h2><span class="accent">//</span> горячие новинки</h2>
+    <div class="grid-3">
+      <div class="icon-box fade-up">
+        <i class="fas fa-eye"></i>
+        <h3>ZEISS Supreme Prime</h3>
+        <p>Радиал 95 мм T1.5, покрытие Full Frame, невесомая механика.</p>
+        <div class="price-tag">4500₽ / день</div>
+      </div>
+      <div class="icon-box fade-up" style="transition-delay: 0.1s;">
+        <i class="fas fa-camera-retro"></i>
+        <h3>Leica Summilux-C</h3>
+        <p>Знаменитое "Leica look". Комплект 16/24/35/65 мм — со скидкой.</p>
+        <div class="price-tag">8900₽ / день</div>
+      </div>
+      <div class="icon-box fade-up" style="transition-delay: 0.2s;">
+        <i class="fas fa-video"></i>
+        <h3>Atlas Orion Anamorph.</h3>
+        <p>Анаморфотные 32/40/50/80 мм. Линзы с характером.</p>
+        <div class="price-tag">12000₽ / день</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. ПОЧЕМУ МЫ (АКЦЕНТ НА ДОВЕРИИ + иконки) -->
+<section id="why">
+  <div class="container">
+    <h2 class="highlight-glow" style="text-align: center;">почему выбирают нас</h2>
+    <div class="grid-4" style="margin-top: 3rem;">
+      <div class="icon-box fade-up">
+        <i class="fas fa-clock"></i>
+        <h4>12+ лет</h4>
+        <p>на рынке кинооборудования, сотрудничаем с большими студиями.</p>
+      </div>
+      <div class="icon-box fade-up" style="transition-delay: 0.1s;">
+        <i class="fas fa-flask"></i>
+        <h4>Чистая оптика</h4>
+        <p>Каждая линза проходит юстировку и очистку ультразвуком.</p>
+      </div>
+      <div class="icon-box fade-up" style="transition-delay: 0.2s;">
+        <i class="fas fa-trophy"></i>
+        <h4>Кейсы</h4>
+        <p>Участвовали в съёмках «Сны Алисы» и «Безмолвие».</p>
+      </div>
+      <div class="icon-box fade-up" style="transition-delay: 0.3s;">
+        <i class="fas fa-shield-halved"></i>
+        <h4>Страховка</h4>
+        <p>Полное покрытие, замена в течение 2ч в случае поломки.</p>
+      </div>
+    </div>
+    <hr>
+    <p style="text-align: center; font-size: 1.3rem;"><i class="fas fa-quote-right" style="color: #c89f5e;"></i> Мы верим: оптика — это не стекло, а душа кадра.</p>
+  </div>
+</section>
+
+<!-- 4. ПОРТФОЛИО / ПРИМЕРЫ РАБОТ (видеографы) -->
+<section id="reviews">
+  <div class="container">
+    <h2><span class="accent">/</span> кадры с наших объективов</h2>
+    <div class="grid-2">
+      <div class="icon-box fade-up" style="padding: 1.8rem;">
+        <i class="fas fa-image" style="font-size: 4rem;"></i>
+        <h4>Клип «Northern Lights»</h4>
+        <p>Снято на Atlas Orion — мягкий анаморфотный бокэ.</p>
+      </div>
+      <div class="icon-box fade-up" style="transition-delay: 0.15s; padding: 1.8rem;">
+        <i class="fas fa-clapperboard" style="font-size: 4rem;"></i>
+        <h4>Полный метр «Бета»</h4>
+        <p>Zeiss Supreme Prime 50mm — 90% материала.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. ПРАЙС / ТАРИФЫ -->
+<section id="pricing">
+  <div class="container">
+    <h2>выгодные <span class="accent">пакеты</span></h2>
+    <div class="grid-3">
+      <div class="icon-box fade-up">
+        <i class="fas fa-box"></i>
+        <h3>Базовый</h3>
+        <p class="price-tag">7500₽/сутки</p>
+        <ul style="list-style: none; margin-top: 1rem;">
+          <li><i class="fas fa-check" style="color:#c89f5e;"></i> любой один объектив</li>
+          <li><i class="fas fa-check" style="color:#c89f5e;"></i> доставка по городу</li>
+        </ul>
+      </div>
+      <div class="icon-box fade-up" style="transition-delay: 0.1s;">
+        <i class="fas fa-cubes"></i>
+        <h3>Студийный</h3>
+        <p class="price-tag">19000₽/сутки</p>
+        <ul style="list-style: none; margin-top: 1rem;">
+          <li><i class="fas fa-check" style="color:#c89f5e;"></i> 3 объектива на выбор</li>
+          <li><i class="fas fa-check" style="color:#c89f5e;"></i> матбокс + фильтры</li>
+        </ul>
+      </div>
+      <div class="icon-box fade-up" style="transition-delay: 0.2s;">
+        <i class="fas fa-dragon"></i>
+        <h3>Киноальянс</h3>
+        <p class="price-tag">35000₽/сутки</p>
+        <ul style="list-style: none; margin-top: 1rem;">
+          <li><i class="fas fa-check" style="color:#c89f5e;"></i> полный комплект оптики</li>
+          <li><i class="fas fa-check" style="color:#c89f5e;"></i> техподдержка на площадке</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. БЛОК КОНСУЛЬТАЦИИ (юридический/доверительный акцент) -->
+<section id="contact">
+  <div class="container" style="display: flex; flex-direction: column; align-items: center;">
+    <h2 style="max-width: 900px; text-align: center;">консультация по подбору оптики</h2>
+    <div class="icon-box" style="max-width: 700px; width: 100%; background: #1a212b;">
+      <i class="fas fa-balance-scale" style="font-size: 3rem;"></i>
+      <p style="margin: 1.5rem 0;">Наши специалисты — практикующие кинооператоры. Поможем выбрать комплект под задачи, бюджет и стиль съёмки. Работаем с физлицами и продакшенами.</p>
+      <div><i class="fas fa-phone-alt"></i> +7 (495) 382-12-12</div>
+      <div><i class="fas fa-envelope"></i> rent@lenspremium.ru</div>
+      <a href="#" class="btn" style="margin-top: 2rem;">записаться на тест</a>
+    </div>
+  </div>
+</section>
+
+<!-- 7. ПАРТНЁРЫ / КЛИЕНТЫ -->
+<section style="min-height: 50vh;">
+  <div class="container">
+    <h2><span class="accent">доверяют</span> профессионалы</h2>
+    <div class="grid-3" style="align-items: center;">
+      <div class="icon-box"><i class="fas fa-building"></i> к/с «Мосфильм»</div>
+      <div class="icon-box"><i class="fas fa-tv"></i> CTC Media</div>
+      <div class="icon-box"><i class="fas fa-clapperboard"></i> Independent Films</div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. FAQ / КОРОТКО -->
+<section style="min-height: 50vh;">
+  <div class="container">
+    <h2>частые <span class="accent">вопросы</span></h2>
+    <div class="grid-2">
+      <div class="icon-box fade-up">
+        <i class="fas fa-question-circle"></i>
+        <h4>Нужен залог?</h4>
+        <p>Для юрлиц — без залога. Для физлиц — паспорт или залог 20% стоимости.</p>
+      </div>
+      <div class="icon-box fade-up" style="transition-delay: 0.1s;">
+        <i class="fas fa-truck"></i>
+        <h4>Доставка по России</h4>
+        <p>Отправляем СДЭКом, страховка включена в тариф.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9. ФУТЕР -->
+<footer>
+  <div class="container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+    <span>© 2025 LENS RENTAL — объективы для кино</span>
+    <span style="letter-spacing: 6px;"><i class="fas fa-circle" style="font-size: 0.4rem; color:#c89f5e;"></i> <i class="fas fa-circle" style="font-size: 0.4rem;"></i> <i class="fas fa-circle" style="font-size: 0.4rem;"></i> </span>
+    <span>made for portfolio</span>
+  </div>
+</footer>
+
+<script>
+  (function() {
+    // 1. Анимация смены слов в шапке (карусель из 5 слов)
+    const words = ['ZEISS', 'LEICA', 'ATLAS', 'COOKE', 'ANGENIEUX'];
+    const el = document.getElementById('changingWord');
+    let idx = 0;
+    setInterval(() => {
+      idx = (idx + 1) % words.length;
+      if (el) {
+        el.style.opacity = '0';
+        setTimeout(() => {
+          el.textContent = words[idx];
+          el.style.opacity = '1';
+        }, 120);
+      }
+    }, 1800);
+
+    // 2. Фиксированное меню — компактный режим при скролле
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 80) {
+        navbar.classList.add('compact');
+      } else {
+        navbar.classList.remove('compact');
+      }
+    });
+
+    // 3. Intersection Observer для fade-up и подсветки текста
+    const fadeElements = document.querySelectorAll('.fade-up');
+    const glowElements = document.querySelectorAll('.highlight-glow');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('appear');
+          // специально для подсветки
+          if (entry.target.classList.contains('highlight-glow')) {
+            entry.target.classList.add('in-view');
+          }
+        } else {
+          // если хотим убирать подсветку, когда блок уходит (опционально)
+          if (entry.target.classList.contains('highlight-glow')) {
+            entry.target.classList.remove('in-view');
+          }
+        }
+      });
+    }, { threshold: 0.25, rootMargin: '0px' });
+
+    fadeElements.forEach(el => observer.observe(el));
+    glowElements.forEach(el => observer.observe(el));
+
+    // дополнительно наблюдаем за элементами с классом .icon-box (чтобы подстветка и появление)
+    document.querySelectorAll('.icon-box').forEach(el => observer.observe(el));
+
+    // 4. Эффект подсветки якоря при наведении (меню) — чисто css, ок
+
+    // 5. Небольшая плавность при якорных ссылках (HTML якоря уже есть)
+    // для красоты добавим сдвиг по высоте под фикс меню
+    document.querySelectorAll('.navbar a').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href'); // #hero etc
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+          const offset = 100; // высота меню
+          const elementPosition = targetElement.getBoundingClientRect().top + window.scrollY;
+          window.scrollTo({
+            top: elementPosition - offset,
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+  })();
+</script>
+
+<!-- небольшой дополнительный стиль для плавности смены слова -->
+<style>
+  #changingWord {
+    transition: opacity 0.2s ease;
+    display: inline-block;
+    min-width: 200px;
+    text-align: left;
+  }
+  /* корректировка для мобил не нужна, но для планшетов отключаем (по заданию только пк) */
+  @media (max-width: 900px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .navbar { gap: 1.2rem; padding: 0.5rem 1rem; }
+  }
+</style>
+<!-- всё -->
+All done!
+```

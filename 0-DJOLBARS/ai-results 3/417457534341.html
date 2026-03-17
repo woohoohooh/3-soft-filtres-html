@@ -1,0 +1,585 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AV · ателье звука | сведение и мастеринг</title>
+    <!-- Font Awesome 6 (стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #faf9f6;
+            color: #141414;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* интерфейсные переменные */
+        :root {
+            --accent: #c89f6e;
+            --accent-dark: #a07d52;
+            --bg-dark: #1e1e1e;
+            --text-light: #f4f2ef;
+            --glass: rgba(255, 255, 255, 0.7);
+            --shadow: 0 20px 40px -12px rgba(0,0,0,0.1);
+        }
+
+        /* кастомный скролл */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #eaeaea; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+
+        /* якорная навигация + фиксированная шапка */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 0.6rem 1.8rem;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+            z-index: 999;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: all 0.3s ease;
+        }
+
+        .navbar ul {
+            display: flex;
+            gap: 2.2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #f0f0f0;
+            font-weight: 500;
+            font-size: 0.95rem;
+            letter-spacing: 0.02em;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .navbar a::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.2s ease;
+        }
+
+        .navbar a:hover::after {
+            width: 100%;
+        }
+
+        .navbar a:hover {
+            color: var(--accent);
+        }
+
+        /* компактный режим при скролле (добавим js) */
+        .navbar.compact {
+            top: 10px;
+            padding: 0.3rem 1.4rem;
+            background: rgba(20, 20, 20, 0.9);
+        }
+
+        /* общий контейнер блоков */
+        section {
+            min-height: 100vh;
+            padding: 6rem 4rem 4rem 4rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .section-title {
+            font-size: 3.2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 2rem;
+            line-height: 1.1;
+        }
+
+        .accent-span {
+            color: var(--accent);
+        }
+
+        /* анимация появления при скролле (fade + slide) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* шапка 1й блок — спецэффект с анимацией js */
+        .header-block {
+            background: var(--bg-dark);
+            color: white;
+            position: relative;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            max-width: 800px;
+            margin-left: 8%;
+        }
+
+        .header-content h1 {
+            font-size: 5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .header-content p {
+            font-size: 1.4rem;
+            margin-top: 1.5rem;
+            opacity: 0.8;
+            max-width: 600px;
+        }
+
+        .header-accent {
+            color: var(--accent);
+        }
+
+        #canvas-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* кнопка cta */
+        .btn {
+            display: inline-block;
+            background: var(--accent);
+            color: #1e1e1e;
+            font-weight: 600;
+            padding: 1rem 2.8rem;
+            border-radius: 40px;
+            text-decoration: none;
+            margin-top: 2.5rem;
+            border: none;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 10px 20px -8px rgba(198, 159, 110, 0.4);
+        }
+
+        .btn:hover {
+            background: #dbb48b;
+            transform: scale(1.02);
+            box-shadow: 0 18px 25px -8px var(--accent);
+        }
+
+        /* карточки */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 32px;
+            padding: 2.2rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .service-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 30px 45px -15px rgba(0,0,0,0.2);
+        }
+
+        .service-card i {
+            font-size: 2.5rem;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+        }
+
+        .service-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .stat-list {
+            display: flex;
+            gap: 3rem;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .testimonial {
+            background: #ffffffcc;
+            backdrop-filter: blur(8px);
+            border-radius: 40px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .footer {
+            background: #161616;
+            color: #b9b9b9;
+            min-height: auto !important;
+            padding: 2.5rem 4rem !important;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer a {
+            color: #ddd;
+            margin-left: 2rem;
+            text-decoration: none;
+        }
+        .footer a:hover { color: var(--accent); }
+
+        /* дополнительные штрихи */
+        .pill {
+            background: rgba(200, 159, 110, 0.1);
+            color: var(--accent);
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            display: inline-block;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            margin: 2rem 0;
+        }
+
+        /* адаптив только для пк — просто аккуратно */
+        @media (max-width: 1100px) {
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            section { padding: 6rem 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- фиксированное якорное меню -->
+    <nav class="navbar" id="mainNav">
+        <ul>
+            <li><a href="#home">дома</a></li>
+            <li><a href="#services">услуги</a></li>
+            <li><a href="#stats">цифры</a></li>
+            <li><a href="#work">процесс</a></li>
+            <li><a href="#reviews">отзывы</a></li>
+            <li><a href="#contact">контакт</a></li>
+        </ul>
+    </nav>
+
+    <!-- БЛОК 1: шапка с canvas анимацией -->
+    <section id="home" class="header-block fade-up">
+        <canvas id="canvas-bg"></canvas>
+        <div class="header-content">
+            <span class="pill">✧ премиальное звучание</span>
+            <h1>ателье звука<br><span class="header-accent">AV</span> studio</h1>
+            <p>Сведение, мастеринг, продакшн. Превращаем идеи в треки, которые звучат дорого.</p>
+            <a href="#contact" class="btn">обсудить проект</a>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: услуги (3 карточки) -->
+    <section id="services" class="fade-up">
+        <span class="pill">что мы делаем</span>
+        <h2 class="section-title">звук, который <span class="accent-span">трогает</span></h2>
+        <div class="grid-3">
+            <div class="service-card">
+                <i class="fas fa-sliders-h"></i>
+                <h3>сведение</h3>
+                <p>Баланс, глубина, чистота. Превращаем многодорожечный хаос в законченный микс.</p>
+            </div>
+            <div class="service-card">
+                <i class="fas fa-magic"></i>
+                <h3>мастеринг</h3>
+                <p>Финальный лоск. Ваш трек зазвучит одинаково мощно на всех платформах.</p>
+            </div>
+            <div class="service-card">
+                <i class="fas fa-headphones"></i>
+                <h3>аудио-продакшн</h3>
+                <p>Запись, аранжировка, работа с артистами — полный цикл создания.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: статистика / цифры доверия -->
+    <section id="stats" class="fade-up">
+        <h2 class="section-title">немного <span class="accent-span">цифр</span></h2>
+        <div class="stat-list">
+            <div class="stat-item"><span class="stat-number">120+</span><br>альбомов сведено</div>
+            <div class="stat-item"><span class="stat-number">45M</span><br>суммарных стримов</div>
+            <div class="stat-item"><span class="stat-number">8 лет</span><br>опыта</div>
+            <div class="stat-item"><span class="stat-number">52</span><br>довольных артиста</div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: как работаем (3 шага) -->
+    <section id="work" class="fade-up">
+        <span class="pill">workflow</span>
+        <h2 class="section-title">от демки до <span class="accent-span">релиза</span></h2>
+        <div class="grid-3" style="margin-top: 1rem;">
+            <div class="service-card" style="background: #f1efe9;">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>01. материал</h3>
+                <p>Вы загружаете сессии или стим, мы проверяем качество.</p>
+            </div>
+            <div class="service-card" style="background: #f1efe9;">
+                <i class="fas fa-random"></i>
+                <h3>02. правки</h3>
+                <p>Две бесплатные итерации после сведения, чтобы звук был идеальным.</p>
+            </div>
+            <div class="service-card" style="background: #f1efe9;">
+                <i class="fas fa-check-circle"></i>
+                <h3>03. финал</h3>
+                <p>Вы получаете мастер-файлы + стемы для соцсетей.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: отзывы (два testimonial) -->
+    <section id="reviews" class="fade-up">
+        <span class="pill">feedback</span>
+        <h2 class="section-title">нам доверяют <span class="accent-span">звезды</span></h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div class="testimonial">
+                <i class="fas fa-quote-left" style="color: var(--accent); font-size: 2rem; opacity: 0.5;"></i>
+                <p style="font-size: 1.3rem; margin: 1rem 0;">«После мастеринга в AV трек заиграл красками. Попали в плейлисты, о которых мечтал».</p>
+                <p><strong>— Малика, инди-артист</strong></p>
+            </div>
+            <div class="testimonial">
+                <i class="fas fa-quote-left" style="color: var(--accent); font-size: 2rem; opacity: 0.5;"></i>
+                <p style="font-size: 1.3rem; margin: 1rem 0;">«Сведение сложного рока — быстро, мощно, без компромиссов. Профессионалы высшего класса».</p>
+                <p><strong>— группа «Эхо дней»</strong></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: контакты и форма / CTA -->
+    <section id="contact" class="fade-up">
+        <div style="background: var(--bg-dark); color: white; padding: 3rem; border-radius: 60px;">
+            <h2 class="section-title" style="color: white;">записаться <span class="accent-span">на сведение</span></h2>
+            <p style="font-size: 1.2rem; max-width: 600px;">Пришлите ссылку на ваш материал — в течение дня мы оценим и предложим варианты.</p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin: 2rem 0;">
+                <input type="text" placeholder="ваше имя" style="flex: 1 1 200px; padding: 1.2rem; border-radius: 60px; border: none; background: #2e2e2e; color: white;">
+                <input type="email" placeholder="email" style="flex: 1 1 200px; padding: 1.2rem; border-radius: 60px; border: none; background: #2e2e2e; color: white;">
+                <button class="btn" style="margin-top: 0; border-radius: 60px; cursor: pointer;">отправить</button>
+            </div>
+            <hr>
+            <div style="display: flex; gap: 3rem; font-size: 1.1rem;">
+                <span><i class="fab fa-telegram" style="color: var(--accent);"></i> @av_studio</span>
+                <span><i class="fas fa-phone-alt"></i> +7 (495) 400-10-20</span>
+                <span><i class="fas fa-envelope"></i> hi@avsound.ru</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: партнёры / клиенты (иконки) -->
+    <section class="fade-up" style="min-height: 30vh; justify-content: center;">
+        <h3 class="section-title" style="font-size: 2rem;">нам доверяют</h3>
+        <div style="display: flex; justify-content: space-around; font-size: 3rem; color: #b0b0b0; flex-wrap: wrap;">
+            <i class="fab fa-spotify"></i>
+            <i class="fab fa-apple"></i>
+            <i class="fab fa-yandex"></i>
+            <i class="fas fa-microphone-alt"></i>
+            <i class="fas fa-guitar"></i>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: финальный призыв (доп блок) -->
+    <section class="fade-up" style="min-height: 50vh; background: #e8e2d9; border-radius: 80px 80px 0 0; margin-bottom: 0;">
+        <h2 class="section-title">готовы <span class="accent-span">усилить</span> ваш звук?</h2>
+        <p style="font-size: 1.5rem; max-width: 700px;">Студия AV — это сочетание технологий и музыкального слуха. Напишите нам.</p>
+        <a href="#contact" class="btn" style="margin-top: 2rem;">начать</a>
+    </section>
+
+    <!-- БЛОК 9: футер -->
+    <footer class="footer fade-up" id="footer">
+        <div>© AV STUDIO · звук высокого полета</div>
+        <div>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-telegram"></i></a>
+            <a href="#"><i class="fab fa-youtube"></i></a>
+        </div>
+    </footer>
+
+    <!-- JS: анимация canvas в шапке + появление блоков + фикс меню -->
+    <script>
+        (function() {
+            // 1) canvas анимация (эффект частиц / волны)
+            const canvas = document.getElementById('canvas-bg');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let particles = [];
+
+                function initParticles() {
+                    const count = 70;
+                    particles = [];
+                    for (let i = 0; i < count; i++) {
+                        particles.push({
+                            x: Math.random(),
+                            y: Math.random(),
+                            radius: Math.random() * 2 + 1,
+                            speedX: (Math.random() - 0.5) * 0.002,
+                            speedY: (Math.random() - 0.5) * 0.002,
+                            opacity: Math.random() * 0.5 + 0.2
+                        });
+                    }
+                }
+
+                function resizeCanvas() {
+                    width = window.innerWidth;
+                    height = window.innerHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+
+                function drawParticles() {
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.fillStyle = '#c89f6e';
+                    for (let p of particles) {
+                        ctx.globalAlpha = p.opacity;
+                        ctx.beginPath();
+                        ctx.arc(p.x * width, p.y * height, p.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // соединяем близкие частицы линиями
+                    ctx.strokeStyle = '#c89f6e';
+                    ctx.lineWidth = 0.4;
+                    ctx.globalAlpha = 0.15;
+                    for (let i = 0; i < particles.length; i++) {
+                        for (let j = i + 1; j < particles.length; j++) {
+                            const p1 = particles[i];
+                            const p2 = particles[j];
+                            const dx = (p1.x - p2.x) * width;
+                            const dy = (p1.y - p2.y) * height;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            if (dist < 120) {
+                                ctx.beginPath();
+                                ctx.moveTo(p1.x * width, p1.y * height);
+                                ctx.lineTo(p2.x * width, p2.y * height);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+
+                function updateParticles() {
+                    for (let p of particles) {
+                        p.x += p.speedX;
+                        p.y += p.speedY;
+                        if (p.x < 0 || p.x > 1) p.speedX *= -1;
+                        if (p.y < 0 || p.y > 1) p.speedY *= -1;
+                    }
+                }
+
+                function animate() {
+                    updateParticles();
+                    drawParticles();
+                    requestAnimationFrame(animate);
+                }
+
+                window.addEventListener('resize', () => {
+                    resizeCanvas();
+                });
+                resizeCanvas();
+                initParticles();
+                animate();
+            }
+
+            // 2) наблюдатель появления блоков (fade-up)
+            const faders = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    } else {
+                        // можно убирать, чтобы при повторном скролле снова появлялось
+                        entry.target.classList.remove('visible');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+
+            faders.forEach(f => observer.observe(f));
+
+            // 3) меню компактное при скролле
+            const nav = document.getElementById('mainNav');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 100) {
+                    nav.classList.add('compact');
+                } else {
+                    nav.classList.remove('compact');
+                }
+            });
+
+            // 4) плавный скролл к якорям
+            document.querySelectorAll('.navbar a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const target = document.querySelector(targetId);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <!-- маленькая имитация "ввода данных" не нужна, но оставим все как есть -->
+</body>
+</html>
+All done!
+```

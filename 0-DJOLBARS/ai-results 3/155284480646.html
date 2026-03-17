@@ -1,0 +1,562 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionCut · режиссёр монтажа</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0b0c10;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #eaeef2;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        /* inter via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* ===== HEADER (dynamic shrink) ===== */
+        header {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2rem 4rem;
+            background: rgba(10, 12, 18, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 215, 100, 0.2);
+            z-index: 999;
+            transition: padding 0.3s ease, background 0.3s, box-shadow 0.3s;
+        }
+        header.scrolled {
+            padding: 0.8rem 4rem;
+            background: rgba(5, 7, 12, 0.95);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .logo {
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #f2c94c, #f2a65c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .nav-menu {
+            display: flex;
+            gap: 2.8rem;
+            font-weight: 400;
+            font-size: 1.1rem;
+        }
+        .nav-menu a {
+            text-decoration: none;
+            color: #cfd9e6;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav-menu a:hover {
+            color: #f5c84e;
+            border-bottom-color: #f5c84e;
+        }
+        .header-btn {
+            background: transparent;
+            border: 1.5px solid #f2c94c;
+            color: #f2c94c;
+            padding: 0.5rem 1.7rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            cursor: default;
+        }
+        .header-btn:hover {
+            background: #f2c94c;
+            color: #0b0c10;
+        }
+
+        /* ===== blocks base ===== */
+        section {
+            min-height: 95vh;
+            width: 100%;
+            padding: 6rem 4rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid rgba(242, 201, 76, 0.06);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* headline / reveal animation base */
+        .reveal-text {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+        .reveal-text.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* slice bg effect */
+        .glitch-slice {
+            position: relative;
+        }
+        .glitch-slice::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(120deg, transparent 30%, rgba(242,201,76,0.03) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 1.2s ease;
+            pointer-events: none;
+        }
+        .glitch-slice.inview::after {
+            transform: translateX(100%);
+        }
+
+        /* ===== block 1 hero ===== */
+        .hero-title {
+            font-size: 5.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            max-width: 13ch;
+        }
+        .hero-title span {
+            background: linear-gradient(145deg, #f5d76e, #fa8b2c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-desc {
+            font-size: 1.3rem;
+            color: #b0bbcc;
+            max-width: 520px;
+            margin: 2rem 0 3rem;
+            border-left: 4px solid #f2c94c;
+            padding-left: 1.8rem;
+        }
+        .hero-flex {
+            display: flex;
+            align-items: center;
+            gap: 4rem;
+        }
+        .hero-strip {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #f2c94c, transparent);
+            margin-top: 4rem;
+        }
+
+        /* custom cursor trailing (JS animation) */
+        #headerCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: overlay;
+        }
+
+        /* block 2 – reels / demo reel */
+        .reel-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.9fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        .reel-badge {
+            background: rgba(242,201,76,0.1);
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            display: inline-block;
+            border: 1px solid rgba(242,201,76,0.4);
+            font-weight: 500;
+            margin-bottom: 2rem;
+        }
+        .fake-player {
+            background: #181e26;
+            border-radius: 30px;
+            padding: 2rem 1.5rem 1.5rem;
+            box-shadow: 0 20px 40px -10px black;
+            border: 1px solid #333a44;
+            width: 100%;
+        }
+        .player-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            color: #f2c94c;
+            font-size: 1.8rem;
+        }
+        .waveform {
+            display: flex;
+            gap: 4px;
+            height: 40px;
+            align-items: center;
+            margin: 1.5rem 0 1rem;
+        }
+        .waveform span {
+            width: 6px;
+            background: #f2c94c;
+            border-radius: 20px;
+            animation: wave 1.4s infinite alternate ease-in-out;
+        }
+        @keyframes wave {
+            0% { height: 10px; }
+            100% { height: 38px; }
+        }
+        .waveform span:nth-child(2) { animation-delay: 0.2s; background: #f5b85c; }
+        .waveform span:nth-child(3) { animation-delay: 0.4s; }
+        .waveform span:nth-child(4) { animation-delay: 0.6s; }
+        .waveform span:nth-child(5) { animation-delay: 0.3s; }
+
+        /* block 3 – expertise */
+        .expert-cards {
+            display: flex;
+            gap: 2rem;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+        }
+        .card {
+            background: #13171f;
+            padding: 2.5rem 2rem;
+            border-radius: 40px;
+            border: 1px solid #2e353f;
+            flex: 1;
+            min-width: 200px;
+            transition: all 0.2s;
+            box-shadow: 0 10px 20px -10px #00000080;
+        }
+        .card i {
+            font-size: 2.5rem;
+            color: #f2c94c;
+            margin-bottom: 1.5rem;
+        }
+
+        /* block 4 – featured work (iconic) */
+        .showreel-strip {
+            display: flex;
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        .work-item {
+            background: #0f131b;
+            padding: 2rem;
+            border-radius: 28px;
+            flex: 1;
+            border: 1px solid #2e3742;
+            transition: 0.15s;
+            text-align: center;
+        }
+        .work-item i {
+            font-size: 3.2rem;
+            color: #f2c94c;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        /* block 5 – clients / brands */
+        .marquee {
+            background: #0e1219;
+            padding: 2rem 0;
+            border-top: 1px solid #20252e;
+            border-bottom: 1px solid #20252e;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .marquee span {
+            display: inline-block;
+            font-size: 2rem;
+            font-weight: 500;
+            margin-right: 4rem;
+            color: #3d4552;
+            letter-spacing: 2px;
+        }
+        .marquee span i {
+            color: #f2c94c;
+            margin-right: 1rem;
+        }
+
+        /* block 6 – contact / collaboration */
+        .contact-block {
+            display: flex;
+            gap: 4rem;
+            background: rgba(242,201,76,0.02);
+            border-radius: 60px;
+            padding: 3.5rem;
+            border: 1px solid rgba(242,201,76,0.2);
+            backdrop-filter: blur(8px);
+        }
+        .contact-info i {
+            width: 2rem;
+            color: #f2c94c;
+            font-size: 1.6rem;
+        }
+
+        /* footer */
+        footer {
+            background: #07090e;
+            padding: 3rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid rgba(242,201,76,0.1);
+        }
+
+        /* responsive (pc only) but fine */
+        @media (max-width: 1100px) {
+            header { padding: 1.5rem 2rem; }
+            section { padding: 6rem 2rem; }
+            .hero-title { font-size: 4.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- fixed canvas for mouse animation (header effect) -->
+    <canvas id="headerCanvas"></canvas>
+
+    <!-- шапка / header (block 1/9) -->
+    <header id="mainHeader">
+        <div class="logo">🎬 VISION CUT</div>
+        <div class="nav-menu">
+            <a href="#reel">Reel</a>
+            <a href="#craft">Craft</a>
+            <a href="#work">Work</a>
+            <a href="#connect">Connect</a>
+        </div>
+        <div class="header-btn">DEMO</div>
+    </header>
+
+    <!-- hero / intro (block 2/9) -->
+    <section id="home" class="glitch-slice">
+        <div class="container">
+            <div class="hero-flex">
+                <div>
+                    <div class="hero-title reveal-text">editing that <span>hits</span> hard.</div>
+                    <div class="hero-desc reveal-text">Cinematic post‑production for artists, brands & storytellers. Reel editing, color & sound design.</div>
+                    <div class="header-btn" style="display:inline-block; padding:0.9rem 3rem; background:#f2c94c; color:#0b0c10; border:none;">🎥 WATCH SHOWREEL</div>
+                </div>
+                <div class="fake-player" style="max-width:360px;">
+                    <i class="fas fa-play-circle" style="color:#f2c94c; font-size:3rem;"></i>
+                    <div class="waveform">
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <div style="color:#aaa;">demo_editing_2025.mov</div>
+                </div>
+            </div>
+            <div class="hero-strip"></div>
+        </div>
+    </section>
+
+    <!-- reel / demo (block 3/9) -->
+    <section id="reel" class="glitch-slice">
+        <div class="container">
+            <span class="reel-badge reveal-text"><i class="fas fa-cut" style="margin-right:8px;"></i>latest cut</span>
+            <div class="reel-grid">
+                <div>
+                    <h2 style="font-size:3.5rem; font-weight:700;">director’s reel 2025</h2>
+                    <p style="font-size:1.2rem; color:#a0abbc; margin:2rem 0 1rem;">music videos · commercials · narrative</p>
+                    <div style="display:flex; gap:1rem; font-size:1.2rem;"><i class="fas fa-star" style="color:#f2c94c;"></i> <i class="fas fa-star" style="color:#f2c94c;"></i> <i class="fas fa-star" style="color:#f2c94c;"></i> <i class="fas fa-star" style="color:#f2c94c;"></i> <i class="fas fa-star-half-alt" style="color:#f2c94c;"></i></div>
+                </div>
+                <div class="fake-player">
+                    <div class="player-controls"><i class="fas fa-play"></i> <i class="fas fa-backward"></i> <i class="fas fa-forward"></i> <span style="flex:1; text-align:right;">00:47 / 02:14</span></div>
+                    <div style="background:#29313c; height:6px; width:100%; border-radius:4px; margin:1.5rem 0;"><div style="width:37%; background:#f2c94c; height:6px; border-radius:4px;"></div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- expertise (block 4/9) -->
+    <section id="craft" class="glitch-slice">
+        <div class="container">
+            <h2 class="reveal-text" style="font-size:3rem;">post production <i class="fas fa-arrow-right" style="color:#f2c94c;"></i></h2>
+            <div class="expert-cards">
+                <div class="card reveal-text"><i class="fas fa-scissors"></i> <h3>offline/online</h3><p style="color:#9ba6b5;">rhythm, pace, story — rough to final cut.</p></div>
+                <div class="card reveal-text"><i class="fas fa-palette"></i> <h3>color grading</h3><p style="color:#9ba6b5;">davinci resolve · look design, cdl, cdl</p></div>
+                <div class="card reveal-text"><i class="fas fa-headphones"></i> <h3>sound design</h3><p style="color:#9ba6b5;">atmos, foley, mixing for impact.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- featured / iconic projects (block 5/9) -->
+    <section id="work" class="glitch-slice">
+        <div class="container">
+            <div style="display:flex; justify-content:space-between;"><h2 style="font-size:2.8rem;">selected cuts</h2> <span style="color:#f2c94c;">+ all projects</span></div>
+            <div class="showreel-strip">
+                <div class="work-item reveal-text"><i class="fas fa-video"></i> <h3>“NIGHTSHADE”</h3> <p style="color:#f2c94c;">music video</p></div>
+                <div class="work-item reveal-text"><i class="fas fa-film"></i> <h3>“RAW / BEAUTY”</h3> <p style="color:#f2c94c;">commercial</p></div>
+                <div class="work-item reveal-text"><i class="fas fa-camera-retro"></i> <h3>“ALMA”</h3> <p style="color:#f2c94c;">short film</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- marquee / social proof (block 6/9) -->
+    <div class="marquee">
+        <span><i class="fas fa-bolt"></i> NIKE · DIOR · OFF-WHITE · BALENCIAGA · BURBERRY · </span>
+        <span><i class="fas fa-bolt"></i> NIKE · DIOR · OFF-WHITE · BALENCIAGA · BURBERRY · </span>
+    </div>
+
+    <!-- contact / collab (block 7/9) -->
+    <section id="connect" class="glitch-slice">
+        <div class="container contact-block">
+            <div style="flex:1.2;">
+                <h2 style="font-size:3rem; line-height:1;">let’s cut<br>your vision</h2>
+                <div style="margin-top:3rem;">
+                    <div class="contact-info"><i class="fas fa-envelope"></i> editor@visioncut.studio</div>
+                    <div class="contact-info" style="margin:1.5rem 0;"><i class="fas fa-phone-alt"></i> +1 (323) 555‑0214</div>
+                    <div><i class="fab fa-instagram" style="font-size:2rem; margin-right:1.5rem;"></i><i class="fab fa-vimeo-v" style="font-size:2rem; margin-right:1.5rem;"></i><i class="fab fa-youtube" style="font-size:2rem;"></i></div>
+                </div>
+            </div>
+            <div style="flex:0.7; background:#1c232e; border-radius:40px; padding:2rem; border:1px solid #3e4856;">
+                <p style="font-size:1.4rem; margin-bottom:1rem;">next available:</p>
+                <p style="color:#f2c94c; font-size:2rem;">MAY – JUN</p>
+                <p style="margin-top:1rem;">⏳ book now for summer projects</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer (block 8/9)  / extra block 9? шапка уже 1, футер 9. Итого: header 1, hero 2, reel 3, expertise 4, work 5, marquee 6, contact 7, footer 8 – но нужно 9 блоков, добавим небольшой prefooter / extra cta (block 8) и footer 9 -->
+    <section style="min-height:30vh; padding:3rem 4rem; display:flex; align-items:center; justify-content:center; background:#0b0c10; border-bottom: none;">
+        <div style="display:flex; gap:6rem; font-size:1.5rem; color:#6d7a8c;"><i class="fas fa-circle-plus"></i> <i class="fas fa-clapperboard"></i> <i class="fas fa-music"></i> <i class="fas fa-wand-magic"></i> <i class="fas fa-cloud"></i></div>
+    </section>
+
+    <footer>
+        <div>© 2025 VISION CUT — editorial studio</div>
+        <div style="display:flex; gap:2rem;"><span>IG</span><span>LI</span><span>VIMEO</span></div>
+    </footer>
+
+    <script>
+        (function(){
+            // ———— HEADER SHRINK ON SCROLL ————
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', ()=>{
+                if(window.scrollY > 50) header.classList.add('scrolled');
+                else header.classList.remove('scrolled');
+            });
+
+            // ———— CANVAS CURSOR ANIMATION (premium trailing effect) ————
+            const canvas = document.getElementById('headerCanvas');
+            const ctx = canvas.getContext('2d');
+            let w = canvas.width = window.innerWidth;
+            let h = canvas.height = window.innerHeight;
+            const particles = [];
+            let mouse = { x: w/2, y: h/2 };
+            let mouseMoved = false;
+
+            window.addEventListener('mousemove', (e)=>{
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+                mouseMoved = true;
+            });
+            window.addEventListener('resize', ()=>{
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            });
+
+            class Particle {
+                constructor(x, y){
+                    this.x = x; this.y = y;
+                    this.size = Math.random() * 7 + 2;
+                    this.speedX = (Math.random() - 0.5)*0.8;
+                    this.speedY = (Math.random() - 0.5)*0.8;
+                    this.life = 1.0;
+                    this.color = `rgba(242, 201, 76, ${Math.random()*0.3+0.2})`;
+                }
+                update(){
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    this.life -= 0.006;
+                }
+                draw(){
+                    ctx.save();
+                    ctx.globalAlpha = this.life;
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            function animateParticles(){
+                if(mouseMoved){
+                    for(let i=0; i<3; i++){
+                        particles.push(new Particle(mouse.x + (Math.random()-0.5)*30, mouse.y + (Math.random()-0.5)*30));
+                    }
+                    mouseMoved = false;
+                }
+                ctx.clearRect(0,0,w,h);
+                for(let i=particles.length-1; i>=0; i--){
+                    particles[i].update();
+                    particles[i].draw();
+                    if(particles[i].life <= 0.02) particles.splice(i,1);
+                }
+                requestAnimationFrame(animateParticles);
+            }
+            animateParticles();
+
+            // ———— REVEAL ON SCROLL (intersection observer) + slice effect ————
+            const revealTexts = document.querySelectorAll('.reveal-text');
+            const sliceBlocks = document.querySelectorAll('.glitch-slice');
+            const observer = new IntersectionObserver((entries)=>{
+                entries.forEach(entry=>{
+                    if(entry.isIntersecting){
+                        entry.target.classList.add('revealed');
+                        // also add inview class for slice pseudo
+                    } else {
+                        // optional: remove if you want re-animate, but we keep revealed stable
+                    }
+                });
+            }, {threshold:0.25, rootMargin: '0px'});
+            revealTexts.forEach(el => observer.observe(el));
+
+            // slice inview observer
+            const sliceObserver = new IntersectionObserver((entries)=>{
+                entries.forEach(entry=>{
+                    if(entry.isIntersecting) entry.target.classList.add('inview');
+                    else entry.target.classList.remove('inview');
+                });
+            }, {threshold:0.2});
+            sliceBlocks.forEach(el => sliceObserver.observe(el));
+
+            // дополнительно добавляем плавное появление для блока манипуляции
+        })();
+    </script>
+    <script>
+        // второй скрипт для дополнительных эффектов: якоря плавный скролл
+        document.querySelectorAll('.nav-menu a').forEach(anchor => {
+            anchor.addEventListener('click', function(e){
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if(targetId && targetId !== '#'){
+                    const target = document.querySelector(targetId);
+                    if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+All done!
+```

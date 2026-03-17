@@ -1,0 +1,634 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LENS·CODE | Продакшн режиссера монтажа</title>
+    <!-- Font Awesome 6 (стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #0b0b0b;
+            color: #f0f0f0;
+            line-height: 1.5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* кастомный скролл */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #d4a11e; border-radius: 8px; }
+
+        /* ФИКСИРОВАННАЯ ШАПКА — преображается при скролле */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 28px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            background: transparent;
+            mix-blend-mode: exclusion;
+        }
+
+        header.scrolled {
+            padding: 14px 5%;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(212, 161, 30, 0.3);
+            mix-blend-mode: normal;
+            box-shadow: 0 10px 30px -10px #00000080;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #f0f0f0;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .logo span {
+            color: #d4a11e;
+            font-weight: 300;
+            font-size: 2.2rem;
+        }
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+        }
+        .nav-links a {
+            color: #f0f0f0;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            padding-bottom: 4px;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: #d4a11e;
+            transition: 0.3s ease;
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* общие секции */
+        section {
+            min-height: 100vh;
+            width: 100%;
+            padding: 80px 8%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255,215,0,0.05);
+        }
+
+        /* анимация появления при скролле (Intersection Observer) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1, h2 {
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+        h1 { font-size: clamp(3rem, 8vw, 6rem); }
+        h2 {
+            font-size: clamp(2.4rem, 5vw, 4rem);
+            margin-bottom: 2rem;
+            position: relative;
+            display: inline-block;
+        }
+        h2 i {
+            color: #d4a11e;
+            margin-right: 15px;
+        }
+
+        /* hero */
+        #home {
+            background: radial-gradient(circle at 30% 40%, #2a281c, #030303 80%);
+            justify-content: flex-end;
+            align-items: flex-start;
+            padding-bottom: 15vh;
+        }
+        .hero-content {
+            max-width: 800px;
+        }
+        .hero-glow {
+            font-size: 1.8rem;
+            color: #d4a11e;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+            letter-spacing: 6px;
+        }
+        .hero-desc {
+            font-size: 1.3rem;
+            max-width: 600px;
+            margin: 2rem 0 3rem;
+            opacity: 0.8;
+            border-left: 4px solid #d4a11e;
+            padding-left: 30px;
+        }
+        .btn {
+            background: transparent;
+            border: 2px solid #d4a11e;
+            color: #d4a11e;
+            padding: 16px 48px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.25s ease;
+            text-decoration: none;
+            display: inline-block;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .btn::before {
+            content: '';
+            background: #d4a11e;
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            transition: left 0.3s;
+            z-index: -1;
+        }
+        .btn:hover {
+            color: #0b0b0b;
+        }
+        .btn:hover::before {
+            left: 0;
+        }
+
+        /* анимация в шапке (js-окружение) */
+        #header-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* блок цифр / статистика */
+        .stats-grid {
+            display: flex;
+            gap: 4rem;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: left;
+        }
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #d4a11e;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #d4a11e;
+            padding-bottom: 8px;
+        }
+
+        /* каталог / работы */
+        .showreel-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin: 40px 0;
+        }
+        .reel-item {
+            aspect-ratio: 16/9;
+            background: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 25px;
+            transition: 0.3s;
+            border: 1px solid #333;
+            position: relative;
+            cursor: pointer;
+        }
+        .reel-item:hover {
+            border-color: #d4a11e;
+            transform: scale(1.02);
+            background: #26221a;
+        }
+        .reel-item i {
+            font-size: 2.5rem;
+            color: #d4a11e;
+            margin-bottom: 15px;
+        }
+        .reel-item span {
+            font-weight: 600;
+            font-size: 1.4rem;
+        }
+        .reel-item small {
+            opacity: 0.6;
+        }
+
+        /* услуги / иконки */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 30px;
+        }
+        .service-card {
+            background: #121212;
+            padding: 40px 30px;
+            border-bottom: 3px solid transparent;
+            transition: 0.2s;
+        }
+        .service-card:hover {
+            border-bottom-color: #d4a11e;
+            background: #1c1c1c;
+        }
+        .service-card i {
+            font-size: 3rem;
+            color: #d4a11e;
+            margin-bottom: 25px;
+        }
+        .service-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        /* клиенты / логотипы (текстовые / иконочные) */
+        .clients-wrap {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin: 40px 0;
+            opacity: 0.7;
+            font-size: 2rem;
+            color: #aaa;
+        }
+        .clients-wrap i {
+            transition: 0.2s;
+        }
+        .clients-wrap i:hover {
+            color: #d4a11e;
+            transform: scale(1.2);
+        }
+
+        /* процесс / этапы */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .tl-item {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            border-left: 2px solid #d4a11e;
+            padding-left: 30px;
+        }
+        .tl-num {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #d4a11e;
+            min-width: 80px;
+        }
+
+        /* отзыв / выделенный блок */
+        .testimonial {
+            background: #151515;
+            padding: 60px;
+            font-size: 1.8rem;
+            font-style: italic;
+            border-radius: 4px;
+            position: relative;
+            margin-top: 20px;
+        }
+        .testimonial i {
+            color: #d4a11e;
+            font-size: 4rem;
+            opacity: 0.3;
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+        }
+
+        /* футер */
+        footer {
+            background: #050505;
+            padding: 40px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #2b2b2b;
+        }
+        .socials i {
+            font-size: 1.8rem;
+            margin-left: 25px;
+            color: #888;
+            transition: 0.2s;
+        }
+        .socials i:hover {
+            color: #d4a11e;
+        }
+
+        /* якорь / плавный скролл */
+        .anchor {
+            scroll-margin-top: 90px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ФИКСИРОВАННАЯ ШАПКА С JS-ПРЕОБРАЖЕНИЕМ -->
+    <header id="mainHeader">
+        <div class="logo"><span>⏺</span> LENS·CODE</div>
+        <div class="nav-links">
+            <a href="#home">Главная</a>
+            <a href="#showreel">Шоурил</a>
+            <a href="#services">Услуги</a>
+            <a href="#process">Процесс</a>
+            <a href="#contact">Контакт</a>
+        </div>
+        <!-- анимация в шапке (js canvas будет встроен) -->
+        <canvas id="header-animation"></canvas>
+    </header>
+
+    <!-- БЛОК 1: HERO -->
+    <section id="home" class="anchor fade-up">
+        <div class="hero-content">
+            <div class="hero-glow">CINEMATIC STORYTELLING</div>
+            <h1>РЕЖИССЕР<br>МОНТАЖА<span style="color:#d4a11e;">.</span></h1>
+            <p class="hero-desc">Демо-рил, реклама, клипы. <br> Ритм, свет, эмоция — кадр за кадром.</p>
+            <a href="#contact" class="btn">НАЧАТЬ ПРОЕКТ</a>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: ШОУРИЛ / ПОРТФОЛИО -->
+    <section id="showreel" class="anchor fade-up">
+        <h2><i class="fas fa-clapperboard"></i> ИЗБРАННЫЕ РАБОТЫ</h2>
+        <div class="showreel-grid">
+            <div class="reel-item"><i class="fas fa-play-circle"></i> <span>COMMERCIAL 24'</span> <small>Nike / fashion</small></div>
+            <div class="reel-item"><i class="fas fa-play-circle"></i> <span>MUSIC VIDEO</span> <small>Moya Mishka</small></div>
+            <div class="reel-item"><i class="fas fa-play-circle"></i> <span>WEDDING TEASER</span> <small>Diamond couple</small></div>
+            <div class="reel-item"><i class="fas fa-play-circle"></i> <span>DOC STORY</span> <small>Arctic session</small></div>
+            <div class="reel-item"><i class="fas fa-play-circle"></i> <span>CORPORATE</span> <small>Yandex Go</small></div>
+            <div class="reel-item"><i class="fas fa-play-circle"></i> <span>ART FILM</span> <small>Kodak 16mm</small></div>
+        </div>
+        <!-- короткая статистика -->
+        <div class="stats-grid">
+            <div class="stat-item"><div class="stat-number">80+</div><div class="stat-label">проектов</div></div>
+            <div class="stat-item"><div class="stat-number">12</div><div class="stat-label">наград</div></div>
+            <div class="stat-item"><div class="stat-number">∞</div><div class="stat-label">кадров в час</div></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: УСЛУГИ (ДЕТАЛЬНО) -->
+    <section id="services" class="anchor fade-up">
+        <h2><i class="fas fa-camera"></i> ПОСТ-ПРОДАКШН</h2>
+        <div class="services-grid">
+            <div class="service-card"><i class="fas fa-cut"></i><h3>Монтаж</h3><p>Драматургия, ритм, color grading. Любой жанр — от рилса до полного метра.</p></div>
+            <div class="service-card"><i class="fas fa-music"></i><h3>Саунд-дизайн</h3><p>Озвучка, шумы, саундтреки. Погружение через уши.</p></div>
+            <div class="service-card"><i class="fas fa-magic"></i><h3>VFX / Titles</h3><p>2D/3D моушн, титры, интеграция графики.</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: КЛИЕНТЫ / ПАРТНЁРЫ (иконки брендов) -->
+    <section class="anchor fade-up" style="min-height: 40vh; background: #0f0f0f;">
+        <h2><i class="fas fa-handshake"></i> ДОВЕРИЛИ МОНТАЖ</h2>
+        <div class="clients-wrap">
+            <i class="fab fa-nike fa-3x"></i>
+            <i class="fab fa-apple fa-3x"></i>
+            <i class="fab fa-adobe fa-3x"></i>
+            <i class="fab fa-spotify fa-3x"></i>
+            <i class="fas fa-mask fa-3x"></i>
+            <i class="fab fa-reddit-alien fa-3x"></i>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: ПРОЦЕСС РАБОТЫ -->
+    <section id="process" class="anchor fade-up">
+        <h2><i class="fas fa-project-diagram"></i> КАК СНИМАЕМ</h2>
+        <div class="timeline">
+            <div class="tl-item"><span class="tl-num">01</span> <h3>Идея / бриф</h3> <p>Погружение, раскадровка, поиск стиля.</p></div>
+            <div class="tl-item"><span class="tl-num">02</span> <h3>Съемка / материалы</h3> <p>Работа с вашим footage или съемочной группой.</p></div>
+            <div class="tl-item"><span class="tl-num">03</span> <h3>Черновой монтаж</h3> <p>Структура, синхронизация, первый ритм.</p></div>
+            <div class="tl-item"><span class="tl-num">04</span> <h3>Цвет / звук / чистота</h3> <p>Финальная полировка, саунд-дизайн.</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: ВЫДЕЛЕННЫЙ ОТЗЫВ -->
+    <section class="anchor fade-up" style="min-height: 60vh; justify-content: center;">
+        <div class="testimonial">
+            «LENS·CODE не просто монтирует — он заново проживает каждый кадр. Наш свадебный фильм дышит!»
+            <i class="fas fa-quote-right"></i>
+            <p style="margin-top: 30px; font-size: 1.2rem;">— Катя и Сергей, молодожены</p>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: КОНТАКТНАЯ ФОРМА / ПРИЗЫВ -->
+    <section id="contact" class="anchor fade-up" style="background: #0a0a0a;">
+        <h2><i class="fas fa-envelope-open-text"></i> НАЧНИ СЪЕМКУ</h2>
+        <div style="display: flex; gap: 50px; flex-wrap: wrap; margin-top: 30px;">
+            <div style="flex: 1; min-width: 280px;">
+                <p style="font-size: 1.5rem; margin-bottom: 30px;">Обсудим проект, рил или полнометражку?</p>
+                <p><i class="fas fa-phone-alt" style="color:#d4a11e;"></i> +7 916 888 08-80</p>
+                <p><i class="fas fa-paper-plane" style="color:#d4a11e;"></i> cut@lenscode.studio</p>
+                <p><i class="fas fa-map-pin" style="color:#d4a11e;"></i> Москва / online</p>
+            </div>
+            <div style="flex: 2;">
+                <input type="text" placeholder="Ваше имя" style="background:#1f1f1f; border:none; padding:18px; width:100%; margin-bottom:15px; color:#fff;">
+                <input type="email" placeholder="Email" style="background:#1f1f1f; border:none; padding:18px; width:100%; margin-bottom:15px; color:#fff;">
+                <textarea rows="4" placeholder="Опишите идею..." style="background:#1f1f1f; border:none; padding:18px; width:100%; margin-bottom:15px; color:#fff;"></textarea>
+                <a href="#" class="btn" style="border-color:#fff; color:#fff;">Отправить тизер</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: БЛОГ / ИНСАЙТЫ (доп. блок) -->
+    <section class="anchor fade-up" style="min-height: 50vh;">
+        <h2><i class="fas fa-newspaper"></i> ЗА КАДРОМ</h2>
+        <div style="display: grid; grid-template-columns: repeat(2,1fr); gap: 30px; margin-top: 20px;">
+            <div style="border: 1px solid #2b2b2b; padding: 30px;">
+                <i class="fas fa-film" style="color:#d4a11e; font-size:2rem;"></i>
+                <h3 style="margin:10px 0;">Почему монтаж важнее съемки?</h3>
+                <p style="opacity:0.7;">Секрет в пазле — даже слабый свет можно превратить в кино.</p>
+            </div>
+            <div style="border: 1px solid #2b2b2b; padding: 30px;">
+                <i class="fas fa-sliders-h" style="color:#d4a11e; font-size:2rem;"></i>
+                <h3 style="margin:10px 0;">LUT vs ручная коррекция</h3>
+                <p style="opacity:0.7;">Разбираем тренд 2025 — натуральный аналог.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: ФУТЕР -->
+    <footer class="fade-up">
+        <div style="font-size: 1.2rem;">© LENS·CODE — монтажная режиссура</div>
+        <div class="socials">
+            <i class="fab fa-vimeo-v"></i>
+            <i class="fab fa-youtube"></i>
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-telegram-plane"></i>
+        </div>
+    </footer>
+
+    <!-- JS: скролл-преображение шапки, Intersection Observer, анимация канвас -->
+    <script>
+        (function() {
+            // Хэдер преображение
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // Intersection Observer для fade-up
+            const faders = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appear');
+                    } else {
+                        // можно убрать, чтобы анимация повторялась, но оставим появившимися
+                        // entry.target.classList.remove('appear'); // (закомментировано — один раз появляются)
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+
+            faders.forEach(el => observer.observe(el));
+
+            // Canvas-анимация в шапке (эффект частиц/линий)
+            const canvas = document.getElementById('header-animation');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initParticles() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+
+                particles = [];
+                for (let i = 0; i < 60; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        vx: (Math.random() - 0.5) * 0.4,
+                        vy: (Math.random() - 0.5) * 0.2,
+                        size: Math.random() * 2 + 1,
+                        color: `rgba(212, 161, 30, ${Math.random() * 0.4 + 0.1})`
+                    });
+                }
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#d4a11e';
+                for (let p of particles) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    // редкие линии между частицами
+                    for (let other of particles) {
+                        let dx = p.x - other.x;
+                        let dy = p.y - other.y;
+                        let dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 120 && dist > 20) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = `rgba(212, 161, 30, ${0.1 * (1 - dist/150)})`;
+                            ctx.lineWidth = 0.6;
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(other.x, other.y);
+                            ctx.stroke();
+                        }
+                    }
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0 || p.x > width) p.vx *= -1;
+                    if (p.y < 0 || p.y > height) p.vy *= -1;
+                }
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', () => {
+                initParticles();
+            });
+
+            initParticles();
+            drawParticles();
+
+            // плавный скролл якорей (без лишнего)
+            document.querySelectorAll('.nav-links a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if(targetId === '#home') {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        return;
+                    }
+                    const targetEl = document.querySelector(targetId);
+                    if(targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        })();
+    </script>
+    <!-- небольшая заглушка для кнопки "Отправить тизер" чтобы не перегружала -->
+    <script>
+        document.querySelectorAll('.btn').forEach(btn => {
+            if(btn.innerText.includes('Отправить')) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    alert('Демо-режим: ваше сообщение осталось в локальной вселенной. Свяжитесь напрямую: cut@lenscode.studio');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+All done!
+```

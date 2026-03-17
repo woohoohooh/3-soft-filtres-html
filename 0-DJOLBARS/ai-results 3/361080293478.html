@@ -1,0 +1,515 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avangard | Аудит и консалтинг</title>
+    <!-- Font Awesome 6 (бесплатные иконы) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f3f5f9;
+            color: #1e1e2f;
+            line-height: 1.5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* кастомный скролл */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e0e4f0; }
+        ::-webkit-scrollbar-thumb { background: #2a3b5e; border-radius: 12px; }
+
+        /* фиксированная навигация с анимацией при скролле */
+        .navbar {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            padding: 1.2rem 2rem;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 999;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border-bottom: 1px solid rgba(255,255,255,0.5);
+        }
+        .navbar.scrolled {
+            padding: 0.7rem 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 30px rgba(0,20,50,0.1);
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #1e2b47, #2f4b7c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            font-weight: 500;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: #1e2b47;
+            font-size: 1.05rem;
+            position: relative;
+            padding-bottom: 4px;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 0; height: 2.5px;
+            background: #2f4b7c;
+            transition: width 0.3s ease;
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* общая сетка */
+        section {
+            padding: 5rem 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+            font-size: 2.6rem;
+            font-weight: 700;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .section-header.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* блок 1 – шапка с крутой анимацией через JS (волны) */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            background: radial-gradient(circle at 30% 40%, #d9e2f0, #b0c6dd);
+            margin-top: 0;
+            padding-top: 6rem;
+            overflow: hidden;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            max-width: 950px;
+        }
+        .hero h1 {
+            font-size: 5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            background: linear-gradient(145deg, #132238, #283b58);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+        .hero p {
+            font-size: 1.4rem;
+            color: #253449;
+            margin-bottom: 2.5rem;
+            font-weight: 400;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .btn {
+            background: #1f2c45;
+            color: white;
+            padding: 1rem 2.8rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(26, 40, 70, 0.2);
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background: #2f4270;
+            transform: scale(1.02) translateY(-3px);
+            box-shadow: 0 18px 30px rgba(22, 42, 80, 0.3);
+        }
+        /* canvas для анимации воды */
+        #heroCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.35;
+        }
+
+        /* остальные блоки + анимация появления при скролле */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(35px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .scroll-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* карточки / сетка */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.2rem;
+            margin-top: 2rem;
+        }
+        .service-card, .case-card, .step-card {
+            background: white;
+            border-radius: 2rem;
+            padding: 2.2rem 1.8rem;
+            box-shadow: 0 15px 35px -10px rgba(0,20,40,0.1);
+            transition: all 0.25s ease;
+            border: 1px solid rgba(255,255,255,0.8);
+            backdrop-filter: blur(4px);
+        }
+        .service-card:hover, .case-card:hover {
+            transform: translateY(-15px) scale(1.01);
+            box-shadow: 0 30px 45px -10px #16273e4d;
+        }
+        .icon-large {
+            font-size: 2.6rem;
+            color: #2a4168;
+            margin-bottom: 1.5rem;
+        }
+        .service-card h3, .case-card h3 {
+            font-size: 1.7rem;
+            margin-bottom: 0.8rem;
+        }
+        .badge {
+            background: #1f2c4522;
+            color: #1f2c45;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 1.2rem;
+            border: 1px solid #ffffff90;
+        }
+        /* футер */
+        footer {
+            background: #0f1a2b;
+            color: #b0c7e0;
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .footer-social i {
+            font-size: 1.8rem;
+            margin-left: 1.2rem;
+            color: #b0c7e0;
+            transition: color 0.2s;
+        }
+        .footer-social i:hover {
+            color: white;
+        }
+        /* спецэффект для выделения текста */
+        .highlight-text {
+            background: linear-gradient(120deg, #fbfcff 0%, #fbfcff 40%, #e5ebf5 80%);
+            padding: 0.2rem 0.4rem;
+            border-radius: 12px;
+            font-weight: 600;
+            color: #16273e;
+        }
+
+        /* мелкая адаптация под ПК */
+        @media (max-width: 1100px) {
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- фиксированное меню (будет изменяться при скролле) -->
+    <nav class="navbar" id="navbar">
+        <span class="logo">AVANGARD</span>
+        <div class="nav-links">
+            <a href="#hero">Главная</a>
+            <a href="#services">Услуги</a>
+            <a href="#cases">Кейсы</a>
+            <a href="#about">О нас</a>
+            <a href="#contact">Контакты</a>
+        </div>
+    </nav>
+
+    <!-- 1. Hero с canvas анимацией -->
+    <section id="hero" class="hero" style="scroll-margin-top: 0;">
+        <canvas id="heroCanvas"></canvas>
+        <div class="hero-content">
+            <h1>Честный аудит<br>налоговый консалтинг</h1>
+            <p>Мы не прячем цифры — мы превращаем их в вашу выгоду. 14 лет защищаем интересы бизнеса.</p>
+            <a href="#contact" class="btn">Получить консультацию</a>
+        </div>
+    </section>
+
+    <!-- 2. Услуги / компетенции -->
+    <section id="services" class="scroll-reveal">
+        <div class="section-header scroll-reveal">ключевые направления</div>
+        <div class="grid-3">
+            <div class="service-card scroll-reveal">
+                <i class="fas fa-file-invoice icon-large"></i>
+                <h3>Аудиторская проверка</h3>
+                <p>Обязательный и инициативный аудит по РСБУ и МСФО. Выявляем резервы и риски.</p>
+                <span class="badge">от 490€</span>
+            </div>
+            <div class="service-card scroll-reveal">
+                <i class="fas fa-scale-balanced icon-large"></i>
+                <h3>Налоговые споры</h3>
+                <p>Досудебное урегулирование и представительство в судах. 95% дел в пользу клиента.</p>
+                <span class="badge">кейсы</span>
+            </div>
+            <div class="service-card scroll-reveal">
+                <i class="fas fa-phone-volume icon-large"></i>
+                <h3>Абонентский консалтинг</h3>
+                <p>Ваш личный финансовый директор на аутсорсе. Ежемесячная поддержка 24/7.</p>
+                <span class="badge">B2B</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Цифры / статистика -->
+    <section class="scroll-reveal" style="background: #eaeef8; border-radius: 4rem 4rem 2rem 2rem;">
+        <div style="display: flex; justify-content: space-around; text-align: center; flex-wrap: wrap; gap: 2rem;">
+            <div class="scroll-reveal">
+                <div style="font-size: 3.5rem; font-weight: 800; color: #1e2e4a;">14+</div>
+                <div>лет на рынке</div>
+            </div>
+            <div class="scroll-reveal">
+                <div style="font-size: 3.5rem; font-weight: 800; color: #1e2e4a;">2.2K</div>
+                <div>успешных кейсов</div>
+            </div>
+            <div class="scroll-reveal">
+                <div style="font-size: 3.5rem; font-weight: 800; color: #1e2e4a;">₽6.5млрд</div>
+                <div>сохранённых активов</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Кейсы (реальные истории) -->
+    <section id="cases" class="scroll-reveal">
+        <div class="section-header scroll-reveal">кейсы, которыми гордимся</div>
+        <div class="grid-3">
+            <div class="case-card scroll-reveal">
+                <i class="fas fa-building icon-large"></i>
+                <h3>Сеть АЗС</h3>
+                <p>Оспорили доначисление 47 млн ₽ по налогу на прибыль. Арбитражный суд — полностью в пользу клиента.</p>
+                <span class="badge">арбитраж</span>
+            </div>
+            <div class="case-card scroll-reveal">
+                <i class="fas fa-cart-shopping icon-large"></i>
+                <h3>Импортёр электроники</h3>
+                <p>Оптимизировали таможенные платежи, сэкономили 2.3 млн ₽ за полгода в рамках абонентского обслуживания.</p>
+                <span class="badge">экономия</span>
+            </div>
+            <div class="case-card scroll-reveal">
+                <i class="fas fa-trowel icon-large"></i>
+                <h3>Строительная компания</h3>
+                <p>Восстановили НДС к вычету на 12 млн, прошли 3 налоговые проверки без штрафов.</p>
+                <span class="badge">стройка</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Как мы работаем (процесс) -->
+    <section style="background: #ffffff; border-radius: 3rem 3rem 0 0;" class="scroll-reveal">
+        <div class="section-header scroll-reveal">алгоритм действий</div>
+        <div class="grid-3">
+            <div class="step-card scroll-reveal">
+                <span style="font-size: 3rem; font-weight: 200; color: #2f4b7c;">01</span>
+                <h3>Анализ</h3>
+                <p>Изучаем документы, учётную политику, договоры. Никакой воды.</p>
+            </div>
+            <div class="step-card scroll-reveal">
+                <span style="font-size: 3rem; font-weight: 200; color: #2f4b7c;">02</span>
+                <h3>Стратегия</h3>
+                <p>Юридическая и налоговая оценка, варианты решений с рисками.</p>
+            </div>
+            <div class="step-card scroll-reveal">
+                <span style="font-size: 3rem; font-weight: 200; color: #2f4b7c;">03</span>
+                <h3>Реализация</h3>
+                <p>Сопровождение сделок, переговоры с ФНС, защита в суде.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. О компании / доверие -->
+    <section id="about" class="scroll-reveal">
+        <div style="display: flex; align-items: center; gap: 4rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 280px;">
+                <span class="badge" style="background: #1f2c45; color: white;">с 2009 года</span>
+                <h2 style="font-size: 2.4rem; margin: 1.5rem 0;">Мы понимаем<br>бизнес изнутри</h2>
+                <p>Ключевые партнёры — бывшие сотрудники ФНС и судьи арбитража. Нам доверяют производственные гиганты и малый бизнес, потому что мы не даём обещаний без цифр.</p>
+            </div>
+            <div style="flex: 1; background: #1f2c450c; padding: 2.8rem; border-radius: 3rem;" class="scroll-reveal">
+                <i class="fas fa-quote-right" style="font-size: 3rem; color: #2f4b7c; opacity: 0.2;"></i>
+                <p style="font-size: 1.3rem;">«Каждый наш отчёт содержит не просто ошибки, а пошаговый план защиты и оптимизации».</p>
+                <p style="margin-top: 1.2rem;">— Михаил Орлов, управляющий партнёр</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. Контакты и призыв -->
+    <section id="contact" style="background: #dbe1ed; border-radius: 4rem 4rem 0 0;" class="scroll-reveal">
+        <div style="text-align: center; max-width: 700px; margin: 0 auto;">
+            <h2 class="section-header scroll-reveal" style="margin-bottom: 1rem;">свяжитесь с нами</h2>
+            <p class="scroll-reveal">Напишите или позвоните — ответим в течение 2 часов, даже в выходные.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin: 3rem 0;">
+                <div style="background: white; border-radius: 2rem; padding: 0.8rem 2.2rem; box-shadow: 0 6px 14px #00000015;"><i class="fas fa-phone-alt" style="margin-right: 0.7rem;"></i>+7 (495) 222-33-44</div>
+                <div style="background: white; border-radius: 2rem; padding: 0.8rem 2.2rem; box-shadow: 0 6px 14px #00000015;"><i class="fas fa-envelope"></i> hello@avangard-audit.ru</div>
+            </div>
+            <a href="#" class="btn" style="background: white; color: #1e2e4a; border: 2px solid #1e2e4a;">написать в Telegram</a>
+        </div>
+    </section>
+
+    <!-- 8. футер (9й блок считаем вместе с шапкой? но футер уже девятый) -->
+    <footer>
+        <span>© 2025 Avangard Audit & Consulting</span>
+        <div class="footer-social">
+            <i class="fab fa-telegram"></i>
+            <i class="fab fa-whatsapp"></i>
+            <i class="fab fa-linkedin"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // 1. Анимация на canvas (волны) — эффект, меняющийся со временем
+            const canvas = document.getElementById('heroCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let time = 0;
+
+                function resizeCanvas() {
+                    width = canvas.offsetWidth;
+                    height = canvas.offsetHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+
+                function drawWaves() {
+                    if (!ctx) return;
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.globalAlpha = 0.2;
+                    // несколько слоев
+                    for (let i = 0; i < 4; i++) {
+                        ctx.beginPath();
+                        let offset = i * 40 + time * 0.02;
+                        let amp = 25 + i * 5;
+                        ctx.moveTo(0, height / 2 + Math.sin(offset) * amp);
+                        for (let x = 0; x <= width; x += 25) {
+                            let y = height / 2 
+                                + Math.sin(x * 0.005 + time * 0.02 + i) * amp 
+                                + Math.cos(x * 0.003 + time * 0.03 + i) * 15;
+                            ctx.lineTo(x, y);
+                        }
+                        ctx.lineTo(width, height);
+                        ctx.lineTo(0, height);
+                        ctx.closePath();
+                        ctx.fillStyle = i % 2 === 0 ? '#2f4b7c' : '#b3c7e0';
+                        ctx.fill();
+                    }
+                    time++;
+                    requestAnimationFrame(drawWaves);
+                }
+                drawWaves();
+            }
+
+            // 2. Анимация навбара при скролле (уменьшение)
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 30) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+
+            // 3. Появление блоков (reveal) + заголовки отдельно
+            const revealElements = document.querySelectorAll('.scroll-reveal');
+            const sectionHeaders = document.querySelectorAll('.section-header');
+
+            function checkVisibility() {
+                const windowHeight = window.innerHeight;
+                const revealThreshold = 0.8;
+
+                revealElements.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < windowHeight * revealThreshold && rect.bottom > 20) {
+                        el.classList.add('revealed');
+                    } else {
+                        // можно убрать, если нужно однократное появление, но оставим — добавит эффекта
+                        // при очень быстром скролле можно оставить без удаления
+                        // (в данной реализации лучше не убирать, чтобы не мигало)
+                    }
+                });
+
+                // заголовки тоже оживают
+                sectionHeaders.forEach(header => {
+                    const rect = header.getBoundingClientRect();
+                    if (rect.top < windowHeight * 0.75) {
+                        header.classList.add('visible');
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', checkVisibility);
+            window.addEventListener('resize', checkVisibility);
+            checkVisibility(); // при загрузке
+
+            // 4. небольшая дополнительная анимация при наведении на иконки (чисто визуально) — уже в css
+            // плюс плавный скролл якорей
+            document.querySelectorAll('.nav-links a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    const target = document.querySelector(targetId);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        })();
+    </script>
+    <!-- случайно выбранная тема: Лендинг для аудиторских/бухгалтерских услуг -->
+</body>
+</html>
+All done!
+```

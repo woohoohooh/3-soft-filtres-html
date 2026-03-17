@@ -1,0 +1,569 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexaViz · иммерсивный лендинг для бизнес-коуча</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f3f5f9;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      color: #121212;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* иконочный шрифт (стандартные, но стильные) */
+    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
+
+    /* хедер с динамической анимацией */
+    header {
+      position: fixed;
+      width: 100%;
+      top: 0;
+      left: 0;
+      padding: 1.2rem 3rem;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px) saturate(180%);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+
+    header.scrolled {
+      padding: 0.7rem 3rem;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 8px 30px rgba(0,20,50,0.08);
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.7rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(130deg, #1B2B4E, #2C3F66);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      transition: transform 0.2s;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      font-weight: 500;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #1a2639;
+      font-size: 1rem;
+      position: relative;
+      padding: 0.3rem 0;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: #2C3F66;
+      transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    /* основной контейнер, компенсация фикс меню */
+    main {
+      margin-top: 80px;
+    }
+
+    section {
+      scroll-margin-top: 80px;
+    }
+
+    /* блоки */
+    .block {
+      min-height: 90vh;
+      padding: 5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      background: #ffffff;
+      border-bottom: 1px solid #eaeef5;
+      overflow: hidden;
+    }
+
+    .block:nth-child(even) {
+      background: #f9fbfe;
+    }
+
+    /* заголовки */
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(150deg, #111C2E, #25415D);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    h3 {
+      font-size: 2rem;
+      font-weight: 500;
+      margin-bottom: 2rem;
+      color: #1F2A44;
+    }
+
+    /* анимация появления при скролле (Intersection Observer) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .fade-up.appear {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .delay-1 { transition-delay: 0.1s; }
+    .delay-2 { transition-delay: 0.2s; }
+    .delay-3 { transition-delay: 0.3s; }
+
+    /* шапка блоков с иконками */
+    .icon-large {
+      font-size: 2.8rem;
+      color: #2C3F66;
+      margin-bottom: 1.5rem;
+      background: rgba(44, 63, 102, 0.08);
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+      transition: all 0.3s;
+    }
+
+    .icon-large:hover {
+      border-radius: 50% 50% 40% 60% / 50% 40% 60% 50%;
+      background: rgba(44, 63, 102, 0.15);
+    }
+
+    /* грид карточек */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: white;
+      padding: 2rem 1.8rem;
+      border-radius: 2rem;
+      box-shadow: 0 20px 40px -12px rgba(0,20,40,0.15);
+      transition: transform 0.3s, box-shadow 0.3s;
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .card i {
+      font-size: 2rem;
+      color: #2C3F66;
+      margin-bottom: 1.5rem;
+    }
+
+    .card:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 30px 50px -18px rgba(17, 34, 68, 0.25);
+    }
+
+    /* цифровой акцент */
+    .stat-row {
+      display: flex;
+      gap: 3rem;
+      justify-content: space-around;
+      margin: 2rem 0;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 3.2rem;
+      font-weight: 700;
+      color: #1B2B4E;
+    }
+
+    /* кнопка */
+    .btn {
+      display: inline-block;
+      background: #1B2B4E;
+      color: white;
+      padding: 1rem 2.8rem;
+      border-radius: 3rem;
+      text-decoration: none;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      border: 1px solid rgba(255,255,255,0.2);
+      transition: all 0.3s;
+      box-shadow: 0 8px 16px rgba(23, 35, 61, 0.2);
+      margin-top: 2rem;
+    }
+
+    .btn i {
+      margin-left: 10px;
+      transition: transform 0.2s;
+    }
+
+    .btn:hover {
+      background: #253c60;
+      box-shadow: 0 12px 24px rgba(23, 35, 61, 0.35);
+      transform: scale(1.02);
+    }
+
+    .btn:hover i {
+      transform: translateX(5px);
+    }
+
+    /* футер */
+    footer {
+      background: #0f172a;
+      color: #cbd5e1;
+      padding: 2rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .social i {
+      font-size: 1.6rem;
+      margin-left: 1.5rem;
+      color: #94a3b8;
+      transition: color 0.2s;
+    }
+
+    .social i:hover {
+      color: white;
+    }
+
+    /* анимация фона в шапке (JS canvas) */
+    #headerCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.3;
+    }
+
+    .relative {
+      position: relative;
+    }
+
+    /* доп твики */
+    .subhead {
+      font-size: 1.2rem;
+      color: #3f4e6b;
+      max-width: 600px;
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(to right, transparent, #a0b4cc, transparent);
+      margin: 2rem 0;
+    }
+
+    /* адаптация под ПК (широкие экраны) */
+    @media (min-width: 1600px) {
+      .block { padding: 5rem 10rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ФИКСИРОВАННАЯ ШАПКА С КАНВАС-АНИМАЦИЕЙ -->
+  <header id="mainHeader">
+    <div class="logo">stratup<span style="font-weight:300;">.coach</span></div>
+    <div class="nav-links">
+      <a href="#hero">Старт</a>
+      <a href="#about">О методе</a>
+      <a href="#services">Услуги</a>
+      <a href="#stats">Цифры</a>
+      <a href="#contact">Контакты</a>
+    </div>
+    <canvas id="headerCanvas"></canvas>
+  </header>
+
+  <main>
+    <!-- БЛОК 1: HERO (с эффектом появления) -->
+    <section id="hero" class="block relative fade-up">
+      <canvas id="heroCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; opacity:0.2; pointer-events:none;"></canvas>
+      <div style="position:relative; z-index:2; max-width: 800px;">
+        <div class="icon-large"><i class="fas fa-chart-line"></i></div>
+        <h2>Удвоить прибыль <br>без выгорания команды</h2>
+        <p class="subhead">Авторская методика бизнес‑коуча с 15-летним опытом. Внедрение системного роста без хаоса.</p>
+        <a href="#contact" class="btn">узнать как <i class="fas fa-arrow-right"></i></a>
+      </div>
+    </section>
+
+    <!-- БЛОК 2: ПРИНЦИП / ДОВЕРИЕ -->
+    <section id="about" class="block fade-up">
+      <div class="icon-large"><i class="fas fa-handshake"></i></div>
+      <h2>Партнёрство, а не консалтинг</h2>
+      <div style="display: flex; gap: 4rem; align-items: center;">
+        <p style="font-size:1.25rem; color:#2d3b52; max-width:600px;">Я не даю готовых «рецептов» — мы ищем уникальный рычаг вашего бизнеса. 87% клиентов масштабируются в первый же год работы.</p>
+        <div style="min-width: 200px;"><i class="fas fa-scale-balanced" style="font-size: 6rem; color:#1B2B4E; opacity:0.2;"></i></div>
+      </div>
+      <hr>
+      <div class="grid-3">
+        <div class="card"><i class="fas fa-brain"></i><h3>CEO mindsets</h3><p>Работа с убеждениями собственника и топ-команды.</p></div>
+        <div class="card"><i class="fas fa-gears"></i><h3>Системы</h3><p>Настраиваем отделы продаж, маркетинг и финансы.</p></div>
+        <div class="card"><i class="fas fa-users"></i><h3>Лояльность</h3><p>Рост LTV и снижение текучки через культуру.</p></div>
+      </div>
+    </section>
+
+    <!-- БЛОК 3: УСЛУГИ / ЧТО ПРЕДЛАГАЮ -->
+    <section id="services" class="block fade-up">
+      <div class="icon-large"><i class="fas fa-crown"></i></div>
+      <h2>Форматы под ваш ритм</h2>
+      <div class="grid-3">
+        <div class="card"><i class="fas fa-calendar-check"></i><h3>Стратегическая сессия</h3><p>2 дня, на выходе — дорожная карта до следующего уровня.</p></div>
+        <div class="card"><i class="fas fa-people-group"></i><h3>Коучинг топ-команды</h3><p>Ежемесячные встречи с первыми лицами.</p></div>
+        <div class="card"><i class="fas fa-rocket"></i><h3>Трансформация под ключ</h3><p>Годовое сопровождение с KPI и аудитом.</p></div>
+      </div>
+    </section>
+
+    <!-- БЛОК 4: ЦИФРЫ / КЕЙСЫ (акцент на доверии) -->
+    <section id="stats" class="block fade-up">
+      <div class="icon-large"><i class="fas fa-chart-pie"></i></div>
+      <h2>Осязаемые результаты</h2>
+      <div class="stat-row">
+        <div class="stat-item"><span class="stat-number">+143%</span><br>средний рост EBITDA</div>
+        <div class="stat-item"><span class="stat-number">9 из 10</span><br>клиентов продлевают</div>
+        <div class="stat-item"><span class="stat-number">27</span><br>успешных сделок M&A</div>
+      </div>
+      <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: center;">
+        <div style="background: #1B2B4E; width: 80px; height: 4px; border-radius: 4px;"></div>
+        <div style="background: #3f5a82; width: 40px; height: 4px; border-radius: 4px;"></div>
+      </div>
+    </section>
+
+    <!-- БЛОК 5: ДЛЯ КОГО (ПЕРСОНАЛИЗАЦИЯ) -->
+    <section class="block fade-up">
+      <div class="icon-large"><i class="fas fa-bullseye"></i></div>
+      <h2>Это для вас, если</h2>
+      <div class="grid-3">
+        <div class="card"><i class="fas fa-chart-simple"></i> выручка 50–500 млн, но упёрлись в потолок</div>
+        <div class="card"><i class="fas fa-clock"></i> собственник устал быть «главным продажником»</div>
+        <div class="card"><i class="fas fa-arrow-trend-up"></i> хотите выйти на новый рынок или привлечь инвестиции</div>
+      </div>
+    </section>
+
+    <!-- БЛОК 6: ПРОЦЕСС (КАК МЫ РАБОТАЕМ) -->
+    <section class="block fade-up">
+      <div class="icon-large"><i class="fas fa-diagram-project"></i></div>
+      <h2>3 шага до первой прибыли</h2>
+      <div style="display: flex; gap: 2rem; justify-content: space-between; flex-wrap: wrap;">
+        <div style="flex:1; min-width:200px;"><span style="background: #1B2B4E; color:white; width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:40px; margin-bottom:1rem;">1</span><h3>Диагностика</h3><p>Анализ цифр, интервью, скрытые точки роста.</p></div>
+        <div style="flex:1; min-width:200px;"><span style="background: #1B2B4E; color:white; width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:40px; margin-bottom:1rem;">2</span><h3>Стратегия</h3><p>Проектируем изменения без потери текучки.</p></div>
+        <div style="flex:1; min-width:200px;"><span style="background: #1B2B4E; color:white; width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:40px; margin-bottom:1rem;">3</span><h3>Внедрение</h3><p>Сопровождаю,校正яю, добиваюсь результата.</p></div>
+      </div>
+    </section>
+
+    <!-- БЛОК 7: ОТЗЫВ / КЕЙС (ПОДСВЕТКА ТЕКСТА) -->
+    <section class="block fade-up">
+      <div class="icon-large"><i class="fas fa-quote-right"></i></div>
+      <h2>«За полгода удвоили оборот и наняли COO»</h2>
+      <p style="font-size: 1.8rem; font-weight: 300; font-style: italic; max-width: 800px; background: linear-gradient(145deg, #162b42, #1b3753); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Алексей, CEO логистической компании</p>
+      <hr style="width:200px; margin:2rem 0;">
+      <p>Рост валовой прибыли 112%, выход на e‑commerce направления.</p>
+    </section>
+
+    <!-- БЛОК 8: КОНТАКТНАЯ ФОРМА (БЕЗ ФУНКЦИИ, ТОЛЬКО ВИЗУАЛ) -->
+    <section id="contact" class="block fade-up">
+      <div class="icon-large"><i class="fas fa-paper-plane"></i></div>
+      <h2>Напишите мне</h2>
+      <p class="subhead">Разберём вашу ситуацию бесплатно в 20-минутном созвоне</p>
+      <div style="display:flex; gap:2rem; flex-wrap:wrap;">
+        <input type="text" placeholder="Ваше имя" style="padding:1rem 1.5rem; border-radius:60px; border:1px solid #ccd9e9; flex:1 1 200px;">
+        <input type="text" placeholder="Телеграм / телефон" style="padding:1rem 1.5rem; border-radius:60px; border:1px solid #ccd9e9; flex:1 1 200px;">
+        <a href="#" class="btn" style="margin-top:0;">отправить <i class="fas fa-arrow-right"></i></a>
+      </div>
+      <p style="margin-top:2rem; color:#62748c;"><i class="fas fa-shield-alt"></i>  гарантирую конфиденциальность</p>
+    </section>
+
+    <!-- БЛОК 9: ДОПОЛНИТЕЛЬНЫЙ ПРИЗЫВ (ПОСЛЕДНИЙ ПЕРЕД ФУТЕРОМ) -->
+    <section class="block fade-up" style="min-height: 50vh; background: #0f172a; color:white; border-bottom:none;">
+      <div class="icon-large" style="background: rgba(255,255,255,0.1); color:white;"><i class="fas fa-star"></i></div>
+      <h2 style="color:white; -webkit-text-fill-color: white; background: none;">Приходите с запросом — уйдёте с планом</h2>
+      <a href="#hero" class="btn" style="background:white; color:#0f172a;">наверх <i class="fas fa-arrow-up"></i></a>
+    </section>
+  </main>
+
+  <!-- ФУТЕР -->
+  <footer>
+    <div>© 2025 — бизнес-коуч Максим Орлов</div>
+    <div class="social">
+      <i class="fab fa-linkedin"></i>
+      <i class="fab fa-telegram"></i>
+      <i class="fab fa-whatsapp"></i>
+    </div>
+  </footer>
+
+  <!-- ОДИН JS: АНИМАЦИИ, ХЕДЕР, СКРОЛЛ, КАНВАС (ПРОСТО ШУМ/ВОЛНЫ) -->
+  <script>
+    (function() {
+      // ------ фикс хедера при скролле ------
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // ------ Intersection Observer для блоков (fade-up) ------
+      const faders = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('appear');
+          } else {
+            // можно убрать, чтобы повторно не исчезали — оставим как есть, но при желании можно закомментировать
+            // entry.target.classList.remove('appear'); // если хотим появление только один раз — закомментируем
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -10px 0px' });
+
+      faders.forEach(fader => observer.observe(fader));
+
+      // ------ Canvas анимация для header (легкие частицы / волны) ------
+      const canvas = document.getElementById('headerCanvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function initParticles() {
+          width = canvas.clientWidth;
+          height = canvas.clientHeight;
+          canvas.width = width;
+          canvas.height = height;
+          particles = [];
+          for (let i = 0; i < 30; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              radius: Math.random() * 2 + 0.5,
+              speedX: (Math.random() - 0.5) * 0.2,
+              speedY: (Math.random() - 0.5) * 0.1,
+              opacity: Math.random() * 0.4 + 0.1,
+            });
+          }
+        }
+
+        function drawParticles() {
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = '#2C3F66';
+          particles.forEach(p => {
+            ctx.beginPath();
+            ctx.globalAlpha = p.opacity;
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            // движение
+            p.x += p.speedX;
+            p.y += p.speedY;
+
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+          });
+          requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', () => {
+          initParticles();
+        });
+
+        initParticles();
+        drawParticles();
+      }
+
+      // второй канвас для hero (простая интерференция)
+      const heroCanvas = document.getElementById('heroCanvas');
+      if (heroCanvas) {
+        const ctxH = heroCanvas.getContext('2d');
+        let w = heroCanvas.parentElement.clientWidth;
+        let h = heroCanvas.parentElement.clientHeight;
+        heroCanvas.width = w; heroCanvas.height = h;
+
+        function drawHeroBg() {
+          ctxH.clearRect(0, 0, w, h);
+          ctxH.strokeStyle = '#1B2B4E';
+          ctxH.lineWidth = 0.8;
+          ctxH.globalAlpha = 0.25;
+          for (let i = 0; i < 8; i++) {
+            ctxH.beginPath();
+            ctxH.arc(w/2 + Math.sin(Date.now()*0.001 + i)*30, h/2 + Math.cos(Date.now()*0.001 + i)*20, 150 + i*30, 0, Math.PI*2);
+            ctxH.stroke();
+          }
+          requestAnimationFrame(drawHeroBg);
+        }
+        drawHeroBg();
+
+        window.addEventListener('resize', () => {
+          w = heroCanvas.parentElement.clientWidth;
+          h = heroCanvas.parentElement.clientHeight;
+          heroCanvas.width = w; heroCanvas.height = h;
+        });
+      }
+
+      // подсветка меню при скролле (якорное)
+      const sections = document.querySelectorAll('section[id]');
+      window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+          const sectionTop = section.offsetTop - 100;
+          if (scrollY >= sectionTop) {
+            current = section.getAttribute('id');
+          }
+        });
+        document.querySelectorAll('.nav-links a').forEach(link => {
+          link.style.fontWeight = '500';
+          if (link.getAttribute('href') === `#${current}`) {
+            link.style.fontWeight = '700';
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

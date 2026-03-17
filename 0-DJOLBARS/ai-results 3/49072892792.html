@@ -1,0 +1,674 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avocato · адвокатское бюро</title>
+  <!-- Font Awesome 6 (бесплатные стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ===== СБРОС И БАЗОВЫЕ НАСТРОЙКИ ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #f3f6fc;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #1e293b;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* искусственный Inter */
+    @supports (font-variation-settings: normal) {
+      body { font-family: 'Inter var', sans-serif; }
+    }
+
+    /* ===== ФИКСИРОВАННАЯ ШАПКА С ДИНАМИЧЕСКИМ СЖАТИЕМ ===== */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.8rem 3rem;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 20, 40, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+      transition: padding 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .header.compact {
+      padding: 0.7rem 3rem;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+    }
+
+    .logo {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(130deg, #0f2b5e, #2b4b9e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: transform 0.2s;
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 2.5rem;
+    }
+
+    .nav-menu a {
+      text-decoration: none;
+      font-weight: 550;
+      color: #1e293b;
+      font-size: 1.1rem;
+      position: relative;
+      transition: color 0.2s;
+    }
+
+    .nav-menu a::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 0%;
+      height: 2.5px;
+      background: #2b4b9e;
+      transition: width 0.25s ease-out;
+    }
+
+    .nav-menu a:hover {
+      color: #0f2b5e;
+    }
+
+    .nav-menu a:hover::after {
+      width: 100%;
+    }
+
+    /* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
+    .main {
+      margin-top: 95px; /* место под фикс. шапку */
+    }
+
+    /* ===== УНИВЕРСАЛЬНЫЙ БЛОК ===== */
+    .block {
+      min-height: 90vh;
+      padding: 5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    /* плавное появление при скролле (Intersection Observer) */
+    .fade-reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .fade-reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== ЗАГОЛОВКИ ===== */
+    h2 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+    }
+
+    .accent-bar {
+      width: 100px;
+      height: 5px;
+      background: linear-gradient(90deg, #2b4b9e, #8ba5d9);
+      margin: 2rem 0;
+    }
+
+    /* ===== БЛОК 1: ГЕРОЙ С АНИМАЦИЕЙ ЧАСТИЦ (JS) ===== */
+    .hero {
+      background: linear-gradient(145deg, #ffffff 0%, #eef3fc 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #particle-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 800px;
+    }
+
+    .hero h1 {
+      font-size: 5rem;
+      font-weight: 800;
+      line-height: 1.05;
+      background: linear-gradient(125deg, #0a1c3a, #2f4b9e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero p {
+      font-size: 1.4rem;
+      color: #334155;
+      margin-bottom: 3rem;
+      max-width: 600px;
+    }
+
+    .btn {
+      background: #1e3a6f;
+      color: white;
+      border: none;
+      padding: 1.2rem 3.5rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border-radius: 60px;
+      cursor: pointer;
+      box-shadow: 0 20px 30px -10px rgba(20, 60, 140, 0.3);
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .btn:hover {
+      background: #0f2b5e;
+      transform: scale(1.02);
+    }
+
+    /* ===== БЛОК 2: ДОВЕРИЕ И ЦИФРЫ ===== */
+    .trust {
+      background: #ffffff;
+    }
+
+    .stats-grid {
+      display: flex;
+      gap: 4rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+
+    .stat-item i {
+      font-size: 3.2rem;
+      color: #2b4b9e;
+      opacity: 0.9;
+    }
+
+    .stat-number {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #0f2b5e;
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 1.2rem;
+      color: #475569;
+    }
+
+    /* ===== БЛОК 3: КЕЙСЫ (УСПЕШНЫЕ ДЕЛА) ===== */
+    .cases {
+      background: #f8fafd;
+    }
+
+    .case-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .case-card {
+      background: white;
+      padding: 2.5rem 2rem;
+      border-radius: 28px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.02);
+      transition: transform 0.25s, box-shadow 0.3s;
+    }
+
+    .case-card:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 30px 45px -15px rgba(20, 60, 130, 0.2);
+    }
+
+    .case-card i {
+      font-size: 2.8rem;
+      color: #1e3a6f;
+      margin-bottom: 1.5rem;
+    }
+
+    .case-card h3 {
+      font-size: 1.8rem;
+      font-weight: 650;
+    }
+
+    .case-card p {
+      color: #475569;
+      margin-top: 0.5rem;
+    }
+
+    /* ===== БЛОК 4: ЮРИДИЧЕСКИЕ УСЛУГИ (ИКОНКИ) ===== */
+    .services {
+      background: #ffffff;
+    }
+
+    .serv-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3rem;
+      row-gap: 3.5rem;
+      margin-top: 2rem;
+    }
+
+    .serv-item {
+      flex: 1 1 240px;
+      display: flex;
+      gap: 1.2rem;
+      align-items: center;
+    }
+
+    .serv-item i {
+      font-size: 2.8rem;
+      color: #2b4b9e;
+      min-width: 60px;
+    }
+
+    .serv-item span {
+      font-size: 1.4rem;
+      font-weight: 550;
+    }
+
+    /* ===== БЛОК 5: ПРОЦЕСС РАБОТЫ ===== */
+    .process {
+      background: linear-gradient(130deg, #f0f5ff, #ffffff);
+    }
+
+    .steps {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      counter-reset: step-counter;
+    }
+
+    .step {
+      flex: 1 1 200px;
+      counter-increment: step-counter;
+      position: relative;
+      padding: 1.8rem 1.5rem;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(4px);
+      border-radius: 30px;
+    }
+
+    .step::before {
+      content: "0" counter(step-counter);
+      position: absolute;
+      top: -15px;
+      right: 20px;
+      font-size: 4rem;
+      font-weight: 800;
+      color: rgba(20, 50, 100, 0.08);
+      z-index: 0;
+    }
+
+    .step i {
+      font-size: 2.5rem;
+      color: #0f2b5e;
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .step h4 {
+      font-size: 1.7rem;
+      font-weight: 600;
+    }
+
+    /* ===== БЛОК 6: КОМАНДА ===== */
+    .team {
+      background: #ffffff;
+    }
+
+    .team-flex {
+      display: flex;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .person {
+      display: flex;
+      align-items: center;
+      gap: 1.8rem;
+      background: #f3f8ff;
+      padding: 1.5rem 2.5rem 1.5rem 1.8rem;
+      border-radius: 70px;
+    }
+
+    .person i {
+      font-size: 3.5rem;
+      color: #1e3a6f;
+    }
+
+    .person h4 {
+      font-size: 2rem;
+      font-weight: 620;
+    }
+
+    /* ===== БЛОК 7: ОТЗЫВЫ ===== */
+    .testimonials {
+      background: #f2f6fb;
+    }
+
+    .testimonial-card {
+      background: white;
+      max-width: 750px;
+      border-radius: 50px;
+      padding: 3rem;
+      box-shadow: 0 20px 30px -5px rgba(0,0,0,0.03);
+    }
+
+    .testimonial-card i {
+      color: #2b4b9e;
+      font-size: 3rem;
+      opacity: 0.2;
+      margin-bottom: 1rem;
+    }
+
+    /* ===== БЛОК 8: КОНТАКТЫ И ПРИЗЫВ ===== */
+    .contact {
+      background: #0f1c2f;
+      color: white;
+    }
+
+    .contact h2 {
+      color: white;
+    }
+
+    .contact-btn {
+      background: white;
+      color: #0f1c2f;
+      border: none;
+      padding: 1.2rem 4rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+      border-radius: 70px;
+      margin-top: 2rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .contact-btn:hover {
+      background: #d3e0fd;
+    }
+
+    /* ===== ФУТЕР ===== */
+    .footer {
+      background: #09121f;
+      color: #afc1e0;
+      padding: 2rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #1f2e48;
+    }
+
+    .footer i {
+      margin: 0 0.7rem;
+      font-size: 1.6rem;
+      color: #91a9d1;
+      transition: color 0.2s;
+    }
+
+    .footer i:hover {
+      color: white;
+    }
+
+    /* Адаптация под ПК остаётся как есть */
+    @media (max-width: 1100px) {
+      .block { padding: 4rem 2rem; }
+      h2 { font-size: 3rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ФИКСИРОВАННАЯ ШАПКА -->
+  <header class="header" id="mainHeader">
+    <div class="logo"><i class="fas fa-gavel" style="margin-right: 12px; color: #1e3a6f;"></i>AVOCATO</div>
+    <nav class="nav-menu">
+      <a href="#hero">Главная</a>
+      <a href="#trust">О нас</a>
+      <a href="#cases">Кейсы</a>
+      <a href="#services">Услуги</a>
+      <a href="#contact">Контакты</a>
+    </nav>
+  </header>
+
+  <main class="main">
+    <!-- БЛОК 1: ГЕРОЙ + canvas анимация -->
+    <section id="hero" class="block hero fade-reveal">
+      <canvas id="particle-canvas"></canvas>
+      <div class="hero-content">
+        <h1>Защита <br>вашего дела</h1>
+        <p>Адвокатское бюро с фокусом на результат. Более 20 лет доверия, сотни выигранных процессов.</p>
+        <button class="btn">Бесплатная консультация</button>
+      </div>
+    </section>
+
+    <!-- БЛОК 2: ДОВЕРИЕ / ЦИФРЫ -->
+    <section id="trust" class="block trust fade-reveal">
+      <h2>Доверие, <br>подтверждённое делами</h2>
+      <div class="accent-bar"></div>
+      <div class="stats-grid">
+        <div class="stat-item"><i class="fas fa-scale-balanced"></i><div><span class="stat-number">350+</span> <span class="stat-label">выигранных дел</span></div></div>
+        <div class="stat-item"><i class="fas fa-handshake"></i><div><span class="stat-number">100%</span> <span class="stat-label">конфиденциальность</span></div></div>
+        <div class="stat-item"><i class="fas fa-clock"></i><div><span class="stat-number">24/7</span> <span class="stat-label">связь с адвокатом</span></div></div>
+      </div>
+    </section>
+
+    <!-- БЛОК 3: КЕЙСЫ -->
+    <section id="cases" class="block cases fade-reveal">
+      <h2>Успешные кейсы</h2>
+      <div class="accent-bar"></div>
+      <div class="case-grid">
+        <div class="case-card"><i class="fas fa-building"></i><h3>Арбитраж</h3><p>Взыскание 45 млн руб. с девелопера</p></div>
+        <div class="case-card"><i class="fas fa-family"></i><h3>Семейное право</h3><p>Раздел бизнеса с сохранением активов</p></div>
+        <div class="case-card"><i class="fas fa-gavel"></i><h3>Уголовное</h3><p>Переквалификация и прекращение дела</p></div>
+      </div>
+    </section>
+
+    <!-- БЛОК 4: УСЛУГИ (иконки) -->
+    <section id="services" class="block services fade-reveal">
+      <h2>Направления</h2>
+      <div class="accent-bar"></div>
+      <div class="serv-list">
+        <div class="serv-item"><i class="fas fa-file-signature"></i><span>Арбитражные споры</span></div>
+        <div class="serv-item"><i class="fas fa-house-chimney"></i><span>Недвижимость</span></div>
+        <div class="serv-item"><i class="fas fa-scale-balanced"></i><span>Налоговые споры</span></div>
+        <div class="serv-item"><i class="fas fa-handcuffs"></i><span>Уголовная защита</span></div>
+      </div>
+    </section>
+
+    <!-- БЛОК 5: ПРОЦЕСС -->
+    <section class="block process fade-reveal">
+      <h2>Как мы работаем</h2>
+      <div class="accent-bar"></div>
+      <div class="steps">
+        <div class="step"><i class="fas fa-comment-dots"></i><h4>Анализ</h4><p>Детальная консультация</p></div>
+        <div class="step"><i class="fas fa-bullseye"></i><h4>Стратегия</h4><p>Разработка позиции</p></div>
+        <div class="step"><i class="fas fa-file-lines"></i><h4>Реализация</h4><p>Судебное сопровождение</p></div>
+        <div class="step"><i class="fas fa-trophy"></i><h4>Результат</h4><p>Защита интересов</p></div>
+      </div>
+    </section>
+
+    <!-- БЛОК 6: КОМАНДА -->
+    <section class="block team fade-reveal">
+      <h2>Ведущие адвокаты</h2>
+      <div class="accent-bar"></div>
+      <div class="team-flex">
+        <div class="person"><i class="fas fa-user-tie"></i><div><h4>Глеб Соколов</h4><span>Арбитраж, стаж 17 лет</span></div></div>
+        <div class="person"><i class="fas fa-user-graduate"></i><div><h4>Мария Ветрова</h4><span>Уголовное право</span></div></div>
+      </div>
+    </section>
+
+    <!-- БЛОК 7: ОТЗЫВ -->
+    <section class="block testimonials fade-reveal">
+      <h2>Мнение клиентов</h2>
+      <div class="accent-bar"></div>
+      <div class="testimonial-card">
+        <i class="fas fa-quote-right"></i>
+        <p style="font-size: 1.8rem; font-weight: 400;">«Avocato помогли в сложном корпоративном конфликте. Победили с минимальными издержками. Рекомендую как профессионалов высшего уровня.»</p>
+        <p style="margin-top: 2rem;">— А. К. Новиков, владелец группы компаний</p>
+      </div>
+    </section>
+
+    <!-- БЛОК 8: КОНТАКТЫ -->
+    <section id="contact" class="block contact fade-reveal">
+      <h2>Защитите интересы сегодня</h2>
+      <div style="width: 100px; height: 5px; background: #6585c5; margin: 2rem 0;"></div>
+      <p style="font-size: 1.6rem; max-width: 600px;">Напишите нам — мы подберём адвоката под вашу задачу.</p>
+      <button class="contact-btn"><i class="fas fa-phone-alt" style="margin-right: 10px;"></i>+7 (495) 300-22-32</button>
+    </section>
+
+    <!-- ФУТЕР -->
+    <footer class="footer">
+      <div>© AVOCATO — адвокатское бюро</div>
+      <div>
+        <i class="fab fa-telegram"></i>
+        <i class="fab fa-whatsapp"></i>
+        <i class="fab fa-linkedin"></i>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    (function() {
+      // --- ДИНАМИЧЕСКАЯ ШАПКА (компактный режим при скролле) ---
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('compact');
+        } else {
+          header.classList.remove('compact');
+        }
+      });
+
+      // --- АНИМАЦИЯ ЧАСТИЦ (canvas) ---
+      const canvas = document.getElementById('particle-canvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        width = canvas.clientWidth;
+        height = canvas.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        const particleCount = 70;
+        particles = [];
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 3.5 + 1.2,
+            speedX: (Math.random() - 0.5) * 0.6,
+            speedY: (Math.random() - 0.5) * 0.4,
+            alpha: Math.random() * 0.35 + 0.1
+          });
+        }
+      }
+
+      function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#1e3a6f';
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.globalAlpha = p.alpha;
+          ctx.fill();
+        }
+        // движение
+        for (let p of particles) {
+          p.x += p.speedX;
+          p.y += p.speedY;
+          // wrap
+          if (p.x > width + 10) p.x = -10;
+          else if (p.x < -10) p.x = width + 10;
+          if (p.y > height + 10) p.y = -10;
+          else if (p.y < -10) p.y = height + 10;
+        }
+        requestAnimationFrame(drawParticles);
+      }
+
+      window.addEventListener('resize', () => {
+        initParticles();
+      });
+
+      initParticles();
+      drawParticles();
+
+      // --- INTERSECTION OBSERVER (плавное появление блоков) ---
+      const revealElements = document.querySelectorAll('.fade-reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          } else {
+            // можно убрать класс, если хотим повторную анимацию (но для эстетики оставим)
+            // entry.target.classList.remove('revealed');
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // якорный скролл плавный (стандартный behaviour smooth уже в css)
+      // дополнительно: подсветка пунктов меню при скролле (опционально)
+      const sections = document.querySelectorAll('.block');
+      const navLinks = document.querySelectorAll('.nav-menu a');
+
+      function changeLinkActive() {
+        let index = sections.length;
+        while (--index && window.scrollY + 120 < sections[index].offsetTop) {}
+        navLinks.forEach((link) => link.style.color = '#1e293b');
+        if (navLinks[index]) navLinks[index].style.color = '#0f2b5e';
+      }
+      changeLinkActive();
+      window.addEventListener('scroll', changeLinkActive);
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

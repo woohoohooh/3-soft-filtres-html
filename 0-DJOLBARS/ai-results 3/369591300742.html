@@ -1,0 +1,708 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modulor · архитектурное бюро</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f3f2f0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.4;
+            color: #1e1e1e;
+            scroll-behavior: smooth;
+        }
+
+        /* интер — быстро через local fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* иконки и декоративные элементы */
+        :root {
+            --accent: #c89f5e;
+            --accent-dark: #a87f45;
+            --bg-light: #faf9f7;
+            --dark: #26221c;
+            --glass: rgba(255, 255, 255, 0.6);
+            --shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+        }
+
+        /* фиксированная навигация — элегантная, появляется при скролле */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 0.8rem 1.8rem;
+            border-radius: 60px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 100;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .navbar.visible {
+            opacity: 1;
+            visibility: visible;
+            top: 24px;
+        }
+
+        .navbar ul {
+            display: flex;
+            gap: 2.2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #1e1e1e;
+            font-weight: 500;
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+            padding: 4px 0;
+        }
+
+        .navbar a:hover {
+            border-bottom-color: var(--accent);
+        }
+
+        /* общий контейнер */
+        .block {
+            min-height: 90vh;
+            padding: 5rem 10%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            background-color: var(--bg-light);
+            border-bottom: 1px solid #eae8e4;
+        }
+
+        .block:nth-child(even) {
+            background-color: #ffffff;
+        }
+
+        /* Header — блок 1 */
+        .header-block {
+            min-height: 100vh;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(145deg, #efebe7 0%, #f9f6f2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .animated-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        #canvas-bg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            opacity: 0.45;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header-content h1 {
+            font-size: 5.5rem;
+            font-weight: 500;
+            letter-spacing: -2px;
+            line-height: 1.0;
+            color: #26221c;
+        }
+
+        .header-content h1 span {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .header-sub {
+            font-size: 1.3rem;
+            margin-top: 1.5rem;
+            color: #4a4640;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+            border-top: 2px solid rgba(198, 159, 94, 0.3);
+            padding-top: 2rem;
+        }
+
+        /* 2 блок (услуги) — появление с задержкой */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+
+        .service-card {
+            background: white;
+            padding: 2.5rem 2rem;
+            border-radius: 32px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s;
+            border: 1px solid #ffffff50;
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 0.8s forwards;
+        }
+
+        .service-card:nth-child(1) { animation-delay: 0.1s; }
+        .service-card:nth-child(2) { animation-delay: 0.2s; }
+        .service-card:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .service-card i {
+            font-size: 2.8rem;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+        }
+
+        .service-card h3 {
+            font-size: 1.8rem;
+            font-weight: 450;
+            margin-bottom: 0.8rem;
+        }
+
+        .service-card p {
+            color: #5f5b56;
+        }
+
+        /* блок 3 — статистика / доверие */
+        .stats-wrap {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 3rem;
+            margin-top: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1 1 150px;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.7s ease;
+        }
+
+        .stat-item.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 550;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            color: #6b645b;
+        }
+
+        /* блок 4 — портфолио (проекты) */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .project-item {
+            background: #f0eeea;
+            border-radius: 40px;
+            padding: 2rem;
+            transition: all 0.4s;
+            cursor: default;
+            border: 1px solid transparent;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .project-item.reveal {
+            animation: slideReveal 0.8s forwards;
+        }
+
+        @keyframes slideReveal {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .project-item:hover {
+            border-color: var(--accent);
+            background: white;
+            box-shadow: 0 30px 40px -20px rgba(0,0,0,0.2);
+        }
+
+        .project-item i {
+            font-size: 2.5rem;
+            color: var(--accent-dark);
+            margin-bottom: 1.5rem;
+        }
+
+        /* блок 5 — командная фраза / параллакс текста */
+        .parallax-quote {
+            font-size: 3.2rem;
+            font-weight: 400;
+            line-height: 1.2;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+            letter-spacing: -0.5px;
+            color: #26221c;
+            transition: transform 0.2s ease-out;
+            will-change: transform;
+        }
+
+        .parallax-quote i {
+            color: var(--accent);
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 1.5rem;
+        }
+
+        /* блок 6 — процесс / как работаем */
+        .process-steps {
+            display: flex;
+            gap: 2rem;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            flex: 1 1 200px;
+            background: #f5f3ef;
+            border-radius: 100px 100px 40px 40px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        .step.in-view {
+            animation: stepSlide 0.5s forwards;
+        }
+
+        @keyframes stepSlide {
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .step .step-num {
+            background: var(--accent);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-weight: 600;
+        }
+
+        /* блок 7 — отзыв / цитата с аватаркой иконка */
+        .testimonial-card {
+            background: #26221c;
+            color: white;
+            padding: 4rem;
+            border-radius: 60px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3rem;
+            align-items: center;
+            margin-top: 2rem;
+            opacity: 0;
+            transform: rotate(0.5deg) scale(0.98);
+            transition: opacity 0.9s, transform 0.9s;
+        }
+
+        .testimonial-card.visible {
+            opacity: 1;
+            transform: rotate(0) scale(1);
+        }
+
+        .testimonial-card i {
+            font-size: 5rem;
+            color: var(--accent);
+        }
+
+        .quote-text {
+            font-size: 1.8rem;
+            font-weight: 330;
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        /* блок 8 — форма/контакт */
+        .contact-flex {
+            display: flex;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-info i {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-right: 1rem;
+            width: 3rem;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 1.2rem 3rem;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 10px 20px -7px var(--accent);
+        }
+
+        .btn:hover {
+            background: var(--accent-dark);
+        }
+
+        /* футер */
+        .footer-block {
+            min-height: 30vh;
+            justify-content: center;
+            align-items: center;
+            background: #1e1b17;
+            color: #b7afa5;
+            flex-direction: row;
+            gap: 4rem;
+        }
+
+        .footer-block a {
+            color: #e0d6cc;
+            text-decoration: none;
+            border-bottom: 1px dotted;
+        }
+
+        /* анимации по скроллу (Intersection Observer) */
+        .hidden-slide {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .hidden-slide.reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* misc */
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+            border-left: 8px solid var(--accent);
+            padding-left: 2rem;
+        }
+
+        i { pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <!-- фиксированное меню (появляется позже) -->
+    <nav class="navbar" id="navbar">
+        <ul>
+            <li><a href="#home">дома</a></li>
+            <li><a href="#services">услуги</a></li>
+            <li><a href="#projects">проекты</a></li>
+            <li><a href="#contact">контакт</a></li>
+        </ul>
+    </nav>
+
+    <!-- БЛОК 1: ШАПКА (header) -->
+    <header class="block header-block" id="home">
+        <div class="animated-bg">
+            <canvas id="canvas-bg"></canvas>
+        </div>
+        <div class="header-content">
+            <h1>modulor <span>✦</span></h1>
+            <div class="header-sub">архитектура света и пространства</div>
+            <div style="margin-top: 3rem;"><i class="fas fa-arrow-down" style="color: var(--accent); font-size: 2rem; opacity: 0.7;"></i></div>
+        </div>
+    </header>
+
+    <!-- БЛОК 2: услуги (случайно выбрал архитектуру) -->
+    <section class="block" id="services">
+        <h2 class="section-title">принципы</h2>
+        <div class="services-grid">
+            <div class="service-card"><i class="fas fa-drafting-compass"></i><h3>Концепт</h3><p>от эскиза до bim-модели, авторский надзор</p></div>
+            <div class="service-card"><i class="fas fa-cubes"></i><h3>Объём</h3><p>жилые комплексы, интерьеры, общественные пространства</p></div>
+            <div class="service-card"><i class="fas fa-leaf"></i><h3>Экология</h3><p>зелёные стандарты, энергоэффективность</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: статистика (цифры доверия) -->
+    <section class="block">
+        <h2 class="section-title">цифры</h2>
+        <div class="stats-wrap" id="statsBlock">
+            <div class="stat-item"><div class="stat-number">14</div><div class="stat-label">лет практики</div></div>
+            <div class="stat-item"><div class="stat-number">87</div><div class="stat-label">реализованных объектов</div></div>
+            <div class="stat-item"><div class="stat-number">23</div><div class="stat-label">награды</div></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: портфолио (проекты) -->
+    <section class="block" id="projects">
+        <h2 class="section-title">избранное</h2>
+        <div class="projects-grid">
+            <div class="project-item hidden-slide"><i class="fas fa-mountain"></i><h3>Residence on Krestovsky</h3><p>частный дом, 2024</p></div>
+            <div class="project-item hidden-slide"><i class="fas fa-water"></i><h3>Порт Silicon Valley</h3><p>яхт-клуб, 2023</p></div>
+            <div class="project-item hidden-slide"><i class="fas fa-tree"></i><h3>Лесной кампус</h3><p>IT-кластер, 2025</p></div>
+            <div class="project-item hidden-slide"><i class="fas fa-building"></i><h3>Бизнес-дом MOD</h3><p>коворкинг + апартаменты</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: параллакс цитата -->
+    <section class="block" id="parallax" style="background: #e3dfd9;">
+        <div class="parallax-quote" id="parallaxText">
+            <i class="fas fa-quote-right"></i> Архитектура — это застывшая музыка, <br> но мы научились её дирижировать.
+        </div>
+    </section>
+
+    <!-- БЛОК 6: процесс (шаги) -->
+    <section class="block">
+        <h2 class="section-title">как мы работаем</h2>
+        <div class="process-steps">
+            <div class="step hidden-slide"><span class="step-num">1</span><h4>Идея</h4><p>анализ участка и брифинг</p></div>
+            <div class="step hidden-slide"><span class="step-num">2</span><h4>Эскиз</h4><p>3D-визуализация</p></div>
+            <div class="step hidden-slide"><span class="step-num">3</span><h4>Реализация</h4><p>авторский надзор</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: testimonial (отзыв) -->
+    <section class="block">
+        <div class="testimonial-card" id="testimonialCard">
+            <i class="fas fa-user-astronaut"></i>
+            <div class="quote-text">«Modulor спроектировали наш дом так, что солнце теперь гуляет по комнатам с утра до вечера»</div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: контакт/форма -->
+    <section class="block" id="contact">
+        <h2 class="section-title">обсудить проект</h2>
+        <div class="contact-flex">
+            <div class="contact-info">
+                <p><i class="fas fa-map-pin"></i> Санкт-Петербург, Петроградская наб. 22</p>
+                <p><i class="fas fa-phone-alt"></i> +7 (812) 555-06-66</p>
+                <p><i class="fas fa-paper-plane"></i> hello@modulor.arch</p>
+            </div>
+            <button class="btn" id="fakeSendBtn">отправить запрос <i class="fas fa-arrow-right"></i></button>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: футер -->
+    <footer class="block footer-block">
+        <span>© modulor architecture 2025</span>
+        <span> made with <i class="fas fa-egg" style="color: var(--accent);"></i> for portfolio</span>
+        <span><a href="#home">наверх</a></span>
+    </footer>
+
+    <script>
+        (function() {
+            // 1) canvas анимация в шапке (эффект частиц/линий)
+            const canvas = document.getElementById('canvas-bg');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let particles = [];
+
+                function resizeCanvas() {
+                    width = canvas.clientWidth;
+                    height = canvas.clientHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                    initParticles();
+                }
+
+                function initParticles() {
+                    particles = [];
+                    const count = 30;
+                    for (let i = 0; i < count; i++) {
+                        particles.push({
+                            x: Math.random() * width,
+                            y: Math.random() * height,
+                            vx: (Math.random() - 0.5) * 0.4,
+                            vy: (Math.random() - 0.5) * 0.2,
+                            baseRadius: Math.random() * 1.5 + 0.5,
+                        });
+                    }
+                }
+
+                function draw() {
+                    if (!ctx) return;
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.strokeStyle = '#c89f5e';
+                    ctx.lineWidth = 1.2;
+                    ctx.globalAlpha = 0.4;
+
+                    // линии между ближайшими
+                    for (let i = 0; i < particles.length; i++) {
+                        for (let j = i + 1; j < particles.length; j++) {
+                            const dx = particles[i].x - particles[j].x;
+                            const dy = particles[i].y - particles[j].y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            if (dist < 120) {
+                                ctx.beginPath();
+                                ctx.moveTo(particles[i].x, particles[i].y);
+                                ctx.lineTo(particles[j].x, particles[j].y);
+                                ctx.strokeStyle = '#c89f5e';
+                                ctx.globalAlpha = 0.25 * (1 - dist/200);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+
+                    // точки
+                    ctx.globalAlpha = 0.7;
+                    particles.forEach(p => {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.baseRadius * 1.5, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#c89f5e';
+                        ctx.fill();
+                    });
+
+                    // движение
+                    particles.forEach(p => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        if (p.x < 0 || p.x > width) p.vx *= -1;
+                        if (p.y < 0 || p.y > height) p.vy *= -1;
+                    });
+
+                    requestAnimationFrame(draw);
+                }
+
+                window.addEventListener('resize', () => {
+                    resizeCanvas();
+                });
+                resizeCanvas();
+                draw();
+            }
+
+            // 2) navbar появляется при скролле ниже 300px
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    navbar.classList.add('visible');
+                } else {
+                    navbar.classList.remove('visible');
+                }
+            });
+
+            // 3) Intersection Observer для анимаций блоков и статистики + цифры
+            const animatedElements = document.querySelectorAll('.hidden-slide, .stat-item, .testimonial-card, .step');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        if (entry.target.classList.contains('stat-item')) {
+                            entry.target.classList.add('visible');
+                        } else if (entry.target.classList.contains('testimonial-card')) {
+                            entry.target.classList.add('visible');
+                        } else {
+                            entry.target.classList.add('reveal');
+                        }
+                        // для step дополнительно
+                        if (entry.target.classList.contains('step')) {
+                            entry.target.classList.add('in-view');
+                        }
+                    }
+                });
+            }, { threshold: 0.25, rootMargin: '0px 0px -30px 0px' });
+
+            animatedElements.forEach(el => observer.observe(el));
+
+            // дополнительные проекты тоже под observer
+            document.querySelectorAll('.project-item').forEach(el => observer.observe(el));
+
+            // 4) параллакс эффект на цитату (блок 5)
+            const quote = document.getElementById('parallaxText');
+            window.addEventListener('scroll', () => {
+                if (!quote) return;
+                const rect = quote.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                const centerY = rect.top + rect.height/2;
+                const distanceFromCenter = centerY - windowHeight/2;
+                const offset = distanceFromCenter * 0.03;
+                quote.style.transform = `translateY(${offset}px)`;
+            });
+
+            // 5) кнопка «отправить» имитация
+            document.getElementById('fakeSendBtn')?.addEventListener('click', function(e) {
+                e.preventDefault();
+                this.innerHTML = 'отправлено <i class="fas fa-check"></i>';
+                this.style.background = '#5f9b6e';
+                setTimeout(() => {
+                    this.innerHTML = 'отправить запрос <i class="fas fa-arrow-right"></i>';
+                    this.style.background = 'var(--accent)';
+                }, 2000);
+            });
+
+            // якоря без перезагрузки
+            document.querySelectorAll('.navbar a, .footer-block a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#home' || targetId === '#') {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                        const targetEl = document.querySelector(targetId);
+                        if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

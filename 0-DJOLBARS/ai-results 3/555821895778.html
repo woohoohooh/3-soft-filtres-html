@@ -1,0 +1,569 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viktor Volkov · Архитектура кадра</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0c0e;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #eaeef2;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* inter google */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap');
+
+        /* custom cursor / grain effect (optional) */
+        .grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJmIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjc1IiBudW1PY3RhdmVzPSIzIiAvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNmKSIgb3BhY2l0eT0iMC4wMjUiIC8+PC9zdmc+');
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* header */
+        header {
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: 0.3s ease-in-out;
+            background: rgba(10, 12, 18, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(230, 240, 255, 0.05);
+        }
+
+        header.scrolled {
+            padding: 0.8rem 3rem;
+            background: rgba(2, 5, 10, 0.9);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(200, 210, 255, 0.15);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #ffffff, #b5cbff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: #ccd9ff;
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            color: #c0d0ff;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.8rem;
+            font-weight: 500;
+        }
+
+        .nav-links a {
+            color: #f0f4ff;
+            text-decoration: none;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            position: relative;
+            padding: 0.3rem 0;
+            transition: 0.2s;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0%;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background: #ffffff;
+            transition: 0.25s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+            background: linear-gradient(90deg, #aac8ff, #ffffff);
+        }
+
+        .menu-toggle {
+            display: none;
+        }
+
+        /* main blocks */
+        section {
+            min-height: 100vh;
+            padding: 7rem 4rem 4rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .block-1 { background: #0a0c12; }
+        .block-2 { background: #0e111b; }
+        .block-3 { background: #0b0f16; }
+        .block-4 { background: #0d101a; }
+        .block-5 { background: #080b13; }
+        .block-6 { background: #10131e; }
+        .block-7 { background: #0a0d17; }
+        .block-8 { background: #0f121d; }
+        footer.block-9 {
+            background: #060811;
+            min-height: 40vh;
+            border-bottom: none;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 5.2rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(145deg, #fff, #adc7ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            letter-spacing: -0.01em;
+        }
+
+        .accent {
+            color: #9bbaff;
+        }
+
+        .grid-2, .grid-3, .grid-4 {
+            display: grid;
+            gap: 2rem;
+            margin-top: 2.5rem;
+        }
+
+        .grid-2 { grid-template-columns: repeat(2,1fr); }
+        .grid-3 { grid-template-columns: repeat(3,1fr); }
+        .grid-4 { grid-template-columns: repeat(4,1fr); }
+
+        .card {
+            background: rgba(20, 25, 36, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 2.2rem 1.8rem;
+            border-radius: 32px;
+            border: 1px solid rgba(255,255,255,0.03);
+            transition: transform 0.2s ease, border-color 0.2s;
+            box-shadow: 0 20px 35px -15px rgba(0,0,0,0.7);
+        }
+
+        .card:hover {
+            border-color: rgba(160, 200, 255, 0.25);
+            transform: translateY(-6px);
+        }
+
+        .card i {
+            font-size: 2.5rem;
+            color: #b7d0ff;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background: transparent;
+            border: 1.5px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 1rem 2.8rem;
+            border-radius: 60px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            transition: 0.25s;
+            margin-top: 2rem;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #0b0c12;
+            border: none;
+            font-weight: 700;
+        }
+
+        .btn-primary:hover {
+            background: #c7dbff;
+            box-shadow: 0 0 25px #aac3ff;
+        }
+
+        /* stats */
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        /* reveal animation (scroll) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.7s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* floating elements */
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* якорь ховер */
+        .tag {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            background: rgba(255,255,255,0.02);
+            border-radius: 40px;
+            border: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.9rem;
+            margin-right: 0.7rem;
+            margin-bottom: 0.7rem;
+        }
+
+        hr {
+            border-color: rgba(255,255,255,0.05);
+            margin: 2rem 0;
+        }
+
+        /* portfolio mosaic */
+        .mosaic {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        .mosaic-item {
+            background: #1a1e2c;
+            border-radius: 24px;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3c4665;
+            font-size: 2rem;
+            border: 1px solid #2f3855;
+            transition: 0.2s;
+        }
+        .mosaic-item i {
+            filter: drop-shadow(0 0 10px #91adff);
+            color: #afc2ff;
+        }
+
+        /* простые адаптивные костыли (десктоп остаётся) */
+        @media (max-width: 1100px) {
+            h1 { font-size: 3.8rem; }
+            .grid-4 { grid-template-columns: repeat(2,1fr); }
+        }
+
+        /* header animation */
+        .glitch {
+            animation: glitch 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+<div class="grain"></div>
+
+<!-- Fixed header with JS animation toggle -->
+<header id="mainHeader">
+    <div class="logo">
+        <i class="fas fa-camera"></i> VV·FRAME
+    </div>
+    <div class="nav-links">
+        <a href="#home">Домой</a>
+        <a href="#portfolio">Кадры</a>
+        <a href="#services">Услуги</a>
+        <a href="#clients">Клиенты</a>
+        <a href="#contact">Связь</a>
+    </div>
+</header>
+
+<!-- 9 БЛОКОВ (1 header уже занят, но блоки секций: 1-8 + footer=9) -->
+<!-- БЛОК 1 / HOME -->
+<section id="home" class="block-1">
+    <div class="container reveal">
+        <span class="tag"><i class="fa-regular fa-star"></i> режиссура кадра</span>
+        <span class="tag"><i class="fa-regular fa-gem"></i> визуальный имидж</span>
+        <h1 style="max-width: 1000px;">Снимаю свет.<br>Проявляю смыслы.</h1>
+        <p style="font-size: 1.3rem; max-width: 600px; color: #b0c2e0;">Репортажная и предметная съёмка для брендов, которые говорят на языке искусства.</p>
+        <a href="#contact" class="btn btn-primary">обсудить проект <i class="fa-regular fa-paper-plane" style="margin-left: 0.7rem;"></i></a>
+        <div style="margin-top: 5rem; display: flex; gap: 3rem;">
+            <div><span class="stat-number">140+</span> <span style="color:#859dcc;">проектов</span></div>
+            <div><span class="stat-number">8</span> <span style="color:#859dcc;">стран</span></div>
+            <div><span class="stat-number">24</span> <span style="color:#859dcc;">награды</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 2 / ПОРТФОЛИО (grid имитация работ) -->
+<section id="portfolio" class="block-2">
+    <div class="container reveal">
+        <h2><span class="accent">/</span> эстетика кадра</h2>
+        <div class="mosaic">
+            <div class="mosaic-item"><i class="fas fa-image fa-3x floating"></i></div>
+            <div class="mosaic-item"><i class="fas fa-camera-retro fa-3x floating"></i></div>
+            <div class="mosaic-item"><i class="fas fa-film fa-3x floating"></i></div>
+            <div class="mosaic-item"><i class="fas fa-portrait fa-3x floating"></i></div>
+            <div class="mosaic-item"><i class="fas fa-tree fa-3x floating"></i></div>
+            <div class="mosaic-item"><i class="fas fa-city fa-3x floating"></i></div>
+        </div>
+        <div style="text-align: right; margin-top: 2rem;"><i class="fa-regular fa-eye"></i> более 60 проектов в портфолио</div>
+    </div>
+</section>
+
+<!-- БЛОК 3 / услуги (карточки) -->
+<section id="services" class="block-3">
+    <div class="container reveal">
+        <h2><span class="accent">/</span> что снимаю</h2>
+        <div class="grid-3">
+            <div class="card"><i class="fas fa-ring"></i><h3>Свадьбы</h3><p>живые эмоции, репортажная эстетика без постановки</p></div>
+            <div class="card"><i class="fas fa-cubes"></i><h3>Предметка</h3><p>для каталогов, брендов и соцсетей — свет и фактура</p></div>
+            <div class="card"><i class="fas fa-microphone-alt"></i><h3>Портреты</h3><p>артисты, бизнес-портреты, креативные образы</p></div>
+            <div class="card"><i class="fas fa-mountain"></i><h3>Репортаж</h3><p>мероприятия, концерты, backstage</p></div>
+            <div class="card"><i class="fas fa-clock"></i><h3>Lifestyle</h3><p>естественность и атмосфера кадра</p></div>
+            <div class="card"><i class="fas fa-video"></i><h3>Видеоклипы</h3><p>короткая форма, цветокоррекция</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 4 / для кого (клиенты/доверие) -->
+<section id="clients" class="block-4">
+    <div class="container reveal">
+        <h2><span class="accent">/</span> доверили кадр</h2>
+        <div class="grid-4">
+            <div class="card" style="padding: 1.5rem; text-align: center;"><i class="fas fa-tshirt fa-2x"></i> Local designers</div>
+            <div class="card" style="padding: 1.5rem; text-align: center;"><i class="fas fa-building fa-2x"></i> Urban decay</div>
+            <div class="card" style="padding: 1.5rem; text-align: center;"><i class="fas fa-music fa-2x"></i> indie labels</div>
+            <div class="card" style="padding: 1.5rem; text-align: center;"><i class="fas fa-champagne-glasses fa-2x"></i> wedding</div>
+        </div>
+        <hr>
+        <p style="font-size: 1.4rem; font-style: italic; max-width: 800px;">«Виктор чувствует ритм кадра. Мы работаем с ним на всех крупных показах» — M. Beret, арт-директор</p>
+    </div>
+</section>
+
+<!-- БЛОК 5 / подход / оборудование / числа -->
+<section class="block-5">
+    <div class="container reveal">
+        <h2><span class="accent">/</span> технологии света</h2>
+        <div class="grid-2">
+            <div class="card"><i class="fas fa-camera"></i> <strong>Hasselblad / Sony Cine</strong> — полнокадровая оптика, кинолинзы</div>
+            <div class="card"><i class="fas fa-lightbulb"></i> <strong>Студийный свет Broncolor</strong>, мобильные вспышки Profoto</div>
+            <div class="card"><i class="fas fa-laptop"></i> <strong>Цветокоррекция DaVinci</strong>, ретушь Capture One</div>
+            <div class="card"><i class="fas fa-drone"></i> <strong>Аэросъёмка</strong> для атмосферных планов</div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 6 / процесс (step-by-step) -->
+<section class="block-6">
+    <div class="container reveal">
+        <h2><span class="accent">/</span> как снимаем</h2>
+        <div class="grid-3">
+            <div class="card"><i class="fas fa-comment"></i> <strong>01.</strong> Брифинг и раскадровка</div>
+            <div class="card"><i class="fas fa-camera"></i> <strong>02.</strong> Съёмка (до 3х часов)</div>
+            <div class="card"><i class="fas fa-paint-roller"></i> <strong>03.</strong> Цвет / ретушь / финал</div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 7 / блог / идеи / инсайты -->
+<section class="block-7">
+    <div class="container reveal">
+        <h2><span class="accent">/</span> последние кадры</h2>
+        <div class="grid-2">
+            <div class="card" style="display: flex; gap:1rem;"><i class="fas fa-pen-fancy fa-2x"></i><span>Как подготовиться к съёмке: гайд для моделей</span></div>
+            <div class="card" style="display: flex; gap:1rem;"><i class="fas fa-play fa-2x"></i><span>Трейлер нового короткого метра «Без фильтров»</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 8 / контакт + cta -->
+<section id="contact" class="block-8">
+    <div class="container reveal">
+        <h2><span class="accent">/</span> показать проект</h2>
+        <div style="background: rgba(30,40,60,0.4); border-radius: 50px; padding: 3rem; text-align: center; max-width: 800px;">
+            <i class="fas fa-envelope-open-text fa-3x" style="color: #b3cbff;"></i>
+            <p style="font-size: 1.8rem; margin: 1rem 0;">hello@vvframe.studio</p>
+            <p>telegram / @volkov_frame</p>
+            <a href="#" class="btn btn-primary" style="margin-top: 2rem;">написать в whatsapp <i class="fa-brands fa-whatsapp"></i></a>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 9 / FOOTER -->
+<footer class="block-9">
+    <div class="container">
+        <div class="logo" style="justify-content: center; font-size: 2rem;"><i class="fas fa-camera"></i> Viktor Volkov · frame</div>
+        <div style="margin: 2rem 0; display: flex; gap: 2rem; justify-content: center; color: #657599;">
+            <i class="fab fa-instagram"></i> <i class="fab fa-behance"></i> <i class="fab fa-vimeo"></i> <i class="fab fa-linkedin"></i>
+        </div>
+        <p style="color: #3d4b68;">© 2025 VV·FRAME — архитектура визуального</p>
+        <p style="font-size: 0.8rem; margin-top: 1rem;">все съёмки проходят с соблюдением авторского света</p>
+    </div>
+</footer>
+
+<script>
+    (function() {
+        // Fixed header animation on scroll (компактное меню)
+        const header = document.getElementById('mainHeader');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Scroll reveal (эффект появления)
+        const reveals = document.querySelectorAll('.reveal');
+        function checkReveals() {
+            for (let el of reveals) {
+                const windowHeight = window.innerHeight;
+                const elementTop = el.getBoundingClientRect().top;
+                const elementVisible = 120; // чем меньше, тем раньше появляется
+                if (elementTop < windowHeight - elementVisible) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active'); // (по желанию можно убрать, чтобы каждый раз прятать – красиво)
+                }
+            }
+        }
+        window.addEventListener('scroll', checkReveals);
+        window.addEventListener('resize', checkReveals);
+        checkReveals(); // при загрузке
+
+        // дополнительная анимация в шапке: glitch-эффект по таймеру (имитация JS animation)
+        const logo = document.querySelector('.logo');
+        setInterval(() => {
+            logo.style.opacity = '0.9';
+            logo.style.transform = 'skew(1deg, 0.5deg)';
+            setTimeout(() => {
+                logo.style.opacity = '1';
+                logo.style.transform = 'skew(0deg, 0deg)';
+            }, 80);
+        }, 3000);
+
+        // random floating extra для иконок – уже через css, но добавим микро-смену цвета
+        const icons = document.querySelectorAll('.card i');
+        setInterval(() => {
+            icons.forEach(icon => {
+                if (Math.random() > 0.7) {
+                    icon.style.color = '#ffe7a0';
+                    setTimeout(() => icon.style.color = '', 300);
+                }
+            });
+        }, 2000);
+    })();
+</script>
+<!-- дополнительный эффект при смене блоков : плавный вход + hover на карточках -->
+<style>
+    /* дополнительные штрихи */
+    .card {
+        transition: transform 0.25s ease, border 0.2s, background 0.3s;
+    }
+    .card:hover {
+        background: rgba(30, 40, 60, 0.8);
+        border-color: #6a8bff;
+    }
+    section {
+        transition: background 0.2s;
+    }
+    ::selection {
+        background: #6f8fdf;
+        color: black;
+    }
+    /* анимация появления active */
+    .reveal {
+        transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.1, 1);
+    }
+    .nav-links a {
+        transition: color 0.2s;
+    }
+    .nav-links a:hover {
+        color: white;
+    }
+    /* подсветка меню при скролле до блока (упрощённо) */
+</style>
+
+<!-- небольшой скрипт для подсветки пунктов (нав) -->
+<script>
+    (function secondary() {
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.nav-links a');
+
+        function changeLinkActive() {
+            let index = sections.length;
+            while(--index && window.scrollY + 100 < sections[index].offsetTop) {}
+            navLinks.forEach((link) => link.style.color = '#b0c6ff');
+            if (navLinks[index]) navLinks[index].style.color = '#ffffff';
+        }
+        changeLinkActive();
+        window.addEventListener('scroll', changeLinkActive);
+    })();
+</script>
+
+<!-- финальный акцент: иконки font awesome уже подключены -->
+<!-- All done! (в самом низу) -->
+All done!
+```

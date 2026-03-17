@@ -1,0 +1,542 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vert·e | Фермерский маркет · доставка здорового питания</title>
+  <!-- Стильные иконочные шрифты: Font Awesome (минимальный набор) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #f6fbf9;
+      color: #1d2b1d;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* плавный скролл + общий контейнер */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* фиксированная шапка (компактная+анимация) */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.2rem 2rem;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(80, 110, 80, 0.15);
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+      box-shadow: 0 8px 20px rgba(0, 20, 0, 0.02);
+    }
+
+    /* компактное меню при скролле (JS добавит класс) */
+    .header.scrolled {
+      padding: 0.6rem 2rem;
+      background: rgba(255, 255, 255, 0.96);
+      border-bottom-color: #b8d5b8;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+      color: #1f3b2c;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo i {
+      color: #519872;
+      font-size: 2.2rem;
+      transition: transform 0.3s ease;
+    }
+
+    .header.scrolled .logo i {
+      transform: rotate(-8deg) scale(0.9);
+    }
+
+    .nav {
+      display: flex;
+      gap: 2.2rem;
+      font-weight: 500;
+    }
+
+    .nav a {
+      text-decoration: none;
+      color: #1f3b2c;
+      font-size: 1.05rem;
+      border-bottom: 2px solid transparent;
+      transition: 0.2s;
+      padding-bottom: 4px;
+    }
+
+    .nav a:hover {
+      border-bottom-color: #519872;
+      color: #173b1f;
+    }
+
+    /* якоря без фикс.перекрытия */
+    .section {
+      scroll-margin-top: 90px;
+    }
+
+    /* общая структура блоков — максимум воздуха */
+    .block {
+      min-height: 100vh;
+      width: 100%;
+      padding: 7rem 4rem 4rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      will-change: opacity, transform;
+    }
+
+    /* анимация появления при скролле (Intersection Observer) */
+    .fade-onscroll {
+      opacity: 0;
+      transform: translateY(36px);
+      transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.05, 0.98), transform 0.9s cubic-bezier(0.25, 0.46, 0.05, 0.98);
+    }
+
+    .fade-onscroll.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* подсветка текста / акцент */
+    .highlight-green {
+      background: linear-gradient(120deg, #d9f0d9 0%, #d9f0d9 40%);
+      padding: 0.2rem 0.4rem;
+      font-weight inherit;
+      transition: background 0.3s;
+    }
+
+    .block:nth-child(odd) {
+      background-color: #ffffff;
+    }
+
+    .block:nth-child(even) {
+      background-color: #f2faf2;
+    }
+
+    /* заголовки */
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #1c3b2a;
+      margin-bottom: 2rem;
+    }
+
+    h2 i {
+      color: #519872;
+      margin-right: 12px;
+      font-size: 2.8rem;
+    }
+
+    h3 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      color: #1f402a;
+    }
+
+    /* сетки, карточки */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .icon-xl {
+      font-size: 2.8rem;
+      color: #519872;
+      margin-bottom: 1rem;
+      transition: transform 0.2s;
+    }
+
+    .card {
+      background: white;
+      padding: 2rem 1.8rem;
+      border-radius: 32px;
+      box-shadow: 0 15px 35px -10px rgba(40, 70, 40, 0.15);
+      border: 1px solid rgba(130, 170, 130, 0.2);
+      transition: transform 0.25s, box-shadow 0.4s;
+    }
+
+    .card:hover {
+      transform: scale(1.02) translateY(-6px);
+      box-shadow: 0 30px 45px -12px #2d5a2d70;
+    }
+
+    .price {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #20663f;
+      margin: 1rem 0 0.2rem;
+    }
+
+    .btn {
+      background: #1d4d2d;
+      color: white;
+      border: none;
+      padding: 1rem 2.5rem;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 8px 18px #1d4d2d40;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .btn i {
+      font-size: 1.4rem;
+    }
+
+    .btn:hover {
+      background: #0d3b1f;
+      box-shadow: 0 12px 24px #1f4d2f80;
+      transform: scale(1.02);
+    }
+
+    /* футер */
+    .footer {
+      background: #172e1c;
+      color: #ddd;
+      padding: 2.5rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      border-top: 4px solid #7dae7d;
+    }
+
+    .footer a {
+      color: #b9e3b9;
+      text-decoration: none;
+    }
+
+    .footer i {
+      color: #b9e3b9;
+      margin: 0 0.7rem;
+    }
+
+    /* дополнительная анимация для блока шапки / hero (js + hover) */
+    .stat-badge {
+      background: #ffffffdc;
+      backdrop-filter: blur(4px);
+      padding: 0.6rem 1.4rem;
+      border-radius: 50px;
+      font-weight: 500;
+      box-shadow: 0 2px 12px #b4d9b4;
+    }
+
+    .floating {
+      animation: float 3s infinite ease-in-out;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0px); }
+    }
+
+    /* интерактивный счётчик в шапке (js) */
+    .co2-counter {
+      background: #e7f5e7;
+      border-radius: 40px;
+      padding: 0.4rem 1.5rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border: 1px dashed #519872;
+    }
+
+    /* специально для монта — всё в одном файле */
+    .testimonial-name {
+      font-weight: 600;
+      color: #1d4d2d;
+    }
+
+    .quote-icon {
+      font-size: 2rem;
+      opacity: 0.3;
+    }
+
+    /* небольшая адаптация для ПК — фиксированная ширина */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ФИКСИРОВАННАЯ ШАПКА (БЛОК 1) -->
+<header class="header" id="mainHeader">
+  <div class="logo">
+    <i class="fas fa-seedling"></i> vert·<span style="color:#519872;">e</span>
+  </div>
+  <div class="nav">
+    <a href="#farm">истоки</a>
+    <a href="#basket">корзина</a>
+    <a href="#plan">план питания</a>
+    <a href="#reviews">отзывы</a>
+    <a href="#contact">контакт</a>
+  </div>
+  <div class="co2-counter" id="co2Widget">
+    <i class="fas fa-leaf"></i> <span id="co2Saved">0</span> кг CO₂
+  </div>
+</header>
+
+<!-- ГЛАВНЫЙ ЭКРАН / HERO (БЛОК 2) -->
+<section id="farm" class="block section fade-onscroll">
+  <div class="container">
+    <div class="grid-2">
+      <div>
+        <span class="stat-badge"><i class="fas fa-truck"></i> доставка завтра до 8:00</span>
+        <h1 style="font-size: 4.2rem; line-height: 1.1; font-weight: 700; color: #1b3824; margin: 1.5rem 0 1rem;">
+          Еда, которую <span class="highlight-green">природа</span> задумала
+        </h1>
+        <p style="font-size: 1.4rem; color: #2e4a36; max-width: 550px;">Фермерские продукты, здоровые боксы и рационы — без химии, без посредников. Овощи, зелень, молочка от хозяйств в радиусе 50 км.</p>
+        <div style="margin: 2.5rem 0; display: flex; gap: 2rem; align-items: center;">
+          <button class="btn"><i class="fas fa-calendar-check"></i> пробный бокс</button>
+          <span style="font-size: 1.2rem;"><i class="fas fa-check-circle" style="color:#519872;"></i> 2500+ семей</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; flex-wrap: wrap;">
+        <div class="card floating" style="width: 200px; text-align: center;"><i class="fas fa-apple-alt icon-xl"></i> <strong>сезонные</strong><br>сборы до рассвета</div>
+        <div class="card floating" style="width: 200px; animation-delay: 0.4s;"><i class="fas fa-tint icon-xl"></i> <strong>био-сертификат</strong><br>контроль земли</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 3 — преимущества / иконки (доверие) -->
+<section id="basket" class="block section fade-onscroll">
+  <div class="container">
+    <h2><i class="fas fa-hand-holding-heart"></i> почему vert·e выбирают</h2>
+    <div class="grid-3">
+      <div class="card"><i class="fas fa-seedling icon-xl"></i><h3>свои семена</h3><p>Сортовые томаты, настоящая зелень — более 30 позиций без ГМО.</p></div>
+      <div class="card"><i class="fas fa-clock icon-xl"></i><h3>урожай к обеду</h3><p>Сбор в 6 утра — доставка с 8 до 12. Максимум свежести.</p></div>
+      <div class="card"><i class="fas fa-recycle icon-xl"></i><h3>нуль пластика</h3><p>Стекло, крафт, многоразовая тара. Забираем пустую упаковку.</p></div>
+    </div>
+    <div style="margin-top: 4rem; background: #e2f0e2; border-radius: 60px; padding: 2rem 3rem; text-align: center;">
+      <i class="fas fa-leaf" style="font-size: 2.4rem; color: #1e4d2e;"></i>
+      <span style="font-size: 1.8rem; font-weight: 500;">Углеродный след каждого бокса — на 63% меньше</span>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 4 — каталог / фермерская корзина (идеи для недвижимости не было, но тут адаптивно) -->
+<section id="plan" class="block section fade-onscroll">
+  <div class="container">
+    <h2><i class="fas fa-box-open"></i> корзина «фермерская»</h2>
+    <div class="grid-3">
+      <div class="card"><i class="fas fa-carrot icon-xl"></i><h3>овощной микс</h3><p>Картофель, морковь, свёкла, тыква, кабачки, томаты черри.</p><div class="price">890 ₽ <span style="font-size: 1rem;">/ 5 кг</span></div></div>
+      <div class="card"><i class="fas fa-cheese icon-xl"></i><h3>молочная лавка</h3><p>Молоко парное, творог, масло, сыры от фермы «Луговое».</p><div class="price">1250 ₽ <span style="font-size:1rem;">/ набор</span></div></div>
+      <div class="card"><i class="fas fa-egg icon-xl"></i><h3>завтрак фермера</h3><p>Яйца, зелень, микрозелень, хлеб на закваске, масло.</p><div class="price">720 ₽</div></div>
+    </div>
+    <div style="text-align: right; margin-top: 2rem;"><a href="#" style="color:#1b4d1b;">все позиции <i class="fas fa-arrow-right"></i></a></div>
+  </div>
+</section>
+
+<!-- БЛОК 5 — рационы / бизнес-ланчи (B2B лёгкий намёк) -->
+<section class="block section fade-onscroll">
+  <div class="container">
+    <h2><i class="fas fa-briefcase"></i> B2B обеды & аутсорсинг столовых</h2>
+    <div class="grid-2">
+      <div class="card" style="background: #fafffa;">
+        <i class="fas fa-building icon-xl"></i>
+        <h3>корпоративные боксы</h3>
+        <p>От 15 порций — сбалансированные обеды из локальных продуктов. Своя доставка, система лояльности.</p>
+        <button class="btn" style="padding: 0.7rem 2rem; font-size: 1rem;">для юрлиц <i class="fas fa-arrow-right"></i></button>
+      </div>
+      <div class="card" style="background: #fafffa;">
+        <i class="fas fa-people-arrows icon-xl"></i>
+        <h3>кейтеринг здорового питания</h3>
+        <p>Конференции, митапы, ретриты. Всё без пластика, с учётом аллергий.</p>
+        <button class="btn" style="padding: 0.7rem 2rem; font-size: 1rem;">калькулятор меню <i class="fas fa-calculator"></i></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 6 — доставка / как мы работаем (анимация счётчика уже в шапке) -->
+<section class="block section fade-onscroll">
+  <div class="container">
+    <h2><i class="fas fa-map-marked-alt"></i> завтра на вашем столе</h2>
+    <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+      <div style="flex: 1;"><i class="fas fa-moon icon-xl" style="font-size: 2rem;"></i> <h3>23:00 — приём заказов</h3><p>Режете время до полуночи — получаете утром.</p></div>
+      <div style="flex: 1;"><i class="fas fa-sun icon-xl" style="font-size: 2rem;"></i> <h3>06:30 — сбор урожая</h3><p>Никаких складов, только с грядки.</p></div>
+      <div style="flex: 1;"><i class="fas fa-bicycle icon-xl" style="font-size: 2rem;"></i> <h3>08–12 — доставка</h3><p>Бесконтактно, вежливо, в термосумках.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 7 — отзывы / соцдок-портфолио -->
+<section id="reviews" class="block section fade-onscroll">
+  <div class="container">
+    <h2><i class="fas fa-comment-dots"></i> соседи рекомендуют</h2>
+    <div class="grid-3">
+      <div class="card"><i class="fas fa-quote-right quote-icon"></i><p>«После vert·e забыли про супермаркеты. Молоко хранится 5 дней, а огурцы пахнут огурцами!»</p><p class="testimonial-name">— Елена, Строгино</p></div>
+      <div class="card"><i class="fas fa-quote-right quote-icon"></i><p>«Заказываем всей IT-командой обеды. Здорово, что можно настраивать рацион под веганов и безглютен».</p><p class="testimonial-name">— Даниил, SmartSoft</p></div>
+      <div class="card"><i class="fas fa-quote-right quote-icon"></i><p>«Упаковку забирают, возвращают тару — и привозят вкуснейший сыр. Спасибо за чистый город!»</p><p class="testimonial-name">— Мария, Зеленоград</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 8 — контакты / форма заявки -->
+<section id="contact" class="block section fade-onscroll">
+  <div class="container">
+    <h2><i class="fas fa-envelope-open-text"></i> напишите нам</h2>
+    <div class="grid-2">
+      <div>
+        <p style="font-size: 1.6rem; margin-bottom: 1rem;">консультация по рационам</p>
+        <p><i class="fas fa-phone-alt"></i> +7 (495) 444-33-22</p>
+        <p><i class="fas fa-paper-plane"></i> hello@verte.ru</p>
+        <p><i class="fas fa-map-pin"></i> Москва, ул. Фермерская 12 (склад-лавка)</p>
+        <div style="margin-top: 2rem;"><i class="fab fa-telegram fa-2x" style="margin-right: 1rem;"></i><i class="fab fa-whatsapp fa-2x"></i></div>
+      </div>
+      <div class="card">
+        <h3>запрос на сотрудничество</h3>
+        <input type="text" placeholder="имя / компания" style="width:100%; padding:1rem; margin:1rem 0; border-radius: 40px; border: 1px solid #a3c9a3;">
+        <input type="text" placeholder="телефон или почта" style="width:100%; padding:1rem; margin:1rem 0; border-radius: 40px;">
+        <button class="btn" style="width:100%;">получить коммерческое</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ФУТЕР (БЛОК 9) -->
+<footer class="footer">
+  <span>© vert·e 2025 — еда как забота</span>
+  <span>
+    <i class="fab fa-instagram"></i>
+    <i class="fab fa-vk"></i>
+    <i class="fab fa-youtube"></i>
+    <i class="fas fa-seedling"></i>
+  </span>
+  <span><a href="#farm">наверх</a> | якоря в действии</span>
+</footer>
+
+<script>
+  (function() {
+    // 1) Анимация шапки при скролле (компактнее)
+    const header = document.getElementById('mainHeader');
+    window.addEventListener('scroll', function() {
+      if (window.scrollY > 30) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    });
+
+    // 2) Счётчик CO2 в шапке — бесконечная анимация + накопление
+    const co2Span = document.getElementById('co2Saved');
+    let co2Value = 0;
+    setInterval(() => {
+      let increment = Math.floor(Math.random() * 3) + 1;  // 1-3
+      co2Value = Math.min(co2Value + increment, 999);    // ограничим визуально
+      co2Span.innerText = co2Value;
+    }, 1800);  // плавно растёт
+
+    // 3) Intersection Observer — появление блоков с красивым fade
+    const sections = document.querySelectorAll('.fade-onscroll');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          // дополнительный эффект "подсветка" — играем с цветом фона коротко
+          entry.target.style.transition = 'background 0.4s';
+          entry.target.style.backgroundColor = '#f3fff3';  // лёгкая вспышка
+          setTimeout(() => {
+            entry.target.style.backgroundColor = '';  // возврат к исходному
+          }, 200);
+        }
+      });
+    }, { threshold: 0.2, rootMargin: '0px' });  // сработает рано
+
+    sections.forEach(section => observer.observe(section));
+
+    // 4) дополнительная микро-анимация на логотип (вращение при ховере)
+    const logoIcon = document.querySelector('.logo i');
+    if (logoIcon) {
+      logoIcon.addEventListener('mouseenter', () => {
+        logoIcon.style.transform = 'scale(1.2) rotate(10deg)';
+      });
+      logoIcon.addEventListener('mouseleave', () => {
+        logoIcon.style.transform = 'scale(1) rotate(0)';
+      });
+    }
+
+    // 5) Визуализация якорей — подсветка пунктов меню (навигация) при скролле
+    const navLinks = document.querySelectorAll('.nav a');
+    const blockIds = ['farm', 'basket', 'plan', 'reviews', 'contact']; // соответствуют секциям
+    window.addEventListener('scroll', () => {
+      let current = '';
+      for (let id of blockIds) {
+        const section = document.getElementById(id);
+        if (section) {
+          const rect = section.getBoundingClientRect();
+          if (rect.top <= 200 && rect.bottom >= 200) {
+            current = id;
+            break;
+          }
+        }
+      }
+      navLinks.forEach(link => {
+        link.style.borderBottomColor = 'transparent';
+        link.style.color = '#1f3b2c';
+        if (link.getAttribute('href') === '#' + current) {
+          link.style.borderBottomColor = '#519872';
+          link.style.color = '#0f401f';
+        }
+      });
+    });
+
+    // 6) hover на блок карточек — современный твист
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(c => {
+      c.addEventListener('mouseenter', () => {
+        c.style.transition = 'transform 0.15s, box-shadow 0.25s';
+      });
+    });
+  })();
+</script>
+<!-- финальная метка -->
+All done!
+</body>
+</html>
+```

@@ -1,0 +1,582 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vertigo · апартаменты у моря</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f2f0ea;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.4;
+      color: #1e1e1e;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* inter-font via fallback */
+    h1, h2, h3, .logo, .menu a, .btn {
+      font-family: 'Inter', 'Helvetica Neue', sans-serif;
+      font-weight: 450;
+      letter-spacing: -0.02em;
+    }
+
+    /* ===== HEADER (БЛОК 1) динамическая анимация JS ===== */
+    .header {
+      position: relative;
+      height: 100vh;
+      background: #0f1215;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      overflow: hidden;
+      clip-path: polygon(0 0, 100% 0, 100% 95%, 0 100%);
+      z-index: 5;
+    }
+
+    .canvas-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.7;
+    }
+
+    #waveCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 3;
+      max-width: 1000px;
+      padding: 0 24px;
+      transform: translateY(-2vh);
+    }
+
+    .header h1 {
+      font-size: clamp(3.2rem, 15vw, 6.2rem);
+      font-weight: 500;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      background: linear-gradient(130deg, #fff6d5, #fff0f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: fadeGlow 3s infinite alternate;
+    }
+
+    @keyframes fadeGlow {
+      0% { text-shadow: 0 0 10px rgba(255,215,100,0.1); }
+      100% { text-shadow: 0 0 30px rgba(255,220,150,0.5); }
+    }
+
+    .header .sub {
+      font-size: 1.4rem;
+      font-weight: 350;
+      letter-spacing: 0.4em;
+      margin-bottom: 2rem;
+      opacity: 0.8;
+      color: #eae4d9;
+    }
+
+    .btn-outline-light {
+      background: transparent;
+      border: 2px solid rgba(255,255,240,0.7);
+      color: white;
+      padding: 16px 48px;
+      font-size: 1.2rem;
+      border-radius: 60px;
+      backdrop-filter: blur(6px);
+      transition: 0.4s;
+      text-decoration: none;
+      display: inline-block;
+      font-weight: 500;
+      letter-spacing: 2px;
+    }
+
+    .btn-outline-light:hover {
+      background: white;
+      color: #0f1215;
+      border-color: white;
+      transform: scale(1.05);
+    }
+
+    /* якорное меню — фиксированное, появляется при скролле */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(16px);
+      padding: 12px 32px;
+      border-radius: 80px;
+      box-shadow: 0 25px 40px -20px rgba(0,0,0,0.3);
+      z-index: 999;
+      display: flex;
+      gap: 40px;
+      border: 1px solid rgba(255,255,255,0.3);
+      transition: all 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .navbar.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .navbar a {
+      color: #1a1a1a;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1rem;
+      transition: 0.2s;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 4px;
+    }
+
+    .navbar a:hover {
+      border-bottom: 1px solid #b8926b;
+      color: #b8926b;
+    }
+
+    /* общие секции */
+    .section {
+      padding: 120px 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+      background: #f2f0ea;
+    }
+
+    .section:nth-child(odd) {
+      background: #faf9f5;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.9rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #a67b5b;
+      font-weight: 500;
+      margin-bottom: 24px;
+      border-left: 4px solid #c7a17b;
+      padding-left: 16px;
+    }
+
+    h2 {
+      font-size: 3.6rem;
+      font-weight: 500;
+      margin-bottom: 30px;
+      line-height: 1.1;
+      color: #1f2a2f;
+    }
+
+    /* анимация появления при скролле (Intersection Observer) */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .scroll-reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* иконки и сетка */
+    .grid-3, .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      margin-top: 40px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .icon-card {
+      background: white;
+      padding: 50px 30px;
+      border-radius: 32px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.02);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0,0,0,0.02);
+      text-align: center;
+    }
+
+    .icon-card i {
+      font-size: 3.6rem;
+      color: #b48b65;
+      margin-bottom: 25px;
+      transition: 0.2s;
+    }
+
+    .icon-card:hover {
+      transform: translateY(-15px);
+      box-shadow: 0 30px 40px -20px rgba(0,0,0,0.15);
+      border-color: #e3d6ca;
+    }
+
+    .icon-card h3 {
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .price {
+      font-size: 2rem;
+      font-weight: 350;
+      color: #886b4e;
+    }
+
+    /* блок 4 — каталог объектов */
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+    }
+
+    .catalog-item {
+      background: white;
+      border-radius: 30px;
+      padding: 30px 25px;
+      transition: all 0.2s;
+      border: 1px solid #ece3da;
+    }
+
+    .catalog-item i {
+      font-size: 3rem;
+      color: #1f2a2f;
+      margin-bottom: 20px;
+    }
+
+    .catalog-item .price {
+      font-size: 1.8rem;
+      margin: 15px 0 5px;
+    }
+
+    .btn-small {
+      background: #1e262b;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-weight: 500;
+      margin-top: 20px;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    /* блок 6/7 и так далее */
+    .testimonial {
+      background: #fefcf8;
+      border-radius: 48px;
+      padding: 60px;
+      box-shadow: inset 0 -2px 0 #e2d9cf;
+    }
+
+    .testimonial i {
+      color: #c7a17b;
+      font-size: 3rem;
+      margin-bottom: 30px;
+    }
+
+    .stats {
+      font-size: 4rem;
+      font-weight: 400;
+      color: #9b7b5e;
+    }
+
+    /* футер (блок 9) */
+    .footer {
+      background: #171f24;
+      color: #e5dfd6;
+      padding: 80px 40px 40px;
+      clip-path: polygon(0 8%, 100% 0, 100% 100%, 0 100%);
+    }
+
+    .footer-grid {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 50px;
+    }
+
+    .footer a {
+      color: #c9b7a4;
+      text-decoration: none;
+      display: block;
+      margin: 8px 0;
+    }
+
+    .socials i {
+      font-size: 2rem;
+      margin-right: 25px;
+      color: #beb1a2;
+      transition: 0.2s;
+    }
+
+    /* прочие эффекты */
+    .highlight-text {
+      background: linear-gradient(145deg, #f3ede7, #fefbf7);
+      padding: 20px 30px;
+      border-radius: 120px;
+      display: inline-block;
+    }
+
+    .border-animate {
+      border-left: 4px solid transparent;
+      animation: borderPulse 2s infinite;
+    }
+
+    @keyframes borderPulse {
+      0% { border-color: #b48b65; }
+      50% { border-color: #e4c7aa; }
+      100% { border-color: #b48b65; }
+    }
+
+    /* адаптация под ПК достаточно, но сделаем приятно */
+    @media (max-width: 1100px) {
+      .grid-3, .catalog-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- FIXED NAV (появляется при скролле) -->
+  <div class="navbar" id="stickyNav">
+    <a href="#home">Виллы</a>
+    <a href="#services">Услуги</a>
+    <a href="#catalog">Объекты</a>
+    <a href="#about">О нас</a>
+    <a href="#contact">Контакты</a>
+  </div>
+
+  <!-- БЛОК 1: шапка с canvas анимацией (волны) -->
+  <header class="header" id="home">
+    <div class="canvas-wrapper">
+      <canvas id="waveCanvas"></canvas>
+    </div>
+    <div class="header-content">
+      <h1>VERTIGO</h1>
+      <div class="sub">residences by the sea</div>
+      <a href="#catalog" class="btn-outline-light"><i class="fas-regular fa-arrow-down" style="margin-right: 10px;"></i> explore</a>
+    </div>
+  </header>
+
+  <!-- БЛОК 2: услуги / доверие + иконки -->
+  <section class="section" id="services">
+    <div class="badge scroll-reveal">эксклюзивный сервис</div>
+    <h2 class="scroll-reveal">Агентство <br>недвижимости премиум-класса</h2>
+    <div class="grid-3">
+      <div class="icon-card scroll-reveal"><i class="fas fa-scale-balanced"></i><h3>Юридическая чистота</h3><p>Полное сопровождение сделки, проверка истории объектов.</p></div>
+      <div class="icon-card scroll-reveal"><i class="fas fa-chart-line"></i><h3>Инвестиции</h3><p>Только объекты с ростом стоимости +20% за 2 года.</p></div>
+      <div class="icon-card scroll-reveal"><i class="fas fa-key"></i><h3>Доверительное управление</h3><p>Сдаем ваши апартаменты, доходность до 9% годовых.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: акцент на доверии / кейсы цифры -->
+  <section class="section" style="background: #fffcf7;">
+    <div class="badge scroll-reveal">кейсы</div>
+    <div class="grid-2">
+      <div class="scroll-reveal">
+        <h2>Сделка на 2,4 млн € за 11 дней</h2>
+        <p style="font-size: 1.4rem; margin-bottom: 30px;">Полный цикл: подбор, переговоры, аудит, ипотека для нерезидентов.</p>
+        <div class="stats">+47%</div><span> средний рост портфеля клиентов</span>
+      </div>
+      <div class="scroll-reveal">
+        <div style="background: #dacfc4; padding: 50px; border-radius: 40px; color: #222;">
+          <i class="fas fa-file-signature fa-3x"></i>
+          <p style="font-size: 2rem; margin-top: 30px;">247</p>
+          <p>успешных закрытий за 3 года</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: каталог объектов (иконки + имитация) -->
+  <section class="section" id="catalog">
+    <div class="badge scroll-reveal">каталог</div>
+    <h2 class="scroll-reveal">Избранные резиденции</h2>
+    <div class="catalog-grid">
+      <div class="catalog-item scroll-reveal"><i class="fas fa-building"></i><h3>Пентхаус, Марина</h3><div class="price">1 280 000 €</div><p>4 спальни, терраса 120м²</p><a href="#" class="btn-small">презентация</a></div>
+      <div class="catalog-item scroll-reveal"><i class="fas fa-water"></i><h3>Вилла на утесе</h3><div class="price">3 450 000 €</div><p>бассейн, приватный пляж</p><a href="#" class="btn-small">презентация</a></div>
+      <div class="catalog-item scroll-reveal"><i class="fas fa-tree"></i><h3>Апартаменты в соснах</h3><div class="price">875 000 €</div><p>2 уровня, камин, сауна</p><a href="#" class="btn-small">презентация</a></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: почему мы / иконки преимущества -->
+  <section class="section" style="background: #f2ede8;">
+    <div class="badge scroll-reveal">преимущества</div>
+    <div class="grid-3">
+      <div class="icon-card scroll-reveal" style="background: #fcf9f5;"><i class="fas fa-globe"></i><h3>Международное право</h3><p>Собственные юристы в Испании, ОАЭ, Черногории.</p></div>
+      <div class="icon-card scroll-reveal" style="background: #fcf9f5;"><i class="fas fa-handshake"></i><h3>Личные переговоры</h3><p>Прямой контакт с собственниками без посредников.</p></div>
+      <div class="icon-card scroll-reveal" style="background: #fcf9f5;"><i class="fas fa-shield-alt"></i><h3>Страхование титула</h3><p>Каждая сделка застрахована Lloyd's на 1 млн €.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: отзыв / testimonial -->
+  <section class="section">
+    <div class="testimonial scroll-reveal">
+      <i class="fas fa-quote-right"></i>
+      <p style="font-size: 2.4rem; font-weight: 300; max-width: 900px;">«Vertigo нашли инвестора за 48 часов. Юридическая проверка выявила скрытое обременение — мы избежали проблем».</p>
+      <div style="display: flex; gap: 30px; margin-top: 50px;"><span><strong>Михаил Б.</strong> инвестор</span><span><i class="fas fa-star" style="color: #d4af37;"></i><i class="fas fa-star" style="color: #d4af37;"></i><i class="fas fa-star" style="color: #d4af37;"></i><i class="fas fa-star" style="color: #d4af37;"></i><i class="fas fa-star" style="color: #d4af37;"></i></span></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: команда / консультанты (иконки людей) -->
+  <section class="section" id="about">
+    <div class="badge scroll-reveal">команда</div>
+    <div class="grid-3">
+      <div class="icon-card scroll-reveal"><i class="fas fa-user-tie"></i><h3>Елена Ветрова</h3><p>ведущий юрист, 14 лет в недвижимости</p></div>
+      <div class="icon-card scroll-reveal"><i class="fas fa-user-graduate"></i><h3>Давид Горич</h3><p>оценщик, MRICS</p></div>
+      <div class="icon-card scroll-reveal"><i class="fas fa-users"></i><h3>аналитический отдел</h3><p>мониторинг 320+ объектов ежедневно</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: призыв / консультация -->
+  <section class="section" style="text-align: center;" id="contact">
+    <span class="badge scroll-reveal">связь</span>
+    <h2 class="scroll-reveal" style="font-size: 5rem; line-height: 1;">Напишите нам</h2>
+    <div class="scroll-reveal highlight-text" style="margin: 40px auto;">
+      <i class="fas fa-paper-plane" style="margin-right: 10px;"></i> hello@vertigo.re
+    </div>
+    <div class="scroll-reveal" style="font-size: 2rem; letter-spacing: 8px;">+34 666 123 987</div>
+    <div style="margin-top: 60px;"><i class="fas fa-arrow-down fa-2x" style="color: #a67b5b;"></i></div>
+  </section>
+
+  <!-- БЛОК 9: футер -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div><i class="fas fa-compass fa-2x" style="color: #bda78f;"></i><p style="margin: 20px 0 10px;">Vertigo Estate</p><p>международное агентство недвижимости</p></div>
+      <div><h4>Навигация</h4><a href="#home">Главная</a><a href="#catalog">Объекты</a><a href="#services">Услуги</a></div>
+      <div><h4>Документы</h4><a href="#">Политика конфиденциальности</a><a href="#">Юридическая информация</a></div>
+      <div class="socials"><h4>Social</h4><i class="fab fa-instagram"></i><i class="fab fa-linkedin"></i><i class="fab fa-youtube"></i></div>
+    </div>
+    <div style="text-align: center; margin-top: 80px; opacity: 0.6;">© Vertigo 2025 — всё для премиального сервиса</div>
+  </footer>
+
+  <script>
+    (function() {
+      // ========== 1. Canvas animation header (волны, динамика) ==========
+      const canvas = document.getElementById('waveCanvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let time = 0;
+
+        function resize() {
+          width = canvas.clientWidth;
+          height = canvas.clientHeight;
+          canvas.width = width;
+          canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function drawWaves() {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+
+          const grad = ctx.createLinearGradient(0, 0, 0, height);
+          grad.addColorStop(0, '#2b3f4e');
+          grad.addColorStop(0.7, '#141c21');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, width, height);
+
+          const waveCount = 3;
+          for (let j = 0; j < waveCount; j++) {
+            ctx.beginPath();
+            const offset = j * 0.5;
+            const amp = 25 + j * 8;
+            const freq = 0.02 - j * 0.003;
+            for (let x = 0; x <= width; x += 20) {
+              const y = height * (0.8 + j * 0.1) 
+                        + Math.sin(x * freq + time * 0.02 + offset) * amp 
+                        + Math.cos(x * 0.01 + time * 0.01) * 8;
+              if (x === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fillStyle = `rgba(180, 160, 140, ${0.15 - j*0.02})`;
+            ctx.fill();
+          }
+          time += 1;
+          requestAnimationFrame(drawWaves);
+        }
+        drawWaves();
+      }
+
+      // ========== 2. Intersection Observer для появления блоков (scroll reveal) ==========
+      const revealElements = document.querySelectorAll('.scroll-reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          } else {
+            // можно убрать класс, если хотите чтобы при уходе исчезало — но оставим на ваше предпочтение
+            // entry.target.classList.remove('revealed'); // раскомментировать если нужно исчезание
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -20px 0px' });
+      revealElements.forEach(el => observer.observe(el));
+
+      // ========== 3. Навбар появляется при скролле ниже шапки ==========
+      const navbar = document.getElementById('stickyNav');
+      const header = document.getElementById('home');
+      window.addEventListener('scroll', () => {
+        if (!header) return;
+        const headerBottom = header.offsetTop + header.offsetHeight * 0.3;
+        if (window.scrollY > headerBottom) {
+          navbar.classList.add('visible');
+        } else {
+          navbar.classList.remove('visible');
+        }
+      });
+
+      // дополнительно: меню якорное без перезагрузки
+      document.querySelectorAll('.navbar a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href').substring(1);
+          const target = document.getElementById(targetId);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+
+      // маленький эффект: при наведении на иконки в каталоге подсветка
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

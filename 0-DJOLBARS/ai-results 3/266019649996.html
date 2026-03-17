@@ -1,0 +1,598 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avant-garde Agency | Digital-продакшн</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f5f3f0;
+            color: #1e1e1e;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll + anchor offset */
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 90px;
+        }
+
+        /* фиксированная шапка (динамическая анимация) */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.2rem 3rem;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* компактный вариант при скролле (js добавит класс) */
+        .header.scrolled {
+            padding: 0.7rem 3rem;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(145deg, #c89f6e, #8a6e4b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            transition: transform 0.2s;
+        }
+
+        .nav {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #1e1e1e;
+            font-weight: 600;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            padding-bottom: 6px;
+            transition: color 0.2s;
+        }
+
+        .nav a::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: #c89f6e;
+            transition: width 0.3s ease;
+        }
+
+        .nav a:hover::before {
+            width: 100%;
+        }
+
+        /* основной контейнер */
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* каждый блок = секция */
+        section {
+            padding: 7rem 2rem;
+            position: relative;
+            will-change: transform, opacity;
+        }
+
+        /* анимация появления при скролле (fade-up + микро-сдвиг) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(35px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* hero (блок 1) с живой анимацией через js */
+        .hero {
+            margin-top: 90px; /* под шапку */
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            background: #f5f3f0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 700px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .hero h1 {
+            font-size: 5.2rem;
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            background: linear-gradient(to right, #1e1e1e, #5e4b34);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            color: #3a3a3a;
+            max-width: 550px;
+            border-left: 6px solid #c89f6e;
+            padding-left: 2rem;
+        }
+
+        /* динамический фон (canvas) для hero */
+        #heroCanvas {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 70%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.5;
+        }
+
+        /* иконки в блоках (стильные) */
+        .icon-lg {
+            font-size: 2.8rem;
+            color: #c89f6e;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        .grid-3, .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .card {
+            background: white;
+            padding: 2.5rem 2rem;
+            border-radius: 32px;
+            box-shadow: 0 15px 40px -10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(200,159,110,0.2);
+        }
+
+        .card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 30px 50px -15px #c89f6e40;
+            border-color: #c89f6e;
+        }
+
+        .card h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            background: #c89f6e;
+            color: white;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            letter-spacing: 0.3px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1e1e1e;
+            color: white;
+            padding: 1.2rem 3rem;
+            border-radius: 50px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            border: 2px solid #1e1e1e;
+        }
+
+        .btn:hover {
+            background: white;
+            color: #1e1e1e;
+            border-color: #c89f6e;
+        }
+
+        /* цитаты, тест, бьюти-блоки */
+        .testimonial {
+            font-size: 1.8rem;
+            font-weight: 500;
+            line-height: 1.4;
+            background: white;
+            border-radius: 48px;
+            padding: 3.5rem;
+            box-shadow: 0 30px 50px -30px #c89f6e;
+        }
+
+        .stats {
+            display: flex;
+            gap: 4rem;
+            justify-content: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 800;
+            color: #c89f6e;
+            line-height: 1;
+        }
+
+        /* футер */
+        .footer {
+            background: #1e1e1e;
+            color: #bbbbbb;
+            padding: 3rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .footer a {
+            color: #c89f6e;
+            text-decoration: none;
+            margin-left: 2rem;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* якорное меню — адаптив не нужен, но для красоты */
+        @media (max-width: 1100px) {
+            .hero h1 { font-size: 4rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ФИКСИРОВАННАЯ ШАПКА (БЛОК 1/9) -->
+    <header class="header" id="mainHeader">
+        <div class="logo">av·garde</div>
+        <div class="nav">
+            <a href="#hero">дома</a>
+            <a href="#services">услуги</a>
+            <a href="#work">работа</a>
+            <a href="#testimonials">отзывы</a>
+            <a href="#contact">контакт</a>
+        </div>
+    </header>
+
+    <!-- HERO + canvas (БЛОК 2/9) -->
+    <section class="hero" id="hero">
+        <div class="container hero-content">
+            <h1>цифровой<br>продакшн полного цикла</h1>
+            <p>видео — анимация — графика — звук. делаем так, что мурашки.</p>
+            <a href="#contact" class="btn" style="margin-top: 2.5rem;">обсудить проект</a>
+        </div>
+        <canvas id="heroCanvas"></canvas>
+    </section>
+
+    <!-- БЛОК 3/9: услуги / expertise -->
+    <section id="services" class="reveal">
+        <div class="container">
+            <span class="badge">экспертиза</span>
+            <h2 style="font-size: 3.5rem; margin: 1rem 0 2rem;">мы делаем сложное<br>простым и сочным</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <i class="fas fa-film icon-lg"></i>
+                    <h3>продакшн</h3>
+                    <p>съёмка, режиссура, постпродакшн — от ролика для соцсетей до имиджевого фильма.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-cube icon-lg"></i>
+                    <h3>motion design</h3>
+                    <p>3D-графика, анимированные титры, визуальные эффекты. любой стиль и хронометраж.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-headphones icon-lg"></i>
+                    <h3>саунд-дизайн</h3>
+                    <p>запись голоса, сведение, оригинальная музыка — атмосфера под ключ.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4/9: портфолио / реализованные проекты -->
+    <section id="work" class="reveal" style="background: #eae7e2;">
+        <div class="container">
+            <span class="badge">портфолио</span>
+            <h2 style="font-size: 3.5rem; margin: 1rem 0;">последние работы</h2>
+            <div class="grid-2">
+                <div class="card" style="background: #fffaf2;">
+                    <i class="fas fa-video icon-lg"></i>
+                    <h3>Nike Tech</h3>
+                    <p>ролик для запуска коллекции — съёмка + графика. охват 2M+</p>
+                </div>
+                <div class="card" style="background: #fffaf2;">
+                    <i class="fas fa-music icon-lg"></i>
+                    <h3>концерт HammAli & Navai</h3>
+                    <p>видео-оформление, проекции, запись выступления. полное визуальное шоу.</p>
+                </div>
+            </div>
+            <div style="margin-top: 2rem; font-size: 1.3rem;">
+                <i class="fas fa-chevron-right" style="color: #c89f6e;"></i> ещё 30+ проектов в портфолио
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5/9: цифры / статистика (акцент на доверии) -->
+    <section class="reveal">
+        <div class="container">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">9</div>
+                    <div>лет опыта</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">240+</div>
+                    <div>реализованных проектов</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">17</div>
+                    <div>наград</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">98%</div>
+                    <div>клиентов возвращаются</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6/9: тест-драйв / квиз-превью (интерактив) -->
+    <section class="reveal" style="background: #c89f6e10;">
+        <div class="container">
+            <span class="badge" style="background: #1e1e1e;">моментальный расчёт</span>
+            <h2 style="font-size: 3rem; margin: 1rem 0;">подберите формат за 1 минуту</h2>
+            <div style="background: white; border-radius: 48px; padding: 2.5rem; box-shadow: 0 20px 40px -20px #00000030;">
+                <p style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-chevron-circle-right" style="color: #c89f6e;"></i> ответьте на 4 вопроса — получите рекомендацию и бонус</p>
+                <button class="btn" style="background: transparent; color:#1e1e1e; border:2px solid #c89f6e;">начать тест <i class="fas fa-arrow-right"></i></button>
+                <span style="margin-left: 2rem;">уже прошли 128 человек</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7/9: отзывы (testimonials) -->
+    <section id="testimonials" class="reveal">
+        <div class="container">
+            <span class="badge">feedback</span>
+            <div class="testimonial">
+                <i class="fas fa-quote-left" style="color: #c89f6e; opacity: 0.4; font-size: 3rem; margin-right: 1rem;"></i>
+                ребята сделали невозможное — за 3 недели родился ролик, который собрал все премии. подход, продакшн, звук — космос.
+                <div style="margin-top: 2rem; font-weight: 700; color:#c89f6e;">— основатель бренда «mechanic»</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8/9: контакты / форма + адрес -->
+    <section id="contact" class="reveal" style="background: #eae7e2;">
+        <div class="container">
+            <span class="badge">связь</span>
+            <div class="grid-2" style="gap: 2rem;">
+                <div>
+                    <h2 style="font-size: 3rem; line-height: 1.1;">давайте создадим что‑то великое</h2>
+                    <p style="font-size: 1.4rem; margin: 2rem 0;"><i class="fas fa-phone-alt" style="color:#c89f6e;"></i> +7 495 123-45-67</p>
+                    <p><i class="fas fa-envelope" style="color:#c89f6e;"></i> hello@av-grde.ru</p>
+                    <p><i class="fas fa-map-pin" style="color:#c89f6e;"></i> Москва, Красный Октябрь</p>
+                </div>
+                <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <input type="text" placeholder="имя" style="padding: 1.2rem; border-radius: 60px; border: 1px solid #ccc; font-size: 1rem;">
+                    <input type="email" placeholder="почта" style="padding: 1.2rem; border-radius: 60px; border: 1px solid #ccc;">
+                    <textarea placeholder="кратко о проекте" rows="3" style="padding: 1.2rem; border-radius: 30px; border: 1px solid #ccc;"></textarea>
+                    <button class="btn" style="background: #c89f6e; border-color: #c89f6e;">отправить</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9/9: футер -->
+    <footer class="footer">
+        <span>© 2025 av·garde production — эмоции в каждом кадре</span>
+        <span>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-youtube"></i></a>
+            <a href="#"><i class="fab fa-behance"></i></a>
+        </span>
+    </footer>
+
+    <script>
+        (function() {
+            // 1. АНИМАЦИЯ ШАПКИ (компактная при скролле)
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // 2. АНИМАЦИЯ ПОЯВЛЕНИЯ БЛОКОВ (reveal)
+            const reveals = document.querySelectorAll('.reveal');
+            function checkReveal() {
+                for (let el of reveals) {
+                    const windowHeight = window.innerHeight;
+                    const revealTop = el.getBoundingClientRect().top;
+                    const revealPoint = 150; // чем меньше, тем раньше появляется
+                    if (revealTop < windowHeight - revealPoint) {
+                        el.classList.add('active');
+                    } else {
+                        // можно убрать класс, если хотим повторное скрытие — но оставим активными
+                        // el.classList.remove('active');
+                    }
+                }
+            }
+            window.addEventListener('scroll', checkReveal);
+            window.addEventListener('load', checkReveal);
+            checkReveal();
+
+            // 3. ЖИВОЙ КАНВАС В ХЕДЕРЕ (анимация волны / частиц) — ОЧЕНЬ ЭФФЕКТНО
+            const canvas = document.getElementById('heroCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let particles = [];
+
+                function initCanvas() {
+                    width = canvas.parentElement.offsetWidth;
+                    height = canvas.parentElement.offsetHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // создадим немного хаотичных точек, которые будут мерцать
+                    const numParticles = 40;
+                    particles = [];
+                    for (let i = 0; i < numParticles; i++) {
+                        particles.push({
+                            x: Math.random() * width,
+                            y: Math.random() * height,
+                            vx: (Math.random() - 0.5) * 0.5,
+                            vy: (Math.random() - 0.5) * 0.3,
+                            radius: Math.random() * 6 + 2,
+                            alpha: Math.random() * 0.6 + 0.2
+                        });
+                    }
+                }
+
+                function animateParticles() {
+                    if (!ctx) return;
+                    ctx.clearRect(0, 0, width, height);
+                    
+                    for (let p of particles) {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        
+                        // границы — мягкое отражение
+                        if (p.x < 0 || p.x > width) p.vx *= -1;
+                        if (p.y < 0 || p.y > height) p.vy *= -1;
+                        
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(200, 159, 110, ${p.alpha})`; // золотистый оттенок
+                        ctx.filter = 'blur(2px)';
+                        ctx.fill();
+                        ctx.filter = 'none';
+                    }
+                    
+                    // соединяем близкие частицы линиями
+                    ctx.strokeStyle = '#c89f6e30';
+                    ctx.lineWidth = 1;
+                    for (let i = 0; i < particles.length; i++) {
+                        for (let j = i+1; j < particles.length; j++) {
+                            const dx = particles[i].x - particles[j].x;
+                            const dy = particles[i].y - particles[j].y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            if (dist < 100) {
+                                ctx.beginPath();
+                                ctx.moveTo(particles[i].x, particles[i].y);
+                                ctx.lineTo(particles[j].x, particles[j].y);
+                                ctx.strokeStyle = `rgba(200, 159, 110, ${0.2 - dist/500})`;
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                    
+                    requestAnimationFrame(animateParticles);
+                }
+
+                window.addEventListener('resize', () => {
+                    initCanvas();
+                });
+                initCanvas();
+                animateParticles();
+            }
+
+            // 4. микро-эффект при наведении на карточки (уже в css)
+            // дополнительно — изменяем иконки при наведении (просто для удовольствия)
+            document.querySelectorAll('.card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    const icon = this.querySelector('.icon-lg');
+                    if (icon) icon.style.transform = 'scale(1.1) rotate(2deg)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    const icon = this.querySelector('.icon-lg');
+                    if (icon) icon.style.transform = 'scale(1) rotate(0)';
+                });
+            });
+
+            // 5. подсветка якорей активного меню (простой штрих)
+            const sections = document.querySelectorAll('section[id]');
+            window.addEventListener('scroll', function() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 100;
+                    if (scrollY >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                document.querySelectorAll('.nav a').forEach(a => {
+                    a.style.color = '#1e1e1e';
+                    if (a.getAttribute('href') === `#${current}`) {
+                        a.style.color = '#c89f6e';
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

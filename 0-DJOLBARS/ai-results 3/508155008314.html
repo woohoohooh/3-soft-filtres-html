@@ -1,0 +1,532 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Эстет | бизнес-коуч · трансформации</title>
+    <!-- Font Awesome 6 (бесплатные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #faf9f6;
+            color: #1e1e1e;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* скролл-анимации (появление + параллакс тень) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px) scale(0.98);
+            transition: all 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* кастомный курсор / ховер-эффект для заголовков */
+        .glow-text {
+            transition: text-shadow 0.3s ease, color 0.2s;
+        }
+        .glow-text:hover {
+            text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+            color: #000;
+        }
+
+        /* шапка с анимацией js */
+        .header {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: #0c0c0c;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            padding: 2rem;
+        }
+
+        #matrix-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 3;
+            max-width: 1000px;
+        }
+
+        .header h1 {
+            font-size: clamp(3rem, 12vw, 6rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            animation: fadeUp 1.2s ease-out;
+        }
+
+        .header p {
+            font-size: 1.6rem;
+            opacity: 0.85;
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            animation: fadeUp 1.2s 0.1s both;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #f5c518;
+            color: #0c0c0c;
+            padding: 1rem 3rem;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1.3rem;
+            text-decoration: none;
+            transition: 0.3s;
+            border: 1px solid transparent;
+            box-shadow: 0 10px 30px -10px rgba(245, 197, 24, 0.4);
+            animation: fadeUp 1.2s 0.2s both;
+        }
+
+        .btn:hover {
+            background: transparent;
+            color: #f5c518;
+            border-color: #f5c518;
+            box-shadow: 0 0 25px #f5c518;
+        }
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* фиксированное меню (преображается при скролле) */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1.2rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+            z-index: 999;
+            transition: all 0.4s;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .navbar.compact {
+            padding: 0.6rem 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.8rem;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #000, #333);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links a {
+            margin-left: 2rem;
+            text-decoration: none;
+            font-weight: 500;
+            color: #1e1e1e;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav-links a:hover {
+            border-bottom-color: #f5c518;
+            color: #000;
+        }
+
+        /* общие блоки */
+        .block {
+            padding: 7rem 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .block-title {
+            font-size: 3.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+            position: relative;
+            display: inline-block;
+        }
+
+        .block-title:after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background: #f5c518;
+            border-radius: 4px;
+        }
+
+        .grid-2, .grid-3 {
+            display: grid;
+            gap: 3rem;
+            margin-top: 4rem;
+        }
+
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+        .card {
+            background: white;
+            border-radius: 32px;
+            padding: 2rem 2rem 2.5rem;
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.08);
+            transition: transform 0.4s, box-shadow 0.4s;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.01);
+            box-shadow: 0 30px 50px -15px rgba(0,0,0,0.15);
+        }
+
+        .icon-lg {
+            font-size: 3.2rem;
+            color: #f5c518;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-number {
+            font-size: 3.8rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #0c0c0c;
+        }
+
+        /* стильный акцент */
+        .accent-bg {
+            background: #f4f2ee;
+            border-radius: 80px 0 80px 0;
+        }
+
+        /* футер */
+        .footer {
+            background: #0c0c0c;
+            color: #aaa;
+            padding: 3rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 2rem;
+            font-size: 1rem;
+        }
+        .footer a { color: #ccc; text-decoration: none; border-bottom: 1px dotted; }
+        .footer a:hover { color: #f5c518; }
+
+        /* якоря */
+        .section-link {
+            scroll-margin-top: 90px;
+        }
+
+        /* небольшие уникальные эффекты */
+        .hover-3d {
+            transition: transform 0.2s;
+        }
+        .hover-3d:hover {
+            transform: perspective(500px) rotateX(2deg) rotateY(1deg);
+        }
+
+        /* адаптация под пк (остается desktop first) */
+        @media (max-width: 900px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .navbar { padding: 1rem; }
+            .nav-links a { margin-left: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- FIXED NAVBAR (JS преображение) -->
+<div class="navbar" id="navbar">
+    <span class="logo">Эстет · коуч</span>
+    <div class="nav-links">
+        <a href="#about">Области</a>
+        <a href="#stats">Цифры</a>
+        <a href="#approach">Метод</a>
+        <a href="#cases">Кейсы</a>
+        <a href="#contact">Связь</a>
+    </div>
+</div>
+
+<!-- БЛОК 1: ШАПКА с canvas анимацией (matrix-like, но мягкая) -->
+<header class="header" id="home">
+    <canvas id="matrix-canvas"></canvas>
+    <div class="header-content">
+        <h1 class="glow-text">Трансформация<br>без компромиссов</h1>
+        <p>Персональный бизнес-коучинг для первого звена и владельцев. 13 лет практики с рынками EU и MENA.</p>
+        <a href="#contact" class="btn">Начать диалог <i class="fas fa-arrow-right" style="margin-left: 10px;"></i></a>
+    </div>
+</header>
+
+<!-- БЛОК 2: УСЛУГИ / НАПРАВЛЕНИЯ (about) -->
+<section class="block section-link" id="about">
+    <h2 class="block-title glow-text">Точки опоры</h2>
+    <div class="grid-3">
+        <div class="card">
+            <i class="fas fa-chess-knight icon-lg"></i>
+            <h3 style="font-size: 2rem; margin-bottom: 1rem;">Стратегия</h3>
+            <p style="color: #444;">Рост выручки, выход на новые рынки, M&A консалтинг. Сопровождение сделок и антикризисные сессии.</p>
+        </div>
+        <div class="card">
+            <i class="fas fa-users icon-lg"></i>
+            <h3 style="font-size: 2rem; margin-bottom: 1rem;">ТОП-команды</h3>
+            <p style="color: #444;">Оценка управленцев, постановка KPI, сессии стратегического единства. Коучинг для С-level.</p>
+        </div>
+        <div class="card">
+            <i class="fas fa-chart-line icon-lg"></i>
+            <h3 style="font-size: 2rem; margin-bottom: 1rem;">Личный бренд</h3>
+            <p style="color: #444;">Упаковка экспертизы, публичные выступления, нетворкинг. Персональный PR первым лицам.</p>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 3: ЦИФРЫ И ДОВЕРИЕ (stats) -->
+<section class="block accent-bg section-link" id="stats">
+    <h2 class="block-title glow-text">сухие цифры · живой эффект</h2>
+    <div class="grid-3" style="margin-top: 3rem;">
+        <div class="card" style="text-align: center;">
+            <span class="stat-number">47</span>
+            <p style="font-size: 1.4rem; margin-top: 0.5rem;">реализованных стратегий</p>
+        </div>
+        <div class="card" style="text-align: center;">
+            <span class="stat-number">₽2.4B</span>
+            <p style="font-size: 1.4rem; margin-top: 0.5rem;">привлечено инвестиций</p>
+        </div>
+        <div class="card" style="text-align: center;">
+            <span class="stat-number">100+</span>
+            <p style="font-size: 1.4rem; margin-top: 0.5rem;">часов менторства в год</p>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 4: ПОДХОД / МЕТОДИКА (approach) -->
+<section class="block section-link" id="approach">
+    <h2 class="block-title glow-text">метод «эстет»</h2>
+    <div class="grid-2">
+        <div class="card hover-3d">
+            <i class="fas fa-brain icon-lg"></i>
+            <h3 style="font-size: 2rem;">Когнитивная гибкость</h3>
+            <p style="color: #444;">Работа с убеждениями первого лица. Убираем шаблоны, которые тормозят рост. </p>
+        </div>
+        <div class="card hover-3d">
+            <i class="fas fa-bolt icon-lg"></i>
+            <h3 style="font-size: 2rem;">Быстрые циклы</h3>
+            <p style="color: #444;">2-недельные спринты внедрения. Без воды — только изменения, которые видят акционеры.</p>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 5: КЕЙСЫ (cases) с эффектом появления -->
+<section class="block section-link" id="cases">
+    <h2 class="block-title glow-text">живые кейсы</h2>
+    <div class="grid-2">
+        <div class="card">
+            <i class="fas fa-building icon-lg"></i>
+            <h3>производственный холдинг</h3>
+            <p>+63% EBITDA за 9 месяцев. Внедрение операционной модели и наём финдиректора.</p>
+        </div>
+        <div class="card">
+            <i class="fas fa-store icon-lg"></i>
+            <h3>федеральный ритейлер</h3>
+            <p>Пересборка коммерческой службы, выход на маркетплейсы, рост оборота 2,1x.</p>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 6: ОБРАЗОВАНИЕ / ИНТЕНСИВЫ (бонусный) -->
+<section class="block accent-bg">
+    <h2 class="block-title glow-text">ближайшие интенсивы</h2>
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 3rem;">
+        <div style="flex:1; min-width: 200px; background: #fff; padding: 2rem; border-radius: 40px;">
+            <i class="fas fa-calendar-alt" style="font-size: 2rem; color:#f5c518;"></i>
+            <h4 style="font-size: 1.6rem;">Совет директоров 2.0</h4>
+            <p>17–19 окт, Москва (закрытый клуб)</p>
+        </div>
+        <div style="flex:1; min-width: 200px; background: #fff; padding: 2rem; border-radius: 40px;">
+            <i class="fas fa-globe" style="font-size: 2rem; color:#f5c518;"></i>
+            <h4 style="font-size: 1.6rem;">Масштабирование в Дубае</h4>
+            <p>5–8 ноя, офлайн-ретрит</p>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 7: КОУЧ / О СЕБЕ -->
+<section class="block">
+    <h2 class="block-title glow-text">кто ведёт</h2>
+    <div style="display: flex; gap: 4rem; align-items: center; flex-wrap: wrap;">
+        <div style="min-width: 200px;">
+            <i class="fas fa-user-tie" style="font-size: 6rem; color: #f5c518; background: #1e1e1e; padding: 1rem; border-radius: 60% 40% 60% 40%;"></i>
+        </div>
+        <div style="flex:1;">
+            <p style="font-size: 1.8rem; font-weight: 300;">Александр Эстет, ex-CEO группы компаний, EMBA INSEAD. Бизнес-коуч PCC ICF. Автор методологии «Эстет».</p>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 8: ПРИГЛАШЕНИЕ К КОНТАКТУ (contact) -->
+<section class="block section-link" id="contact" style="padding-bottom: 3rem;">
+    <h2 class="block-title glow-text">созваниваемся?</h2>
+    <div class="card" style="max-width: 700px; margin: 4rem auto 0; text-align: center;">
+        <i class="fas fa-paper-plane" style="font-size: 4rem; color:#f5c518; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.6rem;">За 15 минут поймём, есть ли共振. Без презентаций, только диалог.</p>
+        <a href="#" class="btn" style="margin-top: 2rem;">Telegram <i class="fab fa-telegram"></i></a>
+        <a href="#" class="btn" style="background:transparent; border:1px solid #0c0c0c; margin-left:1rem;">Почта</a>
+    </div>
+</section>
+
+<!-- БЛОК 9: ФУТЕР -->
+<footer class="footer">
+    <div>© Эстет · коучинг для первых лиц</div>
+    <div>
+        <a href="#">Telegram</a> · <a href="#">LinkedIn</a> · <a href="#">Instagram</a>
+    </div>
+    <div><i class="fas fa-star" style="color: #f5c518;"></i> Москва — Дубай</div>
+</footer>
+
+<!-- JS: матричная анимация шапки + навбар + reveal по скроллу -->
+<script>
+    (function() {
+        // 1) анимация canvas (шапка)
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+
+        const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789';
+        const fontSize = 14;
+        let columns = canvas.width / fontSize;
+        let drops = [];
+
+        function initDrops() {
+            columns = canvas.width / fontSize;
+            drops = [];
+            for (let i = 0; i < columns; i++) {
+                drops[i] = Math.floor(Math.random() * canvas.height / fontSize);
+            }
+        }
+        initDrops();
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#f5c518'; // золотистый цвет символов
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        let matrixInterval = setInterval(drawMatrix, 50);
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initDrops();
+        });
+
+        // 2) навбар преображение (компакт)
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 30) {
+                navbar.classList.add('compact');
+            } else {
+                navbar.classList.remove('compact');
+            }
+        });
+
+        // 3) Reveal блоков при скролле (оригинальная анимация)
+        const reveals = document.querySelectorAll('.block, .header, .footer, .card, .accent-bg > div');
+        // добавим класс reveal многим элементам
+        document.querySelectorAll('.block, .header, .footer, .accent-bg, #contact .card, #stats .card, #approach .card, #cases .card').forEach(el => el.classList.add('reveal'));
+
+        function checkReveals() {
+            const windowHeight = window.innerHeight;
+            reveals.forEach(el => {
+                if (!el.classList.contains('reveal')) return;
+                const rect = el.getBoundingClientRect();
+                const revealPoint = 150;
+                if (rect.top < windowHeight - revealPoint) {
+                    el.classList.add('active');
+                } else {
+                    // (опционально можно убирать, но оставим активными)
+                }
+            });
+        }
+
+        // дополнительно активируем вручную для header
+        setTimeout(() => {
+            document.querySelector('.header').classList.add('active');
+        }, 200);
+
+        window.addEventListener('scroll', checkReveals);
+        window.addEventListener('resize', checkReveals);
+        checkReveals(); // сразу после загрузки
+
+        // 4) плавный скролл якорей (без лишнего)
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    })();
+</script>
+
+<!-- финальная надпись (в конце кода) -->
+All done!
+</body>
+</html>
+```

@@ -1,0 +1,649 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lens Studio · режиссер монтажа</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f7f5f0;
+            color: #1e1b1b;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* custom smooth scroll + snap (optional) */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* header fixed glass */
+        .header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1300px;
+            background: rgba(25, 25, 25, 0.75);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 60px;
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,215,0,0.15);
+            z-index: 999;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,215,0,0.2);
+        }
+
+        .header-scrolled {
+            top: 10px;
+            background: rgba(10, 10, 10, 0.85);
+            box-shadow: 0 15px 30px -8px #00000066;
+            padding: 0.5rem 2rem;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logo i {
+            color: #FFD966;
+            font-size: 2rem;
+            transform: rotate(-5deg);
+        }
+
+        .nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav a {
+            color: #f0f0f0;
+            text-decoration: none;
+            font-weight: 450;
+            font-size: 1rem;
+            transition: 0.25s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav a:hover {
+            color: #FFD966;
+            border-bottom: 1px solid #FFD966;
+        }
+
+        /* blocks container */
+        .block {
+            min-height: 100vh;
+            width: 100%;
+            padding: 6rem 5% 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* intro specific */
+        #intro {
+            background: #0f0e0c;
+            color: white;
+        }
+
+        .bg-motion {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        canvas#intro-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .intro-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1000px;
+        }
+
+        .intro-content h1 {
+            font-size: 5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -2px;
+        }
+
+        .accent {
+            color: #FFD966;
+            text-shadow: 0 0 15px #ffd96680;
+        }
+
+        .tagline {
+            font-size: 1.6rem;
+            margin: 1.5rem 0 2rem;
+            opacity: 0.8;
+            max-width: 700px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .btn {
+            padding: 1rem 2.8rem;
+            border-radius: 40px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.25s;
+            background: transparent;
+            border: 1.5px solid #FFD966;
+            color: white;
+            font-size: 1.1rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-primary {
+            background: #FFD966;
+            color: #0f0e0c;
+            border: none;
+            box-shadow: 0 8px 20px -5px #ffd966b3;
+        }
+
+        .btn-primary:hover {
+            background: #ffcd7e;
+            transform: scale(1.05);
+        }
+
+        .btn-outline:hover {
+            background: #FFD96620;
+            border-color: #ffdb8a;
+        }
+
+        /* BLOCK 2 — SHOWREEL / CRAFT */
+        #showreel {
+            background: #eae7e0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .glitch-text {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            text-transform: uppercase;
+            color: #1e1b1b;
+            transition: text-shadow 0.2s;
+        }
+
+        .glitch-active {
+            text-shadow: -3px -3px 0 #ffb86b, 3px 3px 0 #5a4e3c;
+        }
+
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .reveal-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .icon-strip {
+            display: flex;
+            gap: 2rem;
+            margin-top: 3rem;
+            color: #2b2823;
+        }
+
+        .icon-strip i {
+            font-size: 2.4rem;
+            color: #a56711;
+            transition: all 0.3s;
+        }
+
+        .icon-strip i:hover {
+            color: #d1901f;
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        /* block 3 — REEL projects */
+        #work {
+            background: #1e1b1b;
+            color: #f0ede8;
+        }
+
+        .work-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .work-card {
+            background: #2c2823;
+            padding: 2rem 1.8rem;
+            border-radius: 36px;
+            transition: all 0.3s;
+            border: 1px solid #3e3a33;
+            cursor: default;
+        }
+
+        .work-card:hover {
+            background: #353027;
+            transform: translateY(-12px) scale(1.02);
+            border-color: #FFD966;
+            box-shadow: 0 30px 40px -15px black;
+        }
+
+        .work-card i {
+            font-size: 3rem;
+            color: #FFD966;
+            margin-bottom: 1rem;
+        }
+
+        /* block 4 — about / director’s note */
+        #about {
+            background: #faf7f2;
+        }
+
+        .signature-move {
+            font-size: 2rem;
+            font-weight: 300;
+            font-style: italic;
+            border-left: 8px solid #d4a853;
+            padding-left: 2rem;
+            margin: 2rem 0;
+        }
+
+        /* block 5 — clients */
+        #clients {
+            background: #d9d2c5;
+        }
+
+        .marquee {
+            display: flex;
+            gap: 4rem;
+            font-size: 2rem;
+            font-weight: 600;
+            color: #2f2a21;
+            text-transform: uppercase;
+            white-space: nowrap;
+            animation: scrollMarquee 16s linear infinite;
+            width: fit-content;
+        }
+
+        @keyframes scrollMarquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .marquee i {
+            margin: 0 1rem;
+            color: #917b4b;
+        }
+
+        /* block 6 — numbers */
+        #numbers {
+            background: #25221e;
+            color: white;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .stat-item {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #FFD966;
+        }
+
+        /* block 7 — contact / collaboration */
+        #contact {
+            background: #cfc6b6;
+            color: #1c1814;
+        }
+
+        .contact-flex {
+            display: flex;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .social-links i {
+            font-size: 2.5rem;
+            margin-right: 2rem;
+            color: #2e2a24;
+            transition: 0.2s;
+        }
+
+        .social-links i:hover {
+            color: #b87c1b;
+            transform: translateY(-5px);
+        }
+
+        /* footer */
+        .footer {
+            background: #0c0b09;
+            color: #a39e94;
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #3d362c;
+        }
+
+        /* utils */
+        .section-title {
+            font-size: 3rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+        }
+
+        .dim {
+            opacity: 0.7;
+        }
+
+        hr {
+            margin: 2rem 0;
+            border: 1px solid #998f7c55;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- fixed header (animated on scroll) -->
+    <header class="header" id="mainHeader">
+        <div class="logo">
+            <i class="fas fa-clapperboard"></i> LENS·STUDIO
+        </div>
+        <nav class="nav">
+            <a href="#intro">HOME</a>
+            <a href="#showreel">REEL</a>
+            <a href="#work">EDIT</a>
+            <a href="#about">DIRECTOR</a>
+            <a href="#contact">CONTACT</a>
+        </nav>
+    </header>
+
+    <!-- BLOCK 1: INTRO with canvas animation -->
+    <section class="block" id="intro">
+        <div class="bg-motion">
+            <canvas id="intro-canvas"></canvas>
+        </div>
+        <div class="intro-content">
+            <h1 class="reveal-item visible">CUT / <span class="accent">RHYTHM</span><br>VISUAL STORYTELLING</h1>
+            <div class="tagline reveal-item visible">режиссер монтажа · видео-продакшн · colour</div>
+            <div class="btn-group reveal-item visible">
+                <a href="#work" class="btn btn-primary">Смотреть работы <i class="fas fa-arrow-right"></i></a>
+                <a href="#contact" class="btn btn-outline">Коллаборация</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: SHOWREEL / craft -->
+    <section class="block" id="showreel">
+        <div class="grid-2">
+            <div class="reveal-item">
+                <span class="glitch-text" id="glitchy">SHOWREEL<br>2025</span>
+                <div class="icon-strip">
+                    <i class="fas fa-cut"></i>
+                    <i class="fas fa-sliders-h"></i>
+                    <i class="fas fa-video"></i>
+                    <i class="fas fa-music"></i>
+                </div>
+            </div>
+            <div class="reveal-item">
+                <h2 class="section-title">режиссура монтажа</h2>
+                <p style="font-size: 1.3rem;">от индустриальных роликов до музыкальных клипов. каждый кадр — пульс. каждый переход — эмоция.</p>
+                <hr>
+                <p><i class="fas fa-check-circle" style="color:#ca9626;"></i> более 50 проектов для брендов и артистов</p>
+                <p><i class="fas fa-check-circle" style="color:#ca9626;"></i> DaVinci Resolve · Premiere Pro · After Effects</p>
+                <p><i class="fas fa-check-circle" style="color:#ca9626;"></i> монтаж, цветокоррекция, sound design</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: WORK / портфолио (каталог объектов) -->
+    <section class="block" id="work">
+        <div class="reveal-item">
+            <h2 class="section-title" style="color:#FFD966;">избранные проекты</h2>
+            <p class="dim">монтаж / колористика / режиссура</p>
+        </div>
+        <div class="work-grid">
+            <div class="work-card reveal-item">
+                <i class="fas fa-film"></i>
+                <h3>LOREM IPSUM</h3>
+                <p>корпоративный фильм для tech-бренда. динамичный монтаж, работа с хромакеем.</p>
+            </div>
+            <div class="work-card reveal-item">
+                <i class="fas fa-music"></i>
+                <h3>MUSIC VIDEO</h3>
+                <p>кликбейт-эстетика, коллаж, VFX — арт-объект для инди-исполнителя.</p>
+            </div>
+            <div class="work-card reveal-item">
+                <i class="fas fa-newspaper"></i>
+                <h3>ДОКУМЕНТАЛЬНЫЙ</h3>
+                <p>режиссура монтажа короткого метра. приз на фестивале в Лос-Анджелесе.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: ABOUT (бизнес-коуч/режиссер) -->
+    <section class="block" id="about">
+        <div style="max-width: 800px;" class="reveal-item">
+            <h2 class="section-title">Никита Громов</h2>
+            <p class="signature-move">«монтаж — это пульс. я просто делаю его громче»</p>
+            <p style="font-size: 1.2rem;">10 лет в индустрии. работал с продакшенами Москвы, Лондона. преподаю монтаж в мастерской. для меня каждый проект — вызов линейности.</p>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: CLIENTS / марафон логотипов (анимация) -->
+    <section class="block" id="clients">
+        <h2 class="section-title" style="text-align:center;">доверили монтаж</h2>
+        <div style="overflow:hidden; margin-top: 4rem;">
+            <div class="marquee">
+                <span>◈ NIKE  <i class="fas fa-star"></i>  adidas  <i class="fas fa-star"></i>  RED BULL  <i class="fas fa-star"></i>  APPLE  <i class="fas fa-star"></i>  SONY  <i class="fas fa-star"></i>  BMW  <i class="fas fa-star"></i>  LOUIS VUITTON  ◈</span>
+                <span>◈ NIKE  <i class="fas fa-star"></i>  adidas  <i class="fas fa-star"></i>  RED BULL  <i class="fas fa-star"></i>  APPLE  <i class="fas fa-star"></i>  SONY  <i class="fas fa-star"></i>  BMW  <i class="fas fa-star"></i>  LOUIS VUITTON  ◈</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 6: цифры / факты -->
+    <section class="block" id="numbers">
+        <div class="stats reveal-item">
+            <div><span class="stat-item">120+</span> <br>проектов</div>
+            <div><span class="stat-item">8</span> <br>наград</div>
+            <div><span class="stat-item">14</span> <br>стран</div>
+        </div>
+    </section>
+
+    <!-- BLOCK 7: CONTACT (лендинг для модели/контакты) но в стиле режиссера -->
+    <section class="block" id="contact">
+        <div class="contact-flex">
+            <div class="reveal-item" style="flex:1">
+                <h2 class="section-title">давай снимем</h2>
+                <p>коллаборации, кастинги, монтаж твоего проекта. просто напиши.</p>
+                <div class="social-links" style="margin-top: 2rem;">
+                    <i class="fab fa-telegram"></i>
+                    <i class="fab fa-whatsapp"></i>
+                    <i class="fab fa-instagram"></i>
+                    <i class="fab fa-vimeo-v"></i>
+                </div>
+            </div>
+            <div class="reveal-item" style="flex:1">
+                <p><i class="fas fa-envelope"></i> cut@lens.studio</p>
+                <p><i class="fas fa-phone-alt"></i> +7 999 123-45-67</p>
+                <p><i class="fas fa-map-pin"></i> Москва / online</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER block #9 -->
+    <footer class="footer">
+        <span>© LENS STUDIO — режиссер монтажа</span>
+        <span><i class="fas fa-crown" style="color: #FFD966;"></i>  2025</span>
+    </footer>
+
+    <script>
+        (function() {
+            // HEADER SCROLL ANIMATION (компактнее)
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 40) {
+                    header.classList.add('header-scrolled');
+                } else {
+                    header.classList.remove('header-scrolled');
+                }
+            });
+
+            // CANVAS BACKGROUND animation (abstract movement)
+            const canvas = document.getElementById('intro-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = document.getElementById('intro').offsetHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // рисуем динамические полосы / гранулы
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.6;
+                    this.vy = (Math.random() - 0.5) * 0.4;
+                    this.radius = Math.random() * 3 + 1;
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 215, 100, ${Math.random() * 0.3 + 0.2})`;
+                    ctx.fill();
+                }
+            }
+
+            let particles = [];
+            function initParticles() {
+                particles = [];
+                for (let i = 0; i < 55; i++) {
+                    particles.push(new Particle());
+                }
+            }
+            initParticles();
+
+            function animateCanvas() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                for (let p of particles) {
+                    p.update();
+                    p.draw();
+                }
+                requestAnimationFrame(animateCanvas);
+            }
+            animateCanvas();
+
+            // при изменении размера пересоздать частицы примерные (можно не идеально)
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                initParticles();
+            });
+
+            // REVEAL on scroll (Intersection Observer)
+            const reveals = document.querySelectorAll('.reveal-item');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    } else {
+                        // убираем класс если хотим повторную анимацию (можно закомментировать)
+                        // entry.target.classList.remove('visible');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px' });
+            reveals.forEach(r => observer.observe(r));
+
+            // Глитч-эффект на блоке 2 при наведении (js игра)
+            const glitch = document.getElementById('glitchy');
+            if (glitch) {
+                setInterval(() => {
+                    glitch.classList.toggle('glitch-active');
+                }, 800);
+            }
+
+            // дополнительная анимация чисел (легкий increment при появлении)
+            const statNumbers = document.querySelectorAll('.stat-item');
+            const numberObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        let el = entry.target;
+                        let finalText = el.innerText;
+                        if (finalText.includes('+')) {
+                            let num = parseInt(finalText);
+                            if (!isNaN(num)) {
+                                let current = 0;
+                                let timer = setInterval(() => {
+                                    current += Math.ceil(num/60);
+                                    if (current >= num) {
+                                        el.innerText = num + '+';
+                                        clearInterval(timer);
+                                    } else {
+                                        el.innerText = current + '+';
+                                    }
+                                }, 20);
+                            }
+                        }
+                    }
+                });
+            }, {threshold:0.5});
+            statNumbers.forEach(s => numberObserver.observe(s));
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

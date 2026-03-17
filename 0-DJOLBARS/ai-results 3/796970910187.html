@@ -1,0 +1,674 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Студия недвижимости | Элитные объекты</title>
+    <!-- Font Awesome 6 (Free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f6f5f3;
+            color: #1f2a36;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* кастомный скролл */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #eae7e2; }
+        ::-webkit-scrollbar-thumb { background: #b59d7a; border-radius: 8px; }
+
+        /* фикс. навбар — компактный + анимация появления */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 40px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.02);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.4s cubic-bezier(0.2,0.9,0.3,1);
+            border-bottom: 1px solid rgba(181, 157, 122, 0.15);
+        }
+
+        .navbar.compact {
+            padding: 10px 40px;
+            background: rgba(255,255,255,0.96);
+            box-shadow: 0 4px 25px rgba(0,0,0,0.04);
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 1.8rem;
+            letter-spacing: -0.02em;
+            color: #2c3e4e;
+        }
+        .logo span {
+            color: #b59d7a;
+            font-weight: 400;
+        }
+        .nav-links {
+            display: flex;
+            gap: 36px;
+            font-weight: 450;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: #1f2a36;
+            font-size: 1rem;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .nav-links a:hover {
+            border-bottom: 1px solid #b59d7a;
+            color: #b59d7a;
+        }
+
+        /* хедер блок 1 — анимация градиента + js канвас (фон) */
+        .header-block {
+            height: 100vh;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #1f2a36;
+            background: #dad5cc; /* fallback */
+            overflow: hidden;
+        }
+
+        #gradient-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            max-width: 1000px;
+            padding: 0 20px;
+        }
+
+        .header-content h1 {
+            font-size: 5.5rem;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            text-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            animation: fadeUp 1.4s ease-out;
+        }
+        .header-content p {
+            font-size: 1.4rem;
+            margin: 24px 0 36px;
+            color: #3a4a5a;
+            animation: fadeUp 1.6s ease-out;
+        }
+        .btn {
+            display: inline-block;
+            background: #b59d7a;
+            color: white;
+            padding: 16px 48px;
+            font-weight: 500;
+            font-size: 1.1rem;
+            letter-spacing: 0.3px;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: background 0.2s, transform 0.2s;
+            box-shadow: 0 10px 25px -8px rgba(181,157,122,0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(4px);
+        }
+        .btn:hover {
+            background: #a68963;
+            transform: translateY(-3px);
+        }
+
+        /* общие секции */
+        section {
+            padding: 110px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            opacity: 1;
+            transition: opacity 0.5s, transform 0.5s;
+        }
+
+        /* анимация скролла — появление сдвиг + размытие */
+        .scroll-fade {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.9s cubic-bezier(0.2,0.8,0.3,1), transform 0.9s cubic-bezier(0.2,0.8,0.3,1);
+        }
+        .scroll-fade.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h2 {
+            font-size: 3.3rem;
+            font-weight: 550;
+            letter-spacing: -0.02em;
+            margin-bottom: 20px;
+            color: #1f2a36;
+        }
+
+        .section-subhead {
+            font-size: 1.2rem;
+            color: #5a6b7a;
+            max-width: 700px;
+            margin-bottom: 60px;
+            border-left: 4px solid #b59d7a;
+            padding-left: 24px;
+        }
+
+        /* блок 2 — услуги иконки */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .service-card {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(8px);
+            padding: 40px 25px;
+            border-radius: 28px;
+            box-shadow: 0 15px 30px -15px rgba(0,0,0,0.1);
+            transition: transform 0.25s;
+            border: 1px solid rgba(255,255,255,0.7);
+        }
+        .service-card i {
+            font-size: 2.7rem;
+            color: #b59d7a;
+            margin-bottom: 20px;
+        }
+        .service-card h3 {
+            font-size: 1.7rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        .service-card p {
+            color: #4a5a68;
+        }
+        .service-card:hover {
+            transform: scale(1.02);
+            background: white;
+        }
+
+        /* блок 3 — каталог (сетка объектов) */
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        .catalog-item {
+            background: white;
+            border-radius: 24px;
+            padding: 30px 25px;
+            box-shadow: 0 20px 35px -20px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            border: 1px solid #ece9e4;
+        }
+        .catalog-item:hover {
+            box-shadow: 0 30px 40px -20px #b59d7a80;
+            border-color: #b59d7a;
+        }
+        .catalog-icon {
+            font-size: 2.5rem;
+            color: #b59d7a;
+            margin-bottom: 15px;
+        }
+        .catalog-item h3 {
+            font-size: 2rem;
+            font-weight: 500;
+        }
+        .catalog-item .price {
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin: 15px 0 10px;
+            color: #2c3e4e;
+        }
+        .catalog-item .detail {
+            color: #6d7e8e;
+        }
+
+        /* блок 4 — доверие / кейсы (adv) */
+        .cases {
+            display: flex;
+            gap: 40px;
+            background: #1f2a36;
+            color: white;
+            border-radius: 60px;
+            padding: 70px 60px;
+            margin-top: 40px;
+        }
+        .case-left {
+            flex: 1;
+        }
+        .case-left i {
+            font-size: 3rem;
+            color: #b59d7a;
+            margin-bottom: 20px;
+        }
+        .case-left h3 {
+            font-size: 2.5rem;
+            font-weight: 450;
+            margin-bottom: 20px;
+        }
+        .case-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            flex: 1;
+        }
+        .stat-item {
+            border-left: 3px solid #b59d7a;
+            padding-left: 20px;
+        }
+        .stat-item .number {
+            font-size: 3rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        /* блок 5 — команда / агенты */
+        .team-grid {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+        }
+        .team-card {
+            background: white;
+            border-radius: 40px;
+            padding: 35px 25px;
+            text-align: center;
+            flex: 1;
+            transition: all 0.3s;
+        }
+        .team-card i {
+            font-size: 3.2rem;
+            color: #b59d7a;
+            background: #f0ebe4;
+            padding: 25px;
+            border-radius: 60px;
+        }
+        .team-card h4 {
+            font-size: 1.8rem;
+            margin: 20px 0 5px;
+        }
+
+        /* блок 6 — отзывы (стильный карусель без картинок) */
+        .testimonials {
+            background: #eae7e2;
+            border-radius: 70px;
+            padding: 70px 60px;
+        }
+        .testimonial-slide {
+            font-size: 1.4rem;
+            font-style: italic;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .testimonial-author {
+            margin-top: 30px;
+            font-weight: 600;
+            color: #b59d7a;
+        }
+        .testimonial-dots {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 40px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 10px;
+            background: #c5bcb2;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .dot.active {
+            width: 30px;
+            background: #b59d7a;
+        }
+
+        /* блок 7 — карта/районы */
+        .locations-grid {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 20px;
+        }
+        .location-item {
+            padding: 30px;
+            background: white;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border: 1px solid #dbd5cd;
+        }
+        .location-item i {
+            font-size: 2rem;
+            color: #b59d7a;
+        }
+
+        /* блок 8 — FAQ */
+        .faq-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .faq-item {
+            background: white;
+            padding: 30px;
+            border-radius: 30px;
+            border-bottom: 3px solid transparent;
+            transition: border 0.2s;
+        }
+        .faq-item:hover {
+            border-bottom-color: #b59d7a;
+        }
+        .faq-item i {
+            color: #b59d7a;
+            margin-right: 15px;
+        }
+
+        /* футер (блок 9) */
+        footer {
+            background: #1f2a36;
+            color: #ddd;
+            padding: 70px 40px 40px;
+            border-top-left-radius: 60px;
+            border-top-right-radius: 60px;
+        }
+        .footer-grid {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1.5fr;
+            gap: 40px;
+        }
+        .footer-col i {
+            color: #b59d7a;
+            margin-right: 10px;
+        }
+        .footer-bottom {
+            text-align: center;
+            margin-top: 60px;
+            color: #7d8b9a;
+        }
+
+        /* адаптация под пк — ок, планшеты/моб не трогаем */
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* спецэффект для ссылок меню */
+        .nav-links a.active {
+            border-bottom: 2px solid #b59d7a;
+            color: #b59d7a;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="logo">RESIDENCE<span>.</span></div>
+        <div class="nav-links">
+            <a href="#home">Главная</a>
+            <a href="#services">Услуги</a>
+            <a href="#catalog">Объекты</a>
+            <a href="#cases">Кейсы</a>
+            <a href="#contact">Контакты</a>
+        </div>
+    </nav>
+
+    <!-- БЛОК 1: шапка с canvas анимацией -->
+    <header id="home" class="header-block">
+        <canvas id="gradient-canvas"></canvas>
+        <div class="header-content">
+            <h1>Городская эстетика<br>в объектах премиум</h1>
+            <p>Агентство недвижимости с безупречной репутацией</p>
+            <a href="#catalog" class="btn">Смотреть объекты</a>
+        </div>
+    </header>
+
+    <!-- БЛОК 2: услуги -->
+    <section id="services" class="scroll-fade">
+        <h2>Полный цикл сделки</h2>
+        <div class="section-subhead">Юридическая чистота, прозрачность и премиальный сервис</div>
+        <div class="services-grid">
+            <div class="service-card"><i class="fas fa-scale-balanced"></i><h3>Юридика</h3><p>Проверка документов, сопровождение, ипотека</p></div>
+            <div class="service-card"><i class="fas fa-chart-line"></i><h3>Аналитика</h3><p>Точная оценка и инвестиционный анализ</p></div>
+            <div class="service-card"><i class="fas fa-camera"></i><h3>Продвижение</h3><p>Профессиональная съёмка и маркетинг</p></div>
+            <div class="service-card"><i class="fas fa-key"></i><h3>Безопасность</h3><p>Сделки аккредитив, нотариус, страховка</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: каталог объектов (сетка) -->
+    <section id="catalog" class="scroll-fade">
+        <h2>Избранные лоты</h2>
+        <div class="section-subhead">Жилые комплексы, пентхаусы, особняки</div>
+        <div class="catalog-grid">
+            <div class="catalog-item"><div class="catalog-icon"><i class="fas fa-building"></i></div><h3>Резиденция West</h3><div class="price">₽ 42,5 млн</div><div class="detail">4 комнаты, 128 м², терраса</div></div>
+            <div class="catalog-item"><div class="catalog-icon"><i class="fas fa-tree"></i></div><h3>Парковый особняк</h3><div class="price">₽ 97 млн</div><div class="detail">6 комнат, 320 м², участок</div></div>
+            <div class="catalog-item"><div class="catalog-icon"><i class="fas fa-water"></i></div><h3>Пентхаус Riviera</h3><div class="price">₽ 124 млн</div><div class="detail">5 комнат, 210 м², панорама</div></div>
+            <div class="catalog-item"><div class="catalog-icon"><i class="fas fa-city"></i></div><h3>Loft D-42</h3><div class="price">₽ 28,9 млн</div><div class="detail">2 уровня, 98 м², дизайн</div></div>
+            <div class="catalog-item"><div class="catalog-icon"><i class="fas fa-crown"></i></div><h3>Апартаменты Imperia</h3><div class="price">₽ 63 млн</div><div class="detail">3 комнаты, 156 м², премиум</div></div>
+            <div class="catalog-item"><div class="catalog-icon"><i class="fas fa-mountain"></i></div><h3>Шале Alpine</h3><div class="price">₽ 79 млн</div><div class="detail">5 комнат, 240 м², камин</div></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: кейсы / доверие (аналог адвокатских) -->
+    <section id="cases" class="scroll-fade">
+        <div class="cases">
+            <div class="case-left">
+                <i class="fas fa-gavel"></i>
+                <h3>Юридическая экспертиза и сделки под ключ</h3>
+                <p>Более 300 сопровождаемых сделок, полная проверка истории объектов, защита прав.</p>
+            </div>
+            <div class="case-stats">
+                <div class="stat-item"><span class="number">100%</span><br>чистых сделок</div>
+                <div class="stat-item"><span class="number">₽ 2.8B</span><br>активов продано</div>
+                <div class="stat-item"><span class="number">0</span><br>судебных рисков</div>
+                <div class="stat-item"><span class="number">15</span><br>лет практики</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: команда (агенты/коучи) -->
+    <section class="scroll-fade">
+        <h2>Ведущие брокеры</h2>
+        <div class="section-subhead">Эксперты рынка недвижимости</div>
+        <div class="team-grid">
+            <div class="team-card"><i class="fas fa-user-tie"></i><h4>Дмитрий Соболев</h4><p>Премиум-жилье</p></div>
+            <div class="team-card"><i class="fas fa-user-graduate"></i><h4>Екатерина Ветрова</h4><p>Юридическое бюро</p></div>
+            <div class="team-card"><i class="fas fa-user-astronaut"></i><h4>Андрей Романов</h4><p>Загородная недвижимость</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: отзывы (интерактивные точки) -->
+    <section class="scroll-fade testimonials" id="testimonials">
+        <div class="testimonial-slide" id="testimonial-text">«Сопровождали сделку по продаже пентхауса. Всё идеально — от оценки до безопасных расчётов. Рекомендую как лучших в Москве.»</div>
+        <div class="testimonial-author" id="testimonial-author">— Михаил Б., собственник</div>
+        <div class="testimonial-dots">
+            <span class="dot active" data-idx="0"></span>
+            <span class="dot" data-idx="1"></span>
+            <span class="dot" data-idx="2"></span>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: локации (карта/районы) -->
+    <section class="scroll-fade">
+        <h2>Популярные районы</h2>
+        <div class="locations-grid">
+            <div class="location-item"><i class="fas fa-location-dot"></i> Хамовники <span style="margin-left:auto;">34 лота</span></div>
+            <div class="location-item"><i class="fas fa-location-dot"></i> Патриаршие <span style="margin-left:auto;">17 лотов</span></div>
+            <div class="location-item"><i class="fas fa-location-dot"></i> Остоженка <span style="margin-left:auto;">23 лота</span></div>
+            <div class="location-item"><i class="fas fa-location-dot"></i> Замоскворечье <span style="margin-left:auto;">12 лотов</span></div>
+            <div class="location-item"><i class="fas fa-location-dot"></i> Крылатское <span style="margin-left:auto;">28 лотов</span></div>
+            <div class="location-item"><i class="fas fa-location-dot"></i> Серебряный бор <span style="margin-left:auto;">8 лотов</span></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: FAQ / вопросы -->
+    <section class="scroll-fade">
+        <h2>Частые вопросы</h2>
+        <div class="faq-grid">
+            <div class="faq-item"><i class="fas fa-file-signature"></i> <strong>Проверка квартиры перед покупкой?</strong> Полный legal-аудит, выписки ЕГРН.</div>
+            <div class="faq-item"><i class="fas fa-calculator"></i> <strong>Стоимость услуг?</strong> Комиссия агента 2–4% или фикс.</div>
+            <div class="faq-item"><i class="fas fa-key"></i> <strong>Срочный выкуп?</strong> Да, закрытые сделки за 3 дня.</div>
+            <div class="faq-item"><i class="fas fa-credit-card"></i> <strong>Ипотека без справок?</strong> Аккредитованные банки-партнёры.</div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: футер -->
+    <footer id="contact">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <div class="logo" style="color: #fff;">RESIDENCE<span style="color:#b59d7a;">.</span></div>
+                <p style="margin:25px 0; color:#b0bfcf;">Агентство элитной недвижимости с полным юридическим сопровождением.</p>
+                <p><i class="fas fa-phone-alt"></i> +7 (495) 123-45-67</p>
+                <p><i class="fas fa-envelope"></i> hello@residence.ru</p>
+            </div>
+            <div class="footer-col"><h4>Компания</h4><p>О нас</p><p>Команда</p><p>Вакансии</p></div>
+            <div class="footer-col"><h4>Каталог</h4><p>Квартиры</p><p>Дома</p><p>Коммерция</p></div>
+            <div class="footer-col"><h4>Пресс-центр</h4><p>Блог</p><p>Медиакит</p><p>Партнёрам</p></div>
+        </div>
+        <div class="footer-bottom">© 2025 Residence — премиальная недвижимость</div>
+    </footer>
+
+    <script>
+        (function() {
+            // компактный навбар при скролле
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('compact');
+                } else {
+                    navbar.classList.remove('compact');
+                }
+            });
+
+            // canvas анимация (градиент волны) — блок 1
+            const canvas = document.getElementById('gradient-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let time = 0;
+
+                function resize() {
+                    width = canvas.width = window.innerWidth;
+                    height = canvas.height = document.querySelector('.header-block').offsetHeight;
+                }
+                window.addEventListener('resize', resize);
+                resize();
+
+                function draw() {
+                    requestAnimationFrame(draw);
+                    time += 0.002;
+                    ctx.clearRect(0, 0, width, height);
+                    const grd = ctx.createLinearGradient(0, 0, width*0.7, height);
+                    grd.addColorStop(0, '#f3efe9');
+                    grd.addColorStop(0.5 + Math.sin(time)*0.1, '#cbb99f');
+                    grd.addColorStop(1, '#dad0c2');
+                    ctx.fillStyle = grd;
+                    ctx.fillRect(0, 0, width, height);
+
+                    // дополнительная рябь
+                    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+                    for (let i=0; i<7; i++) {
+                        let xOff = Math.sin(time*1.5 + i)*60;
+                        ctx.beginPath();
+                        ctx.arc(width*0.2 + i*130 + xOff, height*0.5 + Math.sin(time*2 + i)*40, 110, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                }
+                draw();
+            }
+
+            // появление блоков при скролле (scroll-fade)
+            const faders = document.querySelectorAll('.scroll-fade');
+            const appearOptions = { threshold: 0.25, rootMargin: '0px 0px -50px 0px' };
+            const appearOnScroll = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    } else {
+                        // опционально убираем класс, чтобы при повторном входе опять появилось
+                        entry.target.classList.remove('visible');
+                    }
+                });
+            }, appearOptions);
+            faders.forEach(fader => appearOnScroll.observe(fader));
+
+            // маленькая карусель отзывов (три точки)
+            const dots = document.querySelectorAll('.dot');
+            const testimonialEl = document.getElementById('testimonial-text');
+            const authorEl = document.getElementById('testimonial-author');
+            const texts = [
+                '«Сопровождали сделку по продаже пентхауса. Всё идеально — от оценки до безопасных расчётов. Рекомендую как лучших в Москве.»',
+                '«Купил квартиру под инвестиции. Юридическая проверка выявила нюансы с долгами — спасли от проблем.»',
+                '«Помогли продать дом в области за 2 недели и дороже рынка. Честные, порядочные профессионалы.»'
+            ];
+            const authors = ['— Михаил Б., собственник', '— Анна Ш., инвестор', '— Игорь В., продавец'];
+            dots.forEach((dot, idx) => {
+                dot.addEventListener('click', () => {
+                    dots.forEach(d => d.classList.remove('active'));
+                    dot.classList.add('active');
+                    testimonialEl.innerText = texts[idx];
+                    authorEl.innerText = authors[idx];
+                });
+            });
+
+            // акцент на активном меню (просто для красоты при клике)
+            const navLinks = document.querySelectorAll('.nav-links a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // якоря — плавно, без доп.библиотек
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId === "#") return;
+                    const target = document.querySelector(targetId);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

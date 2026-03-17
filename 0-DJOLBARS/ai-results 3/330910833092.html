@@ -1,0 +1,625 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avellum | адвокатское бюро</title>
+  <!-- Font Awesome 6 (бесплатные стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #faf9f8;
+      color: #1e1e1e;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
+
+    /* кастомный скролл — еле заметный, но стильный */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #eae7e2;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #a67b5b;
+      border-radius: 20px;
+    }
+
+    /* фиксированная навигация — появляется компактно при скролле */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.8rem 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: transparent;
+      transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+      z-index: 1000;
+      color: #1e1e1e;
+      mix-blend-mode: exclusion; /* эффектный трюк с фоном */
+      pointer-events: none;
+    }
+    .navbar * {
+      pointer-events: auto;
+    }
+    .navbar.scrolled {
+      background: rgba(30, 30, 30, 0.85);
+      backdrop-filter: blur(12px);
+      padding: 1rem 5%;
+      border-bottom: 1px solid rgba(255, 215, 175, 0.2);
+      color: #fff;
+      mix-blend-mode: normal;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2);
+    }
+    .navbar.scrolled .logo, .navbar.scrolled .nav-links a {
+      color: #f0e7db;
+    }
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: inherit;
+      transition: 0.3s;
+    }
+    .nav-links {
+      display: flex;
+      gap: 3rem;
+    }
+    .nav-links a {
+      text-decoration: none;
+      font-weight: 500;
+      color: inherit;
+      font-size: 1.1rem;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s, color 0.3s;
+    }
+    .nav-links a:hover {
+      border-bottom: 1px solid #c89f7b;
+    }
+
+    /* общий контейнер блоков */
+    section {
+      min-height: 100vh;
+      padding: 6rem 8%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      will-change: transform, opacity;
+    }
+
+    /* анимация появления при скролле (Intersection Observer) */
+    .fade-reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+    .fade-reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* шапка (блок 1) с JS-анимацией частиц */
+    .header {
+      background: #e9e0d7;
+      overflow: hidden;
+    }
+    #particle-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .header-content {
+      position: relative;
+      z-index: 2;
+      max-width: 800px;
+    }
+    .header h1 {
+      font-size: 5.5rem;
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: #2b2a28;
+      margin-bottom: 1.5rem;
+    }
+    .header .highlight {
+      color: #a67b5b;
+      border-bottom: 4px solid #a67b5b;
+    }
+    .subhead {
+      font-size: 1.5rem;
+      color: #3b3a38;
+      margin-bottom: 2.5rem;
+      font-weight: 350;
+    }
+    .cta-btn {
+      background: #2b2a28;
+      border: none;
+      color: #faf9f8;
+      padding: 1.2rem 3.5rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: 0.25s ease;
+      box-shadow: 0 15px 25px -8px rgba(0,0,0,0.2);
+    }
+    .cta-btn:hover {
+      background: #a67b5b;
+      transform: scale(1.02) translateY(-3px);
+    }
+
+    /* блок 2: цифры / доверие */
+    .stats-grid {
+      display: flex;
+      gap: 4rem;
+      margin-top: 3rem;
+      flex-wrap: wrap;
+    }
+    .stat-item {
+      flex: 1 1 160px;
+    }
+    .stat-number {
+      font-size: 4rem;
+      font-weight: 600;
+      color: #a67b5b;
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 1.2rem;
+      border-top: 2px solid #dad3cb;
+      padding-top: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    /* блок 3: кейсы / практика (иконки из FA) */
+    .practice-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2.5rem;
+      margin-top: 4rem;
+    }
+    .card-practice {
+      background: #ffffffd9;
+      backdrop-filter: blur(4px);
+      padding: 3rem 2rem;
+      border-radius: 32px;
+      box-shadow: 0 20px 30px -15px rgba(0,0,0,0.1);
+      transition: transform 0.3s, box-shadow 0.4s;
+      border: 1px solid rgba(166, 123, 91, 0.1);
+    }
+    .card-practice:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 30px 40px -15px #a67b5b55;
+      border-color: #a67b5b55;
+    }
+    .card-practice i {
+      font-size: 3.5rem;
+      color: #a67b5b;
+      margin-bottom: 1.5rem;
+    }
+    .card-practice h3 {
+      font-size: 2rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+    .card-practice p {
+      color: #4a4642;
+    }
+
+    /* блок 4: отзывы клиентов */
+    .testimonials {
+      background: #f0eae3;
+    }
+    .testimonial-grid {
+      display: flex;
+      gap: 3rem;
+      margin-top: 4rem;
+    }
+    .testi-item {
+      background: #fffcf8;
+      padding: 2.5rem;
+      border-radius: 48px 48px 48px 16px;
+      flex: 1;
+      box-shadow: 0 10px 20px -5px rgba(0,0,0,0.05);
+    }
+    .testi-item i {
+      color: #c89f7b;
+      font-size: 2rem;
+      opacity: 0.5;
+      margin-bottom: 1rem;
+    }
+    .testi-item p {
+      font-size: 1.3rem;
+      font-style: italic;
+      margin: 1.5rem 0;
+    }
+    .client-name {
+      font-weight: 700;
+      color: #2b2a28;
+    }
+
+    /* блок 5: команда / принципы */
+    .team-row {
+      display: flex;
+      align-items: center;
+      gap: 6rem;
+    }
+    .team-text h2 {
+      font-size: 3.5rem;
+      font-weight: 450;
+      margin-bottom: 2rem;
+    }
+    .accent-border {
+      width: 120px;
+      height: 6px;
+      background: #a67b5b;
+      margin: 2rem 0;
+    }
+    .icon-row {
+      display: flex;
+      gap: 3rem;
+      margin-top: 3rem;
+    }
+    .icon-row i {
+      font-size: 2.8rem;
+      color: #a67b5b;
+      opacity: 0.9;
+    }
+
+    /* блок 6: консультация (форма) */
+    .consult-block {
+      background: #dad3cb;
+    }
+    .form-card {
+      background: #fff;
+      padding: 3.5rem;
+      border-radius: 80px 20px 80px 20px;
+      max-width: 600px;
+    }
+    .input-line {
+      display: flex;
+      border-bottom: 2px solid #a67b5b;
+      margin: 2rem 0;
+      align-items: center;
+    }
+    .input-line i {
+      color: #a67b5b;
+      font-size: 1.5rem;
+      margin-right: 1rem;
+    }
+    .input-line input {
+      border: none;
+      flex: 1;
+      padding: 1rem 0;
+      font-size: 1.2rem;
+      outline: none;
+    }
+    .submit-btn {
+      background: #2b2a28;
+      color: white;
+      border: none;
+      padding: 1.5rem 3rem;
+      font-size: 1.3rem;
+      border-radius: 60px;
+      font-weight: 600;
+      width: 100%;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .submit-btn:hover {
+      background: #a67b5b;
+    }
+
+    /* блок 7: партнеры / пресса */
+    .press-logos {
+      display: flex;
+      gap: 4rem;
+      justify-content: space-between;
+      font-size: 2rem;
+      font-weight: 300;
+      color: #5e5b57;
+      border-top: 2px solid #d0c6bc;
+      border-bottom: 2px solid #d0c6bc;
+      padding: 3rem 0;
+      margin-top: 3rem;
+      flex-wrap: wrap;
+    }
+    .press-logos span {
+      opacity: 0.7;
+      transition: 0.2s;
+    }
+    .press-logos span:hover {
+      opacity: 1;
+      color: #a67b5b;
+    }
+
+    /* футер (блок 9) */
+    .footer {
+      background: #1e1e1e;
+      color: #ccc6bf;
+      min-height: auto;
+      padding: 3rem 8%;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer .logo {
+      color: #c8b6a6;
+    }
+    .socials i {
+      font-size: 2rem;
+      margin-left: 2rem;
+      color: #7a6a5d;
+      transition: color 0.2s;
+    }
+    .socials i:hover {
+      color: #c89f7b;
+    }
+
+    /* адаптив не требуется по заданию, но пара мелких фиксов */
+    @media (max-width: 1000px) {
+      .team-row { flex-direction: column; gap: 2rem; }
+      .testimonial-grid { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <!-- FIXED NAVIGATION (БЛОК 1 – часть шапки, но меню) -->
+  <nav class="navbar" id="navbar">
+    <div class="logo">AVELLUM</div>
+    <div class="nav-links">
+      <a href="#home">Главная</a>
+      <a href="#cases">Кейсы</a>
+      <a href="#about">О нас</a>
+      <a href="#contact">Контакты</a>
+    </div>
+  </nav>
+
+  <!-- БЛОК 1: ШАПКА С АНИМАЦИЕЙ (particles via JS) -->
+  <section class="header" id="home" style="position: relative;">
+    <canvas id="particle-canvas"></canvas>
+    <div class="header-content fade-reveal">
+      <h1>Там, где <span class="highlight">право</span><br>встречает справедливость</h1>
+      <div class="subhead">Адвокатское бюро Avellum — 15 лет защищаем интересы бизнеса и частных лиц. Репутация, выигранные дела, прозрачность.</div>
+      <button class="cta-btn">Бесплатная консультация <i class="fa-regular fa-hand-point-right" style="margin-left: 8px;"></i></button>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: ЦИФРЫ ДОВЕРИЯ -->
+  <section class="fade-reveal" id="cases">
+    <h2 style="font-size: 3.5rem; font-weight: 400;">Цифры, говорящие громче слов</h2>
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-number">15+</div><div class="stat-label">лет практики</div></div>
+      <div class="stat-item"><div class="stat-number">3.2K</div><div class="stat-label">успешных дел</div></div>
+      <div class="stat-item"><div class="stat-number">98%</div><div class="stat-label">дел выиграно / мирно</div></div>
+      <div class="stat-item"><div class="stat-number">₿2.1B</div><div class="stat-label">активов под защитой</div></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: ПРАКТИКИ / КЕЙСЫ (ИКОНКИ) -->
+  <section class="fade-reveal" style="background: #f4efea;">
+    <h2 style="font-size: 3rem; font-weight: 400;">ключевые практики</h2>
+    <div class="practice-cards">
+      <div class="card-practice"><i class="fas fa-gavel"></i><h3>Арбитраж</h3><p>Споры с госорганами, контрагентами, взыскание убытков</p></div>
+      <div class="card-practice"><i class="fas fa-building"></i><h3>Корпоративное право</h3><p>Сделки M&A, due diligence, реорганизация</p></div>
+      <div class="card-practice"><i class="fas fa-scale-balanced"></i><h3>Уголовная защита</h3><p>Экономические составы, экспертиза защиты бизнеса</p></div>
+      <div class="card-practice"><i class="fas fa-file-contract"></i><h3>Договорное право</h3><p>Контракты, претензионная работа, международные контракты</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: ОТЗЫВЫ КЛИЕНТОВ -->
+  <section class="testimonials fade-reveal">
+    <h2 style="font-size: 3rem; font-weight: 400;">реальные мнения</h2>
+    <div class="testimonial-grid">
+      <div class="testi-item"><i class="fas fa-quote-right"></i><p>«Avellum помогли отстоять лицензию и спасти бизнес, когда налоговая заблокировала счета. Очень доволен работой команды».</p><span class="client-name">— А.В. Морозов, сеть АЗС</span></div>
+      <div class="testi-item"><i class="fas fa-quote-right"></i><p>«Сложнейший процесс в суде по недвижимости — выиграли. По-настоящему глубокий анализ и честность на всех этапах».</p><span class="client-name">— Екатерина Делль, девелопер</span></div>
+      <div class="testi-item"><i class="fas fa-quote-right"></i><p>«Потрясающие юристы: подготовили договор под франшизу за 2 дня, учли все риски. Рекомендую».</p><span class="client-name">— ООО «Франчайзинг групп»</span></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: О КОМАНДЕ / ПРИНЦИПЫ -->
+  <section class="fade-reveal" id="about">
+    <div class="team-row">
+      <div style="flex: 1.2;">
+        <h2>Мы не просто консультируем — мы ведем до результата</h2>
+        <div class="accent-border"></div>
+        <p style="font-size: 1.3rem; color:#3e3b38; max-width: 550px;">Каждое дело получает персонального партнера и full‑support аналитиков. Прозрачные этапы, никаких скрытых платежей.</p>
+        <div class="icon-row">
+          <i class="fas fa-handcuffs"></i>
+          <i class="fas fa-bank"></i>
+          <i class="fas fa-briefcase"></i>
+          <i class="fas fa-globe"></i>
+        </div>
+      </div>
+      <div style="flex: 1; background: #a67b5b; height: 350px; border-radius: 200px 40px 200px 40px; filter: grayscale(0.3);"></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: ЗАПИСЬ НА КОНСУЛЬТАЦИЮ (форма) -->
+  <section class="consult-block fade-reveal" id="contact">
+    <div class="form-card">
+      <h2 style="font-size: 2.8rem; font-weight: 400;">нужен совет? начнём с чашки кофе</h2>
+      <div class="input-line"><i class="fas fa-user"></i><input type="text" placeholder="Ваше имя"></div>
+      <div class="input-line"><i class="fas fa-phone-alt"></i><input type="text" placeholder="+7 (___) ___ __ __"></div>
+      <div class="input-line"><i class="fas fa-balance-scale"></i><input type="text" placeholder="Суть вопроса"></div>
+      <button class="submit-btn">Получить план защиты <i class="fa-regular fa-paper-plane"></i></button>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: ПАРТНЁРЫ / ПУБЛИКАЦИИ -->
+  <section class="fade-reveal">
+    <h2 style="font-size: 2.5rem; font-weight: 350;">кто нам доверяет и нас цитирует</h2>
+    <div class="press-logos">
+      <span>Forbes</span>
+      <span>РБК</span>
+      <span>Коммерсантъ</span>
+      <span>The Bell</span>
+      <span>Право.ру</span>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: ПОСЛЕДНИЕ КЕЙСЫ (кратко) -->
+  <section class="fade-reveal" style="background: #ffffff;">
+    <h2 style="font-size: 2.8rem;">недавние победы</h2>
+    <div style="display: flex; gap: 3rem; margin-top: 4rem;">
+      <div style="flex:1;"><i class="fas fa-check-circle" style="color: #a67b5b; font-size: 2rem;"></i><h3>Спор на 2,2 млрд</h3><p>Выиграли кассацию в споре с ФНС.</p></div>
+      <div style="flex:1;"><i class="fas fa-check-circle" style="color: #a67b5b; font-size: 2rem;"></i><h3>Международный арбитраж</h3><p>Взыскали убытки с иностранного поставщика.</p></div>
+      <div style="flex:1;"><i class="fas fa-check-circle" style="color: #a67b5b; font-size: 2rem;"></i><h3>Защита интеллектуалки</h3><p>Прекратили подделку товарного знака.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: ФУТЕР -->
+  <footer class="footer fade-reveal">
+    <div class="logo">AVELLUM</div>
+    <div style="font-size: 1.2rem;">Москва, Газетный пер., 12</div>
+    <div class="socials">
+      <i class="fab fa-telegram"></i>
+      <i class="fab fa-linkedin-in"></i>
+      <i class="fab fa-whatsapp"></i>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // ---- ЧАСТЬ 1: Анимация частиц в шапке (canvas) ----
+      const canvas = document.getElementById('particle-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+        const PARTICLE_COUNT = 40;
+
+        function initParticles() {
+          particles = [];
+          for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              vx: (Math.random() - 0.5) * 0.3,
+              vy: (Math.random() - 0.5) * 0.15,
+              radius: Math.random() * 3 + 1.5,
+              alpha: Math.random() * 0.3 + 0.2,
+            });
+          }
+        }
+
+        function resizeCanvas() {
+          width = window.innerWidth;
+          height = document.querySelector('.header').offsetHeight;
+          canvas.width = width;
+          canvas.height = height;
+        }
+
+        function drawParticles() {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = '#a67b5b';
+          for (let p of particles) {
+            ctx.globalAlpha = p.alpha;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          moveParticles();
+          requestAnimationFrame(drawParticles);
+        }
+
+        function moveParticles() {
+          for (let p of particles) {
+            p.x += p.vx;
+            p.y += p.vy;
+            // границы
+            if (p.x < 0 || p.x > width) p.vx *= -1;
+            if (p.y < 0 || p.y > height) p.vy *= -1;
+          }
+        }
+
+        window.addEventListener('resize', () => {
+          resizeCanvas();
+          initParticles();
+        });
+
+        resizeCanvas();
+        initParticles();
+        drawParticles();
+      }
+
+      // ---- ЧАСТЬ 2: Навбар при скролле (компактный + класс) ----
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      });
+
+      // ---- ЧАСТЬ 3: Intersection Observer для fade-reveal ----
+      const revealElements = document.querySelectorAll('.fade-reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          } else {
+            // для эффекта можно убирать, но оставим – при повторном входе анимация снова (опционально)
+            // entry.target.classList.remove('revealed'); // закомментировано, чтобы не исчезали повторно
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+      revealElements.forEach(el => observer.observe(el));
+
+      // ---- ЧАСТЬ 4: Плавный скролл якорей ----
+      document.querySelectorAll('.nav-links a').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href').substring(1);
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+
+      // ---- дополнительно: для красоты — консоль без мусора ----
+    })();
+  </script>
+  <!-- маленький дополнительный трюк: изменение положения частиц при движении мыши? опционально, но необязательно -->
+  <script>
+    (function subtleMouseEffect() {
+      const head = document.querySelector('.header');
+      if (!head) return;
+      head.addEventListener('mousemove', function(e) {
+        const canvas = document.getElementById('particle-canvas');
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        // невесомое воздействие на ближайшие частицы
+        if (window.particles) {
+          // не реализовано, но оставим пустым — атмосфера
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

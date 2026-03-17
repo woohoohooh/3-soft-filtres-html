@@ -1,0 +1,565 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LVM Studio · Режиссер монтажа</title>
+  <!-- Font Awesome 6 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #0b0b0b;
+      color: #eaeaea;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* кастомный скролл */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1a1a1a; }
+    ::-webkit-scrollbar-thumb { background: #d946ef; border-radius: 8px; }
+
+    /* фиксированная нав-панель с анимацией сжатия */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2rem 4rem;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      z-index: 999;
+      transition: padding 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .navbar.compact {
+      padding: 1rem 4rem;
+      background: rgba(5, 5, 5, 0.95);
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.8);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(130deg, #f0f0f0, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 3rem;
+    }
+    .nav-links a {
+      color: #ddd;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1.1rem;
+      transition: 0.2s;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 4px;
+    }
+    .nav-links a:hover {
+      color: white;
+      border-bottom-color: #d946ef;
+    }
+
+    /* общий контейнер блоков */
+    section {
+      min-height: 100vh;
+      padding: 6rem 4rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      border-bottom: 1px solid #1e1e1e;
+    }
+
+    /* анимации появления при скролле (Intersection Observer) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* заголовки */
+    h1 {
+      font-size: 5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      background: linear-gradient(140deg, #fff, #d8b4fe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      letter-spacing: -0.02em;
+    }
+    .accent {
+      color: #d946ef;
+    }
+
+    /* сетки, карточки */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .card {
+      background: #141414;
+      border-radius: 2rem;
+      padding: 2.5rem 2rem;
+      border: 1px solid #2a2a2a;
+      transition: all 0.2s;
+      box-shadow: 0 20px 30px -15px rgba(0,0,0,0.6);
+    }
+    .card:hover {
+      border-color: #d946ef;
+      transform: scale(1.02) translateY(-6px);
+      background: #191919;
+    }
+
+    .icon-lg {
+      font-size: 3rem;
+      color: #d946ef;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn {
+      display: inline-block;
+      background: linear-gradient(145deg, #d946ef, #a855f7);
+      border: none;
+      color: white;
+      padding: 1rem 2.8rem;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: 0.3s;
+      text-decoration: none;
+      box-shadow: 0 8px 20px rgba(217, 70, 239, 0.3);
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 30px rgba(217, 70, 239, 0.5);
+    }
+
+    /* специфические блоки */
+    .hero {
+      padding-top: 10rem;
+    }
+    .hero p {
+      font-size: 1.5rem;
+      color: #aaa;
+      max-width: 600px;
+      margin: 2rem 0;
+    }
+
+    .stats {
+      display: flex;
+      gap: 4rem;
+      margin: 3rem 0;
+    }
+    .stat-item {
+      font-size: 1.2rem;
+    }
+    .stat-number {
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .showreel-video-placeholder {
+      width: 100%;
+      background: #1d1d1d;
+      border-radius: 2rem;
+      padding: 30% 2rem;
+      text-align: center;
+      border: 2px dashed #d946ef;
+      font-size: 1.8rem;
+      color: #888;
+      letter-spacing: 2px;
+    }
+
+    /* карусель работ (без картинок, иконки) */
+    .carousel-icons {
+      display: flex;
+      gap: 1.5rem;
+      overflow-x: auto;
+      padding: 1.5rem 0;
+      scrollbar-width: thin;
+      scrollbar-color: #d946ef #1e1e1e;
+    }
+    .carousel-icons::-webkit-scrollbar { height: 6px; }
+    .carousel-icons::-webkit-scrollbar-thumb { background: #d946ef; }
+
+    .work-item {
+      min-width: 280px;
+      background: #181818;
+      border-radius: 1.8rem;
+      padding: 2rem;
+      border: 1px solid #333;
+    }
+    .work-item i {
+      font-size: 4rem;
+      color: #c084fc;
+      margin-bottom: 1rem;
+    }
+
+    /* футер */
+    footer {
+      background: #050505;
+      padding: 3rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #222;
+    }
+    .socials i {
+      font-size: 1.8rem;
+      margin-left: 2rem;
+      color: #888;
+      transition: 0.2s;
+    }
+    .socials i:hover { color: #d946ef; }
+
+    /* якоря фикс */
+    .hash-link {
+      scroll-margin-top: 100px;
+    }
+
+    /* частицы / микро-анимации в шапке */
+    #hero-js-animation {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.3;
+      overflow: hidden;
+    }
+    .hero .content {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* адаптация для пк достаточно, но чуть сожмем */
+    @media (max-width: 1300px) {
+      h1 { font-size: 4rem; }
+      section { padding: 6rem 2rem 4rem; }
+      .navbar { padding: 2rem 2rem; }
+      .navbar.compact { padding: 1rem 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ФИКСИРОВАННОЕ МЕНЮ (ШАПКА) : БЛОК 1 -->
+  <nav class="navbar" id="navbar">
+    <div class="logo">LVM STUDIO</div>
+    <div class="nav-links">
+      <a href="#hero">демо</a>
+      <a href="#services">услуги</a>
+      <a href="#reel">шоурил</a>
+      <a href="#works">портфолио</a>
+      <a href="#contact">контакт</a>
+    </div>
+  </nav>
+
+  <!-- БЛОК 2: HERO с JS-анимацией (плавающие иконки) -->
+  <section id="hero" class="hero hash-link fade-up">
+    <div id="hero-js-animation"></div>
+    <div class="content">
+      <h1>кадры <br> с душой</h1>
+      <p>режиссура монтажа / цветокоррекция / саунд-дизайн — для фильмов, клипов и рекламы</p>
+      <div class="stats">
+        <div class="stat-item"><span class="stat-number">100+</span> проектов</div>
+        <div class="stat-item"><span class="stat-number">15</span> наград</div>
+        <div class="stat-item"><span class="stat-number">∞</span> идей</div>
+      </div>
+      <a href="#contact" class="btn">обсудить проект <i class="fa-regular fa-paper-plane" style="margin-left: 8px;"></i></a>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: УСЛУГИ (акцент на доверии и кейсах) -->
+  <section id="services" class="hash-link fade-up">
+    <h2>что я делаю <span class="accent">· лучше всех</span></h2>
+    <div class="grid-3">
+      <div class="card">
+        <i class="fas fa-film icon-lg"></i>
+        <h3>режиссура монтажа</h3>
+        <p>нарезка, темпоритм, эмоции — превращаю сырой материал в историю. работал с Nike, local bandy</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-palette icon-lg"></i>
+        <h3>color grading</h3>
+        <p>daVinci Resolve · кинематографичный look, соответствие moodboard. более 50 клипов.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-headphones icon-lg"></i>
+        <h3>саунд-дизайн</h3>
+        <p>атмосфера и чистый звук. шумы, foley, микширование — для полного погружения.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: ШОУРИЛ (с видео-заглушкой) -->
+  <section id="reel" class="hash-link fade-up">
+    <h2>demo <span class="accent">reel 2025</span></h2>
+    <div class="showreel-video-placeholder">
+      <i class="fa-regular fa-circle-play" style="font-size: 4rem; color: #d946ef; display: block; margin-bottom: 1rem;"></i>
+      PREVIEW · нажми для воспроизведения
+    </div>
+    <p style="margin-top: 2rem; color: #aaa;">короткий ролик, чтобы понять стиль. монтаж, цвет, звук — за 90 секунд.</p>
+  </section>
+
+  <!-- БЛОК 5: ИЗБРАННЫЕ ПРОЕКТЫ / КЕЙСЫ -->
+  <section id="works" class="hash-link fade-up">
+    <h2>последние <span class="accent">работы</span></h2>
+    <div class="carousel-icons">
+      <div class="work-item">
+        <i class="fas fa-video"></i>
+        <h3>Lavender — «mist»</h3>
+        <p>клип для инди-группы, монтаж + колор, 2 млн просмотров</p>
+      </div>
+      <div class="work-item">
+        <i class="fas fa-camera-retro"></i>
+        <h3>Nike tech pack</h3>
+        <p>рекламный ролик, саунд-дизайн и склейка, эстетика движения</p>
+      </div>
+      <div class="work-item">
+        <i class="fas fa-microphone-alt"></i>
+        <h3>Студия «Звук»</h3>
+        <p>короткометражка — режиссура монтажа, приз зрит. симпатий</p>
+      </div>
+      <div class="work-item">
+        <i class="fas fa-mask"></i>
+        <h3>театр.doc</h3>
+        <p>видео-арт для перформанса, цвет + композинг</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: ПРОЦЕСС / КАК Я РАБОТАЮ (доверие) -->
+  <section class="hash-link fade-up">
+    <h2>метод <span class="accent">LVM</span></h2>
+    <div class="grid-2">
+      <div class="card">
+        <i class="fas fa-comments icon-lg"></i>
+        <h3>1. концепция</h3>
+        <p>вникаю в задачу, музыку, смыслы. составляем moodboard и референсы.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-cut icon-lg"></i>
+        <h3>2. черновик</h3>
+        <p>грубый монтаж, подбор ритма. ты видишь структуру через 3-5 дней.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-sparkles icon-lg"></i>
+        <h3>3. полировка</h3>
+        <p>цвет, звук, эффекты — кадр за кадром до блеска.</p>
+      </div>
+      <div class="card">
+        <i class="fas fa-rocket icon-lg"></i>
+        <h3>4. релиз</h3>
+        <p>финальный рендер, поставка в нужных форматах. поддержка.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: ОТЗЫВЫ И ДОВЕРИЕ (партнеры/клиенты иконками) -->
+  <section class="hash-link fade-up">
+    <h2>мне <span class="accent">доверяют</span></h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 3rem; justify-content: space-between; align-items: center; margin: 3rem 0;">
+      <i class="fab fa-reddit-alien" style="font-size: 4rem; color: #777;"></i>
+      <i class="fab fa-spotify" style="font-size: 4rem; color: #777;"></i>
+      <i class="fab fa-dropbox" style="font-size: 4rem; color: #777;"></i>
+      <i class="fab fa-nike" style="font-size: 4rem; color: #777;"></i>
+      <i class="fab fa-adobe" style="font-size: 4rem; color: #777;"></i>
+    </div>
+    <div class="card" style="max-width: 700px; margin: 0 auto;">
+      <i class="fas fa-quote-right" style="font-size: 3rem; color: #d946ef; opacity: 0.4;"></i>
+      <p style="font-size: 1.4rem; font-style: italic;">«Лёва сделал монтаж нашего клипа за неделю — теперь мы на ротации у MTV. Профи, чувствует ритм»</p>
+      <p style="margin-top: 1rem;">— Анна Ветрова, режиссёр</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: КОНТАКТНАЯ ФОРМА / СВЯЗЬ -->
+  <section id="contact" class="hash-link fade-up">
+    <h2>начать <span class="accent">проект</span></h2>
+    <div class="grid-2" style="align-items: center;">
+      <div class="card" style="background: #0f0f0f;">
+        <i class="fas fa-paper-plane icon-lg"></i>
+        <h3>напишите идею</h3>
+        <p>откликаюсь в течение нескольких часов. расскажите о проекте, хронометраже, бюджете.</p>
+        <div style="margin-top: 2rem;">
+          <div><i class="fas fa-envelope" style="color: #d946ef; width: 30px;"></i> hello@lvmstudio.pro</div>
+          <div><i class="fas fa-phone-alt" style="color: #d946ef; width: 30px;"></i> +7 916 123 44 55</div>
+          <div><i class="fas fa-map-pin" style="color: #d946ef; width: 30px;"></i> Москва / удалённо</div>
+        </div>
+      </div>
+      <div class="card">
+        <i class="fas fa-calendar-check icon-lg"></i>
+        <h3>запись на звонок</h3>
+        <p>15-минутная консультация, чтобы понять задачу и найти оптику.</p>
+        <a href="#" class="btn" style="margin-top: 1.5rem;">выбрать время</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: ФУТЕР -->
+  <footer class="hash-link fade-up">
+    <div class="logo" style="font-size: 1.5rem;">LVM STUDIO · монтаж и цвет</div>
+    <div class="socials">
+      <i class="fab fa-vimeo-v"></i>
+      <i class="fab fa-youtube"></i>
+      <i class="fab fa-instagram"></i>
+      <i class="fab fa-telegram"></i>
+    </div>
+    <div style="color: #555;">© 2025 режиссура монтажа</div>
+  </footer>
+
+  <!-- JS: анимация шапки (с Floating иконки), Intersection Observer, navbar compact -->
+  <script>
+    (function() {
+      // 1. анимация в hero — плавающие иконки (js canvas)
+      const heroSection = document.getElementById('hero');
+      const canvas = document.createElement('canvas');
+      canvas.id = 'hero-js-animation';
+      heroSection.appendChild(canvas); // уже есть div с этим id, заменим на canvas
+      const ctx = canvas.getContext('2d');
+      
+      function resizeCanvas() {
+        canvas.width = heroSection.offsetWidth;
+        canvas.height = heroSection.offsetHeight;
+      }
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      // иконки font awesome будем рисовать символами
+      const icons = ['🎬', '🎞️', '✨', '🎥', '🎚️', '🔊', '📽️', '🌀'];
+      const particles = [];
+      for (let i = 0; i < 22; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.2,
+          char: icons[Math.floor(Math.random() * icons.length)],
+          size: 18 + Math.floor(Math.random() * 24),
+          alpha: 0.1 + Math.random() * 0.3,
+        });
+      }
+
+      function draw() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '28px "Inter", "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        for (let p of particles) {
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = '#d946ef';
+          ctx.font = `${p.size}px "Inter", "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+          ctx.fillText(p.char, p.x, p.y);
+          
+          p.x += p.vx;
+          p.y += p.vy;
+          
+          // границы
+          if (p.x < 0) p.x = canvas.width;
+          if (p.x > canvas.width) p.x = 0;
+          if (p.y < 0) p.y = canvas.height;
+          if (p.y > canvas.height) p.y = 0;
+        }
+        requestAnimationFrame(draw);
+      }
+      draw();
+
+      // 2. Intersection Observer для fade-up блоков
+      const faders = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          } else {
+            // при желании можно убирать класс, но оставим visible навсегда
+            // entry.target.classList.remove('visible');
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px' });
+      faders.forEach(el => observer.observe(el));
+
+      // 3. navbar compact при скролле (добавляем класс)
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 60) {
+          navbar.classList.add('compact');
+        } else {
+          navbar.classList.remove('compact');
+        }
+      });
+
+      // 4. плавный скролл якорей
+      document.querySelectorAll('.nav-links a').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('href').substring(1);
+          const target = document.getElementById(targetId);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+
+      // 5. чтоб первый блок видим был сразу
+      setTimeout(() => {
+        document.querySelector('#hero')?.classList.add('visible');
+      }, 100);
+    })();
+  </script>
+  <!-- маленькая корректировка: канвас поверх контента, но pointer-events none уже в css -->
+  <style>
+    #hero-js-animation {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .hero .content {
+      position: relative;
+      z-index: 2;
+    }
+    canvas { display: block; }
+  </style>
+</body>
+</html>
+All done!
+```

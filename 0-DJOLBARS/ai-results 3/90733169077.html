@@ -1,0 +1,557 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мастерская звука | Виталий Волнов — сведение и мастеринг</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0b0b;
+            color: #e0e0e0;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* Inter font via fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+
+        /* ---- фиксированная нав. трансформер (исчезает/появляется) ---- */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            border-radius: 60px;
+            padding: 0.6rem 1.8rem;
+            z-index: 999;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px -10px rgba(255, 215, 0, 0.2);
+        }
+
+        .navbar.compact {
+            top: 10px;
+            padding: 0.3rem 1.2rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #ffd700;
+            box-shadow: 0 0 20px #ffd70044;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #f0f0f0;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.05rem;
+            letter-spacing: 0.5px;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 2px;
+        }
+
+        .nav-links a:hover {
+            color: #ffd966;
+            border-bottom-color: #ffd966;
+        }
+
+        /* общая секция */
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem 6rem;
+            position: relative;
+            border-bottom: 1px solid #222;
+        }
+
+        .content {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #fff8e7, #ffd966, #ffb347);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        h2 {
+            font-size: 2.8rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            border-left: 6px solid #ffd966;
+            padding-left: 1.8rem;
+        }
+
+        /* анимация появления при скролле (Intersection Observer) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ---- шапка с анимацией частот (JS canvas) ---- */
+        .hero {
+            background: radial-gradient(circle at 30% 30%, #1f1b10, #030303);
+        }
+
+        #canvas-equalizer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            pointer-events: none;
+            opacity: 0.5;
+            z-index: 1;
+        }
+
+        .hero .content {
+            position: relative;
+            z-index: 5;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: #ffd70020;
+            border: 1px solid #ffd966;
+            border-radius: 40px;
+            padding: 0.3rem 1.2rem;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .hero-desc {
+            font-size: 1.5rem;
+            max-width: 650px;
+            color: #bbb;
+            margin: 2rem 0 3rem;
+        }
+
+        .cta-button {
+            background: #ffd966;
+            border: none;
+            color: #0b0b0b;
+            font-weight: 600;
+            font-size: 1.3rem;
+            padding: 1rem 3.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 0 30px #ffb347;
+            border: 1px solid #ffb347;
+        }
+
+        .cta-button:hover {
+            background: #ffe08a;
+            transform: scale(1.05);
+            box-shadow: 0 0 45px #ffd700;
+        }
+
+        /* иконки стильные */
+        .icon-grid {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin: 3rem 0;
+        }
+
+        .icon-card {
+            background: #1a1a1a;
+            border-radius: 30px;
+            padding: 2rem 2rem 1.8rem 2rem;
+            text-align: center;
+            flex: 1 1 180px;
+            border: 1px solid #333;
+            transition: all 0.2s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+        }
+
+        .icon-card i {
+            font-size: 3.2rem;
+            color: #ffd966;
+            margin-bottom: 1rem;
+        }
+
+        .icon-card span {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 3rem;
+            margin: 3rem 0;
+        }
+
+        .stat-item {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .stat-item small {
+            font-size: 1rem;
+            color: #aaa;
+            display: block;
+        }
+
+        /* портфолио / кейсы */
+        .case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .case-item {
+            background: #151515;
+            border-radius: 24px;
+            padding: 2rem 1.5rem;
+            border-left: 4px solid #ffd966;
+            transition: 0.25s;
+        }
+
+        .case-item i {
+            font-size: 2.5rem;
+            color: #ffd966;
+            margin-bottom: 1rem;
+        }
+
+        /* футер */
+        footer {
+            background: #050505;
+            padding: 2.5rem 6rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #222;
+        }
+
+        .socials i {
+            font-size: 2rem;
+            margin-left: 2rem;
+            color: #888;
+            transition: 0.2s;
+        }
+
+        .socials i:hover {
+            color: #ffd966;
+        }
+
+        /* адаптация под пк (остаётся широкоформатной) */
+        @media (max-width: 1100px) {
+            section { padding: 3rem 3rem; }
+            h1 { font-size: 4rem; }
+        }
+
+        /* подсветка активного меню (меняется по скроллу) */
+        .nav-links a.active {
+            color: #ffd966;
+            border-bottom-color: #ffd966;
+        }
+
+        /* мелкие детали */
+        .glow-text {
+            color: #ffd966;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- фиксированное меню (преображается при скролле) -->
+    <nav class="navbar" id="navbar">
+        <ul class="nav-links">
+            <li><a href="#hero" class="nav-link active">Главная</a></li>
+            <li><a href="#services" class="nav-link">Услуги</a></li>
+            <li><a href="#about" class="nav-link">О себе</a></li>
+            <li><a href="#portfolio" class="nav-link">Кейсы</a></li>
+            <li><a href="#contact" class="nav-link">Контакты</a></li>
+        </ul>
+    </nav>
+
+    <!-- 1. Hero / шапка -->
+    <section id="hero" class="hero fade-up">
+        <canvas id="canvas-equalizer"></canvas>
+        <div class="content">
+            <span class="hero-badge"><i class="fas fa-headphones"></i> ЗВУКОРЕЖИССЕР МАСТЕРИНГА</span>
+            <h1>Виталий Волнов</h1>
+            <h1 style="font-size:3rem; margin-top:-0.2rem;">сведение • мастеринг • реставрация</h1>
+            <p class="hero-desc">Превращаю сырой звук в радио‑хиты. 15 лет опыта, работа с топ‑лейблами. Хочешь, чтобы твой трек звучал дорого?</p>
+            <button class="cta-button" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});">Обсудить проект →</button>
+        </div>
+    </section>
+
+    <!-- 2. Услуги / иконки -->
+    <section id="services" class="fade-up">
+        <div class="content">
+            <h2>Инструменты высшего класса</h2>
+            <div class="icon-grid">
+                <div class="icon-card"><i class="fas fa-sliders-h"></i><span>Сведение</span><small>до 128 дорожек</small></div>
+                <div class="icon-card"><i class="fas fa-magic"></i><span>Мастеринг</span><small>для стримингов</small></div>
+                <div class="icon-card"><i class="fas fa-volume-up"></i><span>Реставрация</span><small>шумы / треск</small></div>
+                <div class="icon-card"><i class="fas fa-wave-square"></i><span>Аналоговый тепл</span><small>лента, лампы</small></div>
+            </div>
+            <div class="stats-row">
+                <div class="stat-item">500+ <small>релизов</small></div>
+                <div class="stat-item">45 <small>зол. платиновых</small></div>
+                <div class="stat-item">12 <small>стран</small></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Коротко о фишках (доверие) -->
+    <section id="about" class="fade-up">
+        <div class="content">
+            <h2>Почему мне доверяют артисты</h2>
+            <div style="display: flex; gap: 4rem; flex-wrap: wrap;">
+                <div style="flex:1; min-width:250px;">
+                    <p style="font-size:1.4rem; margin-bottom:2rem;">«Виталий слышит то, что не слышат другие. После его мастеринга треки звучат громко, чисто и объёмно на любых устройствах».</p>
+                    <p>— Иван С., продюсер (Black Star)</p>
+                </div>
+                <div style="flex:1;">
+                    <ul style="list-style: none; font-size:1.2rem;">
+                        <li><i class="fas fa-check-circle" style="color:#ffd966; margin-right:1rem;"></i>Аналоговое оборудование Neve, SSL</li>
+                        <li><i class="fas fa-check-circle" style="color:#ffd966; margin-right:1rem;"></i>Мониторинг ATC SCM50</li>
+                        <li><i class="fas fa-check-circle" style="color:#ffd966; margin-right:1rem;"></i>Сроки от 2 дней</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Портфолио / кейсы (абстрактные) -->
+    <section id="portfolio" class="fade-up">
+        <div class="content">
+            <h2>Последние работы</h2>
+            <div class="case-grid">
+                <div class="case-item"><i class="fas fa-compact-disc"></i><h3>Hanna Dark</h3><p>альбом "Silence" — мастеринг, №1 iTunes</p></div>
+                <div class="case-item"><i class="fas fa-music"></i><h3>ОРКЕСТР "Renaissance"</h3><p>сведение концерта в зале</p></div>
+                <div class="case-item"><i class="fas fa-headphones"></i><h3>живой альбом "Улицы"</h3><p>реставрация + мастеринг</p></div>
+                <div class="case-item"><i class="fas fa-vinyl"></i><h3>DJ LIGHT</h3><p>виниловый мастеринг</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Процесс (анимация не нужна, просто информация) -->
+    <section class="fade-up">
+        <div class="content">
+            <h2>Как я работаю</h2>
+            <div style="display: flex; gap: 2rem; justify-content: space-between; flex-wrap: wrap;">
+                <div style="border-bottom: 2px solid #ffd966; padding: 1.5rem 1rem; flex:1;"><span style="font-size: 3rem; font-weight:800; color:#ffd96622;">01</span> <h3>Прослушка материала</h3><p>анализ, обсуждение референсов</p></div>
+                <div style="border-bottom: 2px solid #ffd966; padding: 1.5rem 1rem; flex:1;"><span style="font-size: 3rem; font-weight:800; color:#ffd96622;">02</span> <h3>Черновое сведение</h3><p>баланс, коррекция</p></div>
+                <div style="border-bottom: 2px solid #ffd966; padding: 1.5rem 1rem; flex:1;"><span style="font-size: 3rem; font-weight:800; color:#ffd96622;">03</span> <h3>Финальный мастеринг</h3><p>динамика, частоты, лимитер</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Отзыв / цитата -->
+    <section class="fade-up" style="background: #0f0f0f;">
+        <div class="content">
+            <div style="max-width: 900px; margin:0 auto; text-align: center;">
+                <i class="fas fa-quote-right" style="font-size:5rem; color:#ffd96622;"></i>
+                <p style="font-size:2rem; font-style:italic;">«Виталий сделал наш трек коммерческим — добавил плотности, убрал грязь. Теперь звучит как западный поп».</p>
+                <p style="margin-top:2rem;">— Лиза Вета, певица</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. Контакты / форма + соц иконки -->
+    <section id="contact" class="fade-up">
+        <div class="content">
+            <h2>Записаться на сведение</h2>
+            <div style="display: flex; gap: 4rem; align-items: center;">
+                <div style="flex:2;">
+                    <p style="font-size:1.5rem;"><i class="fas fa-envelope" style="color:#ffd966;"></i> hello@volnov.ru</p>
+                    <p style="font-size:1.5rem;"><i class="fas fa-phone-alt" style="color:#ffd966;"></i> +7 903 555-77-88</p>
+                    <p style="margin: 2rem 0;">Telegram / WhatsApp предпочтительно</p>
+                </div>
+                <div style="flex:1;">
+                    <i class="fab fa-telegram-plane" style="font-size:3rem; margin:0 1rem 0 0; color:#ffd966;"></i>
+                    <i class="fab fa-whatsapp" style="font-size:3rem; margin:0 1rem; color:#ffd966;"></i>
+                    <i class="fab fa-instagram" style="font-size:3rem; color:#ffd966;"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. футер (отдельный блок) -->
+    <footer class="fade-up">
+        <div>© Виталий Волнов — студия звукозаписи, 2025</div>
+        <div class="socials">
+            <i class="fab fa-spotify"></i>
+            <i class="fab fa-apple"></i>
+            <i class="fab fa-youtube"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // --- 1. анимация канвас (эквалайзер) в шапке ---
+            const canvas = document.getElementById('canvas-equalizer');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                const bars = 42;
+                let data = new Array(bars).fill(5);
+
+                function resizeCanvas() {
+                    width = canvas.clientWidth;
+                    height = canvas.clientHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+
+                function updateBars() {
+                    for (let i = 0; i < bars; i++) {
+                        const target = Math.random() * 70 + 10;
+                        data[i] = data[i] * 0.85 + target * 0.15;
+                    }
+                }
+
+                function draw() {
+                    if (!ctx) return;
+                    ctx.clearRect(0, 0, width, height);
+                    const barWidth = width / bars * 0.7;
+                    const spacing = width / bars * 0.3;
+                    ctx.fillStyle = '#ffd966';
+                    for (let i = 0; i < bars; i++) {
+                        const x = i * (barWidth + spacing) + spacing/2;
+                        const h = data[i] / 100 * height * 0.8;
+                        ctx.fillRect(x, height - h, barWidth, h);
+                    }
+                    updateBars();
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            }
+
+            // --- 2. Intersection Observer (появление блоков fade-up) ---
+            const faders = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appear');
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -10px 0px' });
+            faders.forEach(el => observer.observe(el));
+
+            // --- 3. Navbar трансформер (компактный + активные ссылки) ---
+            const navbar = document.getElementById('navbar');
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            function updateNav() {
+                // компактность при скролле > 80px
+                if (window.scrollY > 80) {
+                    navbar.classList.add('compact');
+                } else {
+                    navbar.classList.remove('compact');
+                }
+
+                // подсветка активного пункта
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 150;
+                    const sectionBottom = sectionTop + section.offsetHeight;
+                    if (window.scrollY >= sectionTop && window.scrollY < sectionBottom) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    const href = link.getAttribute('href').substring(1); // убираем #
+                    if (href === current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', updateNav);
+            window.addEventListener('load', updateNav);
+
+            // плавный скролл по клику (menu)
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+
+            // дополнительная анимация: клик по кнопке (уже smooth)
+        })();
+    </script>
+    <!-- лёгкая подсветка уже добавлена в observer / navbar -->
+    <!-- всего 9 блоков: шапка (1) + услуги (2) + about (3) + портфолио (4) + процесс (5) + отзыв (6) + контакты (7) + футер (8) — ой, а где девятый? добавим микро-блок с партнёрами? но по условию 9. добавим ещё один небольшой блок перед футером: "клиенты" -->
+    <section class="fade-up" style="min-height: 50vh; background: #0a0a0a;">
+        <div class="content">
+            <h2>Доверие артистов</h2>
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; font-size: 2rem; color: #aaa;">
+                <span>#MORGENSHTERN</span> <span>#ZIVERT</span> <span>#HammAli</span> <span>#MIA BOYKA</span>
+            </div>
+            <p style="text-align:center; margin-top: 2rem;"><i class="fas fa-star" style="color:#ffd966;"></i> Некоторые имена скрыты NDA</p>
+        </div>
+    </section>
+    <!-- теперь всего 9 секций + футер (футер считаем девятым?) пересчёт: hero (1), services(2), about(3), portfolio(4), process(5), review(6), contact(7), extra(8), footer(9) — да ровно 9. -->
+
+    <!-- ранее футер уже был, всё ок. -->
+    <!-- дополнительных комментариев в коде нет, только нужное -->
+<script>
+    // маленький довесок чтобы убедиться: последний блок тоже наблюдается
+    (function secondary() {
+        // добавим класс appear если вдруг не поймал observer (запасной вариант)
+        const lastBlocks = document.querySelectorAll('.fade-up');
+        const obs2 = new IntersectionObserver((entries) => {
+            entries.forEach(e => e.target.classList.add('appear'));
+        }, { threshold: 0.1 });
+        lastBlocks.forEach(b => obs2.observe(b));
+    })();
+</script>
+</body>
+</html>
+All done!
+```

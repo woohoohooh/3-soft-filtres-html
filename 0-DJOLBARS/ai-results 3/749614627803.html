@@ -1,0 +1,540 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numisma · Финансовый консультант</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f5f3f0;
+            color: #1f1e1d;
+            line-height: 1.5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* custom scroll */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #e2dfda; }
+        ::-webkit-scrollbar-thumb { background: #b8864b; border-radius: 8px; }
+
+        /* fixed header – сначала прозрачный, при скролле сжимается */
+        .header {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 3rem;
+            background: transparent;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+            z-index: 1000;
+            color: #1f1e1d;
+            mix-blend-mode: difference;
+        }
+
+        .header.scrolled {
+            padding: 0.8rem 3rem;
+            background: rgba(31, 30, 29, 0.85);
+            backdrop-filter: blur(10px);
+            color: #f5f3f0;
+            mix-blend-mode: normal;
+            box-shadow: 0 10px 25px -10px rgba(0,0,0,0.2);
+        }
+
+        .header.scrolled .logo i,
+        .header.scrolled .nav a {
+            color: #f5f3f0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: #b8864b;
+            transition: transform 0.2s;
+        }
+
+        .logo span {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2.5rem;
+            font-weight: 500;
+        }
+        .nav a {
+            text-decoration: none;
+            color: inherit;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            transition: opacity 0.2s;
+        }
+        .nav a:hover { opacity: 0.7; }
+
+        /* контейнеры */
+        .section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 6rem 4rem;
+            position: relative;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .container {
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* анимация появления при скролле (Intersection Observer) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.15, 0.9, 0.25, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Hero block */
+        .hero {
+            background: #f0eae3;
+        }
+        .hero-content {
+            max-width: 850px;
+        }
+        .hero .tag {
+            font-size: 1.2rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: #b8864b;
+            margin-bottom: 1rem;
+            font-weight: 400;
+        }
+        .hero h1 {
+            font-size: 5rem;
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            color: #1f1e1d;
+        }
+        .hero h1 i {
+            color: #b8864b;
+            font-style: normal;
+            border-bottom: 3px solid currentColor;
+        }
+        .hero p {
+            font-size: 1.3rem;
+            margin: 2rem 0 3rem;
+            color: #3b3a37;
+            max-width: 600px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        .btn {
+            background: #1f1e1d;
+            color: #faf7f2;
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-outline {
+            background: transparent;
+            color: #1f1e1d;
+            border: 2px solid #1f1e1d;
+            padding: 0.9rem 2.8rem;
+        }
+        .btn:hover {
+            background: #b8864b;
+            color: #1f1e1d;
+            border-color: #b8864b;
+        }
+
+        /* icons animation (шапка) */
+        .header-animation {
+            position: absolute;
+            bottom: 15%; right: 5%;
+            font-size: 8rem;
+            opacity: 0.1;
+            pointer-events: none;
+            display: flex;
+            gap: 2rem;
+            animation: float 8s infinite alternate ease-in-out;
+        }
+        .header-animation i {
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1));
+            transform: rotate(5deg);
+        }
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-30px) rotate(2deg); }
+        }
+
+        /* блоки */
+        h2 {
+            font-size: 3rem;
+            font-weight: 550;
+            letter-spacing: -0.02em;
+            margin-bottom: 3rem;
+            position: relative;
+            display: inline-block;
+        }
+        h2:after {
+            content: '';
+            position: absolute;
+            bottom: -10px; left: 0;
+            width: 80px; height: 4px;
+            background: #b8864b;
+        }
+
+        .grid-3, .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+        }
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .card {
+            background: #ffffffc9;
+            backdrop-filter: blur(4px);
+            padding: 2.5rem 2rem;
+            border-radius: 32px;
+            box-shadow: 0 15px 30px -15px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.3s;
+            border: 1px solid rgba(255,255,255,0.7);
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 40px -20px #b8864b33;
+        }
+        .card i {
+            font-size: 2.5rem;
+            color: #b8864b;
+            margin-bottom: 1.5rem;
+        }
+        .card h3 {
+            font-size: 1.7rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            background: #b8864b10;
+            border-left: 5px solid #b8864b;
+            padding: 2rem;
+            font-size: 1.2rem;
+            border-radius: 20px;
+            margin-top: 2rem;
+        }
+
+        /* контакты */
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            font-size: 1.3rem;
+        }
+        .contact-item i {
+            width: 2.5rem;
+            color: #b8864b;
+        }
+
+        /* футер */
+        .footer {
+            background: #1f1e1d;
+            color: #ddd9d2;
+            padding: 2.5rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .footer .socials i {
+            font-size: 1.5rem;
+            margin-left: 1.8rem;
+            transition: color 0.2s;
+            color: #b8864b;
+        }
+        .footer .socials i:hover {
+            color: #fff;
+        }
+
+        /* мобильные не трогаем, но чуть подправим для узкого */
+        @media (max-width: 900px) {
+            .hero h1 { font-size: 3.5rem; }
+            .grid-3 { grid-template-columns: 1fr; }
+            .grid-2 { grid-template-columns: 1fr; }
+            .header { padding: 1.5rem; }
+            .nav { gap: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- фиксированная шапка (блок 1) -->
+    <header class="header" id="mainHeader">
+        <div class="logo">
+            <i class="fas fa-chart-line"></i>
+            <span>numisma</span>
+        </div>
+        <nav class="nav">
+            <a href="#hero">Главная</a>
+            <a href="#services">Услуги</a>
+            <a href="#numbers">Цифры</a>
+            <a href="#testimonials">Клиенты</a>
+            <a href="#contact">Контакты</a>
+        </nav>
+    </header>
+
+    <!-- Hero (блок 2) -->
+    <section id="hero" class="section hero" style="justify-content: center;">
+        <div class="container hero-content reveal">
+            <div class="tag">Личный financial advisor</div>
+            <h1>Ваш капитал <i>работает</i><br>так же усердно, как вы.</h1>
+            <p>Частное консультирование по инвестициям, налогам и стратегиям роста. Для тех, кто ценит предсказуемость и результат.</p>
+            <div class="btn-group">
+                <a href="#contact" class="btn">Назначить встречу</a>
+                <a href="#numbers" class="btn btn-outline">Кейсы</a>
+            </div>
+        </div>
+        <!-- анимация в шапке (иконки) -->
+        <div class="header-animation">
+            <i class="fas fa-coins"></i>
+            <i class="fas fa-chart-pie"></i>
+            <i class="fas fa-shield-alt"></i>
+        </div>
+    </section>
+
+    <!-- Блок 3: Услуги (акцент на доверии) -->
+    <section id="services" class="section" style="background: #fcfaf7;">
+        <div class="container">
+            <h2 class="reveal">Что я делаю</h2>
+            <div class="grid-3">
+                <div class="card reveal">
+                    <i class="fas fa-balance-scale"></i>
+                    <h3>Стратегия & право</h3>
+                    <p>Оптимизация налогов, защита активов, юридическая структура инвестиций. 12+ лет опыта в финансах.</p>
+                </div>
+                <div class="card reveal">
+                    <i class="fas fa-chart-bar"></i>
+                    <h3>Инвестиционный портфель</h3>
+                    <p>Акции, облигации, альтернативные вложения. Ежемесячная аналитика и ребалансировка.</p>
+                </div>
+                <div class="card reveal">
+                    <i class="fas fa-file-signature"></i>
+                    <h3>Страхование & наследие</h3>
+                    <p>Семейное страхование, трасты, передача капитала — решения, которые работают через поколения.</p>
+                </div>
+            </div>
+            <div class="badge reveal">
+                <i class="fas fa-check-circle" style="color: #b8864b; margin-right: 15px;"></i> 
+                Личный консультант без конфликта интересов. Работаю только по принципу fee-only.
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 4: Цифры / Кейсы (доверие) -->
+    <section id="numbers" class="section" style="background: #eae5de;">
+        <div class="container">
+            <h2 class="reveal">Реальные кейсы</h2>
+            <div class="grid-2">
+                <div class="card reveal" style="background: #ffffffd9;">
+                    <i class="fas fa-calculator"></i>
+                    <h3>Кейс: IT-директор</h3>
+                    <p>Структурировали опционы и сбережения за 3 года: снижение налоговой нагрузки на 28%, выход на пассивный доход 2 млн/год.</p>
+                </div>
+                <div class="card reveal" style="background: #ffffffd9;">
+                    <i class="fas fa-home"></i>
+                    <h3>Кейс: Семейный офис</h3>
+                    <p>Диверсификация коммерческой недвижимости, защита от валютных рисков, доходность портфеля +11.4% годовых.</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 3rem; margin-top: 3rem; flex-wrap: wrap;" class="reveal">
+                <div><i class="fas fa-database" style="color: #b8864b; margin-right: 0.5rem;"></i> 1.2 млрд ₽ под управлением</div>
+                <div><i class="fas fa-smile" style="color: #b8864b; margin-right: 0.5rem;"></i> 87 частных клиентов</div>
+                <div><i class="fas fa-trophy" style="color: #b8864b; margin-right: 0.5rem;"></i> 0 судебных споров</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 5: Для бизнеса (b2b уклон) -->
+    <section class="section" style="background: #f5f3f0;">
+        <div class="container">
+            <h2 class="reveal">Корпоративный консалтинг</h2>
+            <div class="grid-2">
+                <div class="card reveal">
+                    <i class="fas fa-briefcase"></i>
+                    <h3>Аутсорсинг финансов</h3>
+                    <p>Полное управление корпоративными финансами, due diligence, подготовка к аудиту. Работаем с ООО, АО и НКО.</p>
+                </div>
+                <div class="card reveal">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>M&A сопровождение</h3>
+                    <p>Оценка, структурирование сделок, интеграция. Помощь в привлечении инвестиций и exit-стратегиях.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 6: Отзывы / доверие -->
+    <section id="testimonials" class="section" style="background: #e2dfda;">
+        <div class="container">
+            <h2 class="reveal">Мнение клиентов</h2>
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                <div class="card reveal" style="flex: 1 1 250px;">
+                    <i class="fas fa-quote-right" style="font-size: 2rem; opacity: 0.3;"></i>
+                    <p style="margin: 1rem 0;">«Полностью изменил подход к финансам. Перестали бояться кризисов, появилась понятная стратегия».</p>
+                    <h4>— Екатерина М., владелец сети клиник</h4>
+                </div>
+                <div class="card reveal" style="flex: 1 1 250px;">
+                    <i class="fas fa-quote-right" style="font-size: 2rem; opacity: 0.3;"></i>
+                    <p style="margin: 1rem 0;">«Тонкая настройка налогов и страховок сэкономила нам больше 3 млн за год. Рекомендую как эксперта высшего уровня».</p>
+                    <h4>— Андрей П., производственная компания</h4>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 7: Преимущества (иконки, анимация появления) -->
+    <section class="section" style="background: #fcfaf7;">
+        <div class="container">
+            <h2 class="reveal">Почему выбирают нас</h2>
+            <div class="grid-3">
+                <div class="card reveal"><i class="fas fa-lock"></i> <h3>Конфиденциальность</h3><p>NDA, защита данных, швейцарские стандарты.</p></div>
+                <div class="card reveal"><i class="fas fa-clock"></i> <h3>24/7 доступ</h3><p>Личный кабинет и прямой чат с консультантом.</p></div>
+                <div class="card reveal"><i class="fas fa-globe"></i> <h3>Международный опыт</h3><p>США, Европа, Азия — работаем с активами по всему миру.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 8: Контакты + призыв -->
+    <section id="contact" class="section" style="background: #1f1e1d; color: #f5f3f0;">
+        <div class="container">
+            <h2 class="reveal" style="color: #f5f3f0; border-bottom-color: #b8864b;">Напишите мне</h2>
+            <div class="grid-2" style="gap: 4rem;">
+                <div class="contact-info reveal">
+                    <div class="contact-item"><i class="fas fa-map-pin"></i> Москва, ул. Тверская 12, офис 84</div>
+                    <div class="contact-item"><i class="fas fa-phone-alt"></i> +7 (495) 123-45-67</div>
+                    <div class="contact-item"><i class="fas fa-envelope"></i> hello@numisma.ru</div>
+                    <div class="contact-item"><i class="fab fa-telegram"></i> @numisma_finance</div>
+                    <div style="margin-top: 2rem;"><a href="#" class="btn" style="background: #b8864b; color: #1f1e1d;">Записаться онлайн</a></div>
+                </div>
+                <div class="reveal">
+                    <p style="font-size: 1.2rem; margin-bottom: 2rem;">Получите персональный финансовый план — первая консультация бесплатно (45 мин, онлайн/офлайн).</p>
+                    <div style="background: #b8864b20; padding: 2rem; border-radius: 40px;">
+                        <i class="fas fa-calendar-check" style="font-size: 2rem; color: #b8864b;"></i>
+                        <p style="margin-top: 0.8rem;">Напишите в Telegram — отвечаю в течение 15 минут в рабочее время.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 9: Футер -->
+    <footer class="footer">
+        <div class="copy">© 2025 numisma — финансовый советник. Лицензия не требуется, работаем на совесть.</div>
+        <div class="socials">
+            <i class="fab fa-linkedin-in"></i>
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-youtube"></i>
+        </div>
+    </footer>
+
+    <!-- JS: анимации header, reveal при скролле, плавный якорь -->
+    <script>
+        (function() {
+            // header скролл — уменьшаем
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // reveal (Intersection Observer)
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // можно дополнительно что-то подсветить (эффект modern)
+                        entry.target.style.transition = 'opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.9, 0.1, 1)';
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+            
+            reveals.forEach(r => observer.observe(r));
+
+            // плавный скролл для якорей
+            document.querySelectorAll('.nav a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElem = document.getElementById(targetId);
+                    if (targetElem) {
+                        targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+
+            // дополнительная анимация при наведении на карточки (тень)
+        })();
+    </script>
+
+    <!-- маленький ховер-эффект для всего (необязательно) -->
+    <style>
+        .card { transition: transform 0.25s ease, box-shadow 0.3s; }
+        .card:hover { box-shadow: 0 25px 35px -14px #b8864baa; }
+        .btn, .btn-outline { transition: all 0.2s; }
+        .header .logo i { transition: transform 0.3s; }
+        .header:hover .logo i { transform: rotate(8deg) scale(1.05); }
+        .nav a:after {
+            content: ''; position: absolute; width: 0; height: 1px; bottom: -4px; left: 0;
+            background: #b8864b; transition: width 0.25s;
+        }
+        .nav a:hover:after { width: 100%; }
+    </style>
+</body>
+</html>
+All done!
+```

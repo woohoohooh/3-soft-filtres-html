@@ -1,0 +1,527 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lens·Story | Режиссер монтажа</title>
+    <!-- Font Awesome 6 (бесплатные иконы) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0c0e;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #eaeef2;
+            line-height: 1.5;
+            font-weight: 350;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* кастомный скролл */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1d24; }
+        ::-webkit-scrollbar-thumb { background: #c89f5e; border-radius: 20px; }
+
+        /* хедер — анимация через js (будет менять фон при скролле) */
+        .header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: background 0.3s ease, padding 0.3s ease, backdrop-filter 0.3s ease;
+            mix-blend-mode: difference;
+        }
+
+        .header-scrolled {
+            background: rgba(10, 12, 18, 0.85);
+            backdrop-filter: blur(16px) saturate(180%);
+            padding: 1.2rem 3rem;
+            mix-blend-mode: normal;
+            border-bottom: 1px solid rgba(200, 159, 94, 0.2);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #f0e6d2, #cfa668);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: #f0eee9;
+            font-weight: 450;
+            font-size: 1.1rem;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav-links a:hover {
+            border-bottom-color: #c89f5e;
+            color: #fff;
+        }
+
+        /* общий контейнер */
+        .block {
+            min-height: 100vh;
+            width: 100%;
+            padding: 6rem 4rem 4rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            will-change: transform, opacity;
+        }
+
+        /* анимация появления блоков (Intersection Observer) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 1s cubic-bezier(0.2, 0.9, 0.1, 1), transform 1s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* контентные ограничения */
+        .content {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 5.5rem;
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            background: linear-gradient(145deg, #ffffff, #cfa668, #a89078);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            font-size: 3.5rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            border-left: 6px solid #c89f5e;
+            padding-left: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .accent {
+            color: #c89f5e;
+        }
+
+        .grid-2, .grid-3 {
+            display: grid;
+            gap: 2.5rem;
+        }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+        /* карточки с тонкой обводкой */
+        .card {
+            background: rgba(20, 22, 27, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(200, 159, 94, 0.2);
+            border-radius: 32px;
+            padding: 2.5rem 2rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: #c89f5e;
+            background: rgba(30, 32, 38, 0.8);
+            transform: translateY(-8px);
+        }
+        .card i {
+            font-size: 3rem;
+            color: #c89f5e;
+            margin-bottom: 1.5rem;
+        }
+
+        .demo-reel {
+            background: #1a1d24;
+            border-radius: 48px;
+            padding: 3rem;
+            border: 1px solid #c89f5e30;
+            box-shadow: 0 30px 40px -20px black;
+        }
+
+        .reel-placeholder {
+            background: #0b0c0e;
+            height: 280px;
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            border: 2px dashed #c89f5e60;
+            color: #aa9e8c;
+            font-size: 1.5rem;
+        }
+
+        .reel-placeholder i {
+            font-size: 5rem;
+            opacity: 0.7;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1.5px solid #c89f5e;
+            color: #f0e6d2;
+            padding: 1rem 3rem;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.25s;
+            text-decoration: none;
+            display: inline-block;
+            width: fit-content;
+        }
+        .btn:hover {
+            background: #c89f5e;
+            color: #0b0c0e;
+        }
+
+        .stats {
+            font-size: 3rem;
+            font-weight: 600;
+            color: #c89f5e;
+        }
+
+        .footer {
+            background: #0f1116;
+            border-top: 1px solid #2a2d37;
+            padding: 3rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .footer a {
+            color: #b9b3aa;
+            text-decoration: none;
+            margin-right: 2rem;
+        }
+        .footer a:hover { color: #c89f5e; }
+
+        /* адаптация под ПК (остается широким) */
+        @media (max-width: 1200px) {
+            h1 { font-size: 4rem; }
+            .block { padding: 6rem 2rem; }
+        }
+
+        /* дополнительные акценты */
+        .glow-text {
+            text-shadow: 0 0 15px #c89f5e40;
+        }
+        .marquee-tag {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        .marquee-tag span {
+            background: #20232b;
+            padding: 0.5rem 1.8rem;
+            border-radius: 60px;
+            border: 1px solid #c89f5e40;
+            font-size: 1.1rem;
+        }
+
+        /* якорное меню — активный пункт */
+        .nav-links a.active {
+            border-bottom-color: #c89f5e;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ФИКСИРОВАННАЯ ШАПКА (БЛОК 1/9) -->
+    <header class="header" id="mainHeader">
+        <div class="logo"><i class="fas fa-cut" style="color: #c89f5e; margin-right: 8px;"></i>Lens·Story</div>
+        <div class="nav-links">
+            <a href="#reel">демо</a>
+            <a href="#work">работы</a>
+            <a href="#process">процесс</a>
+            <a href="#contact">контакт</a>
+        </div>
+    </header>
+
+    <!-- БЛОК 2: HERO (fullscreen) -->
+    <section id="hero" class="block fade-up" style="justify-content: flex-end; padding-bottom: 8rem;">
+        <div class="content" style="max-width: 1600px;">
+            <div style="max-width: 1000px;">
+                <p class="accent" style="font-size: 1.3rem; letter-spacing: 4px; margin-bottom: 1rem;"><i class="fas fa-crown" style="margin-right: 8px;"></i>EDITOR / DIRECTOR</p>
+                <h1>монтаж,<br>который держит<br>в кадре</h1>
+                <div class="marquee-tag">
+                    <span>реклама</span>
+                    <span>музыкальные клипы</span>
+                    <span>короткий метр</span>
+                    <span>imax ready</span>
+                </div>
+                <p style="font-size: 1.5rem; margin: 2rem 0 3rem; color: #beb6aa;">драматургия света, ритма и смысла. demo-reel — одним касанием.</p>
+                <a href="#reel" class="btn"><i class="fas fa-play" style="margin-right: 10px;"></i>смотреть рил</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: ДЕМО-РИЛ (с анимацией и иконками) -->
+    <section id="reel" class="block fade-up" style="background: #0c0e12;">
+        <div class="content">
+            <h2><span class="accent">//</span> демо-рил 2025</h2>
+            <div class="demo-reel">
+                <div class="reel-placeholder">
+                    <i class="fas fa-film"></i>
+                    <span>нажмите для предпросмотра (reel)</span>
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div style="display: flex; gap: 2rem; margin-top: 2.5rem; flex-wrap: wrap;">
+                    <div><i class="fas fa-check-circle" style="color: #c89f5e;"></i> 150+ проектов</div>
+                    <div><i class="fas fa-check-circle" style="color: #c89f5e;"></i> 12 наград</div>
+                    <div><i class="fas fa-check-circle" style="color: #c89f5e;"></i> 4K HDR</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: ИЗБРАННЫЕ РАБОТЫ / ПОРТФОЛИО -->
+    <section id="work" class="block fade-up">
+        <div class="content">
+            <h2><span class="accent">//</span> кадры решают</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <i class="fas fa-video"></i>
+                    <h3 style="font-size: 1.8rem; margin-bottom: 1rem;">NIKE · «темп»</h3>
+                    <p>спот для соцсетей, 15млн просмотров. монтаж на стыке tech и эмоций.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-music"></i>
+                    <h3 style="font-size: 1.8rem; margin-bottom: 1rem;">wildways · «тишина»</h3>
+                    <p>клип для альтернативной группы. цветокоррекция + ритм.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-film"></i>
+                    <h3 style="font-size: 1.8rem; margin-bottom: 1rem;">«бабушка» (короткий)</h3>
+                    <p>приз Венецианского фестиваля. режиссура монтажа.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: ЦИФРЫ (СТАТИСТИКА) -->
+    <section class="block fade-up" style="background: #0f1118;">
+        <div class="content">
+            <div class="grid-3" style="text-align: center;">
+                <div>
+                    <div class="stats">7+</div>
+                    <div style="font-size: 1.5rem;">лет в индустрии</div>
+                </div>
+                <div>
+                    <div class="stats">200+</div>
+                    <div style="font-size: 1.5rem;">смонтированных проектов</div>
+                </div>
+                <div>
+                    <div class="stats">24</div>
+                    <div style="font-size: 1.5rem;">фильма / клипа</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: ПРОЦЕСС (СПИСОК УСЛУГ) -->
+    <section id="process" class="block fade-up">
+        <div class="content">
+            <h2><span class="accent">//</span> как я монтирую</h2>
+            <div class="grid-2">
+                <div class="card" style="display: flex; flex-direction: column;">
+                    <i class="fas fa-scissors"></i>
+                    <h3>офлайн / онлайн</h3>
+                    <p>черновой монтаж, тонкий тайминг, мультикамерка.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-paint-bucket"></i>
+                    <h3>color grading</h3>
+                    <p>daVinci Resolve — кинематографичный look, HDR.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-headphones"></i>
+                    <h3>саунд-дизайн</h3>
+                    <p>foley, atmos, сведение под формат.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-rocket"></i>
+                    <h3>финальный экспорт</h3>
+                    <p>DCP, ProRes, H.264 для любых площадок.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: КЛИЕНТЫ / ОТЗЫВЫ (КОРОТКО) -->
+    <section class="block fade-up" style="background: #0a0c10;">
+        <div class="content">
+            <div style="display: flex; gap: 4rem; flex-wrap: wrap; align-items: center;">
+                <div style="flex: 1;">
+                    <i class="fas fa-quote-right" style="font-size: 5rem; opacity: 0.2;"></i>
+                    <p style="font-size: 2rem; font-weight: 300; line-height: 1.4;">«Ты чувствуешь ритм лучше любого метронома. После твоего монтажа фильм заиграл»</p>
+                    <p style="margin-top: 2rem;">— Артём Логинов, режиссёр</p>
+                </div>
+                <div class="card" style="flex: 1; background: #1b1e26;">
+                    <i class="fas fa-handshake"></i>
+                    <p style="font-size: 1.3rem;">работа с брендами: adidas, red Bull, local crew, more</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: ПРИЗЫВ / КОНТАКТНАЯ ФОРМА (УСЛОВНАЯ) -->
+    <section id="contact" class="block fade-up" style="justify-content: center;">
+        <div class="content" style="text-align: center; max-width: 900px;">
+            <h2 style="border-left: none; text-align: center;">начать проект</h2>
+            <p style="font-size: 1.8rem; margin-bottom: 3rem;">раскадровка, монтаж, цвет — под ключ.</p>
+            <div style="display: flex; gap: 2rem; justify-content: center;">
+                <div class="card" style="width: 300px;">
+                    <i class="fas fa-paper-plane"></i>
+                    <h3>Telegram</h3>
+                    <p style="font-size: 1.2rem;">@lens_story_edit</p>
+                </div>
+                <div class="card" style="width: 300px;">
+                    <i class="fas fa-envelope"></i>
+                    <h3>e-mail</h3>
+                    <p style="font-size: 1.2rem;">cut@lensstory.pro</p>
+                </div>
+            </div>
+            <div style="margin-top: 3rem;">
+                <a href="#" class="btn"><i class="fas fa-calendar"></i> забронировать дату</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: ФУТЕР (footer) -->
+    <footer class="footer">
+        <div>
+            <span style="font-size: 1.5rem; font-weight: 600; background: linear-gradient(130deg, #f0e6d2, #cfa668); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Lens·Story</span>
+            <p style="color: #736b60; margin-top: 0.5rem;">© монтаж, меняющий восприятие</p>
+        </div>
+        <div>
+            <a href="#hero">вверх</a>
+            <a href="#reel">рил</a>
+            <a href="#work">портфолио</a>
+            <a href="#contact">контакты</a>
+        </div>
+        <div>
+            <i class="fab fa-instagram" style="margin-right: 1rem; color: #b9b3aa;"></i>
+            <i class="fab fa-vimeo-v" style="margin-right: 1rem; color: #b9b3aa;"></i>
+            <i class="fab fa-linkedin-in" style="color: #b9b3aa;"></i>
+        </div>
+    </footer>
+
+    <!-- JS: анимации шапки, скролл-появление, активное меню -->
+    <script>
+        (function() {
+            // Intersection Observer для появления блоков
+            const faders = document.querySelectorAll('.fade-up');
+            const appearOptions = { threshold: 0.2, rootMargin: '0px 0px -50px 0px' };
+            const appearOnScroll = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    entry.target.classList.add('appear');
+                    observer.unobserve(entry.target);
+                });
+            }, appearOptions);
+            faders.forEach(fader => appearOnScroll.observe(fader));
+
+            // Header анимация при скролле (меняется фон, padding)
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('header-scrolled');
+                } else {
+                    header.classList.remove('header-scrolled');
+                }
+            });
+
+            // Подсветка активного пункта меню (якоря)
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.nav-links a');
+
+            function setActiveLink() {
+                let current = '';
+                const scrollPos = window.scrollY + 200; // компенсация высоты хедера
+
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionBottom = sectionTop + section.offsetHeight;
+                    if (scrollPos >= sectionTop && scrollPos < sectionBottom) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    const href = link.getAttribute('href').replace('#', '');
+                    if (href === current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', setActiveLink);
+            window.addEventListener('load', setActiveLink);
+
+            // доп: плавный скролл для якорей (без конфликтов)
+            document.querySelectorAll('.nav-links a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // кнопка "смотреть рил" тоже smooth
+            const reelBtn = document.querySelector('a[href="#reel"].btn');
+            if(reelBtn) {
+                reelBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const reelSec = document.getElementById('reel');
+                    window.scrollTo({ top: reelSec.offsetTop - 70, behavior: 'smooth' });
+                });
+            }
+        })();
+    </script>
+    <!-- All done! (без комментариев) -->
+</body>
+</html>
+```
+All done!

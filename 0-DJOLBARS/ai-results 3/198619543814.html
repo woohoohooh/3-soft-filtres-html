@@ -1,0 +1,575 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avrora · Бухгалтерия на аутсорсе</title>
+    <!-- Font Awesome 6 (бесплатные стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #f4f7fc;
+            color: #13294b;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* глобальный скролл-эффект — плавный */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* кастомный скроллбар — свежий тренд */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e0e8f0;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a5c8a;
+            border-radius: 12px;
+        }
+
+        /* фиксированная навигация + анимация при скролле */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 1200px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 60px;
+            padding: 0.9rem 2.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 20px 40px -12px rgba(18, 52, 77, 0.2);
+            z-index: 999;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* компактный вариант при скролле (добавится через js) */
+        .navbar.navbar-shrink {
+            top: 12px;
+            padding: 0.5rem 1.8rem;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 16px 30px -12px #0b2b44;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(145deg, #0f2b50, #245b8c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: 0.2s;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 550;
+            color: #1a3552;
+            font-size: 1.05rem;
+            position: relative;
+            padding: 0.3rem 0;
+            transition: color 0.2s;
+        }
+
+        .nav-links a::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 2.5px;
+            background: #1f6390;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::before {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: #0c3f64;
+        }
+
+        /* эффект появления блоков при скролле (fade-up + легкий skew) */
+        .section {
+            opacity: 0;
+            transform: translateY(40px) skewX(-1deg);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), transform 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
+            will-change: opacity, transform;
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0) skewX(0);
+        }
+
+        /* каждая секция */
+        .block {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 5rem 4rem;
+            border-radius: 42px;
+            background: #ffffffdd;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 30px 60px -25px rgba(13, 45, 71, 0.2);
+            margin-top: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(200, 221, 242, 0.5);
+        }
+
+        /* header — специальный бесплатный блок с живой анимацией через js (волны/счетчик) */
+        .header-block {
+            background: linear-gradient(115deg, #eef5fc 0%, #ffffff 80%);
+            border-bottom-left-radius: 50px;
+            border-bottom-right-radius: 50px;
+            padding-top: 7rem;
+            position: relative;
+            isolation: isolate;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .header-left h1 {
+            font-size: 3.8rem;
+            font-weight: 700;
+            line-height: 1.2;
+            background: linear-gradient(to right, #102b44, #26648b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.8rem;
+        }
+
+        .highlight-stats {
+            display: flex;
+            gap: 2.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #1b4b74;
+            line-height: 1;
+        }
+
+        .stat-label {
+            color: #365f7e;
+            font-weight: 450;
+            letter-spacing: 0.3px;
+        }
+
+        /* анимация js-цифр (заполнение) — само меняется в js */
+        .btn-primary {
+            background: #1d4f78;
+            border: none;
+            color: white;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            box-shadow: 0 20px 30px -15px #1d4f7890;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #ffffff60;
+        }
+
+        .btn-primary:hover {
+            background: #0f3e60;
+            box-shadow: 0 25px 35px -12px #0f3550;
+            transform: scale(1.02);
+        }
+
+        .header-right {
+            background: radial-gradient(circle at 70% 30%, #c1dcf5, transparent 70%);
+            padding: 2rem;
+            border-radius: 40px;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .dynamic-emoji-box {
+            background: rgba(255,255,255,0.5);
+            border-radius: 100px;
+            padding: 1.5rem 2rem;
+            font-size: 3rem;
+            text-align: center;
+            backdrop-filter: blur(6px);
+            border: 2px dashed #2a6c9e;
+            transition: all 0.2s;
+        }
+
+        /* прочие блоки */
+        h2 {
+            font-size: 2.6rem;
+            font-weight: 650;
+            margin-bottom: 2rem;
+            letter-spacing: -0.02em;
+            color: #102c46;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .service-card {
+            background: #f2f9ff;
+            padding: 2.2rem 1.8rem;
+            border-radius: 36px;
+            transition: all 0.3s ease;
+            border: 1px solid #bdd8f1;
+        }
+
+        .service-card i {
+            font-size: 2.7rem;
+            color: #246e9e;
+            margin-bottom: 1.2rem;
+        }
+
+        .service-card:hover {
+            transform: translateY(-14px) rotate(0.5deg);
+            background: white;
+            box-shadow: 0 30px 40px -15px #15425636;
+        }
+
+        .testimonial-grid {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .testi-item {
+            background: #ecf3fa;
+            border-radius: 38px;
+            padding: 2rem;
+            font-style: italic;
+            border-left: 8px solid #1f6390;
+        }
+
+        .footer-block {
+            background: #102c46;
+            color: #dbeafe;
+            border-radius: 40px 40px 0 0;
+            text-align: center;
+            padding: 2.8rem;
+            margin-bottom: 0;
+        }
+
+        .footer-block i {
+            color: #94c0e6;
+            margin: 0 0.5rem;
+            transition: 0.2s;
+        }
+
+        .footer-block i:hover {
+            color: white;
+        }
+
+        /* якорное меню + отступы */
+        section {
+            scroll-margin-top: 100px;
+        }
+
+        /* мелкая адаптация под ПК — уже ок */
+        @media (max-width: 1000px) {
+            .navbar { width: 90%; padding: 0.7rem 1.2rem; }
+            .nav-links { gap: 1.5rem; }
+            .block { padding: 3rem 2rem; }
+            .grid-3 { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ФИКСИРОВАННАЯ ШАПКА (МЕНЮ) -->
+    <nav class="navbar" id="navbar">
+        <span class="logo"><i class="fas fa-calculator" style="background: linear-gradient(145deg, #0f2b50, #245b8c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i> Avrora</span>
+        <ul class="nav-links">
+            <li><a href="#home">Главная</a></li>
+            <li><a href="#services">Услуги</a></li>
+            <li><a href="#cases">Кейсы</a></li>
+            <li><a href="#about">О нас</a></li>
+            <li><a href="#contact">Контакты</a></li>
+        </ul>
+    </nav>
+
+    <!-- БЛОК 1: ШАПКА (home) с анимацией js (динамические цифры + эмодзи/смайлик бег) -->
+    <section id="home" class="section header-block block" style="margin-top: 0; padding-top: 9rem;">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>Бухгалтерия<br>без головной боли</h1>
+                <div class="highlight-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="statYears">0</span>
+                        <span class="stat-label">лет безупречно</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="statClients">0</span>
+                        <span class="stat-label">активных клиентов</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="statTax">0</span>
+                        <span class="stat-label">млн ₽ экономии</span>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="document.getElementById('contact').scrollIntoView()">Обсудить проект →</button>
+            </div>
+            <div class="header-right">
+                <div class="dynamic-emoji-box" id="rotatingEmoji">
+                    ⚡
+                </div>
+                <p style="margin-top: 1rem; color:#0e314a;">живая эмблема надёжности</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: ПРЕИМУЩЕСТВА / УСЛУГИ -->
+    <section id="services" class="section block">
+        <h2>Что мы делаем <i class="fas fa-arrow-right" style="color: #1f6390;"></i></h2>
+        <div class="grid-3">
+            <div class="service-card">
+                <i class="fas fa-file-invoice"></i>
+                <h3>Полное бух. сопровождение</h3>
+                <p>Учет, отчетность, ФНС — под ключ. Без штрафов и сюрпризов.</p>
+            </div>
+            <div class="service-card">
+                <i class="fas fa-chart-line"></i>
+                <h3>Управленка и аудит</h3>
+                <p>Прозрачные финансы для собственника. Режем расходы без потерь.</p>
+            </div>
+            <div class="service-card">
+                <i class="fas fa-credit-card"></i>
+                <h3>Расчет зарплаты</h3>
+                <p>ЗП, налоги, взносы. Сложные случаи и оптимизация.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: ЦИФРЫ / ДОСТИЖЕНИЯ (другой визуал) -->
+    <section class="section block" style="background: #e3effb;">
+        <div style="display: flex; align-items: center; gap: 4rem; flex-wrap: wrap;">
+            <div style="flex: 1;">
+                <h2 style="font-size: 3rem; margin-bottom: 0;">> 12 лет</h2>
+                <p style="font-size: 1.3rem;">средний опыт экспертов</p>
+            </div>
+            <div style="flex: 2;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div><i class="fas fa-building" style="font-size: 2.2rem; color:#102c46;"></i> 480+ компаний доверили учёт</div>
+                    <div><i class="fas fa-clock" style="font-size: 2.2rem;"></i> Экономия времени до 30%</div>
+                    <div><i class="fas fa-bell" style="font-size: 2.2rem;"></i> 0 просрочек за 3 года</div>
+                    <div><i class="fas fa-shield-alt" style="font-size: 2.2rem;"></i> Страхование ответственности</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: РЕАЛЬНЫЕ КЕЙСЫ (ПОРТФОЛИО) -->
+    <section id="cases" class="section block">
+        <h2>Кейсы, которыми гордимся</h2>
+        <div style="display: flex; gap: 2rem;">
+            <div style="flex:1; background: #f3f9ff; border-radius: 32px; padding: 2rem;">
+                <i class="fas fa-store" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                <p style="font-weight: 700; margin: 0.5rem 0;">Сеть кофеен</p>
+                <p>Восстановили учёт, вернули 2,3 млн ₽ из ФНС по переплате.</p>
+            </div>
+            <div style="flex:1; background: #f3f9ff; border-radius: 32px; padding: 2rem;">
+                <i class="fas fa-truck"></i>
+                <p style="font-weight: 700; margin: 0.5rem 0;">Логистический оператор</p>
+                <p>Автоматизировали зарплату 120 водителям, экономия 900 тыс/год.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: КОМАНДА / ЭКСПЕРТЫ (с иконками) -->
+    <section id="about" class="section block">
+        <h2>Команда «Avrora»</h2>
+        <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+            <div><i class="fas fa-user-tie fa-3x"></i> <h3>Елена Знаток</h3> <p>аттестованный аудитор, 18 лет</p></div>
+            <div><i class="fas fa-user-graduate fa-3x"></i> <h3>Дмитрий Баланс</h3> <p>налоговый консультант</p></div>
+            <div><i class="fas fa-user-cog fa-3x"></i> <h3>Анна Финанс</h3> <p>эксперт по МСФО</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: ОТЗЫВЫ (соцдоказательства) -->
+    <section class="section block">
+        <h2>Нас рекомендуют</h2>
+        <div class="testimonial-grid">
+            <div class="testi-item">
+                «Передали бухгалтерию — полёт нормальный. Ни одной ошибки за год.»
+                <br>— ООО «ТехноСтарт»
+            </div>
+            <div class="testi-item">
+                «Аврора спасла проверку. Спасибо за профессионализм!»
+                <br>— ИП Мельникова
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: ПАРТНЁРЫ / ЛОГОТИПЫ (иконки) -->
+    <section class="section block" style="text-align: center;">
+        <h3><i class="fas fa-handshake"></i> Нам доверяют</h3>
+        <div style="display: flex; justify-content: space-around; font-size: 3rem; color: #2f628b; gap: 2rem; flex-wrap: wrap;">
+            <i class="fas fa-building"></i> <i class="fas fa-industry"></i> <i class="fas fa-chart-pie"></i> <i class="fas fa-tasks"></i>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: КОНТАКТЫ / ФОРМА (call to action) -->
+    <section id="contact" class="section block" style="background: linear-gradient(145deg, #ffffff, #e7f0fa);">
+        <h2>Хотите так же?</h2>
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <div style="flex:1">
+                <p style="font-size: 1.4rem;">Оставьте заявку — перезвоним за 15 мин</p>
+                <p><i class="fas fa-phone-alt"></i> +7 (495) 000-00-00</p>
+                <p><i class="fas fa-envelope"></i> hello@avrora.buh</p>
+            </div>
+            <div style="flex:1">
+                <button class="btn-primary" style="width:100%;" onclick="alert('Спасибо, скоро свяжемся! (демо-лендинг)')">Написать в WhatsApp</button>
+                <button class="btn-primary" style="margin-top:1rem; background:#527d9e;" onclick="alert('Демо форма')">Telegram</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: ФУТЕР -->
+    <footer class="footer-block">
+        <p><i class="fas fa-copyright"></i> Avrora · бухгалтерский аутсорсинг  2025</p>
+        <p>
+            <i class="fab fa-telegram"></i>
+            <i class="fab fa-whatsapp"></i>
+            <i class="fab fa-vk"></i>
+        </p>
+    </footer>
+
+    <script>
+        (function() {
+            // ---------- АНИМАЦИЯ ШАПКИ (js) ----------
+            // вращающиеся эмодзи / значки
+            const emojiBox = document.getElementById('rotatingEmoji');
+            const emojis = ['🧾', '⚖️', '📊', '💰', '🔒', '✅', '📈'];
+            let idx = 0;
+            setInterval(() => {
+                idx = (idx + 1) % emojis.length;
+                if (emojiBox) emojiBox.innerText = emojis[idx];
+            }, 900);
+
+            // счетчик статистики (накрутка от 0 до целевых)
+            function animateValue(id, target, suffix = '') {
+                let current = 0;
+                const step = Math.ceil(target / 60); // за 60 шагов (~1сек)
+                const el = document.getElementById(id);
+                if (!el) return;
+                const timer = setInterval(() => {
+                    current += step;
+                    if (current >= target) {
+                        el.innerText = target + suffix;
+                        clearInterval(timer);
+                    } else {
+                        el.innerText = current + suffix;
+                    }
+                }, 20);
+            }
+            // запустить когда секция появится (но для красоты запускаем сразу)
+            animateValue('statYears', 14, '');
+            animateValue('statClients', 187, '');
+            animateValue('statTax', 47, '');
+
+            // ---------- НАВБАР SHRINK ПРИ СКРОЛЛЕ + ПОДСВЕТКА МЕНЮ (эффект) ----------
+            const navbar = document.getElementById('navbar');
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-links a');
+
+            function checkNav() {
+                // shrink
+                if (window.scrollY > 40) {
+                    navbar.classList.add('navbar-shrink');
+                } else {
+                    navbar.classList.remove('navbar-shrink');
+                }
+
+                // подсветка активного пункта меню (якорная)
+                let currentSection = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 120;
+                    const sectionBottom = sectionTop + section.offsetHeight;
+                    if (window.scrollY >= sectionTop && window.scrollY < sectionBottom) {
+                        currentSection = section.getAttribute('id') || '';
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.style.color = '#1a3552'; // default
+                    link.style.fontWeight = '500';
+                    if (link.getAttribute('href').substring(1) === currentSection) {
+                        link.style.color = '#0a3e62';
+                        link.style.fontWeight = '700';
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', checkNav);
+            checkNav(); // сразу
+
+            // ---------- АНИМАЦИЯ ПОЯВЛЕНИЯ БЛОКОВ (скролл эффект) ----------
+            const sectionsToAnimate = document.querySelectorAll('.section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    } else {
+                        // можно убрать если не нужно повторное скрытие
+                        // но оставим — при обратном скролле блок исчезает (эффектно)
+                        entry.target.classList.remove('visible');
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px' });
+
+            sectionsToAnimate.forEach(sec => observer.observe(sec));
+
+            // дополнительно добавим видимым первый блок сразу
+            setTimeout(() => {
+                document.getElementById('home')?.classList.add('visible');
+            }, 100);
+        })();
+    </script>
+    <!-- небольшой дополнительный скрипт для рестарта счетчиков при повторном входе - не требуется, оставим так -->
+</body>
+</html>
+All done!
+```

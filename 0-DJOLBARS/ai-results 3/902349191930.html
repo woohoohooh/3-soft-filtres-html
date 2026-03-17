@@ -1,0 +1,595 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Импульс · Промо-сайт умных наушников</title>
+    <!-- Font Awesome 6 (стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f6f8fc;
+            color: #101010;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+        /* плавный скролл + якоря */
+        html {
+            scroll-behavior: smooth;
+        }
+        /* кастомная анимация появления блоков при скролле (IntersectionObserver) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* фиксированная шапка (компактная) */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 18px 10%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.02);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            transition: all 0.25s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+        }
+        header.compact {
+            padding: 8px 10%;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 4px 24px rgba(0,20,50,0.1);
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(145deg, #0a1a2f, #1e3a5f);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .logo i {
+            font-size: 2.2rem;
+            color: #1e3a5f;
+            background: none;
+            background-clip: unset;
+            -webkit-background-clip: unset;
+            color: #1e3a5f;
+        }
+        .nav-links {
+            display: flex;
+            gap: 36px;
+            font-weight: 500;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: #111;
+            font-size: 1rem;
+            border-bottom: 2px solid transparent;
+            transition: 0.2s;
+            padding: 4px 0;
+        }
+        .nav-links a:hover {
+            border-bottom-color: #1e3a5f;
+            color: #1e3a5f;
+        }
+        .nav-links a i {
+            margin-right: 6px;
+            font-size: 0.9rem;
+            color: #3b6e9e;
+        }
+        /* главный блок с js-анимацией в шапке (волны/частицы) */
+        .hero {
+            margin-top: 100px; /* под фикс. шапку */
+            min-height: 90vh;
+            background: radial-gradient(circle at 80% 30%, #eef4ff, #dce9ff);
+            display: flex;
+            align-items: center;
+            position: relative;
+            isolation: isolate;
+            overflow: hidden;
+        }
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .hero-content {
+            max-width: 700px;
+            padding: 0 10%;
+            position: relative;
+            z-index: 5;
+        }
+        .hero-content h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, #091c2f, #20476b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .hero-content p {
+            font-size: 1.4rem;
+            margin: 25px 0 30px;
+            color: #1f384d;
+            font-weight: 350;
+            max-width: 550px;
+        }
+        .cta-btn {
+            background: #101010;
+            border: none;
+            color: white;
+            font-weight: 600;
+            font-size: 1.2rem;
+            padding: 18px 52px;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 20px 30px -8px rgba(0,35,70,0.3);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .cta-btn i {
+            font-size: 1.5rem;
+        }
+        .cta-btn:hover {
+            background: #1e3a5f;
+            transform: scale(1.03) translateY(-3px);
+            box-shadow: 0 28px 35px -8px #0b2b4b;
+        }
+        /* общий блок */
+        .block {
+            padding: 90px 10%;
+            background: white;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+        }
+        .block:nth-child(even) {
+            background: #f9fcff;
+        }
+        .block h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 25px;
+            color: #0c1f30;
+            position: relative;
+            display: inline-block;
+        }
+        .block h2 i {
+            color: #31678c;
+            margin-right: 15px;
+        }
+        .grid-3 {
+            display: flex;
+            gap: 35px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        .card {
+            background: white;
+            border-radius: 40px;
+            padding: 40px 30px;
+            flex: 1 1 240px;
+            box-shadow: 0 30px 45px -20px rgba(0,30,60,0.15);
+            transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.5);
+            backdrop-filter: blur(5px);
+        }
+        .card:hover {
+            transform: translateY(-16px) scale(1.02);
+            box-shadow: 0 40px 55px -15px #1e3a5f40;
+        }
+        .card i {
+            font-size: 3rem;
+            background: linear-gradient(145deg, #1e3a5f, #2e5a88);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+        }
+        .card h3 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .card p {
+            color: #2c3e4f;
+            font-weight: 350;
+        }
+        .specs-show {
+            display: flex;
+            gap: 20px;
+            justify-content: space-between;
+            background: #10273b;
+            color: white;
+            border-radius: 80px;
+            padding: 30px 40px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        .spec-item {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        .spec-item i {
+            font-size: 2.4rem;
+            color: #aad0ff;
+        }
+        .counter {
+            font-size: 2.6rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        /* кастомный блок с testimonial */
+        .testimonial-grid {
+            display: flex;
+            gap: 40px;
+            margin: 50px 0;
+        }
+        .testi {
+            background: #ffffffcc;
+            border-radius: 40px;
+            padding: 40px;
+            backdrop-filter: blur(8px);
+            border: 1px solid white;
+            flex: 1;
+            transition: 0.2s;
+        }
+        .testi i {
+            font-size: 3rem;
+            color: #20476b80;
+        }
+        .testi p {
+            font-size: 1.3rem;
+            margin: 15px 0;
+            font-style: italic;
+        }
+        .testi h4 {
+            font-weight: 600;
+        }
+        .footer {
+            background: #0f1f2d;
+            color: #d3e1ee;
+            padding: 50px 10%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .footer .social i {
+            font-size: 1.8rem;
+            margin-left: 25px;
+            color: #9dbcd4;
+            transition: 0.2s;
+        }
+        .footer .social i:hover {
+            color: white;
+            transform: scale(1.1);
+        }
+        .footer .copy {
+            font-size: 0.95rem;
+        }
+        /* маленькие фишки */
+        .badge-light {
+            background: #dfeaf5;
+            border-radius: 100px;
+            padding: 8px 24px;
+            font-weight: 600;
+            color: #0f2b41;
+        }
+        .price-tag {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #143450;
+        }
+        hr {
+            opacity: 0.2;
+        }
+    </style>
+</head>
+<body>
+    <header id="navbar">
+        <div class="logo">
+            <i class="fas fa-head-side-vr"></i> IMPULSE
+        </div>
+        <div class="nav-links">
+            <a href="#hero"><i class="fas fa-wave-square"></i> концепт</a>
+            <a href="#tech"><i class="fas fa-microchip"></i> технологии</a>
+            <a href="#reviews"><i class="fas fa-star"></i> отзывы</a>
+            <a href="#order"><i class="fas fa-bolt"></i> заказ</a>
+        </div>
+    </header>
+
+    <!-- БЛОК 1: Hero с canvas анимация (JS) -->
+    <section id="hero" class="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content reveal">
+            <span class="badge-light"><i class="fas fa-sparkles"></i> лимитированная серия</span>
+            <h1>Импульс звука<br>нового поколения</h1>
+            <p>Полное погружение, пространственное аудио и адаптивный шумоподавитель — только в Impulse X1.</p>
+            <button class="cta-btn" onclick="alert('Спасибо! Менеджер свяжется (демо-портфолио)')">
+                <i class="fas fa-headphones"></i> получить презентацию
+            </button>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: преимущества / ключевые фишки -->
+    <section id="tech" class="block reveal">
+        <h2><i class="fas fa-bolt"></i> технологический рывок</h2>
+        <div class="grid-3">
+            <div class="card">
+                <i class="fas fa-ear-deaf"></i>
+                <h3>Adaptive ANC™</h3>
+                <p>Активное шумоподавление следующего поколения подстраивается под окружение 500 раз в секунду.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-satellite-dish"></i>
+                <h3>Lossless audio</h3>
+                <p>Передача по сверхширокополосному каналу без сжатия, частота дискретизации 96 кГц.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-battery-full"></i>
+                <h3>60 ч работы</h3>
+                <p>Рекордная автономность + быстрая зарядка: 10 мин = 8 часов музыки.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: цифры / динамический счетчик (js анимация) -->
+    <section class="block reveal" style="background: #e3eefb;">
+        <h2><i class="fas fa-chart-line"></i> импульс в цифрах</h2>
+        <div class="specs-show">
+            <div class="spec-item">
+                <i class="fas fa-head-side"></i>
+                <div><span class="counter" data-target="93">0</span>% <br> довольных клиентов</div>
+            </div>
+            <div class="spec-item">
+                <i class="fas fa-microchip"></i>
+                <div><span class="counter" data-target="12">0</span> мм <br> излучатели</div>
+            </div>
+            <div class="spec-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <div><span class="counter" data-target="40">0</span> kHz <br> частотный диапазон</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: отзывы (реальные фразы) -->
+    <section id="reviews" class="block reveal">
+        <h2><i class="fas fa-comment-dots"></i> что говорят</h2>
+        <div class="testimonial-grid">
+            <div class="testi">
+                <i class="fas fa-quote-right"></i>
+                <p>«Ничего лучше не слушал. Сцена просто космос, шумодав отрезает даже перфоратор соседа»</p>
+                <h4>— Андрей, звукорежиссёр</h4>
+            </div>
+            <div class="testi">
+                <i class="fas fa-quote-right"></i>
+                <p>«В самолёте спал как младенец. Батареи хватило на Москва—Токио и ещё на неделю»</p>
+                <h4>— Елена, пилот</h4>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: дизайн / материалы (иконки) -->
+    <section class="block reveal">
+        <h2><i class="fas fa-gem"></i> материалы и эргономика</h2>
+        <div style="display: flex; gap: 60px; align-items: center; flex-wrap: wrap;">
+            <div style="flex:1">
+                <ul style="list-style: none; font-size: 1.3rem;">
+                    <li><i class="fas fa-check-circle" style="color: #1e6b9b;"></i> Авиационный алюминий</li>
+                    <li><i class="fas fa-check-circle" style="color: #1e6b9b;"></i> Амбушюры с эффектом памяти</li>
+                    <li><i class="fas fa-check-circle" style="color: #1e6b9b;"></i> Водоотталкивающее покрытие</li>
+                </ul>
+            </div>
+            <div style="flex:1">
+                <i class="fas fa-head-side-vr" style="font-size: 12rem; color: #153f5c; opacity: 0.5;"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: промо / цена -->
+    <section id="order" class="block reveal" style="text-align: center;">
+        <h2><i class="fas fa-tags"></i> старт продаж</h2>
+        <div style="font-size: 1.8rem; margin: 20px 0;">ранний доступ — специальная цена</div>
+        <div class="price-tag"><i class="fas fa-dollar-sign"></i> 299 <span style="font-size: 1.2rem; color: gray;">(вместо 449)</span></div>
+        <button class="cta-btn" style="margin: 40px auto; background: #1d3557;" onclick="alert('Демо-заявка принята (лендинг в портфолио)')"><i class="fas fa-gift"></i> забронировать</button>
+    </section>
+
+    <!-- БЛОК 7: сравнение / бонус -->
+    <section class="block reveal">
+        <h2><i class="fas fa-chart-simple"></i> против конкурентов</h2>
+        <table style="width:100%; border-collapse: collapse; font-size: 1.2rem;">
+            <tr><th></th><th>Impulse X1</th><th>Бренд X</th><th>Бренд Y</th></tr>
+            <tr><td>ANC глубина</td><td><i class="fas fa-check" style="color:green"></i> -42 дБ</td><td>-35 дБ</td><td>-38 дБ</td></tr>
+            <tr><td>Кодеки</td><td>LDAC, aptX Lossless</td><td>AAC, SBC</td><td>aptX</td></tr>
+            <tr><td>вес</td><td>245 г</td><td>305 г</td><td>285 г</td></tr>
+        </table>
+    </section>
+
+    <!-- БЛОК 8: FAQ / иконки + аккордеон без JS (упрощенно) -->
+    <section class="block reveal">
+        <h2><i class="fas fa-circle-question"></i> частое</h2>
+        <div style="display: grid; gap: 15px;">
+            <div><i class="fas fa-angle-right"></i> Есть ли влагозащита? — IPX4, для спорта и дождя.</div>
+            <div><i class="fas fa-angle-right"></i> Совместимость с Android / iOS? — полная, плюс кастомное приложение.</div>
+            <div><i class="fas fa-angle-right"></i> Гарантия? — 2 года, расширенная.</div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: футер -->
+    <footer class="footer">
+        <div class="copy"><i class="far fa-copyright"></i> 2025 IMPULSE AUDIO — демо-лендинг для портфолио</div>
+        <div class="social">
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-x-twitter"></i>
+            <i class="fab fa-telegram"></i>
+            <i class="fab fa-linkedin"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // ----- FIXED HEADER компактный при скролле
+            const header = document.getElementById('navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 60) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // ----- canvas анимация в hero (волны / пульсации)
+            const canvas = document.getElementById('hero-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let particles = [];
+                const PARTICLE_COUNT = 45;
+
+                function initCanvas() {
+                    width = window.innerWidth;
+                    height = canvas.parentElement.offsetHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                    particles = [];
+                    for (let i = 0; i < PARTICLE_COUNT; i++) {
+                        particles.push({
+                            x: Math.random() * width,
+                            y: Math.random() * height,
+                            radius: 4 + Math.random() * 18,
+                            speedX: (Math.random() - 0.5) * 0.4,
+                            speedY: (Math.random() - 0.5) * 0.2,
+                            alpha: 0.1 + Math.random() * 0.3,
+                            pulse: 0.5 + Math.random() * 0.8,
+                        });
+                    }
+                }
+
+                function drawParticles() {
+                    ctx.clearRect(0, 0, width, height);
+                    for (let p of particles) {
+                        ctx.beginPath();
+                        let gradient = ctx.createRadialGradient(p.x, p.y, 2, p.x+8, p.y+5, p.radius*2);
+                        gradient.addColorStop(0, 'rgba(100, 160, 230, 0.3)');
+                        gradient.addColorStop(1, 'rgba(40, 90, 150, 0)');
+                        ctx.fillStyle = gradient;
+                        ctx.arc(p.x, p.y, p.radius * (0.8 + 0.4 * Math.sin(Date.now() * 0.002 * p.pulse)), 0, Math.PI * 2);
+                        ctx.fill();
+                        // двигаем
+                        p.x += p.speedX;
+                        p.y += p.speedY;
+                        if (p.x < -30) p.x = width + 30;
+                        if (p.x > width + 30) p.x = -30;
+                        if (p.y < -30) p.y = height + 30;
+                        if (p.y > height + 30) p.y = -30;
+                    }
+                    requestAnimationFrame(drawParticles);
+                }
+
+                window.addEventListener('resize', () => {
+                    initCanvas();
+                });
+                initCanvas();
+                requestAnimationFrame(drawParticles);
+            }
+
+            // ----- Анимация счетчиков (при появлении блока)
+            const counters = document.querySelectorAll('.counter');
+            const speed = 200;
+
+            const observerCounters = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const counter = entry.target;
+                        const updateCounter = () => {
+                            const target = +counter.getAttribute('data-target');
+                            const current = +counter.innerText;
+                            const increment = target / speed;
+                            if (current < target) {
+                                counter.innerText = Math.ceil(current + increment);
+                                setTimeout(updateCounter, 15);
+                            } else {
+                                counter.innerText = target;
+                            }
+                        };
+                        updateCounter();
+                        observerCounters.unobserve(counter); // один раз
+                    }
+                });
+            });
+            counters.forEach(c => observerCounters.observe(c));
+
+            // ----- Reveal-анимация блоков при скролле
+            const reveals = document.querySelectorAll('.reveal');
+            const observerReveal = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    } else {
+                        // можно убирать, если нужно повторное появление, но оставим для эффекта
+                        // entry.target.classList.remove('active');
+                    }
+                });
+            }, { threshold: 0.15 });
+            reveals.forEach(r => observerReveal.observe(r));
+        })();
+    </script>
+
+    <!-- маленький твик для активных ссылок подсветки (доп) -->
+    <style>
+        .nav-links a.active { border-bottom-color: #1e3a5f; color: #0b2b4b; font-weight: 600; }
+        table td, table th { padding: 15px; border-bottom: 1px solid #cad9ed; }
+        .fa-check-circle { margin-right: 10px; }
+    </style>
+    <script>
+        (function secondaryNavHighlight(){
+            const sections = document.querySelectorAll('section[id]');
+            window.addEventListener('scroll', ()=>{
+                let scrollY = window.scrollY;
+                sections.forEach(sec => {
+                    const secTop = sec.offsetTop - 120;
+                    const secBottom = secTop + sec.offsetHeight;
+                    const link = document.querySelector(`.nav-links a[href="#${sec.id}"]`);
+                    if (link && scrollY >= secTop && scrollY < secBottom) {
+                        document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+                        link.classList.add('active');
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

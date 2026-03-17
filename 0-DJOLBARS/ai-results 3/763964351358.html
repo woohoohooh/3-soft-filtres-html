@@ -1,0 +1,665 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinEdge · финансовый советник | доверие + стратегия</title>
+    <!-- Font Awesome 6 (бесплатные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f5f7fb;
+            color: #121826;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* плавный скролл */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* кастомная анимация появления блоков (Intersection Observer сработает через JS) */
+        .section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+            will-change: opacity, transform;
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* фиксированная шапка с анимацией сжатия */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 24px 48px;
+            background: rgba(18, 24, 38, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 100;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: white;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
+        }
+
+        header.compact {
+            padding: 12px 48px;
+            background: rgba(10, 14, 23, 0.95);
+            box-shadow: 0 15px 40px -8px rgba(0,20,50,0.4);
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #fff, #b0c4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: 0.2s;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 40px;
+            font-weight: 500;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: rgba(255,255,255,0.75);
+            font-size: 1.05rem;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav-menu a:hover {
+            color: white;
+            border-bottom-color: #6c8cff;
+        }
+
+        /* герой (первый блок) + JS-анимация частиц */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: radial-gradient(circle at 30% 30%, #1e2a44, #0b0f1a);
+            color: white;
+            position: relative;
+            overflow: hidden;
+            padding: 0 24px;
+        }
+
+        #particles-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            max-width: 1000px;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 8vw, 5.6rem);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(145deg, #fff, #c0d0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 24px;
+            animation: fadeUp 1.2s ease-out;
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            color: rgba(255,255,255,0.7);
+            max-width: 700px;
+            margin: 0 auto 48px;
+            animation: fadeUp 1.2s 0.1s ease-out both;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            animation: fadeUp 1.2s 0.2s ease-out both;
+        }
+
+        .btn {
+            padding: 18px 42px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.25s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 20px 30px -8px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background: #ffffff;
+            color: #0c1424;
+        }
+
+        .btn-primary:hover {
+            background: #cedcff;
+            transform: scale(1.05);
+            box-shadow: 0 30px 40px -8px #2f4896;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .btn-outline:hover {
+            border-color: white;
+            background: rgba(255,255,255,0.05);
+            transform: scale(1.05);
+        }
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* общие стили блоков */
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 100px 48px;
+        }
+
+        h2 {
+            font-size: 3.2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 24px;
+            background: linear-gradient(145deg, #1e293b, #2d3a5e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-subhead {
+            font-size: 1.3rem;
+            color: #4a5568;
+            max-width: 700px;
+            margin-bottom: 60px;
+        }
+
+        /* сетки */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 36px;
+            padding: 40px 30px;
+            box-shadow: 0 30px 50px -20px rgba(0,20,50,0.15);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 40px 70px -20px #1f3a8a;
+        }
+
+        .card i {
+            font-size: 3rem;
+            margin-bottom: 28px;
+            color: #2f4b9e;
+            background: linear-gradient(135deg, #234, #4b6cb0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card h3 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+        }
+
+        .card p {
+            color: #2d3748;
+        }
+
+        /* список кейсов */
+        .case-list {
+            list-style: none;
+        }
+        .case-list li {
+            font-size: 1.3rem;
+            padding: 18px 0;
+            border-bottom: 1px solid #e9edf4;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .case-list i {
+            color: #3b5b9e;
+            font-size: 1.8rem;
+            width: 40px;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 40px;
+            justify-content: space-around;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #101c36, #294780);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label {
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+
+        /* форма */
+        .form-block {
+            background: white;
+            border-radius: 48px;
+            padding: 64px;
+            box-shadow: 0 40px 60px -20px #0b1a33;
+        }
+        .form-grid {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            flex: 1 1 250px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 20px 24px;
+            border-radius: 50px;
+            border: 1px solid #ccd7ec;
+            font-size: 1.1rem;
+            outline: none;
+            transition: 0.2s;
+        }
+        input:focus, textarea:focus {
+            border-color: #2a4eb0;
+            box-shadow: 0 0 0 4px rgba(64,98,224,0.15);
+        }
+        textarea {
+            border-radius: 32px;
+            resize: vertical;
+        }
+        .submit-btn {
+            background: #182848;
+            color: white;
+            padding: 20px 60px;
+            border: none;
+            border-radius: 60px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 15px 25px -8px #182848;
+        }
+        .submit-btn:hover {
+            background: #25407c;
+            transform: scale(1.02);
+        }
+
+        footer {
+            background: #0f1422;
+            color: #a6b3cf;
+            padding: 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-top: 1px solid #283044;
+        }
+        .socials i {
+            font-size: 2rem;
+            margin-left: 28px;
+            color: #b9c4e2;
+            transition: 0.2s;
+        }
+        .socials i:hover {
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* якоря для header */
+        .section-offset {
+            scroll-margin-top: 100px;
+        }
+
+        /* custom */
+        .fa, .fas, .far, .fab { font-family: "Font Awesome 6 Free"; }
+    </style>
+</head>
+<body>
+
+    <!-- Header фиксированный (блок 1) -->
+    <header id="mainHeader">
+        <div class="logo"><i class="fas fa-chart-line" style="margin-right: 10px; background: none; -webkit-text-fill-color: white; color: white;"></i>FinEdge</div>
+        <nav class="nav-menu">
+            <a href="#hero">Главная</a>
+            <a href="#services">Услуги</a>
+            <a href="#cases">Кейсы</a>
+            <a href="#numbers">Цифры</a>
+            <a href="#contact">Контакты</a>
+        </nav>
+    </header>
+
+    <!-- Блок 2: Hero с canvas (анимация через JS) -->
+    <section id="hero" class="hero section-offset section">
+        <canvas id="particles-canvas"></canvas>
+        <div class="hero-content">
+            <h1>Капитал под защитой <br> и в росте</h1>
+            <p>Частный финансовый советник для состояния от $50k. Стратегии, доверие, прозрачность.</p>
+            <div class="btn-group">
+                <a href="#contact" class="btn btn-primary"><i class="fas fa-calendar-check"></i>Консультация</a>
+                <a href="#cases" class="btn btn-outline"><i class="fas fa-scroll"></i>Кейсы</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 3: преимущества / услуги (доверие) -->
+    <section id="services" class="container section section-offset">
+        <h2>Моё фидуциарное обещание</h2>
+        <div class="section-subhead">Работаю исключительно в ваших интересах — оплата только за результат.</div>
+        <div class="grid-3">
+            <div class="card">
+                <i class="fas fa-shield-hal"></i>
+                <h3>Полное доверие</h3>
+                <p>Подписываем соглашение о фидуциарной ответственности. Ваши цели — моя главная метрика.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-chart-pie"></i>
+                <h3>Индивидуальная стратегия</h3>
+                <p>Никаких шаблонов. Диверсификация под ваш риск-профиль и горизонт.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-file-signature"></i>
+                <h3>Прозрачность 24/7</h3>
+                <p>Личный кабинет с отчетами, налогами и юридическим сопровождением каждой сделки.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 4: Кейсы / опыт (юридическая оптика) -->
+    <section id="cases" class="container section section-offset">
+        <h2>Реальные кейсы</h2>
+        <div class="section-subhead">Истории клиентов, которые доверились стратегическому планированию.</div>
+        <ul class="case-list">
+            <li><i class="fas fa-briefcase"></i> <strong>Владелец сети пекарен:</strong> структурировали активы, сэкономили 2,1M ₽ на налогах за 2024</li>
+            <li><i class="fas fa-landmark"></i> <strong>Семейный офис (3 поколения):</strong> сохранность капитала + доходность 14% годовых в валюте</li>
+            <li><i class="fas fa-scale-balanced"></i> <strong>Юридическая консультация:</strong> защита активов при разводе, раздел имущества без потерь</li>
+            <li><i class="fas fa-chart-line"></i> <strong>Топ-менеджер IT-компании:</strong> опционы, диверсификация, выход на пассивный доход</li>
+        </ul>
+    </section>
+
+    <!-- Блок 5: цифры и статистика -->
+    <section id="numbers" class="container section section-offset">
+        <div style="background: #eef2f9; border-radius: 80px; padding: 70px 40px;">
+            <h2 style="text-align: center;">Цифры, говорящие сами за себя</h2>
+            <div class="stat-row">
+                <div class="stat-item">
+                    <div class="stat-number">$187M</div>
+                    <div class="stat-label">активов под управлением</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">340+</div>
+                    <div class="stat-label">частных клиентов</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">23 года</div>
+                    <div class="stat-label">совокупный опыт команды</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">конфликтов интересов</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 6: персональный подход / доверительный блок -->
+    <section class="container section" style="display: flex; align-items: center; gap: 60px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 300px;">
+            <h2>Лично веду каждого клиента</h2>
+            <p style="font-size: 1.3rem; color: #2d3c5e; margin-bottom: 28px;">Никаких «менеджеров». Только прямой контакт и полная включенность в ваш план.</p>
+            <p><i class="fas fa-check-circle" style="color: #2f4b9e; margin-right: 16px;"></i> Ежеквартальные личные встречи</p>
+            <p><i class="fas fa-check-circle" style="color: #2f4b9e; margin-right: 16px;"></i> Мгновенные ответы в мессенджерах</p>
+            <p><i class="fas fa-check-circle" style="color: #2f4b9e; margin-right: 16px;"></i> Полное юридическое и нотариальное плечо</p>
+        </div>
+        <div style="flex: 1; background: #d9e2f0; border-radius: 120px; height: 320px; display: flex; align-items: center; justify-content: center; font-size: 10rem; color: #2b3b6b;">
+            <i class="fas fa-user-tie"></i>
+        </div>
+    </section>
+
+    <!-- Блок 7: отзывы / социальное доказательство (иконки) -->
+    <section class="container section">
+        <h2>Рекомендации</h2>
+        <div class="grid-3">
+            <div class="card" style="background: #fafcff">
+                <i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i>
+                <p style="margin: 25px 0 15px; font-size: 1.2rem;">«Спасли бизнес при проверках, грамотно выстроили структуру активов. Лучший советник за 20 лет».</p>
+                <p>— А. Леонидов, сеть АЗС</p>
+            </div>
+            <div class="card" style="background: #fafcff">
+                <i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i>
+                <p style="margin: 25px 0 15px; font-size: 1.2rem;">«Под ключ оформили ипотеку и инвестиционный портфель для дочери. Очень надёжно и выгодно».</p>
+                <p>— Екатерина В., владелец стоматологии</p>
+            </div>
+            <div class="card" style="background: #fafcff">
+                <i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i><i class="fas fa-star" style="color: #f5b342;"></i>
+                <p style="margin: 25px 0 15px; font-size: 1.2rem;">«Консультирует по семейным финансам уже 6 лет. Ни одной проигрышной сделки. Совесть рынка».</p>
+                <p>— Михаил и Ольга Д.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 8: контактная форма / запись -->
+    <section id="contact" class="container section section-offset">
+        <div class="form-block">
+            <h2 style="margin-top: 0;">Запись на личную встречу</h2>
+            <p style="font-size: 1.3rem; margin-bottom: 40px;">Оставьте телефон — я сам позвоню и предложу удобное время.</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <input type="text" placeholder="Имя">
+                </div>
+                <div class="form-group">
+                    <input type="tel" placeholder="Телефон">
+                </div>
+                <div class="form-group">
+                    <input type="email" placeholder="Email">
+                </div>
+                <div style="flex: 1 1 100%;">
+                    <textarea rows="3" placeholder="Кратко о задаче (необязательно)"></textarea>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="submit-btn"><i class="fas fa-paper-plane"></i> Хочу стратегию</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Блок 9: Footer -->
+    <footer>
+        <div style="font-size: 1.5rem; font-weight: 300;">FinEdge — доверие, проверенное временем</div>
+        <div class="socials">
+            <i class="fab fa-telegram"></i>
+            <i class="fab fa-whatsapp"></i>
+            <i class="fab fa-linkedin"></i>
+            <i class="fas fa-envelope"></i>
+        </div>
+        <div style="width: 100%; margin-top: 30px; font-size: 0.95rem; opacity: 0.7;">© 2025 FinEdge. Все права защищены. Лицензия ЦБ РФ № 1234.</div>
+    </footer>
+
+    <script>
+        (function() {
+            // 1. header compact on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 80) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // 2. particles canvas (Hero)
+            const canvas = document.getElementById('particles-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let particles = [];
+
+                function initParticles() {
+                    width = canvas.clientWidth;
+                    height = canvas.clientHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    particles = [];
+                    for (let i = 0; i < 90; i++) {
+                        particles.push({
+                            x: Math.random() * width,
+                            y: Math.random() * height,
+                            radius: Math.random() * 3.5 + 1.2,
+                            speedX: (Math.random() - 0.5) * 0.25,
+                            speedY: (Math.random() - 0.5) * 0.15,
+                            alpha: Math.random() * 0.5 + 0.2,
+                        });
+                    }
+                }
+
+                function drawParticles() {
+                    if (!ctx) return;
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    for (let p of particles) {
+                        ctx.globalAlpha = p.alpha;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    for (let p of particles) {
+                        p.x += p.speedX;
+                        p.y += p.speedY;
+
+                        if (p.x < 0) p.x = width;
+                        if (p.x > width) p.x = 0;
+                        if (p.y < 0) p.y = height;
+                        if (p.y > height) p.y = 0;
+                    }
+
+                    requestAnimationFrame(drawParticles);
+                }
+
+                window.addEventListener('resize', () => {
+                    initParticles();
+                });
+
+                initParticles();
+                drawParticles();
+            }
+
+            // 3. Intersection Observer для появления блоков + плавное свечение
+            const sections = document.querySelectorAll('.section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // добавим оригинальный эффект при попадании — лёгкая подсветка border
+                        entry.target.style.transition = 'opacity 0.8s, transform 0.8s, box-shadow 0.3s';
+                        entry.target.style.boxShadow = '0 0 0 4px rgba(110, 150, 255, 0.15)';
+                        setTimeout(() => {
+                            entry.target.style.boxShadow = 'none';
+                        }, 400);
+                    } else {
+                        // можно убрать visible, чтобы каждый раз появлялось (по желанию)
+                        // но оставим visible навсегда, чтобы не мигало
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -10px 0px' });
+
+            sections.forEach(section => observer.observe(section));
+
+            // 4. дополнительная анимация в заголовке / необязательно, просто акцент на пунктах меню
+            const menuLinks = document.querySelectorAll('.nav-menu a');
+            menuLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    e.target.style.textShadow = '0 0 10px #6c8cff';
+                });
+                link.addEventListener('mouseleave', (e) => {
+                    e.target.style.textShadow = 'none';
+                });
+            });
+        })();
+    </script>
+    <!-- маленькая задержка, чтобы видимые блоки получили visible при загрузке -->
+    <script>
+        (function() {
+            // повторно пробежимся на случай, если observer не поймал pre-visible
+            window.addEventListener('load', function() {
+                document.querySelectorAll('.section').forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < window.innerHeight - 100) {
+                        el.classList.add('visible');
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

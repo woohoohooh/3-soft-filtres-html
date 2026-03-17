@@ -1,0 +1,547 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vertigo · Фотограф вне времени</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0b0b0b;
+      color: #eaeaea;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* интерфейс — лёгкий скролл-бар */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1a1a1a; }
+    ::-webkit-scrollbar-thumb { background: #c89f68; border-radius: 8px; }
+
+    /* якорное меню — фиксированное, с эффектом сжатия */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: auto;
+      background: rgba(10, 10, 10, 0.75);
+      backdrop-filter: blur(16px) saturate(200%);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(200, 159, 104, 0.2);
+      border-radius: 80px;
+      padding: 0.5rem 1.8rem;
+      z-index: 999;
+      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.8);
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    .navbar.compact {
+      top: 16px;
+      padding: 0.3rem 1.4rem;
+      background: rgba(5, 5, 5, 0.9);
+      border-color: #c89f68;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: #f0f0f0;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 450;
+      letter-spacing: 0.5px;
+      padding: 0.4rem 0;
+      border-bottom: 2px solid transparent;
+      transition: 0.2s;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: #c89f68;
+      color: #fff;
+    }
+
+    /* общий контейнер блоков */
+    .block {
+      min-height: 100vh;
+      width: 100%;
+      padding: 6rem 8% 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    /* анимация появления при скролле (fade + slide) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* заголовки */
+    h1, h2, h3 {
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    h1 {
+      font-size: clamp(3.5rem, 12vw, 6rem);
+      line-height: 1.0;
+      text-transform: uppercase;
+      font-weight: 300;
+    }
+
+    h2 {
+      font-size: 2.8rem;
+      margin-bottom: 2rem;
+      border-left: 6px solid #c89f68;
+      padding-left: 2rem;
+      font-weight: 350;
+    }
+
+    /* акцент / иконки */
+    .gold {
+      color: #c89f68;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: transparent;
+      border: 2px solid #c89f68;
+      color: #fff;
+      padding: 1rem 2.8rem;
+      font-size: 1.2rem;
+      font-weight: 500;
+      text-decoration: none;
+      letter-spacing: 2px;
+      transition: 0.25s;
+      margin-top: 2rem;
+      border-radius: 0;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: #c89f68;
+      transition: left 0.25s ease-out;
+      z-index: -1;
+    }
+
+    .btn:hover::before {
+      left: 0;
+    }
+
+    .btn:hover {
+      color: #0b0b0b;
+      border-color: #c89f68;
+    }
+
+    /* сетки */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 2.5rem;
+      margin: 3rem 0;
+    }
+
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .card {
+      background: #141414;
+      padding: 2.2rem 1.8rem;
+      border: 1px solid #2a2a2a;
+      transition: all 0.2s;
+    }
+
+    .card i {
+      font-size: 2.8rem;
+      color: #c89f68;
+      margin-bottom: 1.5rem;
+    }
+
+    .card:hover {
+      border-color: #c89f68;
+      transform: scale(1.02);
+      background: #1c1c1c;
+    }
+
+    /* специальный header с js‑анимацией */
+    .header-block {
+      background: #0b0b0b;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+
+    .animated-bg {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .animated-bg span {
+      position: absolute;
+      display: block;
+      width: 2px;
+      height: 2px;
+      background: #c89f68;
+      opacity: 0.2;
+      box-shadow: 0 0 20px #c89f68;
+      animation: moveParticles 12s infinite linear;
+    }
+
+    @keyframes moveParticles {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.4; }
+      100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* портфолио / карусель без картинок — графичные квадраты */
+    .reel {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+
+    .reel-item {
+      flex: 1 1 200px;
+      height: 280px;
+      background: #1f1f1f;
+      border: 1px solid #3c3c3c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: 0.25s;
+      color: #5a5a5a;
+    }
+
+    .reel-item i {
+      font-size: 4rem;
+      color: #3e3e3e;
+      transition: 0.2s;
+    }
+
+    .reel-item:hover {
+      border-color: #c89f68;
+      background: #222;
+    }
+    .reel-item:hover i {
+      color: #c89f68;
+    }
+
+    /* блок контактов / футер */
+    .contact-block {
+      background: #050505;
+      border-bottom: none;
+    }
+
+    footer.block {
+      min-height: 30vh;
+      background: #030303;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      border-bottom: none;
+    }
+
+    .social-icons {
+      display: flex;
+      gap: 3rem;
+      justify-content: center;
+      font-size: 2rem;
+      margin: 2rem 0;
+    }
+
+    .social-icons a {
+      color: #aaa;
+      transition: 0.2s;
+    }
+    .social-icons a:hover { color: #c89f68; }
+
+    /* подпись */
+    .copyright {
+      color: #444;
+      font-size: 0.9rem;
+    }
+
+    /* адаптация под ПК — никаких медиа для моб, но оставим изящно */
+    @media (max-width: 1100px) {
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+    }
+    /* финально всё ок */
+  </style>
+</head>
+<body>
+
+  <!-- фиксированное якорное меню (шапка) -->
+  <nav class="navbar" id="navbar">
+    <ul class="nav-links">
+      <li><a href="#home">ДОМ</a></li>
+      <li><a href="#story">ИСТОРИЯ</a></li>
+      <li><a href="#services">УСЛУГИ</a></li>
+      <li><a href="#works">ПОРТФОЛИО</a></li>
+      <li><a href="#contact">КОНТАКТ</a></li>
+    </ul>
+  </nav>
+
+  <!-- БЛОК 1: Хедер с анимацией частиц (js) -->
+  <section id="home" class="block header-block reveal">
+    <div class="animated-bg" id="particleCanvas"></div>
+    <div style="position: relative; z-index: 3;">
+      <p class="gold" style="font-size: 1.2rem; letter-spacing: 6px;">ВИЗУАЛЬНЫЙ АРХИТЕКТОР</p>
+      <h1>MARC<br>SILVER</h1>
+      <p style="max-width: 600px; margin: 2rem auto; color: #aaa;">снимаю тишину, текстуру и эмоцию. для тех, кто ищет не просто кадр, а высказывание.</p>
+      <a href="#contact" class="btn">СОЗДАТЬ <i class="fa-regular fa-arrow-right"></i></a>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: Кредо / коротко -->
+  <section id="story" class="block reveal">
+    <h2>КАДР КАК МАТЕРИЯ</h2>
+    <div class="grid-2">
+      <div class="card">
+        <i class="fa-regular fa-gem"></i>
+        <h3>10+ лет</h3>
+        <p>работал с Vogue, Nike, независимыми лейблами. но главное — доверие людей перед камерой.</p>
+      </div>
+      <div class="card">
+        <i class="fa-regular fa-compass"></i>
+        <h3>жанры</h3>
+        <p>репортаж, предметка, портрет. без границ. только свет и композиция.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: услуги / детали -->
+  <section id="services" class="block reveal">
+    <h2>ЧЕМ Я БУДУ ПОЛЕЗЕН</h2>
+    <div class="grid-3">
+      <div class="card">
+        <i class="fa-regular fa-camera"></i>
+        <h3>персональная съёмка</h3>
+        <p>образы, портфолио, личный бренд. от 2х часов.</p>
+      </div>
+      <div class="card">
+        <i class="fa-regular fa-briefcase"></i>
+        <h3>коммерция / бренды</h3>
+        <p>предметная и имиджевая для малого бизнеса.</p>
+      </div>
+      <div class="card">
+        <i class="fa-regular fa-heart"></i>
+        <h3>репортаж</h3>
+        <p>свадьбы, мероприятия. без постановки — только жизнь.</p>
+      </div>
+      <div class="card">
+        <i class="fa-regular fa-clapperboard"></i>
+        <h3>видео / reel’s</h3>
+        <p>короткий метр, рилс для соцсетей.</p>
+      </div>
+      <div class="card">
+        <i class="fa-regular fa-pen-to-square"></i>
+        <h3>ретушь / цвет</h3>
+        <p>авторская обработка. любой объём.</p>
+      </div>
+      <div class="card">
+        <i class="fa-regular fa-map"></i>
+        <h3>выездные съёмки</h3>
+        <p>Европа, Азия — работаю удалённо.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: цифры / доверие -->
+  <section class="block reveal">
+    <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 3rem;">
+      <div style="text-align: center;"><span class="gold" style="font-size: 4rem;">50+</span><br>проектов в портфолио</div>
+      <div style="text-align: center;"><span class="gold" style="font-size: 4rem;">7</span><br>стран</div>
+      <div style="text-align: center;"><span class="gold" style="font-size: 4rem;">100%</span><br>live — без AI</div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: портфолио / без картинок — стильные иконки -->
+  <section id="works" class="block reveal">
+    <h2>НЕДАВНИЕ РАБОТЫ</h2>
+    <div class="reel">
+      <div class="reel-item"><i class="fa-regular fa-image"></i> fashion story</div>
+      <div class="reel-item"><i class="fa-regular fa-whisper"></i> backstage</div>
+      <div class="reel-item"><i class="fa-regular fa-cubes"></i> предметка</div>
+      <div class="reel-item"><i class="fa-regular fa-face-smile"></i> портрет</div>
+    </div>
+    <div style="margin-top: 2rem;">
+      <p class="gold" style="font-size: 1.1rem;"><i class="fa-regular fa-eye"></i>   полное портфолио по запросу</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: отзывы / стилизованные -->
+  <section class="block reveal">
+    <h2>ЧТО ГОВОРЯТ</h2>
+    <div class="grid-2">
+      <div class="card"><i class="fa-solid fa-quote-right gold"></i> «Марк поймал то, как мы есть на самом деле. без позы.» — Ольга, дизайнер</div>
+      <div class="card"><i class="fa-solid fa-quote-right gold"></i> «Сотрудничаем 4 года. попал в ДНК бренда.» — Влада, основатель LOOM</div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: процесс / этапы -->
+  <section class="block reveal">
+    <h2>КАК МЫ РАБОТАЕМ</h2>
+    <div class="grid-3">
+      <div class="card"><i class="fa-regular fa-message"></i> 1. обсуждаем задачу и референсы</div>
+      <div class="card"><i class="fa-regular fa-calendar"></i> 2. назначаем дату / лукбук</div>
+      <div class="card"><i class="fa-regular fa-star"></i> 3. съёмка и финальные файлы</div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: контакты + призыв -->
+  <section id="contact" class="block contact-block reveal">
+    <h2>НАПИШИТЕ МНЕ</h2>
+    <div style="font-size: 1.8rem; margin: 2rem 0; font-weight: 200;">
+      <p><i class="fa-regular fa-envelope gold"></i>   hello@marcsilver.photo</p>
+      <p style="margin-top: 1rem;"><i class="fa-regular fa-phone gold"></i>   +49 30 123 456 78</p>
+    </div>
+    <div style="border-left: 2px solid #c89f68; padding-left: 2rem;">
+      <p>телеграм / whatsapp — предпочтительно</p>
+      <p class="gold">отвечаю в течение пары часов</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: футер -->
+  <footer class="block reveal">
+    <div class="social-icons">
+      <a href="#"><i class="fa-brands fa-behance"></i></a>
+      <a href="#"><i class="fa-brands fa-instagram"></i></a>
+      <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+      <a href="#"><i class="fa-regular fa-envelope"></i></a>
+    </div>
+    <p class="copyright">© MARC SILVER PHOTOGRAPHY · BERLIN / PRAGUE</p>
+    <p class="copyright" style="margin-top: 0.5rem;">Все права на визуальный язык защищены. 2025</p>
+  </footer>
+
+  <script>
+    (function() {
+      // 1. Живая анимация частиц в шапке (JS)
+      const header = document.getElementById('home');
+      const particleContainer = document.getElementById('particleCanvas');
+      if (particleContainer) {
+        for (let i = 0; i < 60; i++) {
+          let span = document.createElement('span');
+          let size = Math.random() * 4 + 1;
+          span.style.width = size + 'px';
+          span.style.height = size + 'px';
+          span.style.left = Math.random() * 100 + '%';
+          span.style.top = Math.random() * 100 + '%';
+          span.style.animationDelay = Math.random() * 10 + 's';
+          span.style.animationDuration = 10 + Math.random() * 15 + 's';
+          span.style.background = i % 3 === 0 ? '#c89f68' : '#7a6a50';
+          particleContainer.appendChild(span);
+        }
+      }
+
+      // 2. Scroll reveal — активация класса .active при появлении
+      const revealElements = document.querySelectorAll('.reveal');
+      function checkReveal() {
+        for (let el of revealElements) {
+          const rect = el.getBoundingClientRect();
+          const windowHeight = window.innerHeight;
+          if (rect.top < windowHeight * 0.85 && rect.bottom > 50) {
+            el.classList.add('active');
+          } else {
+            // можно убрать, если хотим чтобы оставались видны — оставим раз показываются навсегда
+            // но для эффекта пусть остаются
+          }
+        }
+      }
+      window.addEventListener('scroll', checkReveal);
+      window.addEventListener('resize', checkReveal);
+      checkReveal();
+
+      // 3. Фиксированное меню — эффект "компакт" при скролле ниже 80px
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 80) {
+          navbar.classList.add('compact');
+        } else {
+          navbar.classList.remove('compact');
+        }
+      });
+
+      // 4. Плавный скролл для якорей (без дерганья)
+      document.querySelectorAll('.nav-links a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+          const targetEl = document.querySelector(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+
+      // дополнительно: hover-эффект в навбаре (необязательно)
+    })();
+  </script>
+  <!-- дополнительный маленький трюк: активный пункт меню не делаем, чтоб не усложнять, но якоря работают -->
+  <script>
+    (function secondary() {
+      // подкрасим границу при загрузке, если нужно — небольшая подсветка текущего блока через intersection (опционально)
+      const sections = document.querySelectorAll('.block');
+      const navLinks = document.querySelectorAll('.nav-links a');
+      function onScrollSpy() {
+        let current = '';
+        sections.forEach(section => {
+          const sectionTop = section.offsetTop;
+          if (window.scrollY >= sectionTop - 150) {
+            current = section.getAttribute('id');
+          }
+        });
+        navLinks.forEach(link => {
+          link.style.borderBottomColor = 'transparent';
+          if (link.getAttribute('href') === '#' + current) {
+            link.style.borderBottomColor = '#c89f68';
+          }
+        });
+      }
+      window.addEventListener('scroll', onScrollSpy);
+      window.addEventListener('load', onScrollSpy);
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

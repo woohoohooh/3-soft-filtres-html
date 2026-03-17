@@ -1,0 +1,512 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LENS·M · режиссёр монтажа / демо-рил</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0b0b0b;
+      color: #ededed;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.4;
+      font-weight: 300;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* плавный выход/вход при скролле – кастомные тени, трансформации */
+    .section {
+      min-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      position: relative;
+      transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+      will-change: opacity, transform;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .section.out-view {
+      opacity: 0.3;
+      transform: scale(0.97) translateY(20px);
+      filter: blur(1px);
+    }
+
+    .section.in-view {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      filter: blur(0);
+    }
+
+    .container {
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* якорное меню — компактное + фикс при скролле */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 10, 10, 0.75);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(255, 215, 100, 0.25);
+      border-radius: 60px;
+      padding: 0.6rem 1.6rem;
+      z-index: 999;
+      display: flex;
+      gap: 2rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    }
+
+    .navbar.compact {
+      top: 10px;
+      padding: 0.3rem 1.2rem;
+      background: rgba(5, 5, 5, 0.9);
+      border-color: rgba(255, 215, 100, 0.6);
+      gap: 1.2rem;
+    }
+
+    .navbar a {
+      color: #f0f0f0;
+      text-decoration: none;
+      font-weight: 400;
+      font-size: 0.95rem;
+      letter-spacing: 1px;
+      padding: 8px 0;
+      transition: 0.2s;
+      border-bottom: 1px solid transparent;
+    }
+
+    .navbar a:hover {
+      color: #ffd964;
+      border-bottom-color: #ffd964;
+    }
+
+    /* header с динамической сеткой (JS-анимация) */
+    .header-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      background: #1e1e1e;
+      border-radius: 40px;
+      overflow: hidden;
+      aspect-ratio: 16 / 5;
+      margin-top: 30px;
+      box-shadow: 0 30px 50px -20px black;
+    }
+
+    .grid-cell {
+      background: #0f0f0f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff08;
+      font-size: 4rem;
+      font-weight: 800;
+      transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+      cursor: default;
+      border: 1px solid #2a2a2a;
+      text-shadow: 0 0 10px #ffd96440;
+    }
+
+    .grid-cell.active-cell {
+      color: #ffd964;
+      background: #1c1c1c;
+      border-color: #ffd964;
+      transform: scale(1.02);
+      box-shadow: 0 0 35px #ffd96430;
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 8vw, 5.5rem);
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -2px;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title span {
+      color: #ffd964;
+      font-weight: 600;
+      text-decoration: underline 3px rgba(255, 217, 100, 0.4);
+    }
+
+    .glass-card {
+      background: rgba(20, 20, 20, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid #333;
+      border-radius: 32px;
+      padding: 2.5rem;
+      box-shadow: 0 25px 50px -12px #00000080;
+      transition: transform 0.3s ease, border-color 0.2s;
+    }
+
+    .glass-card:hover {
+      border-color: #ffd96460;
+      transform: translateY(-6px);
+    }
+
+    .icon-large {
+      font-size: 3rem;
+      margin-bottom: 1.5rem;
+      display: inline-block;
+      filter: drop-shadow(0 0 8px #ffd964);
+    }
+
+    .btn {
+      background: transparent;
+      border: 1.5px solid #ffd964;
+      color: #ffd964;
+      padding: 1rem 3rem;
+      border-radius: 50px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      transition: 0.3s;
+      text-decoration: none;
+      display: inline-block;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #ffd964;
+      color: #0b0b0b;
+      box-shadow: 0 0 35px #ffd964;
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .chip {
+      background: #232323;
+      border-radius: 40px;
+      padding: 0.3rem 1.2rem;
+      display: inline-block;
+      color: #ffd964;
+      font-size: 0.9rem;
+      border: 1px solid #3a3a3a;
+    }
+
+    .pricing-card {
+      background: #141414;
+      border-radius: 40px;
+      padding: 2rem;
+      border: 1px solid #2c2c2c;
+      transition: 0.2s;
+    }
+
+    .pricing-card:hover {
+      border-color: #ffd964;
+    }
+
+    .footer {
+      border-top: 1px solid #2a2a2a;
+      background: #090909;
+    }
+
+    .footer .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2rem 0;
+      color: #aaa;
+    }
+
+    .big-quote {
+      font-size: 2.2rem;
+      font-weight: 300;
+      border-left: 6px solid #ffd964;
+      padding-left: 2rem;
+    }
+
+    /* моб не нужен — только desktop */
+
+    hr {
+      border-color: #2c2c2c;
+      width: 100%;
+    }
+  </style>
+  <!-- иконочный набор (Font Awesome-like через Unicode/HTML) будем использовать эмодзи/символы -->
+</head>
+<body>
+  <!-- фиксированное якорное меню -->
+  <nav class="navbar" id="navbar">
+    <a href="#home">⌘ НАЧАЛО</a>
+    <a href="#reel">🎬 ДЕМО-РИЛ</a>
+    <a href="#work">📼 ПРОЕКТЫ</a>
+    <a href="#about">◉ РЕЖИССЁР</a>
+    <a href="#price">💰 УСЛОВИЯ</a>
+    <a href="#contact">✉ КОНТАКТ</a>
+  </nav>
+
+  <!-- 9 секций: header + 7 блоков + footer = 9 -->
+
+  <!-- 1/9 HEADER (home) -->
+  <section id="home" class="section in-view" style="padding-top: 140px;">
+    <div class="container">
+      <div class="header-grid" id="animatedHeaderGrid">
+        <div class="grid-cell">L</div>
+        <div class="grid-cell">E</div>
+        <div class="grid-cell">N</div>
+        <div class="grid-cell">S</div>
+        <div class="grid-cell">M</div>
+        <div class="grid-cell">O</div>
+        <div class="grid-cell">T</div>
+        <div class="grid-cell">N</div>
+        <div class="grid-cell">•</div>
+        <div class="grid-cell">M</div>
+        <div class="grid-cell">T</div>
+        <div class="grid-cell">G</div>
+        <div class="grid-cell">R</div>
+        <div class="grid-cell">L</div>
+        <div class="grid-cell">⌘</div>
+        <div class="grid-cell">⏺</div>
+      </div>
+      <div style="margin-top: 3rem; max-width: 700px;">
+        <div class="hero-title">
+          монтаж, <span>который</span><br>останавливает время
+        </div>
+        <p style="font-size: 1.3rem; color: #bbb; margin: 1.5 0 2rem 0;">режиссура монтажа / демо-рил / видео для брендов</p>
+        <a href="#reel" class="btn">▶ СМОТРЕТЬ ДЕМО</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2/9 DEMO REEL -->
+  <section id="reel" class="section">
+    <div class="container">
+      <span class="chip">⏯ exclusive reel 2025</span>
+      <h2 style="font-size: 3.5rem; margin: 1rem 0 2rem;">демо-рил · director’s cut</h2>
+      <div class="glass-card" style="padding: 2rem; text-align: center;">
+        <div style="background: #1b1b1b; border-radius: 28px; height: 400px; display: flex; align-items: center; justify-content: center; font-size: 5rem; color: #ffd964; border: 1px solid #404040;">
+          ⏯ FULL REEL PREVIEW
+        </div>
+        <p style="margin-top: 2rem; font-size: 1.2rem;">⋆ монтаж, цветокоррекция, саунд-дизайн ⋆</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3/9 ИЗБРАННЫЕ ПРОЕКТЫ -->
+  <section id="work" class="section">
+    <div class="container">
+      <span class="chip">📁 портфолио</span>
+      <h2 style="font-size: 3rem; margin: 1rem 0 2rem;">клипы / реклама / арт</h2>
+      <div class="grid-2col">
+        <div class="glass-card">🎥 «NIGHT SHIFT» — музыкальный клип (2025) <br> <span style="color: #ffd964;">режиссёр монтажа</span></div>
+        <div class="glass-card">🎞 «TECH/CORE» — промо для бренда <br> <span style="color: #ffd964;">авторский монтаж</span></div>
+        <div class="glass-card">📹 «СВЕТ» — короткий метр <br> <span style="color: #ffd964;">колорист / sound design</span></div>
+        <div class="glass-card">📼 «BTS x KINO» — документальный <br> <span style="color: #ffd964;">режиссура</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4/9 ПОДХОД / ПРОЦЕСС -->
+  <section class="section">
+    <div class="container">
+      <div class="grid-2col">
+        <div>
+          <span class="chip">✶ unique</span>
+          <h2 style="font-size: 3rem; margin-top: 0.5rem;">темп, ритм,<br>эмоция</h2>
+        </div>
+        <div class="big-quote">
+          «монтаж — это последний сценарий. я пишу его движением»
+        </div>
+      </div>
+      <div style="display: flex; gap: 2rem; margin-top: 4rem;">
+        <div style="flex:1;">📐 ритмический монтаж<br><span style="color:#888;">на стыке музыки и кадра</span></div>
+        <div style="flex:1;">🌈 colour science<br><span style="color:#888;">давайте тон вашему миру</span></div>
+        <div style="flex:1;">⚡ storytelling<br><span style="color:#888;">ни одной лишней секунды</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5/9 ДОВЕРИЕ / КЛИЕНТЫ (логотипы текстом) -->
+  <section class="section">
+    <div class="container">
+      <span class="chip">✦ доверие</span>
+      <p style="font-size: 2rem; margin: 1rem 0;">работал с:</p>
+      <div style="display: flex; gap: 4rem; flex-wrap: wrap; font-size: 1.8rem; opacity: 0.7; font-weight: 200;">
+        <span>NIKE</span><span>•</span><span>BMW</span><span>•</span><span>VOGUE</span><span>•</span><span>APPLE</span><span>•</span><span>ADIDAS</span>
+      </div>
+      <hr style="margin: 3rem 0;">
+      <div class="glass-card" style="display: flex; align-items: center; gap: 2rem;">
+        <span style="font-size: 4rem;">“</span>
+        <span>режиссёр монтажа, который понимает драматургию. редкое сочетание чувства времени и технологий.</span>
+        <span style="font-weight: bold;">— A. Ветров, продюсер</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6/9 О РЕЖИССЁРЕ (about) -->
+  <section id="about" class="section">
+    <div class="container">
+      <div style="display: flex; align-items: center; gap: 4rem;">
+        <div style="background: #202020; border-radius: 60px; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; font-size: 5rem; border: 2px solid #ffd964;">⌘</div>
+        <div>
+          <h2 style="font-size: 3rem;">Ленз Монтажер</h2>
+          <p style="font-size: 1.2rem; color: #ccc;">15 лет за монтажным столом. MARS by USMU, BDA-номинант. Работаю между жанрами: от инди до глянца.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7/9 УСЛОВИЯ / ПАКЕТЫ (price) -->
+  <section id="price" class="section">
+    <div class="container">
+      <span class="chip">💎 условия работы</span>
+      <div class="grid-2col" style="margin-top: 2rem;">
+        <div class="pricing-card">
+          <span class="icon-large">◈</span>
+          <h3>РЕЖИССЁРСКИЙ</h3>
+          <p style="font-size: 2rem;">от 150k</p>
+          <p>full-монтаж / цвет / саунд</p>
+        </div>
+        <div class="pricing-card">
+          <span class="icon-large">◈◈</span>
+          <h3>КОЛЛАБОРАЦИЯ</h3>
+          <p style="font-size: 2rem;">проектно</p>
+          <p>постпродакшн под ключ</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8/9 КОНТАКТ (contact) -->
+  <section id="contact" class="section">
+    <div class="container">
+      <h2 style="font-size: 4rem;">Связаться</h2>
+      <div style="font-size: 2rem; margin: 1.5rem 0;">lenz.m@edit.studio</div>
+      <div style="display: flex; gap: 3rem;">
+        <span>📱 @lens_director</span>
+        <span>📞 +1 234 567 890</span>
+        <span>⏺ Берлин / удалённо</span>
+      </div>
+      <div style="margin-top: 3rem;">
+        <a href="#" class="btn">НАПИСАТЬ В TELEGRAM</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9/9 FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <span>© LENS·M · режиссёр монтажа</span>
+      <span>все права защищены · 2025</span>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // плавное появление блоков при скролле (Intersection Observer)
+      const sections = document.querySelectorAll('.section');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            entry.target.classList.remove('out-view');
+          } else {
+            entry.target.classList.add('out-view');
+            entry.target.classList.remove('in-view');
+          }
+        });
+      }, { threshold: 0.25, rootMargin: '0px' });
+
+      sections.forEach(sec => observer.observe(sec));
+
+      // компактное меню при скролле вниз
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 100) {
+          navbar.classList.add('compact');
+        } else {
+          navbar.classList.remove('compact');
+        }
+      });
+
+      // АНИМАЦИЯ ШАПКИ — сетка 4x4, подсветка случайных ячеек
+      const cells = document.querySelectorAll('.grid-cell');
+      let prevIndices = [];
+
+      function randomGridGlow() {
+        // убрать старую подсветку
+        cells.forEach(c => c.classList.remove('active-cell'));
+        // выбрать 4–5 уникальных индекса
+        const indices = new Set();
+        while(indices.size < 5) {
+          const rand = Math.floor(Math.random() * cells.length);
+          indices.add(rand);
+        }
+        indices.forEach(i => {
+          if (cells[i]) cells[i].classList.add('active-cell');
+        });
+        prevIndices = Array.from(indices);
+      }
+
+      setInterval(randomGridGlow, 550); // быстрое мерцание
+      randomGridGlow(); // сразу запустить
+
+      // Доп эффект: при наведении на любую ячейку гаснет/зажигается (интерактив)
+      cells.forEach(cell => {
+        cell.addEventListener('mouseenter', () => {
+          cell.classList.add('active-cell');
+        });
+        cell.addEventListener('mouseleave', () => {
+          // не убираем, если должна гореть по таймеру — пусть таймер управляет
+          // ничего не делаем, таймер всё сбросит
+        });
+      });
+    })();
+
+    // плавный скролл якорей
+    document.querySelectorAll('.navbar a').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href');
+        if (targetId === '#') return;
+        const targetEl = document.querySelector(targetId);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+  <!-- маленькая настройка чтобы все секции изначально не были невидимы -->
+  <style>
+    .section {
+      opacity: 1; 
+      transform: none;
+      transition: opacity 0.9s cubic-bezier(0.23, 1, 0.32, 1), transform 0.9s cubic-bezier(0.23, 1, 0.32, 1), filter 0.6s;
+    }
+    .section.out-view {
+      opacity: 0.2;
+      transform: scale(0.96) translateY(30px);
+      filter: blur(2px);
+    }
+    .navbar a {
+      font-size: 0.9rem;
+    }
+    .grid-cell {
+      font-size: 3.5rem;
+    }
+    @media (max-width: 900px) { /* минимально, но по заданию не обязательно */ }
+  </style>
+</body>
+</html>
+All done!
+```

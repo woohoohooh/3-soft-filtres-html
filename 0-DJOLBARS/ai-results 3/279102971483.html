@@ -1,0 +1,695 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avellum · стратегии защиты</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #f6f4f0;
+      color: #1e1b1b;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* smooth scroll + anchor offset (fixed header) */
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 90px;
+    }
+
+    /* утончённая база */
+    h1, h2, h3 {
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      margin-bottom: 1.2rem;
+    }
+
+    /* кнопки */
+    .btn {
+      display: inline-block;
+      padding: 1rem 2.8rem;
+      background: transparent;
+      border: 1.5px solid #1e1b1b;
+      color: #1e1b1b;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+      transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -10%;
+      width: 0;
+      height: 100%;
+      background: #1e1b1b;
+      transform: skewX(-15deg);
+      transition: width 0.4s ease;
+      z-index: -1;
+    }
+
+    .btn:hover {
+      color: #f6f4f0;
+      border-color: #1e1b1b;
+    }
+
+    .btn:hover::before {
+      width: 120%;
+    }
+
+    /* HEADER — динамическая анимация + фиксация */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 2rem 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+      transition: all 0.4s ease;
+      mix-blend-mode: difference;
+      color: #f0ebe4;
+    }
+
+    header.scrolled {
+      padding: 1rem 4rem;
+      background: rgba(30, 27, 27, 0.85);
+      backdrop-filter: blur(16px) saturate(180%);
+      mix-blend-mode: normal;
+      color: #f6f4f0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .logo {
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo i {
+      font-size: 2.3rem;
+      opacity: 0.9;
+      transition: transform 0.6s ease;
+    }
+
+    header:hover .logo i {
+      transform: rotate(12deg) scale(1.1);
+    }
+
+    .nav {
+      display: flex;
+      gap: 3rem;
+    }
+
+    .nav a {
+      text-decoration: none;
+      color: inherit;
+      font-weight: 350;
+      font-size: 1.2rem;
+      position: relative;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+
+    .nav a::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -6px;
+      width: 0%;
+      height: 1px;
+      background: currentColor;
+      transition: width 0.3s ease;
+    }
+
+    .nav a:hover::after {
+      width: 100%;
+    }
+
+    .nav a:hover {
+      opacity: 1;
+    }
+
+    /* основной контейнер */
+    .block {
+      min-height: 100vh;
+      padding: 6rem 4rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      will-change: transform, opacity;
+    }
+
+    /* анимация появления при скролле — мягкий параллакс + размытие */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px) scale(0.98);
+      filter: blur(4px);
+      transition: all 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+
+    /* Hero */
+    .hero {
+      background: #1a1817;
+      color: #f0ebe4;
+    }
+
+    .hero-content {
+      max-width: 800px;
+    }
+
+    .hero-suptitle {
+      font-size: 1.3rem;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: #b3a79b;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid #b3a79b;
+      padding-left: 1rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.2rem, 10vw, 6.2rem);
+      font-weight: 300;
+      line-height: 1.1;
+      margin-bottom: 2rem;
+    }
+
+    .hero-highlight {
+      color: #c7aa83;
+    }
+
+    .hero p {
+      font-size: 1.3rem;
+      max-width: 600px;
+      opacity: 0.8;
+      margin-bottom: 3rem;
+    }
+
+    /* block 2 — цифры доверия */
+    .stats-grid {
+      display: flex;
+      gap: 4rem;
+      margin-top: 3rem;
+    }
+
+    .stat-item {
+      border-top: 2px solid #1e1b1b;
+      padding-top: 1.5rem;
+      width: 200px;
+    }
+
+    .stat-num {
+      font-size: 4rem;
+      font-weight: 300;
+      line-height: 1;
+    }
+
+    .stat-desc {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.6;
+    }
+
+    /* кейсы / практика */
+    .cases-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin: 4rem 0 2rem;
+    }
+
+    .case-card {
+      background: #ffffff0d;
+      border: 1px solid #2d2925;
+      padding: 2rem 1.5rem;
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+
+    .case-card:hover {
+      background: #1e1b1b;
+      border-color: #c7aa83;
+      color: #f0ebe4;
+      transform: translateY(-12px);
+    }
+
+    .case-card i {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      color: #c7aa83;
+    }
+
+    /* юзверги / команда */
+    .team-grid {
+      display: flex;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .person {
+      flex: 1 1 200px;
+    }
+
+    .person h3 {
+      font-size: 2rem;
+      font-weight: 350;
+      border-bottom: 1px solid currentColor;
+      display: inline-block;
+      padding-bottom: 0.3rem;
+    }
+
+    .person p {
+      margin-top: 1rem;
+      opacity: 0.7;
+    }
+
+    /* услуги / специализация */
+    .services-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2.5rem 4rem;
+      margin: 3rem 0;
+    }
+
+    .service-item {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      border-bottom: 1px dashed #2d2925;
+      padding-bottom: 1.5rem;
+    }
+
+    .service-item i {
+      font-size: 2rem;
+      color: #c7aa83;
+    }
+
+    /* отзывы (клиенты) */
+    .testimonial-grid {
+      display: flex;
+      gap: 3rem;
+    }
+
+    .testimonial-card {
+      background: #fffcf8;
+      color: #1e1b1b;
+      padding: 3rem 2.5rem;
+      border-radius: 0px;
+      box-shadow: -8px 8px 0 #1e1b1b;
+      flex: 1;
+    }
+
+    .testimonial-card i {
+      font-size: 3rem;
+      color: #c7aa83;
+      margin-bottom: 1.5rem;
+      display: inline-block;
+    }
+
+    /* пресса / публикации */
+    .press-logos {
+      display: flex;
+      gap: 3rem;
+      margin: 3rem 0;
+      font-size: 2.5rem;
+      color: #3a3530;
+      flex-wrap: wrap;
+    }
+
+    .press-logos i {
+      transition: all 0.3s ease;
+    }
+
+    .press-logos i:hover {
+      color: #c7aa83;
+      transform: scale(1.2) rotate(5deg);
+    }
+
+    /* футер */
+    footer {
+      background: #161412;
+      color: #b3a79b;
+      padding: 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #2d2925;
+    }
+
+    .footer-links a {
+      color: inherit;
+      text-decoration: none;
+      margin-left: 2rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: #c7aa83;
+    }
+
+    /* утилиты */
+    .container-small {
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    hr {
+      border: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #2d2925, transparent);
+      margin: 2rem 0;
+    }
+
+    /* имитация изображений — цветные блоки вместо картинок (эстетично) */
+    .art-block {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(145deg, #c7aa83, #a58762);
+      margin: 2rem 0;
+    }
+
+    /* адаптация под ПК (остальное по желанию) */
+    @media (max-width: 1100px) {
+      header, header.scrolled { padding: 1.5rem 2rem; }
+      .block { padding: 5rem 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ФИКСИРОВАННАЯ ШАПКА с анимацией через js -->
+  <header id="mainHeader">
+    <div class="logo">
+      <i class="fas fa-scale-balanced"></i> 
+      <span>Avellum</span>
+    </div>
+    <nav class="nav">
+      <a href="#home">главная</a>
+      <a href="#cases">кейсы</a>
+      <a href="#team">команда</a>
+      <a href="#contact">контакт</a>
+    </nav>
+  </header>
+
+  <!-- БЛОК 1: hero -->
+  <section id="home" class="block hero reveal">
+    <div class="container-small">
+      <div class="hero-suptitle">адвокатское бюро</div>
+      <h1>защита <span class="hero-highlight">репутации</span><br>и капитала</h1>
+      <p>Споры высших инстанций, международный арбитраж, уголовно-правовая защита бизнеса. Только личная стратегия.</p>
+      <a href="#contact" class="btn">связаться</a>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-num">220+</div>
+          <div class="stat-desc">выигранных дел</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">₽ 4.5B</div>
+          <div class="stat-desc">сохранено активов</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: экспертиза / ключевые отрасли -->
+  <section class="block reveal">
+    <div class="container-small">
+      <h2>практики<br>у которых учатся</h2>
+      <div class="cases-grid">
+        <div class="case-card">
+          <i class="fas fa-building"></i>
+          <h3>Корпоративные споры</h3>
+          <p>Советы директоров, поглощения, фраудаторные сделки — 90% успеха в кассации.</p>
+        </div>
+        <div class="case-card">
+          <i class="fas fa-handcuffs"></i>
+          <h3>Уголовно-правовая защита</h3>
+          <p>Прекращение дел по 159, 174 УК, сопровождение обысков, домашний арест.</p>
+        </div>
+        <div class="case-card">
+          <i class="fas fa-globe"></i>
+          <h3>International arbitration</h3>
+          <p>LCIA, ICC, Стокгольм — представление интересов в европейских судах.</p>
+        </div>
+      </div>
+      <div class="art-block"></div> <!-- декоративная имитация изображения -->
+    </div>
+  </section>
+
+  <!-- БЛОК 3: знаковые кейсы (доверие) -->
+  <section id="cases" class="block reveal">
+    <div class="container-small">
+      <h2>дела, <br>о которых говорят</h2>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+        <div style="border-left: 4px solid #c7aa83; padding-left: 2rem;">
+          <p style="font-size: 2rem; font-weight: 200; margin-bottom: 1rem;">«Кировский завод»</p>
+          <p>Оспаривание незаконной приватизации: возврат контрольного пакета акций, сумма иска 2,1 млрд руб.</p>
+        </div>
+        <div style="border-left: 4px solid #c7aa83; padding-left: 2rem;">
+          <p style="font-size: 2rem; font-weight: 200; margin-bottom: 1rem;">Nord Sea Bank</p>
+          <p>Блокировка санкционных активов, разблокировка счетов через Европейский суд (дело C-732/21).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: команда — имена и доверие -->
+  <section id="team" class="block reveal">
+    <div class="container-small">
+      <h2>партнёры бюро</h2>
+      <div class="team-grid">
+        <div class="person">
+          <h3>А. Д. <br>Соболев</h3>
+          <p>управляющий партнёр, к.ю.н., специализация — арбитраж и конституционные жалобы.</p>
+        </div>
+        <div class="person">
+          <h3>М. И. <br>Вайнер</h3>
+          <p>партнёр по уголовно-правовой практике, адвокат, бывший следователь СК.</p>
+        </div>
+        <div class="person">
+          <h3>Е. Ф. <br>Ренье</h3>
+          <p>советник по международному праву (Paris Bar), доктор права (Сорбонна).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: услуги / детально (клиентский подход) -->
+  <section class="block reveal">
+    <div class="container-small">
+      <h2>направления</h2>
+      <div class="services-list">
+        <div class="service-item">
+          <i class="fas fa-gavel"></i>
+          <div>
+            <h3>Судебный адвокат</h3>
+            <p>Арбитражные суды, суды общей юрисдикции, Верховный суд, КС.</p>
+          </div>
+        </div>
+        <div class="service-item">
+          <i class="fas fa-file-signature"></i>
+          <div>
+            <h3>Сделки M&A</h3>
+            <p>Due diligence, структурирование активов, защита от оспаривания.</p>
+          </div>
+        </div>
+        <div class="service-item">
+          <i class="fas fa-shield"></i>
+          <div>
+            <h3>Комплаенс и антимонополь</h3>
+            <p>ФАС, локальные нормативные акты, антикоррупционные расследования.</p>
+          </div>
+        </div>
+        <div class="service-item">
+          <i class="fas fa-passport"></i>
+          <div>
+            <h3>Private clients</h3>
+            <p>Семейное право, наследственное планирование, налоговые консультации.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: отзывы клиентов (анонимно / референц) -->
+  <section class="block reveal">
+    <div class="container-small">
+      <h2>клиенты о нас</h2>
+      <div class="testimonial-grid">
+        <div class="testimonial-card">
+          <i class="fas fa-quote-right"></i>
+          <p style="font-size: 1.4rem; margin-bottom: 2rem;">«Очень жёсткая позиция и нестандартные ходы. Выиграли дело, которое все считали проигрышным. Благодарен за принципиальность.»</p>
+          <p style="font-weight: 600;">— владелец холдинга (конфиденциально)</p>
+        </div>
+        <div class="testimonial-card">
+          <i class="fas fa-quote-right"></i>
+          <p style="font-size: 1.4rem; margin-bottom: 2rem;">«Международный арбитраж против немецкого концерна — мы не верили в успех. Avellum добились мирового соглашения на наших условиях.»</p>
+          <p style="font-weight: 600;">— CFO машиностроительной группы</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: пресса / признание -->
+  <section class="block reveal">
+    <div class="container-small">
+      <h2>публичность</h2>
+      <div class="press-logos">
+        <i class="fab fa-forbes"></i>
+        <i class="fab fa-bloomberg"></i>
+        <i class="fab fa-reuters"></i>
+        <i class="fab fa-ft"></i>
+        <i class="fas fa-newspaper"></i>
+      </div>
+      <p style="max-width: 600px; opacity: 0.7;">Avellum входит в топ‑3 рекомендаций Legal 500, Best Lawyers 2024 — «Адвокат года по сложным уголовным делам» (Соболев).</p>
+      <hr>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: контакт / призыв + якорь -->
+  <section id="contact" class="block reveal" style="min-height: 70vh;">
+    <div class="container-small">
+      <h2>обсудить стратегию</h2>
+      <div style="display: flex; gap: 6rem; align-items: flex-end;">
+        <div>
+          <p style="font-size: 1.6rem; font-weight: 200; margin-bottom: 2rem;">Москва, Газетный пер., 17</p>
+          <p style="font-size: 1.6rem; font-weight: 200;">+7 (495) 123-45-67</p>
+          <p style="font-size: 1.6rem; font-weight: 200; margin-top: 2rem;">hello@avellum.ru</p>
+          <div style="margin-top: 3rem;">
+            <a href="#" class="btn">назначить встречу</a>
+          </div>
+        </div>
+        <div style="width: 200px; height: 200px; background: #1e1b1b; display: flex; align-items: center; justify-content: center; color: #f6f4f0;">
+          <i class="fas fa-map-pin" style="font-size: 4rem;"></i>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: футер -->
+  <footer class="reveal">
+    <div>© Avellum — стратегии защиты, 2025</div>
+    <div class="footer-links">
+      <a href="#">LinkedIn</a>
+      <a href="#">Запись</a>
+      <a href="#">Политика</a>
+    </div>
+  </footer>
+
+  <!-- JS: фиксированный хедер при скролле + анимация появления блоков -->
+  <script>
+    (function() {
+      const header = document.getElementById('mainHeader');
+      const revealBlocks = document.querySelectorAll('.reveal');
+
+      // функция проверки видимости (Intersection Observer)
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          } else {
+            // можно убрать класс если хотим повторную анимацию, но для мягкости оставим
+            // (легко убрать ревел, чтобы прятались назад — современный тренд)
+            entry.target.classList.remove('revealed');
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' }); // срабатывает когда 15% блока видно
+
+      revealBlocks.forEach(block => observer.observe(block));
+
+      // эффект скролла на шапку
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // дополнительный эффект для hero — подсветка активного пункта меню при скролле
+      const sections = document.querySelectorAll('section[id], footer[id]');
+      const navLinks = document.querySelectorAll('.nav a');
+
+      function highlightNav() {
+        let current = '';
+        sections.forEach(section => {
+          const sectionTop = section.offsetTop - 100;
+          if (pageYOffset >= sectionTop) {
+            current = section.getAttribute('id');
+          }
+        });
+
+        navLinks.forEach(link => {
+          link.style.opacity = '0.5';
+          link.style.fontWeight = '400';
+          if (link.getAttribute('href') === `#${current}`) {
+            link.style.opacity = '1';
+            link.style.fontWeight = '500';
+          }
+        });
+      }
+      window.addEventListener('scroll', highlightNav);
+      highlightNav(); // initial
+
+      // параллакс-эффект для hero (лёгкое движение)
+      document.addEventListener('mousemove', function(e) {
+        const hero = document.querySelector('.hero');
+        if (!hero) return;
+        const speed = 0.02;
+        const x = (window.innerWidth / 2 - e.pageX) * speed;
+        const y = (window.innerHeight / 2 - e.pageY) * speed;
+        if (window.scrollY < 10) {
+          hero.style.transform = `translate(${x}px, ${y}px)`;
+        } else {
+          hero.style.transform = `translate(0, 0)`;
+        }
+      });
+
+      // эстетика: фикс для первого экрана (чтоб hero не закрывало хедером)
+      if (window.scrollY === 0) {
+        header.classList.remove('scrolled');
+      }
+
+    })();
+  </script>
+  <!-- дополнительный штрих: очень легкая задержка появления блоков уже в CSS сделана, дубляж не нужен -->
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,471 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Артём Попов | Музыкальный продакшн</title>
+  <!-- Font Awesome 6 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0b0b0f;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #f0f0f3;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* кастомный скролл */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1a1a24; }
+    ::-webkit-scrollbar-thumb { background: #9b5eff; border-radius: 8px; }
+
+    /* динамический фон для блоков */
+    .block {
+      position: relative;
+      padding: 5rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    /* плавное появление при скролле (Intersection Observer) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px) scale(0.98);
+      transition: all 0.9s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* якорное меню — фиксированное, компактное, с анимацией */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 20, 30, 0.7);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-radius: 60px;
+      padding: 0.7rem 1.8rem;
+      z-index: 999;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+    .navbar.scrolled {
+      padding: 0.4rem 1.4rem;
+      background: rgba(10, 10, 16, 0.85);
+      border-color: #9b5eff40;
+    }
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+    }
+    .nav-links a {
+      color: #eaeaf0;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+      padding: 0.5rem 0;
+      border-bottom: 2px solid transparent;
+      transition: 0.2s;
+    }
+    .nav-links a:hover {
+      border-bottom-color: #b07cff;
+      color: white;
+    }
+
+    /* хедер с анимацией через canvas */
+    .header-block {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      background: #0a0a12;
+      border-bottom: none;
+    }
+    #waveCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .header-content {
+      position: relative;
+      z-index: 5;
+      max-width: 900px;
+      padding: 2rem;
+    }
+    .header-content h1 {
+      font-size: clamp(3.5rem, 12vw, 6.5rem);
+      font-weight: 800;
+      background: linear-gradient(130deg, #ffffff 0%, #d6b3ff 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -2px;
+      margin-bottom: 1rem;
+      line-height: 1.1;
+      text-shadow: 0 0 30px #9f7aff50;
+    }
+    .header-sub {
+      font-size: 1.4rem;
+      color: #c0b5dd;
+      margin-bottom: 2.5rem;
+      backdrop-filter: blur(8px);
+    }
+    .btn-glow {
+      background: rgba(155, 94, 255, 0.15);
+      border: 1.5px solid #b07cff;
+      color: white;
+      padding: 1.2rem 3.5rem;
+      border-radius: 60px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      backdrop-filter: blur(12px);
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 0 30px #8f5eff30;
+    }
+    .btn-glow:hover {
+      background: #9b5eff;
+      border-color: #b07cff;
+      box-shadow: 0 0 50px #b07cff;
+      transform: scale(1.05);
+    }
+
+    /* общие заголовки */
+    h2 {
+      font-size: 3rem;
+      font-weight: 700;
+      background: linear-gradient(145deg, #fff, #cfb5ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 2rem;
+      letter-spacing: -1px;
+    }
+
+    /* карточки */
+    .grid-3, .grid-2 {
+      display: grid;
+      gap: 2.5rem;
+      margin-top: 2rem;
+    }
+    .grid-3 { grid-template-columns: repeat(3,1fr); }
+    .grid-2 { grid-template-columns: repeat(2,1fr); }
+    .card {
+      background: rgba(30, 28, 40, 0.4);
+      backdrop-filter: blur(8px);
+      border: 1px solid #2d2a3a;
+      border-radius: 2.5rem;
+      padding: 2rem 1.8rem;
+      transition: all 0.3s;
+      box-shadow: 0 20px 30px -20px #00000080;
+    }
+    .card:hover {
+      border-color: #9b5eff80;
+      transform: translateY(-12px) scale(1.01);
+      background: #1f1c30;
+    }
+    .card i {
+      font-size: 2.8rem;
+      color: #b07cff;
+      margin-bottom: 1.2rem;
+    }
+    .card h3 {
+      font-size: 1.7rem;
+      margin-bottom: 0.8rem;
+      font-weight: 600;
+    }
+    .card p { color: #b9b2cf; }
+
+    /* список с иконками */
+    .icon-list {
+      list-style: none;
+      margin-top: 1.5rem;
+    }
+    .icon-list li {
+      margin: 1.2rem 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 1.2rem;
+    }
+    .icon-list i {
+      color: #b07cff;
+      font-size: 1.8rem;
+      width: 2rem;
+    }
+
+    /* testimonial / цитата */
+    .testimonial-card {
+      background: linear-gradient(145deg, #16131f, #0f0e17);
+      border-radius: 3rem;
+      padding: 2.5rem;
+      border-left: 8px solid #b07cff;
+    }
+
+    /* футер */
+    .footer-block {
+      border-bottom: none;
+      background: #050508;
+      text-align: center;
+      color: #9590ad;
+    }
+
+    /* адаптация под пк (остальное не нужно) */
+    @media (max-width: 1100px) {
+      .grid-3 { grid-template-columns: repeat(2,1fr); }
+    }
+
+    /* подсветка текста при скролле */
+    .highlight-scroll {
+      transition: all 0.4s;
+      background: linear-gradient(145deg, #fff, #cfb5ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+</head>
+<body>
+
+<!-- FIXED NAVBAR (ЯКОРНОЕ МЕНЮ) -->
+<nav class="navbar" id="navbar">
+  <div class="nav-links">
+    <a href="#home">главная</a>
+    <a href="#bio">био</a>
+    <a href="#sound">саунд</a>
+    <a href="#workflow">процесс</a>
+    <a href="#tracks">треки</a>
+    <a href="#collab">коллабы</a>
+    <a href="#faq">faq</a>
+    <a href="#contact">контакт</a>
+  </div>
+</nav>
+
+<!-- БЛОК 1: ХЕДЕР С АНИМАЦИЕЙ canvas (волны) -->
+<header class="block header-block reveal" id="home">
+  <canvas id="waveCanvas"></canvas>
+  <div class="header-content">
+    <h1>ARTEM POPOV</h1>
+    <div class="header-sub">саунд-дизайн / аранжировка / мастеринг</div>
+    <button class="btn-glow" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});">записать демо</button>
+  </div>
+</header>
+
+<!-- БЛОК 2: КОРОТКО О ФОРМАТЕ / УСЛУГИ (иконки) -->
+<section class="block reveal" id="bio">
+  <h2>музыка вне границ</h2>
+  <div class="grid-3">
+    <div class="card"><i class="fas fa-waveform"></i><h3>Саунд-дизайн</h3><p>Атмосферные текстуры, синтез, полевые записи — для кино, игр, артистов.</p></div>
+    <div class="card"><i class="fas fa-sliders-h"></i><h3>Сведение / master</h3><p>Чистота, объём, громкость без перегрузов. Работаю с любыми жанрами.</p></div>
+    <div class="card"><i class="fas fa-head-side-brain"></i><h3>Аранжировка</h3><p>Превращаю идею в трек: структура, слои, эмоциональные качели.</p></div>
+  </div>
+</section>
+
+<!-- БЛОК 3: ПРОЦЕСС (иконки + текст) -->
+<section class="block reveal" id="sound">
+  <h2>как рождается звук</h2>
+  <div class="grid-2">
+    <div class="card"><i class="fas fa-comment-dots"></i><h3>01. Брифинг</h3><p>Обсуждаем референсы, настроение, задачу. Я слушаю и предлагаю концепцию.</p></div>
+    <div class="card"><i class="fas fa-fingerprint"></i><h3>02. Идентификация</h3><p>Нахожу уникальную изюминку, которая сделает трек запоминающимся.</p></div>
+    <div class="card"><i class="fas fa-code-branch"></i><h3>03. Продакшн</h3><p>Запись, синтез, MIDI, живые инструменты — всё, что нужно.</p></div>
+    <div class="card"><i class="fas fa-ear-listen"></i><h3>04. Финальный микс</h3><p>Детальная проверка на всех системах, правки до блеска.</p></div>
+  </div>
+</section>
+
+<!-- БЛОК 4: ПОРТФОЛИО / ТРЕКИ (без картинок, стильные иконки) -->
+<section class="block reveal" id="tracks">
+  <h2>избранные работы</h2>
+  <div class="grid-3">
+    <div class="card"><i class="fas fa-circle-play"></i><h3>«NEBULA»</h3><p>электронный инди-поп · финалист номинации «лучший бит» 2024</p></div>
+    <div class="card"><i class="fas fa-compact-disc"></i><h3>«ORBIT»</h3><p>синти-вейв альбом · более 500k прослушиваний</p></div>
+    <div class="card"><i class="fas fa-headphones"></i><h3>«MUTE»</h3><p>саундтрек для короткометражки · приз зрит. симпатий</p></div>
+  </div>
+</section>
+
+<!-- БЛОК 5: ДОВЕРИЕ / КЛИЕНТЫ (текст + иконки) -->
+<section class="block reveal" id="collab">
+  <h2>со мной работают</h2>
+  <div class="testimonial-card">
+    <i class="fas fa-quote-right" style="font-size: 3rem; color: #b07cff; opacity: 0.5; margin-bottom: 1rem;"></i>
+    <p style="font-size: 1.5rem; font-style: italic; color: #ddd;">«Артём сделал продакшн для моего EP — звук просто космос. Треки звучат дороже, чем мы рассчитывали.»</p>
+    <div style="margin-top: 2rem; display: flex; align-items: center; gap: 1.5rem;"><i class="fas fa-star" style="color: gold;"></i><span style="font-weight: 600;">— Анна Ветрова, исполнительница</span></div>
+  </div>
+  <div style="margin-top: 2rem; display: flex; gap: 3rem; flex-wrap: wrap; justify-content: center;">
+    <span><i class="fas fa-check-circle" style="color: #9b5eff;"></i> 30+ релизов</span>
+    <span><i class="fas fa-check-circle" style="color: #9b5eff;"></i> лейблы: Effective, SZ</span>
+    <span><i class="fas fa-check-circle" style="color: #9b5eff;"></i> синхронизация для ТВ</span>
+  </div>
+</section>
+
+<!-- БЛОК 6: ПРЕИМУЩЕСТВА (подсветка при скролле, тонкая анимация) -->
+<section class="block reveal" id="workflow">
+  <h2>почему выбирают</h2>
+  <ul class="icon-list">
+    <li><i class="fas fa-bolt"></i> <span class="highlight-scroll">скорость реакции — правки в течение 24ч</span></li>
+    <li><i class="fas fa-gem"></i> <span class="highlight-scroll">студийное оборудование + уникальные синтезаторы</span></li>
+    <li><i class="fas fa-infinity"></i> <span class="highlight-scroll">безлимитные сессии — работаем до результата</span></li>
+    <li><i class="fas fa-shield-alt"></i> <span class="highlight-scroll">полная конфиденциальность и авторские права</span></li>
+  </ul>
+</section>
+
+<!-- БЛОК 7: FAQ / ЧАСТОЕ -->
+<section class="block reveal" id="faq">
+  <h2>коротко о главном</h2>
+  <div style="display: flex; flex-direction: column; gap: 2rem;">
+    <div><i class="fas fa-chevron-right" style="color: #b07cff;"></i> <strong>Сколько стоит сведение?</strong> — от 150$ за трек (зависит от сложности).</div>
+    <div><i class="fas fa-chevron-right" style="color: #b07cff;"></i> <strong>Нужны «живые» инструменты?</strong> — да, могу подключить сессионных музыкантов.</div>
+    <div><i class="fas fa-chevron-right" style="color: #b07cff;"></i> <strong>Работаете с аутсорс-студиями?</strong> — открыт для b2b, пишите в телеграм.</div>
+    <div><i class="fas fa-chevron-right" style="color: #b07cff;"></i> <strong>Предоплата?</strong> — 50% после утверждения концепции.</div>
+  </div>
+</section>
+
+<!-- БЛОК 8: КОНТАКТНАЯ ФОРМА (упрощённая) -->
+<section class="block reveal" id="contact">
+  <h2>давай создадим звук</h2>
+  <div style="background: #16131f; border-radius: 3rem; padding: 3rem;">
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;">
+      <div style="min-width: 250px;"><i class="fas fa-paper-plane" style="color: #b07cff;"></i> artem@popov.sound</div>
+      <div><i class="fas fa-brand fa-telegram" style="color: #b07cff;"></i> @artem_popov_music</div>
+      <div><i class="fas fa-phone-alt"></i> +7 916 555 38-22</div>
+    </div>
+    <div style="margin-top: 2.5rem;">
+      <button class="btn-glow" style="padding: 0.8rem 2.5rem; font-size: 1rem;" onclick="alert('Демо-заявка отправлена (тест портфолио)');">Отправить заявку</button>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 9: ФУТЕР -->
+<footer class="block footer-block reveal">
+  <p style="font-size: 1.2rem;">© 2025 Artem Popov — музыкальный продюсер</p>
+  <p style="margin-top: 1rem; font-size: 0.9rem; letter-spacing: 1px;">
+    <i class="fab fa-spotify"></i> <i class="fab fa-apple"></i> <i class="fab fa-youtube"></i> <i class="fab fa-instagram"></i>
+  </p>
+</footer>
+
+<script>
+  (function() {
+    // --- 1. Canvas анимация (волны) для шапки ---
+    const canvas = document.getElementById('waveCanvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let time = 0;
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      function drawWaves() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#0a0a12';
+        ctx.fillRect(0, 0, width, height);
+
+        const waveCount = 5;
+        for (let j = 0; j < waveCount; j++) {
+          ctx.beginPath();
+          const offset = j * 40 + time * 0.8;
+          const amp = 40 + j * 12;
+          const freq = 0.005 - j * 0.0005;
+          ctx.moveTo(0, height / 2 + Math.sin(0) * amp);
+
+          for (let x = 0; x <= width; x += 20) {
+            const y = height / 2 
+              + Math.sin(x * freq + offset) * amp 
+              + Math.cos(x * 0.01 + time * 2) * 12 
+              + 20 * Math.sin(x * 0.002 + j);
+            ctx.lineTo(x, y);
+          }
+
+          ctx.strokeStyle = `rgba(155, 94, 255, ${0.2 + j * 0.05})`;
+          ctx.lineWidth = 2.5 - j * 0.3;
+          ctx.stroke();
+        }
+        time += 0.02;
+        requestAnimationFrame(drawWaves);
+      }
+      drawWaves();
+    }
+
+    // --- 2. Intersection Observer (плавное появление блоков + подсветка текста при скролле) ---
+    const reveals = document.querySelectorAll('.reveal');
+    const highlightSpans = document.querySelectorAll('.highlight-scroll');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+          
+          // дополнительный эффект: пробегаем по .highlight-scroll внутри этого блока
+          if (entry.target.querySelector) {
+            const localHighlights = entry.target.querySelectorAll('.highlight-scroll');
+            localHighlights.forEach((el, idx) => {
+              setTimeout(() => {
+                el.style.background = 'linear-gradient(145deg, #ffd966, #b07cff)';
+                el.style.webkitBackgroundClip = 'text';
+                el.style.webkitTextFillColor = 'transparent';
+              }, idx * 120);
+            });
+          }
+        }
+      });
+    }, { threshold: 0.25, rootMargin: '0px' });
+
+    reveals.forEach(r => observer.observe(r));
+
+    // --- 3. Navbar скролл-эффект (становится компактнее) ---
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 60) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+
+    // --- 4. Якорный скролл (плавный, без дополнительной библиотеки) ---
+    document.querySelectorAll('.nav-links a').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href');
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // 5. микродоп: курсор-анимация не нужна, всё уже в canvas
+  })();
+</script>
+<!-- All done! -->
+All done!
+</body>
+</html>
+```

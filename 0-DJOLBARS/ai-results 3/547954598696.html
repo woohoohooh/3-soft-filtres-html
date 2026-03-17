@@ -1,0 +1,657 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Автосервис «Деталь» — ремонмт и доверие</title>
+  <!-- Font Awesome 6 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #f3f5f9;
+      color: #1a1e2b;
+      overflow-x: hidden;
+    }
+
+    /* гладкий скролл */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* кастомный скроллбар */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #e0e4f0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2b3b5c;
+      border-radius: 8px;
+    }
+
+    /* фиксированная навигация — изменяется при скролле */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 20px 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      background: rgba(243, 245, 249, 0.6);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(43, 59, 92, 0.1);
+    }
+
+    .navbar.scrolled {
+      padding: 12px 60px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 30px rgba(0, 10, 30, 0.1);
+      border-bottom: 1px solid rgba(255, 140, 0, 0.2);
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 26px;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #1e2b3c, #2b3b5c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      transition: 0.2s;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 40px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      font-weight: 500;
+      color: #1e2b3c;
+      font-size: 16px;
+      position: relative;
+      padding: 5px 0;
+      transition: color 0.2s;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #ff8a3c;
+      transition: width 0.25s ease-out;
+    }
+
+    .nav-links a:hover {
+      color: #ff8a3c;
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    /* блоки */
+    section {
+      min-height: 100vh;
+      width: 100%;
+      padding: 100px 60px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* анимация при появлении блоков (Intersection Observer) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .fade-up.appeared {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* дополнительные микромоушены */
+    .glow-text {
+      transition: text-shadow 0.2s;
+    }
+
+    .glow-text:hover {
+      text-shadow: 0 0 12px rgba(255, 138, 60, 0.5);
+    }
+
+    /* блок 1 — Hero с js canvas анимацией (анимированные частицы/шестеренки) */
+    #hero {
+      background: linear-gradient(145deg, #ffffff 0%, #f0f4fa 100%);
+      position: relative;
+    }
+
+    canvas#heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      max-width: 700px;
+    }
+
+    .hero-content h1 {
+      font-size: 64px;
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #1c2b3a, #3b4f6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 20px;
+    }
+
+    .hero-content p {
+      font-size: 20px;
+      color: #2f4058;
+      margin-bottom: 40px;
+      max-width: 550px;
+    }
+
+    .cta-button {
+      background: #ff8a3c;
+      border: none;
+      color: white;
+      padding: 18px 48px;
+      font-size: 18px;
+      font-weight: 600;
+      border-radius: 60px;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(255, 138, 60, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .cta-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 20px 35px rgba(255, 138, 60, 0.5);
+    }
+
+    /* блок 2 — преимущества / иконки */
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 40px;
+      margin-top: 50px;
+    }
+
+    .benefit-item {
+      text-align: center;
+      padding: 30px 20px;
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(4px);
+      border-radius: 48px 20px 48px 20px;
+      box-shadow: 0 15px 35px -10px rgba(30, 40, 60, 0.2);
+      border: 1px solid rgba(255,255,255,0.6);
+      transition: 0.25s;
+    }
+
+    .benefit-item:hover {
+      transform: translateY(-10px);
+      background: white;
+    }
+
+    .benefit-item i {
+      font-size: 48px;
+      color: #ff8a3c;
+      margin-bottom: 20px;
+    }
+
+    /* блок 3 — услуги (прайс-карточки) */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      margin-top: 50px;
+    }
+
+    .service-card {
+      background: white;
+      border-radius: 30px;
+      padding: 40px 25px;
+      box-shadow: 0 20px 35px -5px rgba(0,0,0,0.05);
+      transition: all 0.3s;
+      border: 1px solid rgba(0,0,0,0.02);
+      position: relative;
+    }
+
+    .service-card:hover {
+      box-shadow: 0 30px 45px -8px rgba(255, 138, 60, 0.2);
+      border-color: rgba(255,138,60,0.3);
+    }
+
+    .service-card i {
+      font-size: 40px;
+      color: #1e2b3c;
+      margin-bottom: 25px;
+    }
+
+    .price-tag {
+      font-size: 26px;
+      font-weight: 700;
+      color: #ff8a3c;
+      margin: 15px 0 5px;
+    }
+
+    /* блок 4 — о мастере (доверие) */
+    .master-row {
+      display: flex;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .master-col {
+      flex: 1;
+    }
+
+    .master-stats {
+      display: flex;
+      gap: 30px;
+      margin: 40px 0;
+    }
+
+    .stat-item {
+      background: white;
+      padding: 25px;
+      border-radius: 30px;
+      text-align: center;
+      min-width: 130px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.02);
+    }
+
+    .stat-number {
+      font-size: 40px;
+      font-weight: 800;
+      color: #ff8a3c;
+    }
+
+    /* блок 5 — кейсы / галерея авто */
+    .cases-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+    }
+
+    .case-item {
+      background: #d9e0ed;
+      height: 220px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: #1e2b3c;
+      font-size: 18px;
+      background-size: cover;
+      background-position: center;
+      transition: 0.3s;
+      box-shadow: inset 0 0 0 0 #ff8a3c;
+      border: 2px solid transparent;
+    }
+
+    .case-item:hover {
+      box-shadow: inset 0 0 0 3px #ff8a3c;
+      transform: scale(0.98);
+    }
+
+    /* блок 6 — отзывы (карусель без картинок, только текст) */
+    .reviews {
+      display: flex;
+      gap: 40px;
+    }
+
+    .review-card {
+      background: white;
+      padding: 35px;
+      border-radius: 40px;
+      box-shadow: 0 25px 45px -10px rgba(0,0,0,0.1);
+      flex: 1;
+      transition: 0.2s;
+    }
+
+    .review-card i {
+      color: #ff8a3c;
+      font-size: 28px;
+      margin-bottom: 20px;
+      opacity: 0.7;
+    }
+
+    /* блок 7 — контакты и призыв */
+    .contact-flex {
+      display: flex;
+      gap: 40px;
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(4px);
+      border-radius: 50px;
+      padding: 50px;
+      align-items: center;
+    }
+
+    .info-line {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 18px;
+      margin: 25px 0;
+    }
+
+    .info-line i {
+      width: 40px;
+      height: 40px;
+      background: #ff8a3c;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    /* футер */
+    footer {
+      background: #141c28;
+      color: #b0c0d0;
+      padding: 40px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .social i {
+      font-size: 24px;
+      margin-left: 20px;
+      color: #a0b2c8;
+      transition: 0.2s;
+    }
+
+    .social i:hover {
+      color: #ff8a3c;
+      transform: translateY(-3px);
+    }
+
+    /* адаптив (минимум, только для пк, но корректно) */
+    @media (max-width: 1200px) {
+      .benefits-grid { grid-template-columns: repeat(2, 1fr); }
+      .services-grid { grid-template-columns: repeat(2, 1fr); }
+      .cases-grid { grid-template-columns: repeat(2, 1fr); }
+      .reviews { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- шапка / фиксированное меню -->
+  <nav class="navbar" id="navbar">
+    <span class="logo"><i class="fas fa-wrench" style="color: #ff8a3c; margin-right: 8px;"></i>Деталь</span>
+    <div class="nav-links">
+      <a href="#hero">Главная</a>
+      <a href="#benefits">Почему мы</a>
+      <a href="#services">Услуги</a>
+      <a href="#master">Мастер</a>
+      <a href="#cases">Кейсы</a>
+      <a href="#contact">Контакты</a>
+    </div>
+  </nav>
+
+  <!-- 1: Hero canvas block -->
+  <section id="hero" class="fade-up">
+    <canvas id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <h1 class="glow-text">Ремонт, который <br>не подведёт в пути</h1>
+      <p>Автосервис «Деталь» — 14 лет опыта, прозрачная диагностика и гарантия 2 года. Доверьте машину настоящим мастерам.</p>
+      <button class="cta-button" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'});">Записаться онлайн</button>
+    </div>
+  </section>
+
+  <!-- 2: Преимущества (иконки) -->
+  <section id="benefits" class="fade-up">
+    <h2 style="font-size: 46px; font-weight: 700; margin-bottom: 20px;">Преимущества</h2>
+    <div class="benefits-grid">
+      <div class="benefit-item"><i class="fas fa-clock"></i><h3>Точно в срок</h3><p>80% заказов заканчиваем раньше обещанного</p></div>
+      <div class="benefit-item"><i class="fas fa-shield-alt"></i><h3>Гарантия 2 года</h3><p>На все работы и запчасти</p></div>
+      <div class="benefit-item"><i class="fas fa-camera"></i><h3>Online-видео</h3><p>Присылаем видео процесса</p></div>
+      <div class="benefit-item"><i class="fas fa-hand-holding-usd"></i><h3>Прозрачно</h3><p>Смета без скрытых доплат</p></div>
+    </div>
+  </section>
+
+  <!-- 3: Услуги (прайс) -->
+  <section id="services" class="fade-up">
+    <h2 style="font-size: 46px; font-weight: 700;">Что делаем</h2>
+    <div class="services-grid">
+      <div class="service-card"><i class="fas fa-oil-can"></i><h3>Замена масла</h3><div class="price-tag">от 2 900 ₽</div><p>Масла премиум, фильтры в подарок</p></div>
+      <div class="service-card"><i class="fas fa-car-battery"></i><h3>Диагностика</h3><div class="price-tag">1 500 ₽</div><p>Компьютерная + проверка ходовой</p></div>
+      <div class="service-card"><i class="fas fa-brake-warning"></i><h3>Тормозная система</h3><div class="price-tag">от 4 500 ₽</div><p>Замена колодок, дисков, суппортов</p></div>
+      <div class="service-card"><i class="fas fa-engine"></i><h3>Капитальный ремонт</h3><div class="price-tag">—</div><p>индивидуальный расчёт</p></div>
+      <div class="service-card"><i class="fas fa-fan"></i><h3>Кондиционер</h3><div class="price-tag">2 990 ₽</div><p>заправка + диагностика утечек</p></div>
+      <div class="service-card"><i class="fas fa-car-crash"></i><h3>Кузовной ремонт</h3><div class="price-tag">от 6 000 ₽</div><p>полировка, покраска, рихтовка</p></div>
+    </div>
+  </section>
+
+  <!-- 4: О мастере / доверие -->
+  <section id="master" class="fade-up">
+    <div class="master-row">
+      <div class="master-col">
+        <h2 style="font-size: 48px; font-weight: 700;">Руководитель <br>сервиса — Илья Градов</h2>
+        <p style="font-size: 18px; margin: 30px 0;">«Автослесарь в третьем поколении. Лично проверяю каждый сложный узел и отвечаю за репутацию».</p>
+        <div class="master-stats">
+          <div class="stat-item"><span class="stat-number">14</span><br>лет опыта</div>
+          <div class="stat-item"><span class="stat-number">2 800+</span><br>машин</div>
+        </div>
+      </div>
+      <div class="master-col">
+        <div style="background: #a0b8d0; height: 360px; border-radius: 60px; display: flex; align-items: center; justify-content: center; color: #1e2b3c; font-weight: 500; box-shadow: 0 25px 35px -5px rgba(0,0,0,0.1);">[фото мастера / атмосфера]</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5: Кейсы / примеры работ (плейсхолдеры без картинок) -->
+  <section id="cases" class="fade-up">
+    <h2 style="font-size: 46px; font-weight: 700;">Последние проекты</h2>
+    <div class="cases-grid">
+      <div class="case-item" style="background: #cbd3e2;">BMW X5 — двигатель</div>
+      <div class="case-item" style="background: #b5c0d4;">Audi Q7 — подвеска</div>
+      <div class="case-item" style="background: #a3b1ca;">Toyota LC200 — кузов</div>
+      <div class="case-item" style="background: #d3dcee;">Mercedes W205 — турбо</div>
+      <div class="case-item" style="background: #c5d0e4;">Lada 4x4 — полный привод</div>
+      <div class="case-item" style="background: #b8c5dd;">Ford Transit — тормоза</div>
+    </div>
+  </section>
+
+  <!-- 6: Отзывы (текст, иконки) -->
+  <section id="reviews" class="fade-up">
+    <h2 style="font-size: 46px; font-weight: 700;">Отзывы клиентов</h2>
+    <div class="reviews" style="margin-top: 50px;">
+      <div class="review-card"><i class="fas fa-star"></i><p>«Делали капитальный ремонт двигателя. Всё чётко, даже видеоотчёт присылали. Прошло полгода — полёт нормальный».</p><br><b>— Дмитрий, владелец Kia Sorento</b></div>
+      <div class="review-card"><i class="fas fa-star"></i><p>«Приехал с проблемой по ходовой, нашли ещё скрытый дефект рулевой. Спасибо за честность. Буду советовать».</p><br><b>— Елена, Hyundai Tucson</b></div>
+    </div>
+  </section>
+
+  <!-- 7: Контакты + призыв -->
+  <section id="contact" class="fade-up">
+    <div class="contact-flex">
+      <div style="flex:1">
+        <h2 style="font-size: 44px; font-weight: 700;">Контакты</h2>
+        <div class="info-line"><i class="fas fa-map-pin"></i> <span>Москва, ул. Автомоторная 12</span></div>
+        <div class="info-line"><i class="fas fa-phone-alt"></i> <span>+7 (495) 888-12-34</span></div>
+        <div class="info-line"><i class="fas fa-envelope"></i> <span>service@detail.ru</span></div>
+        <div class="info-line"><i class="fas fa-clock"></i> <span>пн–сб 9:00–21:00</span></div>
+        <button class="cta-button" style="margin-top: 30px;" onclick="alert('Скоро свяжемся (имитация)')">Оставить заявку</button>
+      </div>
+      <div style="flex:1; background: #ced8e8; border-radius: 40px; padding: 40px; text-align: center;">
+        <i class="fas fa-map-marked-alt" style="font-size: 70px; color: #1e2b3c; opacity: 0.5;"></i>
+        <p style="margin-top: 20px;">[ интерактивная карта ]</p>
+        <p>Яндекс Карты — здесь будет метка</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- футер -->
+  <footer>
+    <span>© 2025 Автосервис «Деталь» — доверие и технологии</span>
+    <div class="social">
+      <i class="fab fa-telegram"></i>
+      <i class="fab fa-whatsapp"></i>
+      <i class="fab fa-youtube"></i>
+    </div>
+  </footer>
+
+  <!-- JS: навбар при скролле, обсервер анимаций, канвас-частицы -->
+  <script>
+    (function() {
+      // 1. навбар изменение при скролле
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      });
+
+      // 2. Intersection Observer — анимация появления блоков .fade-up
+      const appearElements = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('appeared');
+            observer.unobserve(entry.target); // однократно
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+      appearElements.forEach(el => observer.observe(el));
+
+      // 3. Canvas анимация на hero (шестерни / абстрактные линии)
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 38;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: 3 + Math.random() * 12,
+            speedX: (Math.random() - 0.5) * 0.4,
+            speedY: (Math.random() - 0.5) * 0.2,
+            angle: Math.random() * Math.PI * 2,
+            spin: (Math.random() - 0.5) * 0.02,
+          });
+        }
+      }
+
+      function drawGear(x, y, r, angle) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        // рисуем подобие шестерни: круг + зубцы
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 138, 60, 0.06)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 138, 60, 0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // зубцы
+        for (let i = 0; i < 8; i++) {
+          let rad = (i / 8) * Math.PI * 2;
+          let dx = Math.cos(rad) * (r + 6);
+          let dy = Math.sin(rad) * (r + 6);
+          ctx.beginPath();
+          ctx.moveTo(dx * 0.8, dy * 0.8);
+          ctx.lineTo(dx * 1.3, dy * 1.3);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = 'rgba(255, 138, 60, 0.2)';
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function animateCanvas() {
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => {
+          p.x += p.speedX;
+          p.y += p.speedY;
+          p.angle += p.spin;
+
+          if (p.x < -30) p.x = width + 30;
+          if (p.x > width + 30) p.x = -30;
+          if (p.y < -30) p.y = height + 30;
+          if (p.y > height + 30) p.y = -30;
+
+          drawGear(p.x, p.y, p.radius, p.angle);
+        });
+        requestAnimationFrame(animateCanvas);
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = document.getElementById('hero').offsetHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+      animateCanvas();
+
+      // 4. дополнительная анимация при скролле — подсветка навигации
+      const sections = document.querySelectorAll('section');
+      const navLinks = document.querySelectorAll('.nav-links a');
+
+      function highlightNav() {
+        let scrollY = window.pageYOffset;
+        sections.forEach(section => {
+          const sectionTop = section.offsetTop - 100;
+          const sectionBottom = sectionTop + section.offsetHeight;
+          const id = section.getAttribute('id');
+          if (scrollY >= sectionTop && scrollY < sectionBottom) {
+            navLinks.forEach(link => {
+              link.style.color = link.getAttribute('href') === '#'+id ? '#ff8a3c' : '#1e2b3c';
+            });
+          }
+        });
+      }
+      window.addEventListener('scroll', highlightNav);
+      highlightNav();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

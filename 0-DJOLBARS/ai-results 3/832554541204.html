@@ -1,0 +1,596 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avant-garde · Лендинг фотографа</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #f7f5f2;
+            color: #1e1b1b;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* Smooth scroll & anchor offset */
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 80px;
+        }
+
+        /* fixed header modification on scroll (js will toggle class) */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.8rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 1000;
+            mix-blend-mode: exclusion;
+            color: white;
+        }
+
+        .site-header.scrolled {
+            background: rgba(20, 18, 18, 0.85);
+            backdrop-filter: blur(16px);
+            padding: 0.9rem 2.5rem;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2);
+            mix-blend-mode: normal;
+            color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo a {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            text-decoration: none;
+            color: inherit;
+            transition: 0.2s;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2.8rem;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: inherit;
+            font-weight: 500;
+            font-size: 1.1rem;
+            letter-spacing: 0.3px;
+            position: relative;
+            padding-bottom: 4px;
+        }
+
+        .nav-menu a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: currentColor;
+            transition: width 0.3s ease;
+        }
+
+        .nav-menu a:hover::after {
+            width: 100%;
+        }
+
+        /* blocks container */
+        .block {
+            min-height: 100vh;
+            width: 100%;
+            padding: 120px 2.5rem 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* block pair backgrounds */
+        .block:nth-child(odd) {
+            background-color: #f7f5f2;
+            color: #1e1b1b;
+        }
+        .block:nth-child(even) {
+            background-color: #1e1b1b;
+            color: #f0ede8;
+        }
+
+        /* inner content */
+        .container {
+            max-width: 1360px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h2 {
+            font-size: 4rem;
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 2rem;
+        }
+
+        .block:nth-child(even) h2 {
+            color: #f9d77e;
+        }
+
+        /* reveal animation base (will be triggered by Intersection Observer) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* individual animations */
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .reveal-left.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(50px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .reveal-right.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.92);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .reveal-scale.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* header block special */
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .hero-title {
+            font-size: 5.5rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -0.03em;
+        }
+        .hero-title span {
+            color: #b5926a;
+            display: inline-block;
+        }
+
+        .hero-para {
+            font-size: 1.3rem;
+            margin: 1.5rem 0 2.5rem;
+            opacity: 0.8;
+            max-width: 500px;
+        }
+
+        .cta-btn {
+            background: #1e1b1b;
+            border: none;
+            color: white;
+            padding: 1.2rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.25s ease;
+            box-shadow: 0 10px 25px -10px rgba(0,0,0,0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .block:nth-child(even) .cta-btn {
+            background: #f9d77e;
+            color: #1e1b1b;
+        }
+        .cta-btn i {
+            transition: transform 0.3s;
+        }
+        .cta-btn:hover i {
+            transform: translateX(6px);
+        }
+
+        /* floating elements (header animation) */
+        .hero-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            letter-spacing: 1px;
+        }
+
+        /* icon strips */
+        .icon-strip {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+            font-size: 2rem;
+            color: #b5926a;
+        }
+
+        /* card grid */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .service-card {
+            background: rgba(255,255,255,0.05);
+            padding: 2.2rem 1.8rem;
+            border-radius: 36px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+        }
+        .block:nth-child(odd) .service-card {
+            background: #ffffffd6;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
+        }
+        .service-card i {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: #b5926a;
+        }
+        .service-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 0.8rem;
+        }
+
+        /* portfolio mosaic */
+        .mosaic {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+        .mosaic-item {
+            aspect-ratio: 1 / 1.2;
+            background: rgba(255,255,255,0.03);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid currentColor;
+            color: #b5926a;
+            transition: 0.2s;
+        }
+        .mosaic-item i {
+            font-size: 3rem;
+            opacity: 0.5;
+        }
+
+        /* testemonials */
+        .testi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2.5rem;
+        }
+        .testi-card {
+            padding: 2rem;
+            border-left: 4px solid #b5926a;
+            background: rgba(0,0,0,0.2);
+            border-radius: 0 20px 20px 0;
+        }
+
+        /* footer */
+        .site-footer {
+            background: #0f0e0e;
+            color: #bdbdbd;
+            padding: 3rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .social-links a {
+            color: white;
+            margin-left: 1.8rem;
+            font-size: 1.4rem;
+            transition: 0.2s;
+        }
+        .social-links a:hover {
+            color: #b5926a;
+        }
+
+        /* misc */
+        .micro-tag {
+            display: inline-block;
+            background: #b5926a20;
+            padding: 0.3rem 1rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            margin-bottom: 1.5rem;
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background: rgba(128, 128, 128, 0.2);
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- fixed header -->
+    <header class="site-header" id="mainHeader">
+        <div class="logo"><a href="#hero">· FRAME BY M.</a></div>
+        <nav class="nav-menu">
+            <a href="#hero">Главная</a>
+            <a href="#services">Услуги</a>
+            <a href="#portfolio">Портфолио</a>
+            <a href="#about">Обо мне</a>
+            <a href="#contact">Контакты</a>
+        </nav>
+    </header>
+
+    <!-- BLOCK 1: hero -->
+    <section id="hero" class="block">
+        <div class="container hero-content">
+            <div class="reveal-left">
+                <span class="micro-tag"><i class="fas fa-camera" style="margin-right: 6px;"></i>свадебный / репортажный</span>
+                <h1 class="hero-title">Ловить<br><span>эмоции</span> без<br>постановки</h1>
+                <p class="hero-para">Природный свет, живые кадры, никакой искусственности. Для тех, кто ценит момент.</p>
+                <button class="cta-btn">Обсудить съёмку <i class="fas fa-arrow-right"></i></button>
+                <div class="hero-stats">
+                    <div class="stat-item"><span class="stat-number">70+</span><span class="stat-label">свадеб</span></div>
+                    <div class="stat-item"><span class="stat-number">200+</span><span class="stat-label">портфолио</span></div>
+                    <div class="stat-item"><span class="stat-number">6 лет</span><span class="stat-label">опыта</span></div>
+                </div>
+            </div>
+            <div class="reveal-right">
+                <div class="icon-strip">
+                    <i class="fas fa-camera-retro"></i>
+                    <i class="fas fa-film"></i>
+                    <i class="fas fa-image"></i>
+                    <i class="fas fa-heart"></i>
+                </div>
+                <p style="font-size: 1.2rem; margin-top: 2rem; max-width: 400px;">«Фотография — это история, которую не рассказать словами»</p>
+            </div>
+        </div>
+        <!-- floating small animation (js later) -->
+        <div style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); font-size: 1.5rem; color: #b5926a;">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </section>
+
+    <!-- BLOCK 2: услуги / specialties -->
+    <section id="services" class="block">
+        <div class="container">
+            <div class="reveal-scale">
+                <h2>жанры, в которых<br>я рассказываю истории</h2>
+            </div>
+            <div class="card-grid">
+                <div class="service-card reveal" data-delay="0.1">
+                    <i class="fas fa-ring"></i>
+                    <h3>Свадебная</h3>
+                    <p>Репортажная съёмка без постановки. От подготовки до торта — всё живо.</p>
+                </div>
+                <div class="service-card reveal" data-delay="0.2">
+                    <i class="fas fa-people-group"></i>
+                    <h3>Репортаж</h3>
+                    <p>Мероприятия, концерты, корпоративы. Ловлю атмосферу.</p>
+                </div>
+                <div class="service-card reveal" data-delay="0.3">
+                    <i class="fas fa-camera-portrait"></i>
+                    <h3>Портрет / Love story</h3>
+                    <p>Индивидуальные или парные съёмки в городе или на природе.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 3: портфолио (мозаика) -->
+    <section id="portfolio" class="block">
+        <div class="container">
+            <div class="reveal-left">
+                <h2>свежие работы</h2>
+            </div>
+            <div class="mosaic">
+                <div class="mosaic-item reveal-scale"><i class="fas fa-camera"></i></div>
+                <div class="mosaic-item reveal-scale" data-delay="0.1"><i class="fas fa-crown"></i></div>
+                <div class="mosaic-item reveal-scale" data-delay="0.2"><i class="fas fa-tree"></i></div>
+                <div class="mosaic-item reveal-scale"><i class="fas fa-wine-glass"></i></div>
+                <div class="mosaic-item reveal-scale" data-delay="0.1"><i class="fas fa-ring"></i></div>
+                <div class="mosaic-item reveal-scale" data-delay="0.2"><i class="fas fa-hand-peace"></i></div>
+            </div>
+            <p style="margin-top: 2rem; opacity: 0.7; font-size: 1.1rem;"><i class="fas fa-plus-circle"></i> ещё 50+ истотий в портфолио</p>
+        </div>
+    </section>
+
+    <!-- BLOCK 4: обо мне (личное) -->
+    <section id="about" class="block">
+        <div class="container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;">
+            <div class="reveal-left">
+                <div class="icon-strip" style="justify-content: start;">
+                    <i class="fas fa-camera"></i>
+                    <i class="fas fa-compass"></i>
+                </div>
+                <h2 style="font-size: 3.5rem;">Михаил<br>Соболев</h2>
+                <p style="font-size: 1.3rem; margin: 1rem 0;">Документальный фотограф, режиссёр монтажа. Живу в кадре и между ними.</p>
+            </div>
+            <div class="reveal-right">
+                <p style="font-size: 1.2rem; margin-bottom: 2rem;">— Снимаю так, чтобы через 20 лет вы не просто вспоминали, а снова чувствовали. Никаких шаблонов, только честность.</p>
+                <hr>
+                <p><i class="fas fa-check-circle" style="color: #b5926a;"></i> Публикации в Vogue, GQ</p>
+                <p><i class="fas fa-check-circle" style="color: #b5926a;"></i> Сотрудничество с брендами: Nikon, Profoto</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 5: отзывы (testimonials) -->
+    <section id="testimonials" class="block">
+        <div class="container">
+            <div class="reveal">
+                <h2>доверие в кадрах</h2>
+            </div>
+            <div class="testi-grid">
+                <div class="testi-card reveal" data-delay="0.1">
+                    <i class="fas fa-quote-right" style="font-size: 2rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                    <p>«Миша единственный, кто смог снять нашу свадьбу так, будто мы просто гуляли. Ни одного натужного кадра. Гости до сих пор спрашивают фотографа».</p>
+                    <p style="margin-top: 1.5rem; font-weight: bold;">— Анна и Дмитрий</p>
+                </div>
+                <div class="testi-card reveal" data-delay="0.2">
+                    <i class="fas fa-quote-right" style="font-size: 2rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                    <p>«Работали над love-story в горах. Результат превзошёл ожидания — фотографии тёплые, настоящие. Обязательно вернёмся».</p>
+                    <p style="margin-top: 1.5rem; font-weight: bold;">— Екатерина</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 6: как проходят съёмки (процесс) -->
+    <section class="block">
+        <div class="container">
+            <h2 class="reveal-left">как мы создаём</h2>
+            <div style="display: flex; gap: 3rem; margin: 3rem 0; flex-wrap: wrap;">
+                <div class="reveal-scale" style="flex:1; min-width: 200px;"><i class="fas fa-comments" style="font-size: 2rem;"></i><h3>1. Знакомство</h3><p>Обсуждаем идеи, локацию, настрой.</p></div>
+                <div class="reveal-scale" data-delay="0.1" style="flex:1;"><i class="fas fa-camera" style="font-size: 2rem;"></i><h3>2. Съёмка</h3><p>Прогулка или репортаж: легко и без напряжения.</p></div>
+                <div class="reveal-scale" data-delay="0.2" style="flex:1;"><i class="fas fa-wand-magic-sparkles" style="font-size: 2rem;"></i><h3>3. Цвет + кадры</h3><p>Авторская обработка, никакого пересвета.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOCK 7: контакты + призыв -->
+    <section id="contact" class="block">
+        <div class="container" style="max-width: 800px; text-align: center;">
+            <div class="reveal">
+                <h2>хотите так же?</h2>
+                <p style="font-size: 1.5rem; margin-bottom: 2rem;">пишите в любой мессенджер</p>
+                <button class="cta-btn" style="margin: 0 auto;"><i class="fab fa-telegram"></i> Telegram</button>
+                <button class="cta-btn" style="margin-left: 1rem; background: #fff; color: #1e1b1b;"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                <div style="margin-top: 3rem;">
+                    <p><i class="fas fa-envelope"></i> hello@mbphotography.ru</p>
+                    <p><i class="fas fa-phone"></i> +7 (916) 555-03-20</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER - block 8/9? всего 7+ header+footer=9 -->
+    <footer class="site-footer">
+        <div>© Михаил Соболев · фотограф 2025</div>
+        <div class="social-links">
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-vk"></i></a>
+            <a href="#"><i class="fab fa-behance"></i></a>
+            <a href="#"><i class="fab fa-youtube"></i></a>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // Fixed header shrink on scroll
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 30) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // Intersection Observer for reveals
+            const revealElements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // small delay if data-delay attr exists
+                        const delay = entry.target.getAttribute('data-delay') || 0;
+                        setTimeout(() => {
+                            entry.target.classList.add('active');
+                        }, delay * 1000);
+                        // optionally unobserve after activation
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+
+            revealElements.forEach(el => observer.observe(el));
+
+            // extra micro‑animation: floating chevron + bg effect (simple)
+            const heroBlock = document.getElementById('hero');
+            if (heroBlock) {
+                setInterval(() => {
+                    const chevron = heroBlock.querySelector('.fa-chevron-down');
+                    if (chevron) {
+                        chevron.style.transform = 'translateY(8px)';
+                        setTimeout(() => chevron.style.transform = 'translateY(0)', 600);
+                    }
+                }, 2000);
+            }
+
+            // mimic "random theme" pick: photographer is done. 
+            // Header mouse move parallax (tiny)
+            document.addEventListener('mousemove', function(e) {
+                const moveX = (e.clientX / window.innerWidth - 0.5) * 10;
+                const moveY = (e.clientY / window.innerHeight - 0.5) * 10;
+                const heroTitle = document.querySelector('.hero-title');
+                if (heroTitle && window.scrollY < 100) {
+                    heroTitle.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

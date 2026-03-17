@@ -1,0 +1,596 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avocato · адвокатское бюро</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f5f3f0;
+            color: #1e1b1a;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+        }
+
+        /* фиксированная нав. панель — преображение при скролле */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 24px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+            z-index: 1000;
+            mix-blend-mode: difference;
+            color: white;
+            pointer-events: none;
+        }
+        .navbar a, .logo {
+            pointer-events: auto;
+        }
+        .navbar.scrolled {
+            background: #0f0e0d;
+            padding: 16px 48px;
+            mix-blend-mode: normal;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,215,0,0.2);
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+            color: white;
+            text-decoration: none;
+        }
+        .logo i {
+            color: #d4af37;
+            margin-right: 6px;
+            transition: transform 0.3s ease;
+        }
+        .navbar.scrolled .logo i {
+            transform: rotate(8deg);
+        }
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: white;
+            font-weight: 500;
+            font-size: 1.1rem;
+            position: relative;
+            padding: 6px 0;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #d4af37;
+            transition: width 0.3s ease;
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* общая сетка */
+        section {
+            min-height: 100vh;
+            padding: 80px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* анимация появления блоков (сработает при скролле) */
+        .fade-reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .fade-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* дополнительные эффекты при смене блоков (подсветка текста) */
+        .highlight-change {
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .highlight-change.changed {
+            background: rgba(212, 175, 55, 0.15);
+            color: #b8860b;
+            box-shadow: -4px 0 0 #d4af37;
+        }
+
+        /* блок 1 — шапка (герой) */
+        .hero {
+            background: #161412;
+            color: white;
+        }
+        .hero-content {
+            max-width: 900px;
+        }
+        .hero h1 {
+            font-size: 5.2rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+        .hero h1 i {
+            color: #d4af37;
+            font-style: normal;
+            display: inline-block;
+            animation: glitch 3s infinite;
+        }
+        @keyframes glitch {
+            0%, 100% { transform: skew(0deg, 0deg); opacity: 1; }
+            95% { transform: skew(2deg, 1deg); opacity: 0.9; }
+            96% { transform: skew(-2deg, -1deg); }
+            97% { transform: skew(0deg, 0deg); }
+        }
+        .hero .subhead {
+            font-size: 1.5rem;
+            margin: 32px 0 24px;
+            opacity: 0.8;
+            border-left: 4px solid #d4af37;
+            padding-left: 24px;
+        }
+        .stats {
+            display: flex;
+            gap: 60px;
+            margin-top: 60px;
+        }
+        .stat-item {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+        .stat-item span {
+            font-size: 1rem;
+            display: block;
+            opacity: 0.6;
+            font-weight: 400;
+        }
+
+        /* блок 2 — доверие / регалии */
+        .trust {
+            background: #ffffff;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 48px;
+            margin-top: 48px;
+        }
+        .card {
+            padding: 32px;
+            background: #f8f6f3;
+            border-radius: 32px;
+            transition: 0.2s;
+        }
+        .card i {
+            font-size: 2.8rem;
+            color: #d4af37;
+            margin-bottom: 24px;
+        }
+        .card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 12px;
+        }
+
+        /* блок 3 — кейсы (карусель / слайдер текста с анимацией js) */
+        .cases {
+            background: #eae7e2;
+        }
+        .case-slider {
+            background: #1e1b1a;
+            color: white;
+            padding: 48px;
+            border-radius: 48px;
+            margin-top: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+        .case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .case-title {
+            font-size: 2.4rem;
+            font-weight: 500;
+        }
+        .case-nav {
+            display: flex;
+            gap: 16px;
+        }
+        .case-nav button {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .case-nav button:hover {
+            background: #d4af37;
+            border-color: #d4af37;
+            color: #1e1b1a;
+        }
+        .case-content {
+            display: flex;
+            gap: 48px;
+            align-items: center;
+        }
+        .case-icon {
+            font-size: 5rem;
+            color: #d4af37;
+        }
+        .case-text h2 {
+            font-size: 2.2rem;
+            margin-bottom: 16px;
+        }
+        .case-text p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        /* блок 4 — экспертиза (бухгалтерские нотки) */
+        .expertise {
+            background: #2b2724;
+            color: white;
+        }
+        .pill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 48px 0;
+        }
+        .pill {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(212,175,55,0.3);
+            padding: 16px 32px;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+        .pill i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+        /* блок 5 — консультация (форма) */
+        .consult {
+            background: #f0ebe4;
+        }
+        .form-card {
+            background: white;
+            max-width: 640px;
+            padding: 48px;
+            border-radius: 48px;
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2);
+        }
+        .input-line {
+            border: none;
+            border-bottom: 2px solid #ccc;
+            padding: 16px 0;
+            width: 100%;
+            font-size: 1.2rem;
+            outline: none;
+            transition: 0.2s;
+        }
+        .input-line:focus {
+            border-bottom-color: #d4af37;
+        }
+        .btn {
+            background: #1e1b1a;
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            font-size: 1.2rem;
+            border-radius: 60px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 32px;
+        }
+        .btn i {
+            color: #d4af37;
+            font-size: 1.5rem;
+        }
+        .btn:hover {
+            background: #d4af37;
+            color: #1e1b1a;
+        }
+        .btn:hover i {
+            color: #1e1b1a;
+        }
+
+        /* блок 6 — цифры/результаты */
+        .numbers {
+            background: #cfc9c0;
+        }
+        .big-number {
+            font-size: 8rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #1e1b1a;
+            -webkit-text-stroke: 2px #d4af37;
+            text-stroke: 2px #d4af37;
+        }
+
+        /* блок 7 — контакты / футер */
+        .footer {
+            background: #0f0e0d;
+            color: white;
+            min-height: auto;
+            padding: 60px 48px;
+        }
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .social i {
+            font-size: 2rem;
+            margin-right: 24px;
+            color: #aaa;
+            transition: 0.2s;
+        }
+        .social i:hover {
+            color: #d4af37;
+        }
+
+        /* вспомогательное */
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        h2 {
+            font-size: 3.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+        .accent {
+            color: #d4af37;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <a href="#" class="logo"><i class="fas fa-gavel"></i> AVOCATO</a>
+        <div class="nav-links">
+            <a href="#trust">О нас</a>
+            <a href="#cases">Кейсы</a>
+            <a href="#expertise">Услуги</a>
+            <a href="#consult">Контакты</a>
+        </div>
+    </nav>
+
+    <!-- БЛОК 1: шапка/герой -->
+    <section id="hero" class="hero fade-reveal">
+        <div class="container hero-content">
+            <h1>Защита <i>бизнеса</i><br>на уровне <i>искусства</i></h1>
+            <div class="subhead">Адвокатское бюро с налоговым и арбитражным уклоном — выиграны дела на 2,3 млрд ₽</div>
+            <div class="stats">
+                <div class="stat-item">18+ <span>лет практики</span></div>
+                <div class="stat-item">100% <span>успех в кассации</span></div>
+                <div class="stat-item">47 <span>судейских побед</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: доверие / адвокатская палата и тд -->
+    <section id="trust" class="trust fade-reveal">
+        <div class="container">
+            <h2>Доверие — <span class="accent">наша валюта</span></h2>
+            <div class="grid-3">
+                <div class="card"><i class="fas fa-scale-balanced"></i><h3>Адвокатская палата</h3><p>Статус с 2006, рекомендации ВАС РФ, этика и конфиденциальность.</p></div>
+                <div class="card"><i class="fas fa-handcuffs"></i><h3>Уголовный щит</h3><p>Защита на следствии и в суде — прекращение дел, оправдательные приговоры.</p></div>
+                <div class="card"><i class="fas fa-file-invoice"></i><h3>Налоговые споры</h3><p>Снижение доначислений на 90%, возврат НДС из бюджета.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: кейсы (интерактивный слайдер) -->
+    <section id="cases" class="cases fade-reveal">
+        <div class="container">
+            <h2>Практика <span class="accent">успеха</span></h2>
+            <div class="case-slider" id="caseSlider">
+                <div class="case-header">
+                    <span class="case-title">действующие кейсы</span>
+                    <div class="case-nav">
+                        <button id="prevCase"><i class="fas fa-arrow-left"></i></button>
+                        <button id="nextCase"><i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+                <div class="case-content" id="caseContent">
+                    <div class="case-icon"><i class="fas fa-building"></i></div>
+                    <div class="case-text">
+                        <h2>Строительный гигант «Бетон-Инвест»</h2>
+                        <p>Признание договора недействительным — сняты обременения на 780 млн руб. • арбитраж Москвы</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: экспертиза / услуги -->
+    <section id="expertise" class="expertise fade-reveal">
+        <div class="container">
+            <h2>компетенции <span class="accent">boutique</span></h2>
+            <div class="pill-list">
+                <span class="pill"><i class="fas fa-coins"></i> Налоговые споры</span>
+                <span class="pill"><i class="fas fa-bank"></i> Банкротство</span>
+                <span class="pill"><i class="fas fa-gavel"></i> Арбитраж</span>
+                <span class="pill"><i class="fas fa-user-tie"></i> Корпоративное право</span>
+                <span class="pill"><i class="fas fa-hand"></i> Уголовная защита</span>
+                <span class="pill"><i class="fas fa-file-signature"></i> Due diligence</span>
+            </div>
+            <p style="font-size: 1.4rem; max-width: 700px;">Работаем с крупнейшими девелоперами, ритейлом и финтехом. Личная стратегия под каждый спор.</p>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: консультация -->
+    <section id="consult" class="consult fade-reveal">
+        <div class="container">
+            <div class="form-card">
+                <h2 style="font-size: 2.6rem; margin-bottom: 24px;">Получить анализ дела</h2>
+                <input type="text" class="input-line" placeholder="Ваше имя">
+                <input type="text" class="input-line" placeholder="Телефон или почта">
+                <textarea class="input-line" rows="2" placeholder="Суть вопроса"></textarea>
+                <button class="btn">Назначить встречу <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: цифры / факты -->
+    <section class="numbers fade-reveal">
+        <div class="container">
+            <h2>в масштабе <span class="accent">реальности</span></h2>
+            <div style="display: flex; gap: 100px; margin: 60px 0;">
+                <div><div class="big-number">2,3</div> <span style="font-size: 2rem;">млрд ₽</span><br>спорные активы</div>
+                <div><div class="big-number">84</div> <span style="font-size: 2rem;">судебных акта</span><br>в нашу пользу</div>
+                <div><div class="big-number">0</div> <span style="font-size: 2rem;">проигрышей</span><br>в 2024</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: футер / контакты -->
+    <section class="footer fade-reveal">
+        <div class="container footer-content">
+            <div>
+                <div class="logo" style="color:white; font-size: 2rem;"><i class="fas fa-gavel"></i> AVOCATO</div>
+                <p style="margin: 20px 0; opacity: 0.6;">Пресненская наб., 8, Москва</p>
+                <p>+7 (495) 123-45-67</p>
+            </div>
+            <div class="social">
+                <i class="fab fa-telegram"></i>
+                <i class="fab fa-whatsapp"></i>
+                <i class="fab fa-linkedin"></i>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 60px; opacity:0.4;">© 2025 — частная адвокатская практика</div>
+    </section>
+
+    <script>
+        (function() {
+            // 1. Фиксированная шапка преображение при скролле
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+
+            // 2. Анимация появления блоков (reveal) + подсветка текста при смене (эффект на секциях)
+            const sections = document.querySelectorAll('.fade-reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        // добавляем класс 'changed' для временной подсветки текста
+                        entry.target.classList.add('highlight-change', 'changed');
+                        setTimeout(() => {
+                            entry.target.classList.remove('changed');
+                        }, 400);
+                    }
+                });
+            }, { threshold: 0.3, rootMargin: '0px' });
+            sections.forEach(s => observer.observe(s));
+
+            // 3. Кейс-слайдер (интерактив, меняем контент)
+            const caseContent = document.getElementById('caseContent');
+            const caseIcon = caseContent.querySelector('.case-icon i');
+            const caseTitle = caseContent.querySelector('.case-text h2');
+            const caseDesc = caseContent.querySelector('.case-text p');
+
+            const cases = [
+                { icon: 'fa-building', title: 'Строительный гигант «Бетон-Инвест»', desc: 'Признание договора недействительным — сняты обременения на 780 млн руб.' },
+                { icon: 'fa-truck', title: 'Логист‑оператор «ЮгТранс»', desc: 'Отмена решения ФНС на 190 млн, доказана реальность сделок.' },
+                { icon: 'fa-cart-shopping', title: 'Ритейлер «Меркурий»', desc: 'Защита по делу о контрафакте — компенсация снижена в 10 раз.' }
+            ];
+            let currentIdx = 0;
+
+            function updateCase(index) {
+                const c = cases[index % cases.length];
+                caseIcon.className = `fas ${c.icon}`;
+                caseTitle.innerText = c.title;
+                caseDesc.innerText = c.desc;
+                // добавим микро-анимацию внутри блока
+                caseContent.style.transition = 'transform 0.2s';
+                caseContent.style.transform = 'scale(0.98)';
+                setTimeout(() => caseContent.style.transform = 'scale(1)', 150);
+            }
+
+            document.getElementById('nextCase').addEventListener('click', () => {
+                currentIdx = (currentIdx + 1) % cases.length;
+                updateCase(currentIdx);
+            });
+            document.getElementById('prevCase').addEventListener('click', () => {
+                currentIdx = (currentIdx - 1 + cases.length) % cases.length;
+                updateCase(currentIdx);
+            });
+
+            // 4. доп. анимация в шапке — бесконечное легкое движение (уже через css glitch)
+            // 5. эффект нажатия на кнопку "Назначить встречу" (для портфолио)
+            document.querySelector('.btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                this.innerHTML = 'Отправлено <i class="fas fa-check"></i>';
+                this.style.background = '#d4af37';
+                this.style.color = '#1e1b1a';
+                setTimeout(() => {
+                    this.innerHTML = 'Назначить встречу <i class="fas fa-arrow-right"></i>';
+                    this.style.background = '#1e1b1a';
+                    this.style.color = 'white';
+                }, 2000);
+            });
+
+            // небольшой эффект якорного меню (подсветка при клике)
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' });
+                        target.classList.add('highlight-change', 'changed');
+                        setTimeout(() => target.classList.remove('changed'), 600);
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

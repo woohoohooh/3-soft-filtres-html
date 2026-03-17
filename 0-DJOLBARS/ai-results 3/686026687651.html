@@ -1,0 +1,658 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Студия недвижимости | premium selection</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f2f5f9;
+            color: #1e2b37;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* якорное меню — компактное, с анимацией при скролле */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 12px 28px;
+            box-shadow: 0 20px 40px -10px rgba(0,20,30,0.15), 0 0 0 1px rgba(255,255,255,0.8) inset;
+            display: flex;
+            gap: 36px;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .navbar.scrolled {
+            top: 12px;
+            padding: 8px 24px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 20px 35px -8px rgba(0,0,0,0.2);
+            gap: 28px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            color: #1a2b36;
+            letter-spacing: 0.02em;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .navbar a i {
+            margin-right: 6px;
+            font-size: 0.9rem;
+            color: #b7986c;
+            transition: 0.2s;
+        }
+
+        .navbar a:hover {
+            color: #b7986c;
+        }
+
+        .navbar a::after {
+            content: '';
+            position: absolute;
+            width: 0%;
+            height: 2px;
+            background: #b7986c;
+            left: 0;
+            bottom: -5px;
+            transition: 0.3s;
+        }
+
+        .navbar a:hover::after {
+            width: 100%;
+        }
+
+        /* общий контейнер блоков */
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem 10%;
+            position: relative;
+            will-change: transform, opacity;
+        }
+
+        /* анимация появления при скролле (срабатывает через IntersectionObserver) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.1, 1);
+        }
+
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* заголовки */
+        h2 {
+            font-size: 3.5rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        h2 i {
+            color: #b7986c;
+            font-size: 2.8rem;
+            margin-right: 10px;
+        }
+
+        .accent-text {
+            color: #b7986c;
+            font-weight: 400;
+            border-left: 4px solid #b7986c;
+            padding-left: 20px;
+        }
+
+        /* блок 1 — хедер с анимацией js */
+        .header-block {
+            background: #1e2b37;
+            color: white;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-content {
+            max-width: 700px;
+            z-index: 2;
+        }
+
+        .header-content h1 {
+            font-size: 5rem;
+            font-weight: 400;
+            line-height: 1.0;
+            margin-bottom: 25px;
+        }
+
+        .header-content h1 span {
+            display: block;
+            font-weight: 600;
+            color: #e5c9a7;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 50px;
+            margin: 40px 0;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 2.4rem;
+            font-weight: 500;
+            color: #e5c9a7;
+        }
+
+        /* canvas анимация (волны / частицы) */
+        #headerCanvas {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* блок 2 — иконки услуг */
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 40px;
+            padding: 35px 25px;
+            text-align: center;
+            box-shadow: 0 20px 35px -8px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .service-card i {
+            font-size: 3.3rem;
+            color: #b7986c;
+            margin-bottom: 20px;
+        }
+
+        .service-card h3 {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .service-card p {
+            color: #5b6f7e;
+            margin-top: 10px;
+        }
+
+        .service-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 45px -12px #b7986c40;
+        }
+
+        /* каталог объектов (блок 3) */
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 50px 0;
+        }
+
+        .obj-item {
+            background: white;
+            border-radius: 30px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.02);
+            border: 1px solid #fff;
+            transition: 0.25s;
+        }
+
+        .obj-item i {
+            font-size: 2.5rem;
+            color: #b7986c;
+            margin-bottom: 15px;
+        }
+
+        .obj-price {
+            font-size: 2rem;
+            font-weight: 500;
+            margin: 10px 0 5px;
+        }
+
+        .obj-detail {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            color: #4a6572;
+        }
+
+        /* блок 4 — финансовый консультант (акцент на доверии) */
+        .trust-row {
+            display: flex;
+            gap: 70px;
+            align-items: center;
+        }
+
+        .trust-item {
+            flex: 1;
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 40px;
+            padding: 40px;
+            border: 1px solid rgba(183,152,108,0.3);
+        }
+
+        .trust-item i {
+            font-size: 3rem;
+            color: #b7986c;
+        }
+
+        /* блок 5 — аудит / бухгалтерия */
+        .audit-stats {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .audit-card {
+            background: white;
+            border-radius: 30px;
+            padding: 30px;
+            flex: 1 1 200px;
+            border-left: 6px solid #b7986c;
+        }
+
+        /* блок 6 — B2B аутсорсинг (акцент на цифрах) */
+        .b2b-numbers {
+            display: flex;
+            gap: 30px;
+            text-align: center;
+        }
+
+        .num-block {
+            background: #1e2b37;
+            color: white;
+            border-radius: 50px;
+            padding: 35px;
+            flex: 1;
+        }
+
+        .num-block i {
+            font-size: 2.5rem;
+            color: #e5c9a7;
+        }
+
+        /* блок 7 — отзывы / кейсы */
+        .testimonials {
+            display: flex;
+            gap: 25px;
+        }
+
+        .testi-card {
+            background: white;
+            padding: 35px;
+            border-radius: 40px;
+            box-shadow: 0 20px 30px -15px #ccc;
+        }
+
+        /* футер */
+        .footer-block {
+            min-height: 35vh;
+            background: #1e2b37;
+            color: #ccc;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            gap: 25px;
+        }
+
+        .footer-icons i {
+            font-size: 1.8rem;
+            margin: 0 15px;
+            color: #b7986c;
+            transition: 0.2s;
+        }
+
+        .footer-icons i:hover {
+            color: white;
+        }
+
+        /* дополнительные декоративные элементы */
+        .pill-tag {
+            background: #e5c9a7;
+            color: #1e2b37;
+            padding: 6px 16px;
+            border-radius: 40px;
+            display: inline-block;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* кнопка */
+        .btn-gold {
+            background: #b7986c;
+            border: none;
+            color: white;
+            padding: 16px 42px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 8px 18px #b7986c40;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .btn-gold i {
+            margin-left: 8px;
+        }
+
+        .btn-gold:hover {
+            background: #a58357;
+            transform: scale(1.02);
+        }
+
+        /* микро-анимации */
+        .hover-lift {
+            transition: transform 0.2s;
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+        }
+
+        hr {
+            opacity: 0.1;
+        }
+    </style>
+</head>
+<body>
+    <!-- фиксированное якорное меню -->
+    <nav class="navbar" id="navbar">
+        <a href="#home"><i class="fas-regular fa-compass"></i>Главная</a>
+        <a href="#services"><i class="fas-regular fa-building"></i>Услуги</a>
+        <a href="#catalog"><i class="fas-regular fa-camera"></i>Объекты</a>
+        <a href="#trust"><i class="fas-regular fa-handshake"></i>Доверие</a>
+        <a href="#contacts"><i class="fas-regular fa-message"></i>Контакты</a>
+    </nav>
+
+    <!-- БЛОК 1: шапка / header + живая canvas анимация -->
+    <section id="home" class="header-block fade-up">
+        <div class="header-content">
+            <div class="pill-tag"><i class="fa-regular fa-star"></i> premium realty</div>
+            <h1>
+                агентство<br>
+                <span>недвижимости</span>
+            </h1>
+            <div class="header-stats">
+                <div class="stat-item"><span class="stat-number">17+</span> лет экспертизы</div>
+                <div class="stat-item"><span class="stat-number">850</span> объектов</div>
+                <div class="stat-item"><span class="stat-number">98%</span> сделок online</div>
+            </div>
+            <a href="#catalog" class="btn-gold">смотреть каталог <i class="fa-regular fa-arrow-right"></i></a>
+        </div>
+        <canvas id="headerCanvas"></canvas>
+    </section>
+
+    <!-- БЛОК 2: услуги (иконки стильные) -->
+    <section id="services" class="fade-up">
+        <h2><i class="fa-regular fa-pentagon"></i> ключевые направления</h2>
+        <div class="service-grid">
+            <div class="service-card"><i class="fa-regular fa-building-columns"></i><h3>Городская</h3><p>квартиры, апартаменты</p></div>
+            <div class="service-card"><i class="fa-regular fa-tree"></i><h3>Загородная</h3><p>коттеджи, участки</p></div>
+            <div class="service-card"><i class="fa-regular fa-chart-line"></i><h3>Инвестиции</h3><p>доходность 12%+</p></div>
+            <div class="service-card"><i class="fa-regular fa-scale-balanced"></i><h3>Юридическое</h3><p>сопровождение</p></div>
+            <div class="service-card"><i class="fa-regular fa-calculator"></i><h3>Бухгалтерия</h3><p>налоговый консалтинг</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: каталог объектов (агентство недвижимости) -->
+    <section id="catalog" class="fade-up">
+        <h2><i class="fa-regular fa-camera"></i> объекты в продаже</h2>
+        <div class="catalog-grid">
+            <div class="obj-item">
+                <i class="fa-regular fa-building"></i>
+                <div class="obj-price">€ 1.250.000</div>
+                <div>пентхаус, 180 м², терасса</div>
+                <div class="obj-detail"><span><i class="fa-regular fa-bed"></i> 4</span> <span><i class="fa-regular fa-bath"></i> 3</span> <span>центр</span></div>
+            </div>
+            <div class="obj-item">
+                <i class="fa-regular fa-umbrella-beach"></i>
+                <div class="obj-price">€ 890.000</div>
+                <div>таунхаус у озера, 320 м²</div>
+                <div class="obj-detail"><span><i class="fa-regular fa-tree"></i> участок</span> <span>SPA</span></div>
+            </div>
+            <div class="obj-item">
+                <i class="fa-regular fa-city"></i>
+                <div class="obj-price">€ 2.100.000</div>
+                <div>лофт с историей, 240 м²</div>
+                <div class="obj-detail"><span>3 этажа</span> <span>терраса</span></div>
+            </div>
+            <div class="obj-item">
+                <i class="fa-regular fa-mountain-city"></i>
+                <div class="obj-price">€ 495.000</div>
+                <div>апартаменты, вид на море</div>
+                <div class="obj-detail"><span>2 спальни</span> <span>паркинг</span></div>
+            </div>
+        </div>
+        <div style="margin-top: 30px;"><i class="fa-regular fa-circle-check" style="color:#b7986c;"></i> полный каталог — 120+ объектов премиум-класса</div>
+    </section>
+
+    <!-- БЛОК 4: доверие / юридическая консультация (адвокатская тематика) -->
+    <section id="trust" class="fade-up" style="background: #e8eef3;">
+        <h2><i class="fa-regular fa-handshake"></i> юридическая защита</h2>
+        <div class="trust-row">
+            <div class="trust-item">
+                <i class="fa-regular fa-file-signature"></i>
+                <h3 style="font-size: 2rem; margin: 15px 0;">14+ лет в арбитраже</h3>
+                <p>Кейсы: выигранные споры с застройщиками, регистрация прав, due diligence.</p>
+            </div>
+            <div class="trust-item">
+                <i class="fa-regular fa-gavel"></i>
+                <h3 style="font-size: 2rem; margin: 15px 0;">адвокатская монополия</h3>
+                <p>Представляем интересы в судах общей юрисдикции и арбитраже. Более 200 дел.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: бухгалтерские / аудиторские услуги -->
+    <section class="fade-up">
+        <h2><i class="fa-regular fa-calculator"></i> аудит & бухгалтерия</h2>
+        <div class="audit-stats">
+            <div class="audit-card"><i class="fa-regular fa-file-invoice"></i> <h3>990+</h3> успешных проверок</div>
+            <div class="audit-card"><i class="fa-regular fa-clock"></i> <h3>24/7</h3> облачная бухгалтерия</div>
+            <div class="audit-card"><i class="fa-regular fa-badge-check"></i> <h3>GAAP/IFRS</h3> международный стандарт</div>
+            <div class="audit-card"><i class="fa-regular fa-sack-dollar"></i> <h3>налоговая оптимизация</h3> законно</div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: B2B аутсорсинг / клининг / персонал -->
+    <section class="fade-up" style="background: #1e2b37; color: white;">
+        <h2 style="color: white;"><i class="fa-regular fa-briefcase"></i> B2B аутсорсинг</h2>
+        <div class="b2b-numbers">
+            <div class="num-block"><i class="fa-regular fa-people-group"></i><h3>340+</h3>сотрудников предоставлено</div>
+            <div class="num-block"><i class="fa-regular fa-spray-can-sparkles"></i><h3>85</h3>объектов клининг</div>
+            <div class="num-block"><i class="fa-regular fa-gear"></i><h3>24/7</h3>поддержка</div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: кейсы / портфолио (дизайн, фотографы, бьюти-идеи вставлены стильно) -->
+    <section class="fade-up">
+        <h2><i class="fa-regular fa-crown"></i> прецеденты</h2>
+        <div class="testimonials">
+            <div class="testi-card"><i class="fa-regular fa-quote-right" style="color: #b7986c; font-size: 2rem;"></i><p style="margin: 15px 0;">«Продали особняк за 3 недели, юридическое сопровождение идеальное»</p><span>— владелец, Knight Frank</span></div>
+            <div class="testi-card"><i class="fa-regular fa-quote-right" style="color: #b7986c; font-size: 2rem;"></i><p style="margin: 15px 0;">«Аудит выявил скрытые резервы, сэкономили 2,4 млн руб.»</p><span>— финдиректор, Azimut</span></div>
+            <div class="testi-card"><i class="fa-regular fa-quote-right" style="color: #b7986c; font-size: 2rem;"></i><p style="margin: 15px 0;">«Передали бухгалтерию на аутсорс — прозрачно и надежно»</p><span>— CEO, стартап</span></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: бизнес-коуч / финансовый консультант (блок с сильным призывом) -->
+    <section class="fade-up" style="background: #fff4e8;">
+        <div style="display: flex; gap: 50px; align-items: center;">
+            <div><i class="fa-regular fa-chart-pie" style="font-size: 5rem; color: #b7986c;"></i></div>
+            <div><h2>стратегия роста <br>от бизнес-коуча</h2>
+            <p style="max-width: 500px;">Индивидуальный план развития, финансовая модель, масштабирование. Запишись на диагностику.</p>
+            <a href="#" class="btn-gold" style="margin-top: 20px;">получить консультацию</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: футер + карта / соцсети -->
+    <footer id="contacts" class="footer-block fade-up">
+        <div style="max-width: 700px;">
+            <i class="fa-regular fa-compass" style="font-size: 3rem; color: #b7986c;"></i>
+            <p style="margin: 25px 0; font-size: 1.2rem;">«все блоки в одном — для впечатляющего портфолио»</p>
+            <div class="footer-icons">
+                <i class="fa-brands fa-telegram"></i>
+                <i class="fa-brands fa-whatsapp"></i>
+                <i class="fa-regular fa-envelope"></i>
+                <i class="fa-brands fa-behance"></i>
+            </div>
+            <hr style="width: 150px; margin: 30px auto;">
+            <p>© 2025 студия премиальных лендингов</p>
+            <p style="font-size: 0.9rem;">все права защищены · якорное меню · canvas анимация</p>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // 1. Intersection Observer — анимация появления блоков (fade-up)
+            const sections = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appear');
+                    } else {
+                        // можно убрать, если не нужно повторное исчезновение
+                        // entry.target.classList.remove('appear');
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px' });
+            sections.forEach(s => observer.observe(s));
+
+            // 2. navbar компактный при скролле
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+
+            // 3. canvas анимация в шапке (эффект частиц / мягкие волны)
+            const canvas = document.getElementById('headerCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function initParticles() {
+                const count = 50;
+                particles = [];
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random(),
+                        y: Math.random(),
+                        size: Math.random() * 2 + 1,
+                        speedX: (Math.random() - 0.5) * 0.002,
+                        speedY: (Math.random() - 0.5) * 0.002,
+                        opacity: Math.random() * 0.4 + 0.2,
+                    });
+                }
+            }
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = document.querySelector('.header-block').offsetHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            function drawParticles() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#e5c9a7';
+
+                particles.forEach(p => {
+                    // обновление позиции
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    if (p.x < 0) p.x = 1;
+                    if (p.x > 1) p.x = 0;
+                    if (p.y < 0) p.y = 1;
+                    if (p.y > 1) p.y = 0;
+
+                    const x = p.x * width;
+                    const y = p.y * height;
+                    ctx.globalAlpha = p.opacity * 0.7;
+                    ctx.beginPath();
+                    ctx.arc(x, y, p.size * 2, 0, Math.PI * 2);
+                    ctx.fillStyle = '#e5c9a7';
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1.0;
+                requestAnimationFrame(drawParticles);
+            }
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+            });
+
+            resizeCanvas();
+            initParticles();
+            drawParticles();
+
+            // дополнительный эффект: меню при клике (якорный скролл)
+            document.querySelectorAll('.navbar a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

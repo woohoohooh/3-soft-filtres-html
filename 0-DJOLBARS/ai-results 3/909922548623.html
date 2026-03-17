@@ -1,0 +1,684 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Финансовый компас | Александр Морозов</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #f6f9fc;
+      color: #152a41;
+      line-height: 1.4;
+      scroll-behavior: smooth;
+    }
+
+    /* динамический фон под шапку */
+    .hero-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    canvas#networkCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      opacity: 0.3;
+    }
+
+    /* фиксированное меню с анимацией сжатия */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 1280px;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 60px;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      box-shadow: 0 15px 35px -10px rgba(0,40,80,0.15);
+      border: 1px solid rgba(255,255,255,0.5);
+      transition: all 0.3s cubic-bezier(0.25,0.1,0.25,1);
+    }
+
+    .navbar.compact {
+      top: 12px;
+      padding: 0.6rem 1.8rem;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 20px 30px -12px rgba(0,65,102,0.25);
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(145deg, #0b2b40, #1f4b6e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      font-weight: 500;
+      color: #1a3b55;
+      font-size: 1rem;
+      transition: 0.2s;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 4px;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: #1e6f9f;
+      color: #0a2942;
+    }
+
+    /* общие секции */
+    section {
+      position: relative;
+      width: 100%;
+      padding: 6rem 2rem;
+      max-width: 1280px;
+      margin: 0 auto;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .block-header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+
+    .block-header h2 {
+      font-size: 2.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #0c2b3f;
+    }
+
+    .block-header p {
+      font-size: 1.2rem;
+      color: #46758e;
+      margin-top: 0.6rem;
+    }
+
+    /* hero */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      padding-top: 140px;
+      isolation: isolate;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 750px;
+    }
+
+    .hero h1 {
+      font-size: 4.5rem;
+      font-weight: 700;
+      line-height: 1.1;
+      background: linear-gradient(160deg, #0a2c41, #174a6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero .accent {
+      font-size: 1.4rem;
+      color: #1f6c9e;
+      margin-bottom: 2rem;
+      font-weight: 300;
+      border-left: 4px solid #2f8dc0;
+      padding-left: 1.5rem;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .btn-primary {
+      background: #1a5d89;
+      border: none;
+      padding: 1rem 3rem;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 20px 30px -10px #1a5d8950;
+      transition: all 0.25s;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .btn-primary:hover {
+      background: #0f4970;
+      transform: scale(1.02);
+      box-shadow: 0 25px 35px -8px #124b70;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid #1e6f9f;
+      padding: 0.9rem 2.5rem;
+      border-radius: 40px;
+      font-weight: 600;
+      color: #1e6f9f;
+      cursor: pointer;
+      transition: 0.25s;
+    }
+
+    .btn-outline:hover {
+      background: #1e6f9f10;
+      border-color: #0f4f79;
+      color: #0f4f79;
+    }
+
+    /* услуги (блок 2) */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .service-card {
+      background: white;
+      padding: 2.5rem 1.8rem;
+      border-radius: 40px;
+      box-shadow: 0 30px 40px -25px rgba(0,45,70,0.2);
+      transition: transform 0.3s, box-shadow 0.3s;
+      text-align: center;
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .service-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 45px 50px -25px #1b4e73;
+    }
+
+    .service-card i {
+      font-size: 3rem;
+      color: #22668b;
+      margin-bottom: 1.2rem;
+    }
+
+    /* кейсы (блок 3) */
+    .cases-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .case-item {
+      background: white;
+      border-radius: 60px;
+      padding: 1.8rem 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      box-shadow: 0 10px 20px -10px #b3d0e2;
+      border-left: 12px solid #2f8dc0;
+      transition: 0.25s;
+    }
+
+    .case-item .icon {
+      background: #eaf3fa;
+      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: #1f6c9e;
+    }
+
+    .case-stats {
+      font-weight: 700;
+      color: #0a3f5e;
+      font-size: 1.4rem;
+    }
+
+    /* блок доверия (4) */
+    .trust-row {
+      display: flex;
+      align-items: center;
+      gap: 3rem;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(8px);
+      border-radius: 80px;
+      padding: 3rem 4rem;
+      border: 1px solid white;
+    }
+
+    .trust-row .number {
+      font-size: 4rem;
+      font-weight: 700;
+      color: #145a83;
+      line-height: 1;
+    }
+
+    /* калькулятор (блок 5) интерактив */
+    .calc-card {
+      background: white;
+      border-radius: 50px;
+      padding: 3rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3rem;
+      box-shadow: 0 35px 50px -25px #0f3852;
+    }
+
+    .calc-panel {
+      flex: 1 1 250px;
+    }
+
+    .range-wrap {
+      margin: 2rem 0;
+    }
+
+    .range-wrap output {
+      display: block;
+      font-size: 2.5rem;
+      font-weight: 600;
+      color: #1a5d89;
+    }
+
+    input[type=range] {
+      width: 100%;
+      margin: 1rem 0;
+      accent-color: #1f6c9e;
+    }
+
+    .calc-result {
+      background: #e2f0f9;
+      border-radius: 40px;
+      padding: 2rem;
+      text-align: center;
+      flex: 1;
+    }
+
+    #taxResult {
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: #104366;
+    }
+
+    /* команда (6) */
+    .team-flex {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+    }
+
+    .team-card {
+      background: white;
+      border-radius: 40px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      width: 240px;
+      box-shadow: 0 15px 25px -10px #b0cdde;
+    }
+
+    .team-card i {
+      font-size: 3.5rem;
+      color: #1f6c9e;
+      background: #e4f0f8;
+      padding: 1rem;
+      border-radius: 50%;
+    }
+
+    /* отзывы (7) */
+    .reviews-slider {
+      display: flex;
+      gap: 2rem;
+      overflow-x: auto;
+      padding: 1.5rem 0.5rem;
+      scroll-snap-type: x mandatory;
+    }
+
+    .review {
+      min-width: 320px;
+      background: white;
+      border-radius: 40px;
+      padding: 2rem;
+      scroll-snap-align: start;
+      border: 1px solid rgba(0,53,84,0.1);
+    }
+
+    .fa-quote-right {
+      color: #abcad9;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    /* футер */
+    footer {
+      background: #102b39;
+      color: #e1f0f9;
+      padding: 3rem 2rem;
+      border-radius: 40px 40px 0 0;
+      max-width: 1280px;
+      margin: 2rem auto 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .socials i {
+      font-size: 1.8rem;
+      margin: 0 0.7rem;
+      color: white;
+      transition: 0.2s;
+    }
+
+    .socials i:hover {
+      color: #8fc9ff;
+    }
+
+    /* простая анимация при скролле — подсветка текста */
+    .highlight-scroll {
+      transition: background-color 0.5s, color 0.2s;
+    }
+
+    .highlight-scroll.highlighted {
+      background: linear-gradient(120deg, #f7ffcf 0%, #f7ffcf 40%, #cbe6f5 90%);
+      color: #00283c;
+      padding: 0.2rem 0.5rem;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Фиксированное меню -->
+  <nav class="navbar" id="navbar">
+    <span class="logo"><i class="fas fa-compass" style="color: #1e6f9f;"></i> morozov.partners</span>
+    <div class="nav-links">
+      <a href="#home">Главная</a>
+      <a href="#services">Услуги</a>
+      <a href="#cases">Кейсы</a>
+      <a href="#calculator">Калькулятор</a>
+      <a href="#contact">Контакты</a>
+    </div>
+  </nav>
+
+  <!-- Блок 1: Hero -->
+  <section class="hero" id="home">
+    <div class="hero-bg">
+      <canvas id="networkCanvas"></canvas>
+    </div>
+    <div class="hero-content">
+      <h1>Финансовый компас <br>для вашего бизнеса</h1>
+      <div class="accent">Страхование · Аудит · Консалтинг</div>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="document.getElementById('contact').scrollIntoView()">Обсудить проект</button>
+        <button class="btn-outline" onclick="document.getElementById('cases').scrollIntoView()">Кейсы</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Блок 2: услуги -->
+  <section id="services">
+    <div class="block-header">
+      <h2>направления</h2>
+      <p>экспертиза, которой доверяют</p>
+    </div>
+    <div class="services-grid">
+      <div class="service-card"><i class="fas fa-shield-alt"></i><h3>Страхование рисков</h3><p>комплексная защита активов, D&O, киберстрахование</p></div>
+      <div class="service-card"><i class="fas fa-calculator"></i><h3>Аудит и налоги</h3><p>международная отчетность, оптимизация, due diligence</p></div>
+      <div class="service-card"><i class="fas fa-chart-line"></i><h3>Инвест-сопровождение</h3><p>бизнес-планы, оценка, привлечение капитала</p></div>
+    </div>
+  </section>
+
+  <!-- Блок 3: кейсы -->
+  <section id="cases">
+    <div class="block-header">
+      <h2>реализованные проекты</h2>
+      <p>финансовые решения, которые работают</p>
+    </div>
+    <div class="cases-grid">
+      <div class="case-item"><span class="icon"><i class="fas fa-building"></i></span> <span class="case-stats">холдинг “Вектор”</span> — сокращение налоговой нагрузки на 28% | 2024</div>
+      <div class="case-item"><span class="icon"><i class="fas fa-truck"></i></span> <span class="case-stats">логист. группа “Юг”</span> — возврат 14 млн руб. из ФНС, досудебно</div>
+      <div class="case-item"><span class="icon"><i class="fas fa-store"></i></span> <span class="case-stats">сеть “Морепродукт”</span> — exit по мультипликатору 8,4x EBITDA</div>
+    </div>
+  </section>
+
+  <!-- Блок 4: доверие (партнеры/регалии) -->
+  <section id="trust">
+    <div class="trust-row">
+      <div><span class="number">12+</span> <br>лет практики</div>
+      <div><i class="fas fa-medal" style="font-size: 3rem; color:#1f6c9f;"></i></div>
+      <div><span class="number">80+</span> <br>успешных споров</div>
+      <div><i class="fas fa-handshake" style="font-size: 3rem;"></i></div>
+      <div><span class="number">₽4.5B</span> <br>сохранено</div>
+    </div>
+  </section>
+
+  <!-- Блок 5: живой калькулятор (интерактив) -->
+  <section id="calculator">
+    <div class="block-header">
+      <h2>оценка экономии</h2>
+      <p>потенциальный эффект от налогового аудита</p>
+    </div>
+    <div class="calc-card">
+      <div class="calc-panel">
+        <h3>Оборот бизнеса, ₽</h3>
+        <div class="range-wrap">
+          <output id="rangeValue">15 000 000</output>
+          <input type="range" id="revenueRange" min="2" max="200" value="15" step="1">
+          <span>млн ₽</span>
+        </div>
+        <p style="color:#1d5f87;"><i class="fa-regular fa-lightbulb"></i> Средний % оптимизации: 3–7%</p>
+      </div>
+      <div class="calc-result">
+        <p style="font-size:1.3rem;">Ориентир экономии</p>
+        <div id="taxResult">780 000 ₽</div>
+        <small>в год *при условии рекомендаций</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- Блок 6: команда -->
+  <section id="team">
+    <div class="block-header">
+      <h2>ключевые фигуры</h2>
+    </div>
+    <div class="team-flex">
+      <div class="team-card"><i class="fas fa-user-tie"></i> <h3>Александр М.</h3><p>страхование, риск-менеджмент</p></div>
+      <div class="team-card"><i class="fas fa-user-graduate"></i> <h3>Екатерина В.</h3><p>налоговый консультант</p></div>
+      <div class="team-card"><i class="fas fa-user-secret"></i> <h3>Дмитрий К.</h3><p>аудит и МСФО</p></div>
+    </div>
+  </section>
+
+  <!-- Блок 7: отзывы -->
+  <section id="reviews">
+    <div class="block-header">
+      <h2>клиенты о нас</h2>
+    </div>
+    <div class="reviews-slider">
+      <div class="review"><i class="fas fa-quote-right"></i><p>«Восстановили учёт, отбили интерес ФНС. Результат — ноль доначислений»</p><b>— ООО «Техносфера»</b></div>
+      <div class="review"><i class="fas fa-quote-right"></i><p>«Сопроводили сделку M&A. Спустя полгода — никаких скрытых проблем»</p><b>— Angel investors club</b></div>
+      <div class="review"><i class="fas fa-quote-right"></i><p>«Оперативно настроили страховую программу для складов»</p><b>— “Юнилот”</b></div>
+    </div>
+  </section>
+
+  <!-- Блок 8: контакты / форма -->
+  <section id="contact">
+    <div class="block-header">
+      <h2>свяжитесь с нами</h2>
+      <p>короткая консультация без обязательств</p>
+    </div>
+    <div style="background:white; border-radius:70px; padding:3rem; display:flex; justify-content:space-between; gap:2rem; flex-wrap:wrap;">
+      <div style="flex:1;"><i class="fas fa-map-pin" style="color:#22658f;"></i> Москва, Пресненская наб., 12</div>
+      <div style="flex:1;"><i class="fas fa-phone-alt"></i> +7 (495) 280-30-30</div>
+      <div style="flex:1;"><i class="fa-regular fa-envelope"></i> hello@morozov.partners</div>
+    </div>
+  </section>
+
+  <!-- Блок 9: футер -->
+  <footer>
+    <span>© morozov.partners, 2025 — финансовая устойчивость</span>
+    <div class="socials">
+      <i class="fab fa-telegram"></i>
+      <i class="fab fa-linkedin"></i>
+      <i class="fab fa-youtube"></i>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      // 1) фоновая сетка (canvas)
+      const canvas = document.getElementById('networkCanvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        function resize() {
+          width = canvas.parentElement.offsetWidth;
+          height = canvas.parentElement.offsetHeight;
+          canvas.width = width;
+          canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const nodes = [];
+        for (let i = 0; i < 50; i++) {
+          nodes.push({ x: Math.random() * width, y: Math.random() * height, vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3 });
+        }
+
+        function draw() {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          ctx.strokeStyle = '#1f6e9f';
+          ctx.lineWidth = 1.2;
+          for (let i = 0; i < nodes.length; i++) {
+            let n = nodes[i];
+            n.x += n.vx;
+            n.y += n.vy;
+            if (n.x < 0 || n.x > width) n.vx *= -1;
+            if (n.y < 0 || n.y > height) n.vy *= -1;
+            for (let j = i+1; j < nodes.length; j++) {
+              let m = nodes[j];
+              let dx = n.x - m.x, dy = n.y - m.y;
+              let dist = Math.hypot(dx, dy);
+              if (dist < 100) {
+                ctx.beginPath();
+                ctx.moveTo(n.x, n.y);
+                ctx.lineTo(m.x, m.y);
+                ctx.strokeStyle = `rgba(31, 110, 159, ${0.3 - dist/400})`;
+                ctx.stroke();
+              }
+            }
+          }
+          requestAnimationFrame(draw);
+        }
+        draw();
+      }
+
+      // 2) сжатие меню при скролле
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 40) {
+          navbar.classList.add('compact');
+        } else {
+          navbar.classList.remove('compact');
+        }
+      });
+
+      // 3) появление блоков + подсветка текста
+      const sections = document.querySelectorAll('section');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            // пробегаемся по абзацам внутри для подсветки
+            const paragraphs = entry.target.querySelectorAll('p, h2, .case-item');
+            paragraphs.forEach(el => {
+              el.classList.add('highlight-scroll');
+              setTimeout(() => {
+                el.classList.add('highlighted');
+              }, 100);
+              setTimeout(() => {
+                el.classList.remove('highlighted');
+              }, 900);
+            });
+          }
+        });
+      }, { threshold: 0.25 });
+      sections.forEach(s => observer.observe(s));
+
+      // 4) калькулятор
+      const range = document.getElementById('revenueRange');
+      const out = document.getElementById('rangeValue');
+      const resultSpan = document.getElementById('taxResult');
+      function updateTax() {
+        let val = parseInt(range.value, 10); // млн
+        out.innerText = (val * 1e6).toLocaleString('ru-RU') + ' ₽';
+        let saving = val * 0.052 * 1e6; // ~5.2%
+        resultSpan.innerText = Math.round(saving).toLocaleString('ru-RU') + ' ₽';
+      }
+      if (range) {
+        range.addEventListener('input', updateTax);
+        updateTax();
+      }
+
+      // 5) плавный скролл якорей
+      document.querySelectorAll('.nav-links a, .btn-primary, .btn-outline').forEach(link => {
+        link.addEventListener('click', function(e) {
+          const hash = this.getAttribute('href') || (this.tagName === 'BUTTON' ? '#contact' : null);
+          if (hash && hash.startsWith('#')) {
+            e.preventDefault();
+            const target = document.querySelector(hash);
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+    })();
+  </script>
+  <!-- дополнительно чтобы подсветка меню — но уже норм -->
+</body>
+</html>
+All done!
+```

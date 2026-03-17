@@ -1,0 +1,532 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinVisor | Личный финансовый навигатор</title>
+  <!-- Font Awesome 6 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #f5f7fb;
+      color: #1e293b;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* плавный скролл */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* дефолтные стили секций */
+    section, header, footer {
+      position: relative;
+      padding: 5rem 2rem;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    header, footer {
+      padding: 1.5rem 2rem;
+    }
+
+    /* АНИМАЦИЯ ПОЯВЛЕНИЯ БЛОКОВ ПРИ СКРОЛЛЕ */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    .fade-up.appeared {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* фиксированная шапка (изменяется при скролле) */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+      transition: all 0.3s ease;
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    header.compact {
+      padding: 0.6rem 2rem;
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 8px 30px rgba(0,30,60,0.1);
+    }
+
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      font-weight: 800;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #0f2b4b, #2a5f8a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      transition: all 0.2s;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      font-weight: 500;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #1e2b3c;
+      font-size: 1rem;
+      transition: 0.2s;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 4px;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: #2a5f8a;
+      color: #0f2b4b;
+    }
+
+    /* кнопка */
+    .btn {
+      background: #1e3b5c;
+      color: white;
+      border: none;
+      padding: 0.8rem 2rem;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.25s ease;
+      box-shadow: 0 10px 20px -8px rgba(20,60,120,0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn i {
+      font-size: 1.1rem;
+    }
+
+    .btn:hover {
+      background: #143049;
+      transform: translateY(-3px);
+      box-shadow: 0 18px 25px -10px #0f2b4b;
+    }
+
+    /* герой */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 3rem;
+      padding-top: 3rem;
+      padding-bottom: 5rem;
+    }
+
+    .hero h1 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      line-height: 1.2;
+      background: linear-gradient(145deg, #0b253c, #234b74);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: #475569;
+      margin-bottom: 2rem;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 2.5rem;
+      margin-top: 2rem;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #0f2b4b;
+    }
+
+    .stat-label {
+      color: #5f6c80;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+    }
+
+    /* анимация в шапке — бегущая строка/волна (JS-эффект) */
+    .ticker-wrap {
+      width: 100%;
+      overflow: hidden;
+      background-color: transparent;
+      color: #1e3b5c;
+      margin-top: 0.5rem;
+      font-weight: 500;
+      border-radius: 40px;
+    }
+
+    .ticker {
+      display: inline-block;
+      white-space: nowrap;
+      animation: tickerMove 18s linear infinite;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+    }
+
+    .ticker i {
+      margin: 0 15px;
+      color: #2a5f8a;
+    }
+
+    @keyframes tickerMove {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* блок с иконками преимуществ */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .service-card {
+      background: white;
+      padding: 2rem 1.5rem;
+      border-radius: 30px;
+      box-shadow: 0 25px 40px -20px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255,255,255,0.5);
+      text-align: center;
+    }
+
+    .service-card:hover {
+      transform: scale(1.02) translateY(-8px);
+      box-shadow: 0 35px 45px -20px #1e3b5c40;
+    }
+
+    .service-card i {
+      font-size: 2.8rem;
+      background: linear-gradient(130deg, #1e3b5c, #4179a5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+
+    /* кейсы / примеры */
+    .cases-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    .case-item {
+      background: white;
+      border-radius: 28px;
+      padding: 2rem 1.8rem;
+      box-shadow: 0 20px 30px -10px #cbd5e1;
+      border-left: 6px solid #2a5f8a;
+      transition: 0.25s;
+    }
+
+    .case-item:hover {
+      border-left-width: 10px;
+      border-left-color: #0f2b4b;
+    }
+
+    .case-item i {
+      color: #2a5f8a;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .case-item .result {
+      font-weight: 700;
+      margin: 1rem 0 0.2rem;
+      color: #0f2b4b;
+    }
+
+    /* Футер */
+    footer {
+      background: #0f1a28;
+      color: #afc3db;
+      border-radius: 50px 50px 0 0;
+      margin-top: 4rem;
+    }
+
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .socials i {
+      font-size: 1.5rem;
+      margin: 0 0.7rem;
+      color: #cedcec;
+      transition: 0.2s;
+    }
+
+    .socials i:hover {
+      color: white;
+      transform: scale(1.2);
+    }
+
+    /* прочие стили */
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      color: #0f2b4b;
+    }
+
+    .section-sub {
+      color: #4b6584;
+      margin-bottom: 3rem;
+      font-size: 1.2rem;
+    }
+
+    hr {
+      opacity: 0.2;
+    }
+
+    /* адаптация (только пк, но минимум) */
+    @media (max-width: 1100px) {
+      .services-grid {
+        grid-template-columns: repeat(2,1fr);
+      }
+      .cases-grid {
+        grid-template-columns: repeat(2,1fr);
+      }
+      .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER (блок 1) с анимацией js (бегущая строка и изменение класса при скролле) -->
+  <header id="mainHeader">
+    <div class="header-container">
+      <span class="logo"><i class="fas fa-chart-line" style="background: none; -webkit-text-fill-color: #1e3b5c;"></i> FinVisor</span>
+      <div class="nav-links">
+        <a href="#hero">Главная</a>
+        <a href="#services">Услуги</a>
+        <a href="#cases">Кейсы</a>
+        <a href="#contact">Контакты</a>
+      </div>
+      <button class="btn"><i class="fas fa-phone-alt"></i> Связаться</button>
+    </div>
+    <!-- анимированная строка в header (js-эффект) -->
+    <div class="ticker-wrap" id="tickerWrap">
+      <div class="ticker" id="ticker">
+        <span>🇨🇭 Налоговая оптимизация в Швейцарии — снижение ставки до 11% </span><i class="fas fa-circle"></i>
+        <span>🇬🇧 Открытие счетов в Лондоне для резидентов и non-res </span><i class="fas fa-circle"></i>
+        <span>🇦🇪 Инвестиции в Дубае под 6-8% годовых </span><i class="fas fa-circle"></i>
+        <span>🇨🇭 Налоговая оптимизация в Швейцарии — снижение ставки до 11% </span><i class="fas fa-circle"></i>
+        <span>🇬🇧 Открытие счетов в Лондоне для резидентов и non-res </span><i class="fas fa-circle"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO (блок 2) -->
+  <section id="hero" class="hero fade-up">
+    <div>
+      <h1>Ваш капитал требует стратегии</h1>
+      <p>Частный финансовый консультант с опытом 14 лет. Структурирую активы, снижу риски, приумножу капитал. Работаю с HNWI и малым бизнесом.</p>
+      <button class="btn"><i class="fas fa-calendar-check"></i> Бесплатная диагностика</button>
+      <div class="hero-stats">
+        <div class="stat-item"><span class="stat-number">₣127M</span><div class="stat-label">под управлением</div></div>
+        <div class="stat-item"><span class="stat-number">47</span><div class="stat-label">довольных партнёров</div></div>
+        <div class="stat-item"><span class="stat-number">0</span><div class="stat-label">потерь клиентов</div></div>
+      </div>
+    </div>
+    <div style="background: radial-gradient(circle at 30% 50%, #b3d4f0, transparent 70%); border-radius: 40px; padding: 2rem;">
+      <i class="fas fa-chart-pie" style="font-size: 15rem; color: #1e3b5c; opacity: 0.6;"></i>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: Преимущества / услуги (с иконками) -->
+  <section id="services" class="fade-up">
+    <h2 class="section-title">Что я предлагаю</h2>
+    <div class="services-grid">
+      <div class="service-card"><i class="fas fa-shield-alt"></i><h3>Аудит портфеля</h3><p>Проверка текущих инвестиций, оптимизация комиссий и рисков.</p></div>
+      <div class="service-card"><i class="fas fa-piggy-bank"></i><h3>Пассивный доход</h3><p>Облигации, дивидендные акции, структурированные продукты.</p></div>
+      <div class="service-card"><i class="fas fa-file-invoice"></i><h3>Налоговое планирование</h3><p>Легальное снижение нагрузки, международные схемы.</p></div>
+      <div class="service-card"><i class="fas fa-umbrella-beach"></i><h3>Страхование жизни</h3><p>Защита капитала и наследственное планирование.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: Кейсы (доверие) -->
+  <section id="cases" class="fade-up">
+    <h2 class="section-title">Результаты, которыми горжусь</h2>
+    <div class="cases-grid">
+      <div class="case-item"><i class="fas fa-briefcase"></i><h3>Семейный офис</h3><p>Диверсификация активов семьи (UK, CH, SG).</p><div class="result">➕ рост капитала 18% за 2 года</div></div>
+      <div class="case-item"><i class="fas fa-building"></i><h3>IT-экспорт</h3><p>Оптимизация налогов для IT-компании (IRP + холдинг).</p><div class="result">💰 экономия €240k/год</div></div>
+      <div class="case-item"><i class="fas fa-hand-holding-usd"></i><h3>Страховой полис</h3><p>Unit-linked для владельца заводов, сохранение капитала.</p><div class="result">🔐 защита $4.2M</div></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: Доверие / партнеры (логотипы брендов нет, но можно иконки) -->
+  <section class="fade-up">
+    <h2 class="section-title">Партнёры и лицензии</h2>
+    <div style="display: flex; gap: 4rem; font-size: 3rem; color: #4f6f8f; flex-wrap: wrap; justify-content: center;">
+      <i class="fas fa-university"></i><i class="fas fa-coins"></i><i class="fas fa-chart-simple"></i><i class="fas fa-scale-balanced"></i>
+    </div>
+    <p style="margin-top: 2rem; color: #62748c;">Лицензия FCA (UK), член CFA Institute, страховой брокер Lloyd’s.</p>
+  </section>
+
+  <!-- БЛОК 6: Процесс работы (steps) -->
+  <section class="fade-up">
+    <h2 class="section-title">Как мы работаем</h2>
+    <div style="display: grid; grid-template-columns: repeat(3,1fr); gap: 2rem; text-align: center;">
+      <div><span style="background:#0f2b4b; color:white; border-radius: 60px; padding: 0.6rem 1.4rem; font-weight: bold;">1</span><h3>Анализ</h3><p>Изучаю финансы, цели и риски.</p></div>
+      <div><span style="background:#0f2b4b; color:white; border-radius: 60px; padding: 0.6rem 1.4rem; font-weight: bold;">2</span><h3>Стратегия</h3><p>Подбираю инструменты под вас.</p></div>
+      <div><span style="background:#0f2b4b; color:white; border-radius: 60px; padding: 0.6rem 1.4rem; font-weight: bold;">3</span><h3>Сопровождение</h3><p>Ежеквартальные отчёты, коррекция.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: Отзыв / цитата (текст) -->
+  <section class="fade-up" style="background: #e7eef8; border-radius: 60px; padding: 3.5rem;">
+    <i class="fas fa-quote-right" style="font-size: 3rem; color: #1e3b5c; opacity: 0.3; float: right;"></i>
+    <p style="font-size: 1.6rem; font-weight: 500; max-width: 80%;">«Финсоветник помог реструктурировать долги и выйти на стабильный денежный поток. Рекомендую как честного профи»</p>
+    <p style="margin-top: 1.5rem;">— С.В., владелец сети клиник</p>
+  </section>
+
+  <!-- БЛОК 8: Призыв к действию / консультация -->
+  <section id="contact" class="fade-up" style="text-align: center;">
+    <h2 class="section-title">Готовы обсудить сотрудничество?</h2>
+    <p class="section-sub">Первая консультация — бесплатно и без обязательств.</p>
+    <button class="btn" style="padding: 1.2rem 3.5rem; font-size: 1.2rem;"><i class="fas fa-envelope"></i> Написать в Telegram / WhatsApp</button>
+    <p style="margin-top: 2rem;"><i class="fas fa-phone"></i> +41 22 000 00 00  (Zug, Switzerland)</p>
+  </section>
+
+  <!-- FOOTER (блок 9) -->
+  <footer class="fade-up">
+    <div class="footer-content">
+      <span>© 2025 FinVisor — частный финансовый консультант</span>
+      <div class="socials">
+        <i class="fab fa-linkedin-in"></i>
+        <i class="fab fa-x-twitter"></i>
+        <i class="fab fa-telegram-plane"></i>
+        <i class="fab fa-whatsapp"></i>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript: анимация появления, скролл-эффект шапки, кастомная анимация (мигание/подсветка) -->
+  <script>
+    (function() {
+      // 1. Эффект появления блоков (Intersection Observer)
+      const faders = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('appeared');
+          }
+        });
+      }, { threshold: 0.1 });
+      faders.forEach(el => observer.observe(el));
+
+      // 2. Шапка компактнее при скролле (меняем класс)
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 40) {
+          header.classList.add('compact');
+        } else {
+          header.classList.remove('compact');
+        }
+      });
+
+      // 3. Дополнительная живая анимация: подсветка заголовков при наведении (эффект тренда)
+      const titles = document.querySelectorAll('.section-title');
+      titles.forEach(title => {
+        title.addEventListener('mouseenter', (e) => {
+          e.target.style.transition = '0.3s';
+          e.target.style.textShadow = '0 0 8px #a0c4e9';
+        });
+        title.addEventListener('mouseleave', (e) => {
+          e.target.style.textShadow = 'none';
+        });
+      });
+
+      // 4. Анимация внутри ticker (уже css, но можно добавить изменение скорости при клике - для эффекта)
+      const tickerEl = document.getElementById('ticker');
+      if (tickerEl) {
+        tickerEl.addEventListener('mouseenter', () => {
+          tickerEl.style.animationDuration = '9s';
+        });
+        tickerEl.addEventListener('mouseleave', () => {
+          tickerEl.style.animationDuration = '18s';
+        });
+      }
+
+      // 5. Эффект «печатной машинки» для hero (оригинально) — быстрая смена части текста (просто для wow)
+      const heroH1 = document.querySelector('.hero h1');
+      if (heroH1) {
+        const originalText = heroH1.innerText;
+        let flag = false;
+        setInterval(() => {
+          if (!flag) {
+            heroH1.style.transition = '0.1s';
+            heroH1.style.opacity = '0.7';
+            heroH1.innerText = 'Ваш капитал под защитой';
+          } else {
+            heroH1.style.opacity = '1';
+            heroH1.innerText = originalText;
+          }
+          flag = !flag;
+        }, 2000);
+      }
+    })();
+  </script>
+  <!-- маленький дополнительный скрипт для якорей (без ломания) -->
+  <script>
+    document.querySelectorAll('.nav-links a').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
+All done!
+```

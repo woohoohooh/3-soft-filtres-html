@@ -1,0 +1,545 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vavilov Studio · бизнес‑коуч</title>
+  <!-- Font Awesome 6 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body {
+      background: #f2f4f8;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
+    /* интерфейс — плавная прокрутка, кастомный скролл */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #e6eaf0; }
+    ::-webkit-scrollbar-thumb { background: #2f3e4e; border-radius: 10px; }
+
+    /* фиксированное меню с элегантным преображением */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.2rem 8%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 6px 24px rgba(0,20,40,0.06);
+      z-index: 999;
+      transition: all 0.3s cubic-bezier(0.2,0.9,0.3,1);
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+    .navbar.compact {
+      padding: 0.6rem 8%;
+      background: rgba(18,28,40,0.92);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .navbar.compact .logo a,
+    .navbar.compact .nav-links a {
+      color: #ffffff;
+    }
+    .logo a {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      text-decoration: none;
+      color: #1e2b37;
+      transition: 0.2s;
+    }
+    .logo i {
+      color: #c9a25d;
+      margin-right: 6px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 2.8rem;
+    }
+    .nav-links a {
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1.05rem;
+      color: #1e2b37;
+      transition: 0.2s;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 4px;
+    }
+    .nav-links a:hover {
+      border-bottom-color: #c9a25d;
+      color: #c9a25d;
+    }
+
+    /* общий контейнер блоков */
+    section {
+      min-height: 100vh;
+      width: 100%;
+      padding: 6rem 8% 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      background: #ffffff;
+    }
+    section:nth-child(even) {
+      background: #f9fbfd;
+    }
+
+    /* анимация появления блоков (Intersection Observer) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(35px);
+      transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.15,0.85,0.35,1);
+    }
+    .fade-up.appear {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* шапка (блок 1) с уникальной js-анимацией */
+    .hero {
+      background: linear-gradient(145deg, #19232c 0%, #0d1a26 100%);
+      color: white;
+      overflow: hidden;
+      position: relative;
+      isolation: isolate;
+    }
+    #particle-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 750px;
+    }
+    .hero h1 {
+      font-size: 4.3rem;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      background: linear-gradient(120deg, #fff, #d4c19e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero .highlight {
+      color: #e5c687;
+      font-style: italic;
+    }
+    .hero p {
+      font-size: 1.3rem;
+      margin: 2rem 0 2.5rem;
+      opacity: 0.9;
+      max-width: 600px;
+    }
+    .cta-btn {
+      background: #c9a25d;
+      border: none;
+      padding: 1.1rem 3rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #0d1a26;
+      border-radius: 60px;
+      cursor: pointer;
+      box-shadow: 0 20px 35px -8px rgba(201,162,93,0.3);
+      transition: all 0.25s;
+      display: inline-block;
+      text-decoration: none;
+      letter-spacing: 0.3px;
+    }
+    .cta-btn:hover {
+      background: #ddb775;
+      transform: scale(1.02) translateY(-3px);
+      box-shadow: 0 28px 35px -6px #c9a25d;
+    }
+
+    /* блок 3 – услуги / иконки */
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5rem;
+      margin-top: 3rem;
+    }
+    .service-item {
+      background: white;
+      padding: 2.5rem 2rem;
+      border-radius: 38px;
+      box-shadow: 0 15px 35px -10px rgba(0,20,40,0.1);
+      transition: all 0.25s;
+      text-align: center;
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+    .service-item i {
+      font-size: 3.2rem;
+      color: #c9a25d;
+      margin-bottom: 1.5rem;
+    }
+    .service-item h3 {
+      font-size: 1.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    /* блок 4 – свежие кейсы (стильно) */
+    .cases {
+      display: flex;
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    .case-card {
+      background: #ffffff;
+      border-radius: 40px;
+      padding: 2.5rem 2rem;
+      flex: 1;
+      box-shadow: 0 25px 40px -16px rgba(0,32,64,0.12);
+      border: 1px solid #ffffff50;
+      transition: 0.2s;
+    }
+    .case-card i {
+      color: #1e2b37;
+      background: #f2e8da;
+      padding: 0.6rem;
+      border-radius: 18px;
+      font-size: 1.8rem;
+    }
+
+    /* блок 5 – видео-рил / презентация (без картинок, только иконки/стиль) */
+    .reel-block {
+      display: flex;
+      align-items: center;
+      gap: 4rem;
+    }
+    .reel-player {
+      background: #1a1f2b;
+      width: 55%;
+      border-radius: 46px;
+      padding: 2rem;
+      box-shadow: 0 35px 70px -20px #00000050;
+    }
+    .reel-player i {
+      font-size: 5rem;
+      color: #c9a25d;
+      opacity: 0.9;
+    }
+
+    /* блок 6 – отзывы */
+    .testimonials {
+      display: flex;
+      gap: 2rem;
+    }
+    .testi {
+      background: white;
+      border-radius: 34px;
+      padding: 2.5rem;
+      box-shadow: 0 10px 25px -8px rgba(0,0,0,0.05);
+    }
+
+    /* блок 7 – команда / доверие */
+    .team-mini {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+    }
+    .team-mini div {
+      text-align: center;
+      background: white;
+      padding: 2rem 3rem;
+      border-radius: 100px 100px 40px 40px;
+    }
+
+    /* блок 8 – контакты / предзапись */
+    .contact-block {
+      background: #1e2b37;
+      color: white;
+      border-radius: 60px;
+      padding: 4rem;
+    }
+
+    /* футер */
+    footer {
+      background: #0e1a24;
+      color: #afbcc9;
+      padding: 2.5rem 8%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #2d3d4d;
+    }
+
+    /* адаптация под ПК — без медий для моб */
+    h2 { font-size: 3rem; margin-bottom: 2rem; font-weight: 600; letter-spacing: -1px; }
+    .sub { font-size: 1.2rem; color: #425564; }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar">
+    <div class="logo">
+      <a href="#"><i class="fas fa-chess-queen"></i> VAVILOV</a>
+    </div>
+    <div class="nav-links">
+      <a href="#hero">Начало</a>
+      <a href="#about">Принцип</a>
+      <a href="#services">Услуги</a>
+      <a href="#cases">Кейсы</a>
+      <a href="#reel">Reel</a>
+      <a href="#contact">Связь</a>
+    </div>
+  </nav>
+
+  <!-- БЛОК 1: шапка (Hero) с canvas-анимацией частиц -->
+  <section class="hero" id="hero">
+    <canvas id="particle-canvas"></canvas>
+    <div class="hero-content fade-up">
+      <h1>Стратегия роста <span class="highlight">для первых лиц</span> и экспертов</h1>
+      <p>Личный бизнес‑коуч с опытом масштабирования 12+ лет. Пошаговый план, дисциплина и опора на цифры.</p>
+      <a href="#contact" class="cta-btn"><i class="fas fa-calendar-check" style="margin-right: 8px;"></i>Исследовать synergy</a>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: ключевая идея / философия -->
+  <section id="about" class="fade-up">
+    <h2>Метод Vavilov</h2>
+    <div style="display: flex; gap: 5rem; align-items: center;">
+      <div style="flex:1">
+        <p style="font-size: 1.5rem; font-weight: 300; line-height: 1.6;">«Я не даю волшебных таблеток. Я перестраиваю операционную модель так, чтобы прибыль росла без выгорания.»</p>
+        <div style="margin-top: 2rem; display: flex; gap: 2rem;">
+          <div><i class="fas fa-chart-line" style="color:#c9a25d; font-size: 2.2rem;"></i><br><span style="font-weight: 600;">+147%</span> средний рост</div>
+          <div><i class="fas fa-clock" style="color:#c9a25d; font-size: 2.2rem;"></i><br><span style="font-weight: 600;">9 нед</span> до первых сдвигов</div>
+        </div>
+      </div>
+      <div style="flex:1; background: #e9dfd1; border-radius: 200px; padding: 2rem; text-align: center;">
+        <i class="fas fa-brain" style="font-size: 8rem; color:#1e2b37; opacity: 0.6;"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: услуги (иконки fontawesome) -->
+  <section id="services" class="fade-up">
+    <h2>Направления</h2>
+    <div class="service-grid">
+      <div class="service-item"><i class="fas fa-chess-board"></i><h3>Стратегия</h3><p>Долгосрочное планирование, диверсификация, выход на новые рынки.</p></div>
+      <div class="service-item"><i class="fas fa-users-cog"></i><h3>Топ‑команды</h3><p>Постановка KPI, найм сильных управленцев, кадровый аудит.</p></div>
+      <div class="service-item"><i class="fas fa-chart-pie"></i><h3>Фин. модель</h3><p>Юнит-экономика, cash flow, привлечение инвестиций.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: кейсы (реальные цифры) -->
+  <section id="cases" class="fade-up">
+    <h2>Ключевые проекты</h2>
+    <div class="cases">
+      <div class="case-card"><i class="fas fa-building"></i><h3 style="margin:1rem 0">Сеть стоматологий</h3><p>Удвоение выручки за 14 месяцев, выход на 3 новые локации.</p></div>
+      <div class="case-card"><i class="fas fa-truck"></i><h3 style="margin:1rem 0">Логистический b2b</h3><p>Настроили отдел продаж + оптимизация маршрутов = EBITDA +62%.</p></div>
+      <div class="case-card"><i class="fas fa-laptop-code"></i><h3 style="margin:1rem 0">IT-аутсорс</h3><p>Пересобрал коммерческую стратегию, LTV вырос в 2.3 раза.</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: демо-рил / видео-превью (без картинок, стилизация) -->
+  <section id="reel" class="fade-up">
+    <h2>Смотреть демо‑рил</h2>
+    <div class="reel-block">
+      <div class="reel-player" style="display: flex; justify-content: center; align-items: center;">
+        <i class="fas fa-play-circle"></i><span style="margin-left: 20px; color:white; font-size: 1.5rem;">проигрыватель стратегий</span>
+      </div>
+      <div style="flex:1">
+        <p style="font-size: 1.4rem;">2 минуты о том, как мы с клиентами раскачиваем прибыль.</p>
+        <div style="margin-top: 2rem;"><i class="fas fa-star" style="color:#c9a25d;"></i> <i class="fas fa-star" style="color:#c9a25d;"></i> <i class="fas fa-star" style="color:#c9a25d;"></i> <i class="fas fa-star" style="color:#c9a25d;"></i> <i class="fas fa-star-half-alt" style="color:#c9a25d;"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: отзывы / социальное доказательство -->
+  <section class="fade-up">
+    <h2>Голос клиента</h2>
+    <div class="testimonials">
+      <div class="testi"><i class="fas fa-quote-right" style="font-size: 2rem; color:#c9a25d;"></i><p style="margin:1.5rem 0">«Алексей единственный, кто жёстко настоял на смене финдира — это спасло бизнес.»</p><span>— Е. Королева, сеть цветов</span></div>
+      <div class="testi"><i class="fas fa-quote-right" style="font-size: 2rem; color:#c9a25d;"></i><p style="margin:1.5rem 0">«За 4 месяца вышли на оборот, который планировали через год.»</p><span>— Д. Шестаков, автосервис</span></div>
+      <div class="testi"><i class="fas fa-quote-right" style="font-size: 2rem; color:#c9a25d;"></i><p style="margin:1.5rem 0">«Коуч пересобрал команду, ушли эмоции — пришли деньги.»</p><span>— Т. Михеева, бутик</span></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: команда / экспертиза -->
+  <section class="fade-up">
+    <h2>Плечом к плечу</h2>
+    <div class="team-mini">
+      <div><i class="fas fa-user-tie" style="font-size: 3.2rem; color:#c9a25d;"></i><h4>Алексей Вавилов</h4><p>управленец, ex-CEO</p></div>
+      <div><i class="fas fa-user-check" style="font-size: 3.2rem; color:#c9a25d;"></i><h4>Аналитика</h4><p>data‑подход</p></div>
+      <div><i class="fas fa-scale-balanced" style="font-size: 3.2rem; color:#c9a25d;"></i><h4>Партнеры</h4><p>юристы, налоги</p></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: контакт / захват лида -->
+  <section id="contact" class="fade-up">
+    <div class="contact-block">
+      <h2 style="color: white;">Напишите мне</h2>
+      <p style="font-size: 1.2rem; margin-bottom: 2rem;">Краткий аудит текущей ситуации — бесплатно.</p>
+      <div style="display: flex; gap: 1rem;">
+        <input type="text" placeholder="Телефон / Telegram" style="flex:3; padding: 1.2rem; border-radius: 50px; border:0; font-size: 1.1rem;">
+        <button class="cta-btn" style="flex:1; background: #c9a25d; border-radius: 50px;">Связь</button>
+      </div>
+      <div style="margin-top: 2.2rem;">
+        <i class="fab fa-telegram" style="color:white; font-size: 2rem; margin-right: 1.5rem;"></i>
+        <i class="fab fa-whatsapp" style="color:white; font-size: 2rem;"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: футер -->
+  <footer class="fade-up">
+    <span>© Vavilov coaching 2025</span>
+    <span><i class="fas fa-gavel"></i> Политика доверия</span>
+    <span>+7 (495) 133-7-233</span>
+  </footer>
+
+  <script>
+    (function() {
+      // === 1) фиксированное меню (компактное при скролле) ===
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 60) {
+          navbar.classList.add('compact');
+        } else {
+          navbar.classList.remove('compact');
+        }
+      });
+
+      // === 2) canvas-анимация в шапке (эффект интеллектуальных частиц) ===
+      const canvas = document.getElementById('particle-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function initParticles() {
+          width = canvas.clientWidth;
+          height = canvas.clientHeight;
+          canvas.width = width;
+          canvas.height = height;
+
+          particles = [];
+          const particleCount = 80;
+          for (let i = 0; i < particleCount; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              vx: (Math.random() - 0.5) * 0.35,
+              vy: (Math.random() - 0.5) * 0.2,
+              radius: Math.random() * 2.2 + 0.8,
+              alpha: Math.random() * 0.4 + 0.2
+            });
+          }
+        }
+
+        function drawParticles() {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = '#e5c687';
+          for (let p of particles) {
+            ctx.globalAlpha = p.alpha;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+            ctx.fill();
+          }
+
+          // редкие соединения (тонкие линии)
+          ctx.strokeStyle = '#c9a25d';
+          ctx.lineWidth = 0.3;
+          ctx.globalAlpha = 0.14;
+          for (let i = 0; i < particles.length; i+=3) {
+            for (let j = i+1; j < particles.length; j+=5) {
+              const dx = particles[i].x - particles[j].x;
+              const dy = particles[i].y - particles[j].y;
+              const dist = Math.sqrt(dx*dx + dy*dy);
+              if (dist < 130) {
+                ctx.beginPath();
+                ctx.moveTo(particles[i].x, particles[i].y);
+                ctx.lineTo(particles[j].x, particles[j].y);
+                ctx.stroke();
+              }
+            }
+          }
+        }
+
+        function updateParticles() {
+          for (let p of particles) {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+          }
+        }
+
+        function animateCanvas() {
+          if (!canvas || !ctx) return;
+          updateParticles();
+          drawParticles();
+          requestAnimationFrame(animateCanvas);
+        }
+
+        window.addEventListener('resize', () => {
+          initParticles();
+        });
+
+        initParticles();
+        animateCanvas();
+      }
+
+      // === 3) Intersection Observer для появления блоков (fade-up) ===
+      const faders = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('appear');
+            // можно оставить видимым навсегда
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -30px 0px' });
+
+      faders.forEach(el => observer.observe(el));
+
+      // небольшой эффект при наведении на карточки (необязательно)
+    })();
+  </script>
+
+  <!-- якоря работают гладко -->
+  <script>
+    document.querySelectorAll('.nav-links a').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+    document.querySelector('.logo a').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    document.querySelector('.cta-btn[href="#contact"]').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
+    });
+  </script>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,556 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lextrust · Адвокатское бюро</title>
+  <!-- Font Awesome 5 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #fafbfc;
+      color: #1e293b;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* динамичный фон для шапки (canvas) */
+    #headerCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.25;
+    }
+
+    /* якорное меню — фиксированное, элегантное */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 60px;
+      padding: 0.7rem 1.8rem;
+      box-shadow: 0 15px 35px -10px rgba(0, 20, 30, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      z-index: 999;
+      transition: all 0.3s ease;
+      display: flex;
+      gap: 2.5rem;
+    }
+
+    .navbar.compact {
+      top: 10px;
+      padding: 0.4rem 1.5rem;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.2);
+    }
+
+    .navbar a {
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1rem;
+      color: #0f2b3c;
+      letter-spacing: 0.02em;
+      transition: color 0.2s;
+      position: relative;
+    }
+
+    .navbar a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0%;
+      height: 2.5px;
+      background: #b8915c;
+      transition: width 0.25s ease;
+    }
+
+    .navbar a:hover::after {
+      width: 100%;
+    }
+
+    .navbar a:hover {
+      color: #b06d3c;
+    }
+
+    /* общие секции */
+    section {
+      position: relative;
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    .block-header {
+      padding-top: 7rem; /* компенсация фикс. меню */
+    }
+
+    h2 {
+      font-size: 2.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+      color: #122b39;
+    }
+
+    h2 i {
+      color: #b8915c;
+      margin-right: 0.5rem;
+    }
+
+    /* эффект появления при скролле (Intersection Observer) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* акцентные детали */
+    .gold-rule {
+      height: 4px;
+      width: 100px;
+      background: linear-gradient(90deg, #c9a36d, #e5c9a6);
+      border-radius: 4px;
+      margin: 1rem 0 2rem;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .stat-card, .service-card, .case-card {
+      background: white;
+      padding: 2rem 1.8rem;
+      border-radius: 32px;
+      box-shadow: 0 20px 35px -10px rgba(0,0,0,0.05);
+      transition: all 0.25s ease;
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .stat-card:hover, .service-card:hover, .case-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 30px 45px -12px rgba(80, 60, 30, 0.15);
+      border-color: #e9dacb;
+    }
+
+    .big-icon {
+      font-size: 2.5rem;
+      color: #b8915c;
+      margin-bottom: 1.5rem;
+    }
+
+    .badge {
+      background: #f1ebe4;
+      color: #7b5d40;
+      padding: 0.3rem 1rem;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    /* кнопки */
+    .btn-primary {
+      background: #122b39;
+      color: white;
+      padding: 1rem 2.5rem;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      box-shadow: 0 10px 20px -7px #0f2b3c70;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .btn-primary i {
+      margin-left: 0.5rem;
+      transition: transform 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: #1f4053;
+      transform: scale(1.02);
+    }
+
+    .btn-primary:hover i {
+      transform: translateX(5px);
+    }
+
+    /* footer */
+    footer {
+      background: #0e1d28;
+      color: #d2dbe0;
+      padding: 3rem 2rem;
+      border-top-left-radius: 50px;
+      border-top-right-radius: 50px;
+    }
+
+    .footer-inner {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .social-links i {
+      font-size: 1.8rem;
+      margin-right: 1.5rem;
+      color: #c9b69c;
+      transition: color 0.2s;
+    }
+
+    .social-links i:hover {
+      color: #eaceb0;
+    }
+
+    /* кейсы */
+    .case-result {
+      font-weight: 600;
+      color: #b8915c;
+      margin-top: 1rem;
+      font-size: 1.3rem;
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #d4b48c, transparent);
+      margin: 2rem 0;
+    }
+
+    /* адаптация для ПК (как просили — только десктопный вид) */
+    @media (min-width: 1400px) {
+      section { padding: 6rem 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ФИКСИРОВАННОЕ МЕНЮ (ЯКОРНОЕ) -->
+<nav class="navbar" id="navbar">
+  <a href="#home">Главная</a>
+  <a href="#about">О нас</a>
+  <a href="#services">Услуги</a>
+  <a href="#cases">Кейсы</a>
+  <a href="#stats">Цифры</a>
+  <a href="#contact">Контакты</a>
+</nav>
+
+<!-- БЛОК 1: ШАПКА (header) с canvas анимацией -->
+<header id="home" class="block-header" style="position: relative; min-height: 90vh; display: flex; align-items: center; padding: 2rem; max-width: 1300px; margin: 0 auto;">
+  <canvas id="headerCanvas"></canvas>
+  <div style="position: relative; z-index: 2; max-width: 700px;">
+    <span class="badge"><i class="fas fa-gavel" style="margin-right: 6px;"></i>LexTrust / Адвокатское бюро</span>
+    <h1 style="font-size: 4.5rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin: 1.5rem 0 1rem; color: #10242f;">
+      Защищаем<br>ваши интересы
+    </h1>
+    <div class="gold-rule"></div>
+    <p style="font-size: 1.3rem; color: #2b4a5c; max-width: 550px; margin-bottom: 2.5rem;">
+      Доверие, которое подкреплено делами. 15 лет побед в арбитраже и судах общей юрисдикции.
+    </p>
+    <a href="#contact" class="btn-primary">Бесплатная консультация <i class="fas fa-arrow-right"></i></a>
+  </div>
+  <!-- минималистичная "печать" справа (только декор) -->
+  <div style="position: absolute; right: 2rem; bottom: 4rem; font-size: 8rem; opacity: 0.06; pointer-events: none; transform: rotate(5deg);">
+    <i class="fas fa-balance-scale"></i>
+  </div>
+</header>
+
+<!-- БЛОК 2: О НАС -->
+<section id="about" class="fade-up">
+  <div style="display: flex; align-items: center; gap: 4rem; flex-wrap: wrap;">
+    <div style="flex: 1;">
+      <h2><i class="fas fa-users"></i> О бюро</h2>
+      <div class="gold-rule"></div>
+      <p style="font-size: 1.2rem; color: #2c3f4d;">Бюро Lextrust объединяет адвокатов с исключительной специализацией. Мы не берёмся за всё подряд — только сложные споры, защита бизнеса, наследственные и семейные дела высшего эшелона.</p>
+      <p style="margin-top: 1.5rem; color: #496d81;"><i class="fas fa-check-circle" style="color: #b8915c; margin-right: 10px;"></i>Каждый кейс ведёт лично партнёр</p>
+      <p style="margin-top: 0.5rem; color: #496d81;"><i class="fas fa-check-circle" style="color: #b8915c; margin-right: 10px;"></i>Прозрачная стратегия и человеческое отношение</p>
+    </div>
+    <div style="flex: 1; background: #e7dfd3; padding: 2.5rem; border-radius: 40px; box-shadow: 0 30px 40px -20px #665533;">
+      <i class="fas fa-quote-right" style="font-size: 2rem; color: #b8915c; opacity: 0.5; margin-bottom: 1rem;"></i>
+      <p style="font-size: 1.5rem; font-weight: 400; font-style: italic; color: #203e4e;">«Клиент получает не просто услугу, а спокойствие и уверенность в завтрашнем дне»</p>
+      <p style="margin-top: 1.5rem; font-weight: 600;">— Александр Бероев, managing partner</p>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 3: УСЛУГИ (сервисы) -->
+<section id="services" class="fade-up">
+  <h2><i class="fas fa-briefcase"></i> Практики</h2>
+  <div class="gold-rule"></div>
+  <div class="card-grid">
+    <div class="service-card">
+      <i class="fas fa-building big-icon"></i>
+      <h3>Арбитраж & споры</h3>
+      <p>Сопровождение в судах всех инстанций. Взыскание убытков, оспаривание сделок.</p>
+    </div>
+    <div class="service-card">
+      <i class="fas fa-shield-alt big-icon"></i>
+      <h3>Уголовно-правовая защита</h3>
+      <p>Защита на следствии и в суде. Бизнес-преступления, экономические составы.</p>
+    </div>
+    <div class="service-card">
+      <i class="fas fa-hand-holding-heart big-icon"></i>
+      <h3>Семейное & наследство</h3>
+      <p>Раздел имущества, споры о детях, наследственные дела с активами.</p>
+    </div>
+    <div class="service-card">
+      <i class="fas fa-file-contract big-icon"></i>
+      <h3>Юридический аудит</h3>
+      <p>Due diligence, минимизация рисков, налоговая структура.</p>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 4: КЕЙСЫ / ПОРТФОЛИО (с акцентом на доверие) -->
+<section id="cases" class="fade-up">
+  <h2><i class="fas fa-trophy"></i> Успешные кейсы</h2>
+  <div class="gold-rule"></div>
+  <div class="card-grid" style="grid-template-columns: repeat(2, 1fr);">
+    <div class="case-card">
+      <span class="badge">Арбитражный суд г. Москвы</span>
+      <h3 style="margin: 1rem 0 0.5rem;">Спор с контрагентом на 240 млн ₽</h3>
+      <p>Полный отказ во встречном иске, взыскание неустойки и судебных издержек.</p>
+      <div class="case-result">Выигрыш</div>
+    </div>
+    <div class="case-card">
+      <span class="badge">Мосгорсуд</span>
+      <h3 style="margin: 1rem 0 0.5rem;">Раздел бизнеса при разводе</h3>
+      <p>Сохранены активы и корпоративный контроль, мировое соглашение.</p>
+      <div class="case-result">Активы сохранены</div>
+    </div>
+    <div class="case-card">
+      <span class="badge">Следственный комитет</span>
+      <h3 style="margin: 1rem 0 0.5rem;">Прекращение дела по ч.4 ст.159</h3>
+      <p>Доследственная проверка закрыта за отсутствием состава.</p>
+      <div class="case-result">Дело прекращено</div>
+    </div>
+    <div class="case-card">
+      <span class="badge">ВС РФ</span>
+      <h3 style="margin: 1rem 0 0.5rem;">Определение ВС в пользу клиента</h3>
+      <p>Отмена решений нижестоящих судов по кассационной жалобе.</p>
+      <div class="case-result">Кассация удовлетворена</div>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 5: ЦИФРЫ И ДОВЕРИЕ (статистика) -->
+<section id="stats" class="fade-up">
+  <h2><i class="fas fa-chart-line"></i> Цифры доверия</h2>
+  <div class="gold-rule"></div>
+  <div class="card-grid" style="grid-template-columns: repeat(4,1fr);">
+    <div class="stat-card"><i class="fas fa-hourglass-half big-icon"></i>
+      <h3>15+ лет</h3>
+      <p>безупречной практики</p>
+    </div>
+    <div class="stat-card"><i class="fas fa-balance-scale big-icon"></i>
+      <h3>1 200+</h3>
+      <p>выигранных дел</p>
+    </div>
+    <div class="stat-card"><i class="fas fa-building big-icon"></i>
+      <h3>70+</h3>
+      <p>компаний на абонентском обслуживании</p>
+    </div>
+    <div class="stat-card"><i class="fas fa-star big-icon"></i>
+      <h3>ТОП-10</h3>
+      <p>рейтинг «Коммерсантъ» 2024</p>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 6: КОМАНДА (коротко, но с именами) -->
+<section class="fade-up">
+  <h2><i class="fas fa-user-tie"></i> Ведущие адвокаты</h2>
+  <div class="gold-rule"></div>
+  <div style="display: flex; gap: 2.5rem; flex-wrap: wrap;">
+    <div style="flex:1; min-width: 180px;"><i class="fas fa-certificate" style="color:#b8915c;"></i> <strong>Александр Бероев</strong> — арбитраж, статус адвоката 20 лет</div>
+    <div style="flex:1; min-width: 180px;"><i class="fas fa-certificate" style="color:#b8915c;"></i> <strong>Елена Ветрова</strong> — уголовно-правовая защита, к.ю.н.</div>
+    <div style="flex:1; min-width: 180px;"><i class="fas fa-certificate" style="color:#b8915c;"></i> <strong>Марат Сафин</strong> — семейные споры, наследство</div>
+  </div>
+</section>
+
+<!-- БЛОК 7: КОНСУЛЬТАЦИЯ (форма, но без функционала — просто стиль) -->
+<section id="contact" class="fade-up" style="background: #f0f2f4; border-radius: 60px; padding: 4rem 3rem;">
+  <div style="display: flex; gap: 3rem; align-items: center;">
+    <div style="flex:1.2;">
+      <h2 style="margin-bottom: 0.5rem;"><i class="fas fa-pen"></i> Назначить встречу</h2>
+      <div class="gold-rule"></div>
+      <p style="font-size: 1.2rem;">Приезжайте в офис на Патриарших или созвонимся онлайн. Первичная консультация — бесплатно (до 30 мин).</p>
+      <div style="margin-top: 2rem;">
+        <div><i class="fas fa-phone-alt" style="color:#b8915c; width: 30px;"></i> +7 (495) 123-45-67</div>
+        <div><i class="fas fa-envelope" style="color:#b8915c; width: 30px;"></i> hello@lextrust.ru</div>
+        <div><i class="fas fa-map-marker-alt" style="color:#b8915c; width: 30px;"></i> Москва, М. Бронная 22</div>
+      </div>
+    </div>
+    <div style="flex:1; background: white; border-radius: 40px; padding: 2rem; box-shadow: 0 10px 20px rgba(0,0,0,0.06);">
+      <p style="font-weight: 600; margin-bottom: 1rem;"><i class="fas fa-check-circle" style="color:#b8915c;"></i> Заполните — мы перезвоним</p>
+      <input type="text" placeholder="Ваше имя" style="width:100%; padding:1rem; border-radius:60px; border:1px solid #ddd; margin-bottom: 1rem;">
+      <input type="text" placeholder="Телефон" style="width:100%; padding:1rem; border-radius:60px; border:1px solid #ddd; margin-bottom: 1.5rem;">
+      <button class="btn-primary" style="width:100%;">Отправить</button>
+      <p style="font-size:0.8rem; margin-top:1rem; opacity:0.7;">Нажимая, вы соглашаетесь с политикой обработки данных</p>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 8: ПАРТНЕРЫ / ДОВЕРИТЕЛИ (иконки брендов) -->
+<section class="fade-up">
+  <h2 style="font-size: 2rem;"><i class="fas fa-handshake"></i> Нам доверяют</h2>
+  <div class="gold-rule"></div>
+  <div style="display: flex; flex-wrap: wrap; gap: 3rem; justify-content: space-between; font-size: 2rem; color: #5d7f94; opacity: 0.5;">
+    <i class="fab fa-microsoft"></i>
+    <i class="fas fa-university"></i>
+    <i class="fas fa-industry"></i>
+    <i class="fas fa-truck"></i>
+    <i class="fas fa-chart-pie"></i>
+    <i class="fas fa-gem"></i>
+  </div>
+</section>
+
+<!-- БЛОК 9: ФУТЕР -->
+<footer class="fade-up">
+  <div class="footer-inner">
+    <div>
+      <i class="fas fa-gavel" style="font-size: 2rem; color: #b8915c; margin-right: 10px;"></i>
+      <span style="font-size: 1.5rem; font-weight: 200;">Lextrust <span style="font-weight: 500;">.ru</span></span>
+      <p style="margin-top: 1rem;">© 2025 Адвокатское бюро</p>
+    </div>
+    <div class="social-links">
+      <i class="fab fa-telegram"></i>
+      <i class="fab fa-whatsapp"></i>
+      <i class="fab fa-linkedin-in"></i>
+      <i class="fab fa-youtube"></i>
+    </div>
+  </div>
+</footer>
+
+<!-- JS: анимация canvas (шапка) + IntersectionObserver + компактное меню при скролле + эффект появления блоков -->
+<script>
+  (function() {
+    // 1. Canvas анимация (волны/частицы)
+    const canvas = document.getElementById('headerCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resizeCanvas() {
+      width = canvas.clientWidth;
+      height = canvas.clientHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // рисуем мягкие движущиеся линии
+    let offset = 0;
+    function draw() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, width, height);
+      
+      // градиентный фон
+      const gradient = ctx.createLinearGradient(0, 0, width*0.5, height);
+      gradient.addColorStop(0, '#f3eee9');
+      gradient.addColorStop(1, '#fafbfc');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      // изогнутые "волны доверия"
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.7);
+      for (let i = 0; i <= width; i += 30) {
+        let y = height * 0.6 + Math.sin(i * 0.01 + offset) * 25 + Math.cos(i * 0.02 + offset*2) * 15;
+        ctx.lineTo(i, y);
+      }
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(184, 145, 92, 0.04)';
+      ctx.fill();
+
+      // вторая волна
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.8);
+      for (let i = 0; i <= width; i += 20) {
+        let y = height * 0.7 + Math.cos(i * 0.015 + offset*1.3) * 20 + Math.sin(i*0.025) * 12;
+        ctx.lineTo(i, y);
+      }
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(170, 140, 100, 0.03)';
+      ctx.fill();
+
+      offset += 0.02;
+      requestAnimationFrame(draw);
+    }
+    draw();
+
+    // 2. Intersection Observer (появление блоков)
+    const fadeElements = document.querySelectorAll('.fade-up');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+    fadeElements.forEach(el => observer.observe(el));
+
+    // 3. Фикс меню (становится компактнее при скролле)
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 60) {
+        navbar.classList.add('compact');
+      } else {
+        navbar.classList.remove('compact');
+      }
+    });
+
+    // 4. Плавный скролл якорей (без лишнего)
+    document.querySelectorAll('.navbar a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  })();
+</script>
+<!-- единственная строка в конце по условию -->
+All done!
+</body>
+</html>
+```

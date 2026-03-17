@@ -1,0 +1,583 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avista · аудит для роста</title>
+  <!-- Font Awesome 6 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #f4f7fc;
+      color: #1a2639;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* гладкий скролл + якоря */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* кастомный курсор / выделение (штрих) */
+    ::selection {
+      background: #c7a86b;
+      color: #0b0f17;
+    }
+
+    /* фиксированная навигация — появляется компактной после скролла */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 28px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      transition: all 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
+      background: transparent;
+      pointer-events: none;
+    }
+    .navbar.scrolled {
+      padding: 16px 48px;
+      background: rgba(10, 18, 30, 0.88);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 20px -8px rgba(0,0,0,0.25);
+      pointer-events: all;
+      border-bottom: 1px solid rgba(199, 168, 107, 0.2);
+    }
+    .nav-logo {
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+      color: #e6d9b8;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.15);
+      transition: color 0.2s;
+      pointer-events: all;
+    }
+    .nav-links {
+      display: flex;
+      gap: 42px;
+      font-weight: 500;
+      pointer-events: all;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: #f0f3f8;
+      font-size: 1.1rem;
+      position: relative;
+      padding: 6px 0;
+      transition: 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+    .navbar.scrolled .nav-links a {
+      color: #dfe7f5;
+    }
+    .nav-links a:hover {
+      color: #cfb87c;
+      border-bottom-color: #cfb87c;
+    }
+
+    /* общий контейнер блоков */
+    section {
+      width: 100%;
+      padding: 6rem 10% 7rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* заголовки */
+    h2 {
+      font-size: 3.3rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+    .gold {
+      color: #b4945c;
+    }
+
+    /* анимация появления при скролле (intersection) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), transform 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== HEADER (блок 1) ===== */
+    .header {
+      height: 100vh;
+      min-height: 700px;
+      background: radial-gradient(125% 90% at 0% 0%, #19243b, #0b101f);
+      display: flex;
+      align-items: center;
+      color: white;
+      padding-top: 80px;
+    }
+    .header-content {
+      max-width: 700px;
+    }
+    .header-content .badge {
+      background: rgba(199, 168, 107, 0.18);
+      border: 1px solid rgba(199, 168, 107, 0.4);
+      border-radius: 60px;
+      padding: 8px 18px;
+      display: inline-block;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(6px);
+      color: #ecd7aa;
+    }
+    .header-content h1 {
+      font-size: 5.2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 1.8rem;
+    }
+    .header-content p {
+      font-size: 1.3rem;
+      color: #b9c8e6;
+      margin-bottom: 3rem;
+      max-width: 560px;
+    }
+    .btn {
+      background: #cfb87c;
+      border: none;
+      color: #0c1422;
+      padding: 18px 48px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: 0.25s ease;
+      box-shadow: 0 20px 30px -10px rgba(207, 184, 124, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .btn:hover {
+      background: #e5ce98;
+      transform: scale(1.04);
+      box-shadow: 0 28px 35px -8px #b4945c80;
+    }
+
+    /* анимированный фон header (js canvas) */
+    #header-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.45;
+    }
+    .header .container {
+      position: relative;
+      z-index: 5;
+    }
+
+    /* блок 2: преимущества / иконки */
+    .features {
+      background: #ffffff;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem;
+      margin-top: 3rem;
+    }
+    .feat-item {
+      background: #f3f7ff;
+      padding: 2.5rem 2rem;
+      border-radius: 32px;
+      transition: 0.25s;
+      border: 1px solid #e9eef5;
+      box-shadow: 0 15px 30px -20px #1a2639;
+    }
+    .feat-item i {
+      font-size: 3rem;
+      color: #b4945c;
+      margin-bottom: 1.5rem;
+    }
+    .feat-item h3 {
+      font-size: 1.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    /* блок 3: кейсы / доверие */
+    .cases {
+      background: #eaf0f9;
+    }
+    .case-cards {
+      display: flex;
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    .case-card {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 40px;
+      flex: 1;
+      box-shadow: 0 25px 45px -25px #0b1a2e;
+    }
+    .case-card span {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #b4945c;
+      display: block;
+    }
+    .case-card h4 {
+      font-size: 1.8rem;
+      margin: 0.5rem 0 1rem;
+    }
+
+    /* блок 4: цифры / статистика (иконки) */
+    .stats {
+      background: #1a2639;
+      color: white;
+      text-align: center;
+    }
+    .stats-grid {
+      display: flex;
+      justify-content: space-around;
+      margin: 3rem 0 1rem;
+    }
+    .stat-item i {
+      font-size: 3.5rem;
+      color: #cfb87c;
+      margin-bottom: 1rem;
+    }
+    .stat-item .num {
+      font-size: 3.2rem;
+      font-weight: 700;
+    }
+
+    /* блок 5: как мы работаем (пошагово) */
+    .steps {
+      background: white;
+    }
+    .step-row {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin: 3rem 0;
+    }
+    .step-icon {
+      background: #e2dccd;
+      width: 80px;
+      height: 80px;
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      color: #1a2639;
+    }
+    .step-text h3 {
+      font-size: 2rem;
+    }
+
+    /* блок 6: команда / эксперты */
+    .team {
+      background: #f8faff;
+    }
+    .team-grid {
+      display: flex;
+      gap: 2rem;
+    }
+    .team-card {
+      background: white;
+      padding: 2rem;
+      border-radius: 30px;
+      text-align: center;
+      flex: 1;
+    }
+    .team-card i {
+      font-size: 3rem;
+      background: #1a2639;
+      color: #cfb87c;
+      padding: 1.2rem;
+      border-radius: 60px;
+      margin-bottom: 1.5rem;
+    }
+
+    /* блок 7: отзывы (карусель текста без картинок) */
+    .testimonials {
+      background: #eef2f9;
+    }
+    .testimonial-slider {
+      background: white;
+      border-radius: 50px;
+      padding: 3rem;
+      max-width: 800px;
+      margin: 2rem auto;
+      font-size: 1.5rem;
+      box-shadow: 0 30px 40px -25px #121e30;
+      position: relative;
+    }
+    .testimonial-slider i {
+      color: #b4945c;
+      margin-right: 0.5rem;
+    }
+
+    /* блок 8: контакты / призыв */
+    .contact {
+      background: #101826;
+      color: white;
+    }
+    .contact-flex {
+      display: flex;
+      gap: 5rem;
+    }
+    .contact-info i {
+      font-size: 2rem;
+      margin-right: 1rem;
+      color: #cfb87c;
+    }
+    .contact-info p {
+      margin: 1.5rem 0;
+    }
+
+    /* FOOTER (блок 9) */
+    .footer {
+      background: #0a101c;
+      color: #9aa9c1;
+      padding: 2.5rem 10%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #253040;
+    }
+    .footer .social i {
+      font-size: 1.8rem;
+      margin-left: 2rem;
+      color: #b4945c;
+      transition: 0.2s;
+    }
+    .footer .social i:hover {
+      color: #e6cfa2;
+    }
+
+    /* якорные отступы */
+    #about, #cases, #steps, #team, #contact {
+      scroll-margin-top: 90px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ФИКСИРОВАННАЯ ШАПКА (меню) -->
+<nav class="navbar" id="navbar">
+  <div class="nav-logo">AVISTA</div>
+  <div class="nav-links">
+    <a href="#home">Главная</a>
+    <a href="#about">О нас</a>
+    <a href="#cases">Кейсы</a>
+    <a href="#steps">Процесс</a>
+    <a href="#contact">Контакты</a>
+  </div>
+</nav>
+
+<!-- БЛОК 1: HEADER (с анимацией canvas) -->
+<section class="header" id="home">
+  <canvas id="header-canvas"></canvas>
+  <div class="container header-content">
+    <div class="badge">Аудит · налоги · b2b</div>
+    <h1>Больше,<br>чем <span class="gold">цифры</span></h1>
+    <p>Финансовый аудит и бухгалтерское сопровождение, которые возвращают доверие и открывают прибыль.</p>
+    <button class="btn">Прозрачная консультация</button>
+  </div>
+</section>
+
+<!-- БЛОК 2: преимущества (иконки) -->
+<section class="features fade-up" id="about">
+  <h2>Почему выбирают <span class="gold">Avista</span></h2>
+  <div class="features-grid">
+    <div class="feat-item"><i class="fas fa-shield-alt"></i><h3>Страхование ответственности</h3><p>Полис покрывает риски до 50 млн ₽ — работаем на доверии.</p></div>
+    <div class="feat-item"><i class="fas fa-chart-line"></i><h3>Аудит как рост</h3><p>Не просто отчёт, а точки роста: оптимизация и налоговые резервы.</p></div>
+    <div class="feat-item"><i class="fas fa-user-tie"></i><h3>Личный партнёр</h3><p>Закреплённый эксперт с опытом от 10 лет в b2b.</p></div>
+  </div>
+</section>
+
+<!-- БЛОК 3: кейсы (доверие) -->
+<section class="cases fade-up" id="cases">
+  <h2>Реальные <span class="gold">истории</span></h2>
+  <div class="case-cards">
+    <div class="case-card"><span>43 млн ₽</span><h4>Доначислили бы</h4>Производственной компании снизили претензии ФНС до 0, подтвердив расходы.</div>
+    <div class="case-card"><span>22%</span><h4>Рост прибыли</h4>Торговой сети нашли неэффективные затраты и перестроили учёт.</div>
+    <div class="case-card"><span>3 недели</span><h4>Смена УК</h4>Срочный аудит перед сделкой M&A — сделка закрыта в срок.</div>
+  </div>
+</section>
+
+<!-- БЛОК 4: статистика (цифры + иконки) -->
+<section class="stats fade-up">
+  <h2>Цифры <span class="gold">Avista</span></h2>
+  <div class="stats-grid">
+    <div class="stat-item"><i class="fas fa-briefcase"></i><div class="num">15+</div><div>лет на рынке</div></div>
+    <div class="stat-item"><i class="fas fa-file-signature"></i><div class="num">780</div><div>проверенных отчётов</div></div>
+    <div class="stat-item"><i class="fas fa-medal"></i><div class="num">100%</div><div>сохранность данных</div></div>
+  </div>
+</section>
+
+<!-- БЛОК 5: пошаговый процесс -->
+<section class="steps fade-up" id="steps">
+  <h2>Как мы <span class="gold">работаем</span></h2>
+  <div class="step-row"><div class="step-icon"><i class="fas fa-handshake"></i></div><div class="step-text"><h3>1. Знакомство и аудит данных</h3><p>Анализируем документы, учётную политику, риски. Никаких слепых решений.</p></div></div>
+  <div class="step-row"><div class="step-icon"><i class="fas fa-microchip"></i></div><div class="step-text"><h3>2. Цифровая проверка</h3><p>Пропускаем всё через алгоритмы и опыт экспертов, находим расхождения.</p></div></div>
+  <div class="step-row"><div class="step-icon"><i class="fas fa-scroll"></i></div><div class="step-text"><h3>3. Отчёт + стратегия</h3><p>Детальный отчёт и рекомендации под ваш именно b2b-сегмент.</p></div></div>
+</section>
+
+<!-- БЛОК 6: команда (эксперты) -->
+<section class="team fade-up">
+  <h2>Эксперты,<br>которым <span class="gold">доверяют</span></h2>
+  <div class="team-grid">
+    <div class="team-card"><i class="fas fa-user-circle"></i><h3>Елена Ветрова</h3><p>Управляющий партнёр, стаж 19 лет, аттестат Минфина.</p></div>
+    <div class="team-card"><i class="fas fa-user-circle"></i><h3>Дмитрий Корец</h3><p>Руководитель налоговой практики, эксперт по спорам.</p></div>
+    <div class="team-card"><i class="fas fa-user-circle"></i><h3>Анна Резник</h3><p>Судебный аудит, защита интересов в арбитраже.</p></div>
+  </div>
+</section>
+
+<!-- БЛОК 7: отзывы (стилизованная карусель-слайдер без картинок) -->
+<section class="testimonials fade-up">
+  <h2>Говорят <span class="gold">клиенты</span></h2>
+  <div class="testimonial-slider" id="testiSlider">
+    <i class="fas fa-quote-left"></i> С Avista мы впервые за 8 лет получили аудит не как «проверку», а как карту улучшений. Сократили налог на прибыль законно. <br>— <strong>финдиректор «СтройГрупп»</strong>
+  </div>
+</section>
+
+<!-- БЛОК 8: контакты (призыв) -->
+<section class="contact fade-up" id="contact">
+  <h2>Готовы к <span class="gold">честному аудиту?</span></h2>
+  <div class="contact-flex">
+    <div class="contact-info">
+      <p><i class="fas fa-map-pin"></i> Москва, Пресненская наб., 12</p>
+      <p><i class="fas fa-phone-alt"></i> +7 (495) 280-70-80</p>
+      <p><i class="fas fa-envelope"></i> hello@avista-audit.ru</p>
+    </div>
+    <div style="flex:1;">
+      <button class="btn" style="background:white; color:#0b101f;">Записаться на аудит</button>
+    </div>
+  </div>
+</section>
+
+<!-- БЛОК 9: FOOTER -->
+<footer class="footer">
+  <div>© 2025 Avista — аудиторский консалтинг</div>
+  <div class="social">
+    <i class="fab fa-linkedin"></i>
+    <i class="fab fa-telegram"></i>
+    <i class="fab fa-youtube"></i>
+  </div>
+</footer>
+
+<!-- JS: анимация шапки, скролл-эффекты, слайдер, появление блоков -->
+<script>
+  (function() {
+    // ----- 1. фиксированная навигация (компакт при скролле) -----
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 100) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+
+    // ----- 2. Intersection Observer (анимация появления) -----
+    const fadeElements = document.querySelectorAll('.fade-up');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.2 });
+    fadeElements.forEach(el => observer.observe(el));
+
+    // ----- 3. Canvas header (геометрическая анимация) -----
+    const canvas = document.getElementById('header-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+
+    function initCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      particles = [];
+      for (let i = 0; i < 45; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.3,
+          size: Math.random() * 3 + 1,
+          phase: Math.random() * 100,
+        });
+      }
+    }
+    initCanvas();
+
+    function drawParticles() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#cfb87c';
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        ctx.globalAlpha = 0.5 + 0.2 * Math.sin(Date.now() * 0.003 + p.phase);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 1.2, 0, 2 * Math.PI);
+        ctx.fillStyle = '#e6cfa2';
+        ctx.fill();
+      });
+      requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
+
+    window.addEventListener('resize', () => {
+      initCanvas();
+    });
+
+    // ----- 4. Простой автоматический слайдер для отзывов (текст ротация) -----
+    const testimonials = [
+      '«Avista помогла структурировать учёт холдинга за 2 недели. Никакой воды.» <br>— <strong>владелец Optima Group</strong>',
+      '«Благодаря их аудиту защитили вычеты по НДС на 12 млн. Спасли квартальный бонус.» <br>— <strong>гл.бух «ТехноСтиль»</strong>',
+      '«С Avista мы впервые за 8 лет получили аудит не как проверку, а как карту улучшений.» <br>— <strong>финдиректор «СтройГрупп»</strong>'
+    ];
+    let idx = 0;
+    const sliderDiv = document.getElementById('testiSlider');
+    if (sliderDiv) {
+      setInterval(() => {
+        idx = (idx + 1) % testimonials.length;
+        sliderDiv.innerHTML = `<i class="fas fa-quote-left"></i> ${testimonials[idx]}`;
+      }, 4500);
+    }
+  })();
+</script>
+
+<!-- небольшой ховер-эффект для иконок footer (необязательно) и якоря -->
+</body>
+</html>
+All done!
+```

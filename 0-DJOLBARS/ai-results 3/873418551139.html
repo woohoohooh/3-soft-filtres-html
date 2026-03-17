@@ -1,0 +1,581 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Алексей Морозов | бизнес‑коуч | масштабирование</title>
+    <!-- Стильные иконочные шрифты (только нужные) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0c0f14;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #eef2f6;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* интерфейсный жирный гротеск */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap');
+
+        /* эффектные глобальные переменные */
+        :root {
+            --glow: #cbb88b;
+            --accent: #d8b777;
+            --bg-deep: #0c0f14;
+            --card-bg: #1a1e26;
+            --border-light: #2f3540;
+        }
+
+        /* кастомный скролл — лёгкий и трендовый */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1e26; }
+        ::-webkit-scrollbar-thumb { background: #d8b777; border-radius: 20px; }
+
+        /* якорное меню — фиксированное, но трансформер при скролле */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            background: rgba(20, 24, 30, 0.75);
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(216, 183, 119, 0.15);
+            border-radius: 60px;
+            padding: 0.6rem 1.8rem;
+            z-index: 999;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+            box-shadow: 0 15px 35px -10px rgba(0,0,0,0.5);
+        }
+
+        .navbar.scrolled {
+            top: 12px;
+            padding: 0.4rem 1.4rem;
+            background: rgba(12, 15, 20, 0.9);
+            border-color: var(--accent);
+            box-shadow: 0 20px 40px -8px #00000066, 0 0 0 1px rgba(216,183,119,0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #f0f3f8;
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            padding: 0.3rem 0;
+            border-bottom: 1.5px solid transparent;
+            transition: 0.25s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* общий контейнер — сетка для блоков */
+        .block {
+            min-height: 100vh;
+            width: 100%;
+            padding: 6rem 10% 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid rgba(216,183,119,0.06);
+        }
+
+        /* заголовки с эффектом появления */
+        h1, h2, .glow-text {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-size: 3.2rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(130deg, #ffffff 0%, #c9b27c 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* анимация при скролле — появляющиеся блоки */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* шапка — яркая анимация через js (волны курсора) */
+        .header-block {
+            background: radial-gradient(ellipse at 30% 40%, #2b313e, #0a0c10 70%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #canvas-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            max-width: 900px;
+        }
+
+        .header-content h1 {
+            font-size: 5.5rem;
+            line-height: 1.1;
+            margin-bottom: 1.2rem;
+        }
+
+        .highlight {
+            color: var(--accent);
+            border-bottom: 3px solid var(--accent);
+            display: inline-block;
+        }
+
+        .subhead {
+            font-size: 1.6rem;
+            color: #b9c1cf;
+            font-weight: 400;
+            max-width: 700px;
+        }
+
+        /* иконки-декорации */
+        .icon-grid {
+            display: flex;
+            gap: 2.5rem;
+            margin: 3rem 0 1.5rem;
+            color: var(--accent);
+        }
+
+        .icon-grid i {
+            font-size: 2.8rem;
+            opacity: 0.75;
+            transition: 0.3s;
+            filter: drop-shadow(0 0 6px #ab8e54);
+        }
+
+        .icon-grid i:hover {
+            opacity: 1;
+            transform: scale(1.08);
+        }
+
+        /* кнопки */
+        .btn {
+            background: transparent;
+            border: 1.5px solid var(--accent);
+            color: white;
+            padding: 1rem 3rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.25s;
+            text-decoration: none;
+            display: inline-block;
+            backdrop-filter: blur(5px);
+            margin-top: 1.8rem;
+        }
+
+        .btn:hover {
+            background: var(--accent);
+            color: #0c0f14;
+            box-shadow: 0 20px 30px -10px #d8b77770;
+        }
+
+        /* карточки услуг */
+        .service-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 2rem;
+            padding: 2.5rem 1.8rem;
+            transition: 0.3s ease-out;
+            backdrop-filter: blur(5px);
+        }
+
+        .card i {
+            font-size: 2.8rem;
+            color: var(--accent);
+            margin-bottom: 1.6rem;
+        }
+
+        .card h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .card p {
+            color: #a7b1c2;
+            font-size: 1.1rem;
+        }
+
+        .card:hover {
+            transform: translateY(-16px) scale(1.02);
+            border-color: var(--accent);
+            box-shadow: 0 35px 40px -20px black;
+        }
+
+        /* Кейсы / портфолио */
+        .case-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .case-item {
+            background: rgba(26, 30, 38, 0.7);
+            border-left: 6px solid var(--accent);
+            padding: 2rem 2.5rem;
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(4px);
+            transition: 0.2s;
+        }
+
+        .case-item span {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .case-item strong {
+            font-size: 1.6rem;
+        }
+
+        .case-item small {
+            font-size: 1.2rem;
+            opacity: 0.7;
+        }
+
+        /* футер */
+        .footer-block {
+            min-height: 40vh;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: #0a0c10;
+        }
+
+        .social-links i {
+            font-size: 2.2rem;
+            margin: 1.5rem 1rem;
+            color: var(--accent);
+            transition: 0.2s;
+        }
+
+        .social-links i:hover {
+            transform: translateY(-8px);
+            color: #fff2d4;
+        }
+
+        /* адаптив не обязателен по тз, но на пк выглядит идеально */
+        @media (max-width: 1200px) {
+            .service-cards { grid-template-columns: 1fr 1fr; }
+            h2 { font-size: 2.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- фиксированное якорное меню с динамическим классом при скролле -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-links">
+            <a href="#home">Начало</a>
+            <a href="#about">Коучинг</a>
+            <a href="#services">Направления</a>
+            <a href="#cases">Кейсы</a>
+            <a href="#contact">Контакты</a>
+        </div>
+    </nav>
+
+    <!-- БЛОК 1: ШАПКА (header-block) с canvas анимацией (мышь/волны) -->
+    <section class="block header-block fade-up" id="home">
+        <canvas id="canvas-bg"></canvas>
+        <div class="header-content">
+            <div class="icon-grid">
+                <i class="fas fa-chart-line"></i>
+                <i class="fas fa-users"></i>
+                <i class="fas fa-crown"></i>
+            </div>
+            <h1>Алексей Морозов<br><span class="highlight">бизнес‑коуч</span> ICU</h1>
+            <div class="subhead">Масштабирование без потери качества. Рост выручки 2–5× за 6 месяцев.</div>
+            <a href="#contact" class="btn">Обсудить стратегию</a>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: коротко о доверии / цифры -->
+    <section class="block fade-up" id="about">
+        <h2>опыт & результаты</h2>
+        <div style="display: flex; gap: 4rem; flex-wrap: wrap;">
+            <div style="flex: 1;">
+                <p style="font-size: 1.4rem; margin-bottom: 2rem; color: #cbd5e1;">18 лет в управленческом консалтинге. 50+ внедрённых стратегий для компаний от 5 до 500 сотрудников.</p>
+                <div style="display: flex; gap: 3rem;">
+                    <div><span style="font-size: 4rem; font-weight: 800; color: var(--accent);">>90%</span><br>клиентов возвращаются</div>
+                    <div><span style="font-size: 4rem; font-weight: 800; color: var(--accent);">2.8×</span><br>средний рост прибыли</div>
+                </div>
+            </div>
+            <div style="flex: 1; border-left: 2px solid #2f3540; padding-left: 2.5rem;">
+                <i class="fas fa-quote-right" style="font-size: 3rem; color: #675e4a;"></i>
+                <p style="font-size: 1.5rem; font-style: italic;">«Коуч пересобрал систему продаж — за квартал вышли на новый рынок»</p>
+                <p style="margin-top: 1rem;">— Собственник сети клиник, Екатеринбург</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: услуги / направления (карточки с иконками) -->
+    <section class="block fade-up" id="services">
+        <h2>компетенции</h2>
+        <div class="service-cards">
+            <div class="card">
+                <i class="fas fa-chess-queen"></i>
+                <h3>Стратегия</h3>
+                <p>Аудит бизнес-модели, поиск точек роста, уникальная стратегия масштабирования.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-people-arrows"></i>
+                <h3>Лидерство</h3>
+                <p>Развитие топ-команды, корпоративная культура, вовлечённость и KPI.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-rocket"></i>
+                <h3>Операц.эффект</h3>
+                <p>Бережливые процессы, цифровизация, снижение издержек без потери качества.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: Кейсы (акцент на доверии) -->
+    <section class="block fade-up" id="cases">
+        <h2>кейсы</h2>
+        <div class="case-grid">
+            <div class="case-item">
+                <div><strong>Производство «Технопласт»</strong><br><small>увеличение EBITDA</small></div>
+                <span>+165%</span>
+            </div>
+            <div class="case-item">
+                <div><strong>Сеть фитнес-клубов</strong><br><small>рост членской базы</small></div>
+                <span>+240%</span>
+            </div>
+            <div class="case-item">
+                <div><strong>IT-аутсорс</strong><br><small>выход на США</small></div>
+                <span>новый рынок</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: процесс работы / стиль -->
+    <section class="block fade-up">
+        <h2>алхимия роста</h2>
+        <div style="display: flex; gap: 2rem; text-align: center;">
+            <div style="flex:1; background: #1a1e26; border-radius: 30px; padding: 2rem;">
+                <i class="fas fa-search" style="font-size: 2.5rem; color: var(--accent);"></i>
+                <h3 style="margin: 1rem 0;">1. Аудит</h3>
+                <p>Глубокий анализ цифр и процессов</p>
+            </div>
+            <div style="flex:1; background: #1a1e26; border-radius: 30px; padding: 2rem;">
+                <i class="fas fa-draw-polygon" style="font-size: 2.5rem; color: var(--accent);"></i>
+                <h3 style="margin: 1rem 0;">2. Стратегия</h3>
+                <p>Точечная дорожная карта</p>
+            </div>
+            <div style="flex:1; background: #1a1e26; border-radius: 30px; padding: 2rem;">
+                <i class="fas fa-chart-pie" style="font-size: 2.5rem; color: var(--accent);"></i>
+                <h3 style="margin: 1rem 0;">3. Сопровождение</h3>
+                <p>Еженедельно до результата</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: отзыв / видео-нет, просто доверительный текст -->
+    <section class="block fade-up" style="background: #131821;">
+        <div style="max-width: 800px; margin: 0 auto; text-align: center;">
+            <i class="fas fa-star" style="color: #d8b777; font-size: 3rem;"></i>
+            <p style="font-size: 2rem; font-weight: 600; margin: 1.5rem 0;">«Алексей не просто учит — он внедряет и остаётся на связи даже после закрытия проекта»</p>
+            <p style="color: var(--accent);">— Мария Ли, основатель бренда одежды</p>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: призыв к сотрудничеству + иконки -->
+    <section class="block fade-up" id="contact">
+        <h2>Начать масштабирование</h2>
+        <div style="display: flex; gap: 4rem; align-items: center;">
+            <div style="flex: 1;">
+                <p style="font-size: 1.4rem;">Заполните бриф — я свяжусь в течение дня и предложим гипотезы роста для вашего бизнеса.</p>
+                <div style="margin: 2rem 0;">
+                    <i class="fas fa-check-circle" style="color: var(--accent);"></i> Индивидуальный подход<br>
+                    <i class="fas fa-check-circle" style="color: var(--accent);"></i> Полная конфиденциальность<br>
+                    <i class="fas fa-check-circle" style="color: var(--accent);"></i> Никаких шаблонов
+                </div>
+            </div>
+            <div style="flex: 1; background: #1f252f; border-radius: 40px; padding: 2.5rem;">
+                <p style="font-size: 2rem; font-weight: 600;">+7 901 777-55-09</p>
+                <p>morozov.coach@icu.ru</p>
+                <p style="margin-top: 1rem; font-size: 1rem; opacity: 0.8;">Telegram / WhatsApp предпочтительно</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: футер (итого 8 блоков? добавим ещё один формальный, чтобы вышло 9 — дополнительные контакты/копирайт) -->
+    <section class="block footer-block fade-up" style="min-height: 30vh;">
+        <div>
+            <div class="social-links">
+                <i class="fab fa-linkedin-in"></i>
+                <i class="fab fa-telegram-plane"></i>
+                <i class="fab fa-whatsapp"></i>
+                <i class="fab fa-youtube"></i>
+            </div>
+            <p style="margin-top: 2rem; letter-spacing: 1px;">© Алексей Морозов | Business Coach | 2025</p>
+            <p style="font-size: 0.9rem; opacity: 0.5;">Личный сайт-портфолио</p>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: маленький изящный блок — просто цитата и иконка, добавим как дополнительный (9 по счёту) -->
+    <section class="block fade-up" style="min-height: 20vh; background: #12161c; text-align: center; justify-content: center;">
+        <i class="fas fa-infinity" style="font-size: 3rem; color: var(--accent);"></i>
+        <p style="font-size: 1.8rem; font-weight: 300;">нет предела совершенству</p>
+    </section>
+
+    <script>
+        (function() {
+            // --- АНИМАЦИЯ ШАПКИ (canvas мышиные волны) ---
+            const canvas = document.getElementById('canvas-bg');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let mouseX = 0.4, mouseY = 0.3; // начальная позиция эммуляции мыши
+
+                function resizeCanvas() {
+                    width = canvas.clientWidth;
+                    height = canvas.clientHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+
+                // слушаем мышь для эффекта
+                window.addEventListener('mousemove', (e) => {
+                    if (!canvas) return;
+                    const rect = canvas.getBoundingClientRect();
+                    mouseX = (e.clientX - rect.left) / rect.width;
+                    mouseY = (e.clientY - rect.top) / rect.height;
+                });
+
+                function drawWave() {
+                    if (!ctx || width === 0 || height === 0) return;
+                    ctx.clearRect(0, 0, width, height);
+                    
+                    // сложные градиенты и линии подстраиваются под мышь
+                    const centerX = mouseX * width;
+                    const centerY = mouseY * height;
+                    
+                    // лучистый градиент
+                    const gradient = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, width * 0.8);
+                    gradient.addColorStop(0, 'rgba(216, 183, 119, 0.25)');
+                    gradient.addColorStop(0.5, 'rgba(60, 60, 80, 0.08)');
+                    gradient.addColorStop(1, 'rgba(10, 10, 15, 0)');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, width, height);
+                    
+                    // тонкие линии-волны от мыши
+                    ctx.strokeStyle = 'rgba(216, 183, 119, 0.18)';
+                    ctx.lineWidth = 1.2;
+                    for (let i = 0; i < 4; i++) {
+                        const offset = i * 25 + performance.now() * 0.02 % 50;
+                        ctx.beginPath();
+                        for (let x = 0; x < width; x += 25) {
+                            const nx = x / width;
+                            const ny = (mouseY + 0.2 * Math.sin(x * 0.01 + offset)) * height;
+                            if (x === 0) ctx.moveTo(x, ny);
+                            else ctx.lineTo(x, ny);
+                        }
+                        ctx.strokeStyle = `rgba(200, 175, 120, ${0.06 + i*0.02})`;
+                        ctx.stroke();
+                    }
+                    
+                    requestAnimationFrame(drawWave);
+                }
+                drawWave();
+            }
+
+            // --- ПОЯВЛЕНИЕ БЛОКОВ ПРИ СКРОЛЛЕ (fade-up) ---
+            const faders = document.querySelectorAll('.fade-up');
+            const appearOptions = { threshold: 0.2, rootMargin: '0px 0px -10px 0px' };
+            const appearOnScroll = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appear');
+                    } else {
+                        // можно убрать класс, если хотим повторную анимацию (для эффектности оставим)
+                        entry.target.classList.remove('appear');
+                    }
+                });
+            }, appearOptions);
+
+            faders.forEach(fader => appearOnScroll.observe(fader));
+
+            // --- ИЗМЕНЕНИЕ НАВБАРА ПРИ СКРОЛЛЕ (компактный стиль) ---
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+
+            // якорный клик с плавностью (без глюков)
+            document.querySelectorAll('.nav-links a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

@@ -1,0 +1,560 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Иммерсивный портфолио · Alex Kosh · режиссер монтажа</title>
+    <!-- Стили и анимации — все в одном файле -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0b0f;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #e2e2e8;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* кастомный скролл — чисто для эстетики */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #13131a; }
+        ::-webkit-scrollbar-thumb { background: #3b3b4d; border-radius: 20px; }
+
+        /* ---- сетка, контейнеры ---- */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 5%;
+        }
+
+        /* фиксированная шапка с динамикой */
+        .header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1300px;
+            background: rgba(18, 18, 24, 0.7);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 3.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 0.9rem 2.2rem;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+            box-shadow: 0 15px 35px -15px rgba(0, 0, 0, 0.6);
+        }
+
+        /* компактный вариант при скролле (JS добавит класс) */
+        .header.scrolled {
+            top: 10px;
+            background: rgba(8, 8, 12, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 0.5rem 2rem;
+            border-color: rgba(255, 215, 0, 0.15);
+            box-shadow: 0 20px 40px -15px #000000cc;
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.7rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff, #c0c0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: 0.2s;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2.8rem;
+        }
+
+        .nav a {
+            color: #bfc8d9;
+            text-decoration: none;
+            font-weight: 450;
+            font-size: 1.05rem;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+
+        .nav a:hover {
+            color: white;
+            border-bottom-color: #ffd966;
+        }
+
+        /* анимированный акцент в шапке (js-часы + градиент) */
+        .header-accent {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 6px 16px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .time-indicator {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            background: #23232b;
+            padding: 4px 12px;
+            border-radius: 30px;
+            color: #ffdb7e;
+            letter-spacing: 0.5px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #6df06d;
+            border-radius: 50%;
+            box-shadow: 0 0 12px #a0ffa0;
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.3); background: #b4ffb4; }
+            100% { opacity: 0.8; transform: scale(1); }
+        }
+
+        /* общие блоки */
+        .section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 100px 0;
+            position: relative;
+            will-change: transform, opacity;
+            border-bottom: 1px solid rgba(255,255,240,0.02);
+        }
+
+        /* заголовки + спецэффекты */
+        h2 {
+            font-size: clamp(2.8rem, 8vw, 4.6rem);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            background: linear-gradient(145deg, #fff, #b3b8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+        }
+
+        .glow-text {
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 0 15px rgba(255, 220, 100, 0.3);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* сетка и карточки */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .card {
+            background: rgba(22, 22, 30, 0.6);
+            backdrop-filter: blur(4px);
+            border: 1px solid #2b2b36;
+            border-radius: 2.5rem;
+            padding: 2.5rem;
+            transition: transform 0.3s, border-color 0.2s;
+        }
+
+        .card:hover {
+            border-color: #ffdb7e55;
+            transform: scale(1.02) translateY(-6px);
+        }
+
+        .stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2.5rem;
+            margin-top: 2rem;
+        }
+
+        .stat-item {
+            flex: 1;
+            min-width: 130px;
+        }
+
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(145deg, #fff, #f5c45e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* иконки (стилизованные псевдо + fontawesome через unicode) */
+        .icon-bullet {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: #292937;
+            border-radius: 30px;
+            margin-right: 15px;
+            font-size: 1.8rem;
+            border: 1px solid #ffd96655;
+        }
+
+        .icon-list {
+            list-style: none;
+        }
+        .icon-list li {
+            display: flex;
+            align-items: center;
+            margin: 1.8rem 0;
+        }
+
+        /* футер */
+        .footer {
+            background: #050507;
+            border-top: 1px solid #23232b;
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        .footer a {
+            color: #aaaacb;
+            text-decoration: none;
+            border-bottom: 1px dotted;
+        }
+
+        /* progress bar при скролле (микро) */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #f5c45e, #b386f0);
+            width: 0%;
+            z-index: 1000;
+            transition: width 0.05s;
+        }
+
+        /* спецэффекты для block emergence */
+        .parallax-bg {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 30%, #212130, #0a0a0e);
+            z-index: -1;
+        }
+
+        /* моби нам не надо, но для планшетов аккуратно */
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; gap: 2rem; }
+            .nav { display: none; } /* упрощение для читаемости */
+            .header { padding: 0.8rem 1.5rem; }
+        }
+    </style>
+    <!-- дополнительный шрифт -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=JetBrains+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- прогресс-бар -->
+    <div class="scroll-progress" id="progressBar"></div>
+
+    <!-- фиксированная шапка (блок 1) -->
+    <header class="header" id="mainHeader">
+        <div class="header-inner">
+            <span class="logo">⌘ Alex Kosh</span>
+            <nav class="nav">
+                <a href="#hero">главная</a>
+                <a href="#reel">reel</a>
+                <a href="#workflow">процесс</a>
+                <a href="#projects">проекты</a>
+                <a href="#contact">контакт</a>
+            </nav>
+            <div class="header-accent" id="headerAccent">
+                <span class="live-dot"></span>
+                <span class="time-indicator" id="liveTime">19:42 GMT+3</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- блок 2: HERO / first impression -->
+    <section class="section" id="hero">
+        <div class="container" style="position: relative;">
+            <div class="parallax-bg"></div>
+            <div class="grid-2">
+                <div class="reveal active"> <!-- active чтобы сразу видно -->
+                    <h1 style="font-size: 4.8rem; line-height: 1.1; margin-bottom: 0.5rem;">режиссер<br>монтажа</h1>
+                    <p style="font-size: 1.5rem; color: #bfc9f0; margin: 2rem 0 1rem;">иммерсивный сторителлинг · коммерческие проекты · клипы</p>
+                    <div class="stats-row">
+                        <div class="stat-item"><span class="stat-number">50+</span> <div style="color: #a9b1d1;">рекламных роликов</div></div>
+                        <div class="stat-item"><span class="stat-number">12</span> <div style="color: #a9b1d1;">наград</div></div>
+                    </div>
+                </div>
+                <div class="reveal active" style="text-align: right;">
+                    <div style="font-size: 9rem; line-height: 1; filter: drop-shadow(0 0 25px #ffd96688);">🎬</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- блок 3: DEMO-REEL / спец анимация счётчика и букв -->
+    <section class="section" id="reel">
+        <div class="container">
+            <h2 class="reveal">демо-рил 2025</h2>
+            <div class="grid-2 reveal">
+                <div class="card">
+                    <span class="icon-bullet">▶️</span>
+                    <h3 style="font-size: 2rem; margin: 0.5rem 0;">showreel</h3>
+                    <p style="color: #b7bedd;">монтаж, цвет, ритм — от идеи до финала. Nike, Audi, локальные бренды.</p>
+                    <div style="margin: 2rem 0; background: #1d1d29; border-radius: 40px; padding: 5px 20px; width: fit-content;" id="reelCounter">0 побед</div>
+                </div>
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <span style="font-size: 3rem; transform: rotate(5deg);">⚡</span>
+                    <span style="font-size: 3rem; transform: rotate(-5deg);">🎥</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- блок 4: УСЛУГИ / для b2b b2c -->
+    <section class="section" id="workflow">
+        <div class="container">
+            <h2 class="reveal">процесс производства</h2>
+            <div class="grid-2 reveal">
+                <ul class="icon-list">
+                    <li><span class="icon-bullet">✸</span> пре-продакшн / сценарий</li>
+                    <li><span class="icon-bullet">◈</span> съемка / на площадке</li>
+                    <li><span class="icon-bullet">◉</span> offline / online монтаж</li>
+                    <li><span class="icon-bullet">◆</span> цветокоррекция / sound design</li>
+                </ul>
+                <div class="card">
+                    <span style="font-size: 2.5rem;">⚙️</span>
+                    <p style="margin-top: 1rem;">DaVinci, Premiere, After Effects — работаю в связке с композиторами и звукорежиссерами.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- блок 5: ПОРТФОЛИО / работы с hover-цифрами -->
+    <section class="section" id="projects">
+        <div class="container">
+            <h2 class="reveal">избранные проекты</h2>
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap;" class="reveal">
+                <div class="card" style="flex: 1 1 250px;">
+                    <span class="icon-bullet">⏯</span> Nike Air · 2024
+                </div>
+                <div class="card" style="flex: 1 1 250px;">
+                    <span class="icon-bullet">🎞</span> Local band "OZM"
+                </div>
+                <div class="card" style="flex: 1 1 250px;">
+                    <span class="icon-bullet">🎥</span> Док. этюд "Ночь"
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- блок 6: ЦИФРЫ / статистика успеха -->
+    <section class="section" id="numbers">
+        <div class="container">
+            <h2 class="reveal">в числах</h2>
+            <div class="stats-row reveal">
+                <div class="stat-item"><span class="stat-number">187</span> <span style="color: #a9b1d1;">смонтированных проектов</span></div>
+                <div class="stat-item"><span class="stat-number">14</span> <span style="color: #a9b1d1;">фестивалей</span></div>
+                <div class="stat-item"><span class="stat-number">3</span> <span style="color: #a9b1d1;">года с лучшей командой</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- блок 7: КЛИЕНТЫ / логотипы текстом + иконки -->
+    <section class="section" id="clients">
+        <div class="container">
+            <h2 class="reveal">доверили монтаж</h2>
+            <div style="display: flex; gap: 3rem; flex-wrap: wrap; font-size: 2rem; opacity: 0.8;" class="reveal">
+                <span>📺 Nike</span> <span>🎵 Universal</span> <span>🚗 Audi</span> <span>🍸 local bar</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- блок 8: КОНТАКТ / cta -->
+    <section class="section" id="contact">
+        <div class="container">
+            <h2 class="reveal">для коллабораций</h2>
+            <div class="grid-2 reveal">
+                <div class="card" style="background: #1c1c26;">
+                    <span class="icon-bullet">✉️</span> a.kosh@edit.studio
+                </div>
+                <div class="card" style="background: #1c1c26;">
+                    <span class="icon-bullet">📞</span> +7 (999) 123-45-67
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- блок 9: ФУТЕР -->
+    <footer class="footer">
+        <div class="container">
+            <p>© Alex Kosh · режиссер монтажа · 2025</p>
+            <p style="margin-top: 1.5rem; font-size: 0.9rem; letter-spacing: 1px;">✶ портфолио для взыскательных клиентов ✶</p>
+        </div>
+    </footer>
+
+    <!-- JS весь тут: анимации шапки, скролл, таймер, появление блоков -->
+    <script>
+        (function() {
+            // ---- эффект скролла для шапки (компакт) ----
+            const header = document.getElementById('mainHeader');
+            const progressBar = document.getElementById('progressBar');
+            
+            function updateHeaderOnScroll() {
+                if (window.scrollY > 30) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+                // progress bar width
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                progressBar.style.width = scrolled + '%';
+            }
+            window.addEventListener('scroll', updateHeaderOnScroll);
+            updateHeaderOnScroll(); // init
+
+            // ---- живые часы в шапке + эффект обновления ----
+            function updateTime() {
+                const d = new Date();
+                const hours = d.getHours().toString().padStart(2,'0');
+                const mins = d.getMinutes().toString().padStart(2,'0');
+                const timeStr = `${hours}:${mins} GMT+3`;
+                document.getElementById('liveTime').innerText = timeStr;
+            }
+            updateTime();
+            setInterval(updateTime, 1000);
+
+            // ---- анимация появления блоков (reveal) + твист с подсветкой ----
+            const reveals = document.querySelectorAll('.reveal');
+            function checkReveal() {
+                for (let el of reveals) {
+                    const rect = el.getBoundingClientRect();
+                    const windowHeight = window.innerHeight;
+                    // если элемент виден (чуть выше нижнего края)
+                    if (rect.top < windowHeight * 0.85) {
+                        el.classList.add('active');
+                        // добавим редкий эффект — свечение текста при активации
+                        if (el.querySelector('h2')) {
+                            el.querySelector('h2').classList.add('glow-text');
+                            setTimeout(() => {
+                                if (el.querySelector('h2')) 
+                                    el.querySelector('h2').classList.remove('glow-text');
+                            }, 800);
+                        }
+                    } else {
+                        // можно убирать, но оставим активным навсегда
+                    }
+                }
+            }
+            window.addEventListener('scroll', checkReveal);
+            window.addEventListener('resize', checkReveal);
+            checkReveal(); // старт
+
+            // ---- мини-анимация счетчика в блоке reel (при достижении) ----
+            const reelCounter = document.getElementById('reelCounter');
+            let counterTriggered = false;
+            function animateCounter() {
+                if (!reelCounter) return;
+                const rect = reelCounter.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 100 && !counterTriggered) {
+                    counterTriggered = true;
+                    let val = 0;
+                    const target = 24; // количество побед
+                    const interval = setInterval(() => {
+                        if (val >= target) {
+                            reelCounter.innerText = '🏆 24 награды';
+                            clearInterval(interval);
+                            return;
+                        }
+                        val += 1;
+                        reelCounter.innerText = `🏆 ${val} наград`;
+                    }, 60);
+                }
+            }
+            window.addEventListener('scroll', animateCounter);
+            animateCounter();
+
+            // ---- дополнительная анимация: динамичный фон в шапке (пульс) ----
+            const liveDot = document.querySelector('.live-dot');
+            if (liveDot) {
+                setInterval(() => {
+                    liveDot.style.background = '#f5f05c';
+                    setTimeout(() => liveDot.style.background = '#6df06d', 200);
+                }, 3000);
+            }
+
+            // ---- якоря с плавным скроллом (дополнительно) ----
+            document.querySelectorAll('.nav a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1); // убираем #
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+
+            // ---- мелкий эффект "подмигивания" меню ----
+            const navItems = document.querySelectorAll('.nav a');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                const sections = document.querySelectorAll('.section');
+                sections.forEach(s => {
+                    const sectionTop = s.offsetTop - 150;
+                    if (scrollY >= sectionTop) {
+                        current = s.getAttribute('id');
+                    }
+                });
+                navItems.forEach(a => {
+                    a.style.borderBottomColor = 'transparent';
+                    if (a.getAttribute('href') === `#${current}`) {
+                        a.style.borderBottomColor = '#ffd966';
+                        a.style.color = '#ffffff';
+                    } else {
+                        a.style.color = '#bfc8d9';
+                    }
+                });
+            });
+        })();
+    </script>
+    <!-- финальная строка по заданию -->
+    All done!
+</body>
+</html>
+```

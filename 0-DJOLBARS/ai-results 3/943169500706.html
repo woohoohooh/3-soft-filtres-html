@@ -1,0 +1,568 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lenscape · Портфолио фотографа</title>
+  <!-- Font Awesome 6 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #f3f5f9;
+      color: #1b1e2f;
+      line-height: 1.4;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
+
+    /* интерфейсная сетка */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+
+    /* фиксированная нав. палочка — с динамическим сжатием */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 80px);
+      max-width: 1220px;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px) saturate(180%);
+      border-radius: 3.5rem;
+      padding: 0.8rem 2.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 20px 35px -8px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.6) inset;
+      z-index: 1000;
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    /* компактный вид при скролле (js добавит класс .navbar-shrink) */
+    .navbar.navbar-shrink {
+      top: 12px;
+      padding: 0.35rem 1.8rem;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 15px 30px -10px rgba(0,0,0,0.2);
+    }
+
+    .logo a {
+      font-weight: 800;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(130deg, #23232e, #4b3f6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.2rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      font-weight: 550;
+      font-size: 1.05rem;
+      color: #1e1e2c;
+      transition: 0.2s;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 4px;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: #6d5b98;
+      color: #2a2340;
+    }
+
+    /* акцентная кнопка */
+    .btn-cta {
+      background: #1f1a2e;
+      color: white !important;
+      padding: 8px 20px !important;
+      border-radius: 40px;
+      font-weight: 600;
+      border: none;
+      transition: all 0.25s ease !important;
+      box-shadow: 0 6px 14px rgba(48, 35, 75, 0.25);
+    }
+
+    .btn-cta:hover {
+      background: #352e4a;
+      transform: scale(1.02);
+      border-bottom-color: transparent !important;
+    }
+
+    /* общий стиль блоков */
+    .section {
+      min-height: 90vh;
+      display: flex;
+      align-items: center;
+      padding: 100px 0;
+      position: relative;
+      will-change: transform, opacity;
+    }
+
+    /* параллакс-тень при скролле — анимация появления (Intersection Observer) */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(35px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), transform 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    .fade-up.appeared {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* заголовки */
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    .accent-span {
+      display: inline-block;
+      border-bottom: 4px solid #b7a8dd;
+      padding-bottom: 6px;
+    }
+
+    /* Hero / шапка */
+    .hero {
+      background: radial-gradient(ellipse at 80% 30%, #e2dcf1, #cdc3e0 70%);
+      position: relative;
+      isolation: isolate;
+    }
+
+    .hero-content {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .hero h1 {
+      font-size: 4.2rem;
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: #14121c;
+    }
+
+    .hero-highlight {
+      background: linear-gradient(145deg, #5c4b81, #2e2740);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.3rem;
+      margin: 1.8rem 0 2.5rem;
+      color: #2d2a3a;
+      max-width: 90%;
+    }
+
+    /* анимированная сфера (JS canvas) */
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* карточки */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .service-card {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 2.5rem;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 20px 40px -20px rgba(0,0,0,0.3);
+      transition: transform 0.3s ease, box-shadow 0.4s;
+      border: 1px solid rgba(255,255,255,0.7);
+    }
+
+    .service-card:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 35px 40px -20px #3b2f55;
+    }
+
+    .service-card i {
+      font-size: 2.8rem;
+      background: linear-gradient(45deg, #40375c, #735faa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+
+    /* портфолио галерея-сетка (плейсхолдеры без картинок) */
+    .gallery-strip {
+      display: flex;
+      gap: 1.8rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .gallery-item {
+      background: #ded6ec;
+      border-radius: 3rem;
+      height: 270px;
+      width: 240px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #2c243b;
+      font-weight: 600;
+      font-size: 1.2rem;
+      box-shadow: 0 30px 30px -20px rgba(65, 45, 95, 0.4);
+      transition: 0.2s;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .gallery-item i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      color: #584a78;
+    }
+
+    /* блок с testimonial */
+    .testimonial-card {
+      background: white;
+      border-radius: 3rem;
+      padding: 3rem;
+      width: 75%;
+      margin: 0 auto;
+      box-shadow: 0 30px 40px -30px #2e2740;
+      border: 1px solid #ffffffaa;
+    }
+
+    .footer {
+      background: #151221;
+      color: #ccc4e0;
+      padding: 3.5rem 0;
+      border-top-left-radius: 4rem;
+      border-top-right-radius: 4rem;
+    }
+
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .social-links i {
+      font-size: 1.8rem;
+      margin-left: 1.5rem;
+      color: #b7abd3;
+      transition: 0.2s;
+    }
+
+    .social-links i:hover {
+      color: white;
+      transform: scale(1.1);
+    }
+
+    hr {
+      border: 0.5px solid #3a314e;
+      margin: 2.5rem 0 2rem;
+    }
+
+    /* микро-анимации на ссылки меню (активный раздел) */
+    .nav-links a.active-nav {
+      border-bottom-color: #6d5b98;
+      color: #201c2b;
+      font-weight: 650;
+    }
+
+    @media (max-width: 1000px) {
+      .hero-content { grid-template-columns: 1fr; }
+      .container { padding: 0 30px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="hero-canvas"></canvas>
+
+  <!-- фиксированная шапка с якорями -->
+  <nav class="navbar" id="mainNav">
+    <div class="logo"><a href="#">LENSCAPE.</a></div>
+    <div class="nav-links">
+      <a href="#work" class="nav-link">Портфолио</a>
+      <a href="#services" class="nav-link">Услуги</a>
+      <a href="#about" class="nav-link">Обо мне</a>
+      <a href="#contact" class="nav-link">Контакты</a>
+      <a href="#consult" class="btn-cta">Запись <i class="fas fa-arrow-right" style="margin-left: 6px;"></i></a>
+    </div>
+  </nav>
+
+  <!-- БЛОК 1: Hero с анимацией (canvas) -->
+  <section class="section hero" id="home">
+    <div class="container hero-content">
+      <div class="fade-up">
+        <h1>Кадры, <span class="hero-highlight">о которых говорят</span></h1>
+        <p>Репортажная и портретная съёмка по всему миру. Искренние эмоции, безупречный свет и ваша история в фотографиях.</p>
+        <a href="#consult" class="btn-cta" style="display: inline-block; padding: 14px 38px; font-size: 1.2rem;">Обсудить проект</a>
+      </div>
+      <div class="fade-up" style="text-align: center;">
+        <!-- декоративный элемент (иконка/визуал) -->
+        <i class="fas fa-camera-retro" style="font-size: 10rem; color: #fff; opacity: 0.3; mix-blend-mode: overlay;"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: Портфолио (галерея иконок) -->
+  <section class="section" id="work">
+    <div class="container">
+      <h2 class="fade-up"><span class="accent-span">Портфолио</span> — свежие работы</h2>
+      <div class="gallery-strip fade-up">
+        <div class="gallery-item"><i class="fas fa-tree"></i> Nature</div>
+        <div class="gallery-item"><i class="fas fa-people-arrows"></i> Репортаж</div>
+        <div class="gallery-item"><i class="fas fa-ring"></i> Свадьбы</div>
+        <div class="gallery-item"><i class="fas fa-city"></i> Город</div>
+        <div class="gallery-item"><i class="fas fa-crown"></i> Fashion</div>
+      </div>
+      <p class="fade-up" style="margin-top: 2.5rem; font-size: 1.2rem; opacity: 0.8;"><i class="fas fa-plus-circle"></i> Более 300 завершённых проектов</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: Услуги / карточки -->
+  <section class="section" id="services">
+    <div class="container">
+      <h2 class="fade-up"><span class="accent-span">Услуги</span> и пакеты</h2>
+      <div class="card-grid">
+        <div class="service-card fade-up"><i class="fas fa-camera"></i><h3>Портретная</h3><p>Индивидуальная или парная съёмка в студии / на локации. 2 часа, 50 обработанных фото.</p></div>
+        <div class="service-card fade-up"><i class="fas fa-video"></i><h3>Репортаж</h3><p>Мероприятия, конференции, корпоративы. Более 5 часов съёмки, быстрая отдача.</p></div>
+        <div class="service-card fade-up"><i class="fas fa-heart"></i><h3>Love story</h3><p>Романтическая выездная съёмка. Стилизация, подготовка образа, готовый альбом.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: О себе / филосфия -->
+  <section class="section" id="about">
+    <div class="container" style="display: flex; gap: 4rem; align-items: center;">
+      <div class="fade-up" style="flex:1">
+        <h2>Привет, я <span class="hero-highlight">Алиса</span></h2>
+        <p style="font-size: 1.3rem;">Фотограф с 10-летним опытом, работаю с Vogue, брендами и просто прекрасными людьми. Люблю естественный свет, чистые цвета и ничего постановочного.</p>
+        <p style="margin-top:1.5rem;"><i class="fas fa-check-circle" style="color:#584a78;"></i> Более 50 довольных брендов</p>
+      </div>
+      <div class="fade-up" style="flex:1; background: #cdc0e6; border-radius: 100px 30px 100px 30px; height: 300px; display: flex; align-items: center; justify-content: center;">
+        <i class="fas fa-smile" style="font-size: 7rem; color: #3e315b;"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: отзыв (testimonial) -->
+  <section class="section" id="testimonials">
+    <div class="container">
+      <div class="testimonial-card fade-up">
+        <i class="fas fa-quote-left" style="font-size: 3rem; color: #d5c9f0; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.7rem; font-weight: 400; line-height: 1.3;">«Лучший фотограф, с кем мы работали. Полное погружение, чуткость и результат, от которого мурашки».</p>
+        <p style="margin-top: 2rem;">— Екатерина, бренд LUNA</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: Особый подход (с иконками) -->
+  <section class="section">
+    <div class="container">
+      <h2 class="fade-up"><span class="accent-span">Преимущества</span> работы</h2>
+      <div style="display: flex; gap: 4rem; flex-wrap: wrap; justify-content: center; margin-top: 3rem;">
+        <div class="fade-up" style="text-align: center;"><i class="fas fa-bolt" style="font-size: 3rem;"></i><h4>Моментальная цветокоррекция</h4></div>
+        <div class="fade-up" style="text-align: center;"><i class="fas fa-cloud-sun" style="font-size: 3rem;"></i><h4>Работа в любых условиях</h4></div>
+        <div class="fade-up" style="text-align: center;"><i class="fas fa-infinity" style="font-size: 3rem;"></i><h4>Коммерческие права</h4></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: консультация/контакт -->
+  <section class="section" id="consult">
+    <div class="container" style="text-align: center;">
+      <div class="fade-up" style="background: #ded3f1; border-radius: 120px; padding: 4rem 2rem;">
+        <h2 style="font-size: 3rem;">Хотите так же?</h2>
+        <p style="font-size: 1.4rem; margin-bottom: 2rem;">Заполните заявку — я свяжусь в течение часа</p>
+        <a href="#" class="btn-cta" style="background: #2d1f44; font-size: 1.4rem; padding: 14px 48px;">написать в Telegram <i class="fab fa-telegram"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: контакты / соцсети -->
+  <section class="section" id="contact" style="min-height: auto; padding: 60px 0;">
+    <div class="container">
+      <div class="fade-up" style="display: flex; gap: 3rem; justify-content: space-between; background: rgba(255,255,255,0.2); border-radius: 4rem; padding: 3rem;">
+        <div><i class="fas fa-phone-alt"></i> +49 123 456 789</div>
+        <div><i class="fas fa-envelope"></i> hello@lenscape.portfolio</div>
+        <div><i class="fab fa-instagram"></i> @lenscape.alisa</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <span>© 2025 Lenscape — визуальный контент</span>
+        <div class="social-links">
+          <i class="fab fa-behance"></i>
+          <i class="fab fa-instagram"></i>
+          <i class="fab fa-linkedin"></i>
+        </div>
+      </div>
+      <hr>
+      <p style="font-size: 0.9rem;">Сделано для вдохновения · все права защищены</p>
+    </div>
+  </footer>
+
+  <!-- JS анимации: навбар сжатие, появление блоков (intersection), кастомная подсветка меню, canvas фон -->
+  <script>
+    (function() {
+      // 1) navbar shrink + активные пункты
+      const navbar = document.getElementById('mainNav');
+      const navLinks = document.querySelectorAll('.nav-link');
+      const sections = document.querySelectorAll('.section');
+
+      function onScroll() {
+        // сжатие
+        if (window.scrollY > 60) {
+          navbar.classList.add('navbar-shrink');
+        } else {
+          navbar.classList.remove('navbar-shrink');
+        }
+
+        // подсветка меню (active)
+        let current = '';
+        sections.forEach(section => {
+          const sectionTop = section.offsetTop - 120;
+          const sectionBottom = sectionTop + section.offsetHeight;
+          if (window.scrollY >= sectionTop && window.scrollY < sectionBottom) {
+            current = section.getAttribute('id') || '';
+          }
+        });
+
+        navLinks.forEach(link => {
+          link.classList.remove('active-nav');
+          const href = link.getAttribute('href').replace('#', '');
+          if (href === current) {
+            link.classList.add('active-nav');
+          }
+        });
+      }
+      window.addEventListener('scroll', onScroll);
+      onScroll(); // сразу
+
+      // 2) Intersection Observer — появление блоков (fade-up)
+      const fadeElements = document.querySelectorAll('.fade-up');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('appeared');
+            observer.unobserve(entry.target); // один раз
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' });
+
+      fadeElements.forEach(el => observer.observe(el));
+
+      // 3) canvas animation (абстрактная сфера)
+      const canvas = document.getElementById('hero-canvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        particles = [];
+        for (let i = 0; i < 40; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 8 + 3,
+            speedX: (Math.random() - 0.5) * 0.3,
+            speedY: (Math.random() - 0.5) * 0.15,
+            color: `rgba(180, 165, 220, ${Math.random() * 0.3 + 0.2})`
+          });
+        }
+      }
+
+      function drawCanvas() {
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+          // движение
+          p.x += p.speedX;
+          p.y += p.speedY;
+          // зацикливание
+          if (p.x < -20) p.x = width + 20;
+          if (p.x > width + 20) p.x = -20;
+          if (p.y < -20) p.y = height + 20;
+          if (p.y > height + 20) p.y = -20;
+        });
+        requestAnimationFrame(drawCanvas);
+      }
+
+      window.addEventListener('resize', () => {
+        initCanvas();
+      });
+
+      initCanvas();
+      drawCanvas();
+
+      // 4) дополнительная анимация — при наведении на карточки (акцент)
+      // уже в css
+    })();
+  </script>
+
+  <!-- якоря плавный переход (легкий) -->
+  <script>
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if(target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+
+  <!-- микро-подсветка кнопок -->
+</body>
+</html>
+All done!
+```

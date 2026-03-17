@@ -1,0 +1,492 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avra · tax & finance · minimal audit</title>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f6f4f0;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.4;
+      color: #1b2b40;
+      scroll-behavior: smooth;
+    }
+
+    /* интер, но без гугл-шрифтов — system-ui достаточно */
+    h1, h2, h3, .nav-logo {
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    /* фикс. меню с изменением при скролле */
+    .header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      padding: 1.2rem 2.5rem;
+      background: rgba(246, 244, 240, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(0,0,0,0.02);
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header.compact {
+      padding: 0.6rem 2.5rem;
+      background: rgba(246, 244, 240, 0.9);
+      box-shadow: 0 6px 18px rgba(0,10,20,0.04);
+    }
+
+    .nav-logo {
+      font-size: 1.8rem;
+      font-weight: 500;
+      background: linear-gradient(145deg, #162b3a, #2b4b5c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: transform 0.2s;
+    }
+
+    .nav-logo i {
+      background: none;
+      -webkit-text-fill-color: #2b4b5c;
+      margin-right: 6px;
+      font-size: 1.8rem;
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 2.5rem;
+      font-weight: 450;
+    }
+
+    .nav-menu a {
+      text-decoration: none;
+      color: #1f3a4b;
+      font-size: 1rem;
+      border-bottom: 1px solid transparent;
+      transition: 0.2s;
+    }
+
+    .nav-menu a:hover {
+      border-bottom: 1px solid #2b4b5c;
+      color: #0f2a38;
+    }
+
+    /* основной контейнер */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* блоки = 9 шт */
+    section {
+      scroll-margin-top: 80px;
+    }
+
+    .block {
+      min-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5rem 0;
+      border-bottom: 1px solid rgba(43, 75, 92, 0.06);
+    }
+
+    /* hero (блок 1) + анимация шапки (js канвас) */
+    .hero {
+      min-height: 100vh;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #canvas-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      max-width: 700px;
+    }
+
+    .hero h1 {
+      font-size: 4.2rem;
+      font-weight: 500;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      color: #162b3a;
+      text-shadow: 0 2px 5px rgba(255,255,240,0.5);
+    }
+
+    .hero .accent {
+      font-style: italic;
+      font-weight: 300;
+      color: #4d707f;
+    }
+
+    /* плавающие иконки в hero (доп эфект) */
+    .float-icon {
+      position: absolute;
+      font-size: 2rem;
+      color: #456d80;
+      opacity: 0.2;
+      z-index: 0;
+      animation: float 8s infinite alternate ease-in-out;
+    }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(20px, -20px) rotate(5deg); }
+    }
+
+    /* блоки с анимацией появления при скролле */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.1, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.1, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* сетка */
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 3rem;
+      margin-top: 2.5rem;
+    }
+
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .card {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(4px);
+      padding: 2.5rem 2rem;
+      border-radius: 48px 16px 48px 16px;
+      border: 1px solid rgba(43, 75, 92, 0.1);
+      transition: all 0.25s;
+      box-shadow: 0 20px 30px -20px rgba(0,20,30,0.15);
+    }
+
+    .card:hover {
+      background: white;
+      border-color: #aac2cc;
+      transform: translateY(-6px);
+    }
+
+    .card i {
+      font-size: 2.6rem;
+      color: #2b4b5c;
+      margin-bottom: 1.2rem;
+    }
+
+    .badge {
+      background: #2b4b5c;
+      color: #edeae2;
+      padding: 0.2rem 1rem;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      width: fit-content;
+    }
+
+    /* футер */
+    .footer {
+      background: #162b3a;
+      color: #d4dadf;
+      padding: 3rem 2rem;
+      border-top: 1px solid #244c5e;
+    }
+
+    .footer-inner {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .footer a {
+      color: #bdd3dd;
+      text-decoration: none;
+      margin-left: 2rem;
+    }
+
+    /* прочие детали */
+    .stat-number {
+      font-size: 3rem;
+      font-weight: 400;
+      color: #162b3a;
+      line-height: 1;
+    }
+
+    .separator {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #2b4b5c, transparent);
+      width: 120px;
+      margin: 2rem 0;
+    }
+
+    @media (max-width: 900px) {
+      .grid-3 { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 3rem; }
+      .header { padding: 1rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- фиксированное меню (шапка) блок №1 (часть) + анимация canvas-->
+  <header class="header" id="mainHeader">
+    <div class="nav-logo"><i class="fas fa-balance-scale"></i> lex aura</div>
+    <div class="nav-menu">
+      <a href="#home">главная</a>
+      <a href="#practice">практика</a>
+      <a href="#cases">кейсы</a>
+      <a href="#process">процесс</a>
+      <a href="#contact">контакт</a>
+    </div>
+  </header>
+
+  <!-- canvas для анимации в шапке (js) -->
+  <canvas id="canvas-bg"></canvas>
+
+  <!-- БЛОК 1: Hero / home -->
+  <section id="home" class="block hero">
+    <div class="container hero-content">
+      <div class="badge" style="margin-bottom: 1.5rem;">• адвокатское бюро • доверие</div>
+      <h1>защита<br>без компромиссов <span class="accent">— опыт, исчисляемый десятилетиями</span></h1>
+      <p style="font-size: 1.3rem; max-width: 600px; color: #2b4b5c;">Переговоры, арбитраж, уголовная практика. Работаем с 2009 года.</p>
+      <div style="margin-top: 2.5rem; display: flex; gap: 1.5rem; align-items: center;">
+        <a href="#contact" style="background: #162b3a; color: white; padding: 0.9rem 2.6rem; border-radius: 60px; text-decoration: none; font-weight: 500;">консультация <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></a>
+        <span style="border-bottom: 1px solid #162b3a; padding-bottom: 4px;">150+ выигранных дел</span>
+      </div>
+    </div>
+    <!-- плавающие иконки для украшения -->
+    <div class="float-icon" style="top: 25%; left: 70%;"><i class="fas fa-gavel"></i></div>
+    <div class="float-icon" style="top: 65%; left: 15%;"><i class="fas fa-handshake"></i></div>
+    <div class="float-icon" style="top: 75%; left: 80%;"><i class="fas fa-shield-alt"></i></div>
+  </section>
+
+  <!-- БЛОК 2: цифры/доверие -->
+  <section id="practice" class="block">
+    <div class="container reveal">
+      <h2 style="font-size: 2.8rem; font-weight: 450;">цифры, за которые<br>не стыдно</h2>
+      <div class="separator"></div>
+      <div class="grid-3" style="margin-top: 2rem;">
+        <div class="card"><i class="fas fa-trophy"></i><div class="stat-number">17</div> <h3>лет практики</h3><p>без единого дисциплинарного взыскания</p></div>
+        <div class="card"><i class="fas fa-briefcase"></i><div class="stat-number">2,8 млрд</div><h3>руб. защищённых активов</h3><p>в спорах с госорганами и контрагентами</p></div>
+        <div class="card"><i class="fas fa-scale-balanced"></i><div class="stat-number">94%</div><h3>успешных кассаций</h3><p>выше среднего по рынку</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: направления (иконки стильные) -->
+  <section class="block">
+    <div class="container reveal">
+      <h2 style="font-size: 2.6rem;">практика <i class="fas fa-circle-nodes" style="color:#2b4b5c;"></i></h2>
+      <div class="grid-2" style="margin-top: 2rem;">
+        <div class="card"><i class="fas fa-landmark"></i><h3>Арбитраж & корпоративные споры</h3><p>Сопровождение споров акционеров, взыскание убытков, оспаривание сделок.</p></div>
+        <div class="card"><i class="fas fa-handcuffs"></i><h3>Уголовно-правовая защита</h3><p>Бизнес-преступления, экономические составы, защита на следствии.</p></div>
+        <div class="card"><i class="fas fa-file-contract"></i><h3>Договорная работа</h3><p>Аудит контрактов, due diligence, международные контракты.</p></div>
+        <div class="card"><i class="fas fa-building"></i><h3>Налоговые споры</h3><p>Досудебное урегулирование, обжалование решений ФНС.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: кейсы (до/после) -->
+  <section id="cases" class="block">
+    <div class="container reveal">
+      <span class="badge">резонансные дела</span>
+      <h2 style="font-size: 2.6rem; margin: 0.5rem 0 1.5rem;">кейсы, изменившие практику</h2>
+      <div class="grid-2">
+        <div class="card" style="border-radius: 24px;"><i class="fas fa-scale-balanced"></i><h3>№ А40-1234/2023</h3><p>Отмена решения ФАС о штрафе 70 млн руб. — доказано отсутствие картельного сговора.</p></div>
+        <div class="card" style="border-radius: 24px;"><i class="fas fa-gavel"></i><h3>Дело «СтройИнвест»</h3><p>Прекращение уголовного дела о мошенничестве на этапе предварительного следствия.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: процесс (как работаем) -->
+  <section id="process" class="block">
+    <div class="container reveal">
+      <h2>процесс — максимально прозрачный</h2>
+      <div class="grid-3" style="margin-top: 3rem;">
+        <div><i class="fas fa-magnifying-glass" style="font-size: 2rem;"></i><h3>диагностика</h3><p>Анализ перспектив, рисков, судебной практики конкретного судьи.</p></div>
+        <div><i class="fas fa-people-arrows" style="font-size: 2rem;"></i><h3>стратегия</h3><p>Выбираем позицию: контрнаступление или досудебное урегулирование.</p></div>
+        <div><i class="fas fa-check-double" style="font-size: 2rem;"></i><h3>реализация</h3><p>Сопровождение до финала, включая исполнительное производство.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: команда (доверие) -->
+  <section class="block">
+    <div class="container reveal">
+      <div style="display: flex; gap: 4rem; align-items: center; flex-wrap: wrap;">
+        <div><i class="fas fa-user-tie" style="font-size: 4rem; color: #1f3a4b;"></i></div>
+        <div><h3>Алексей Градов, managing partner</h3><p>Кандидат юридических наук, 20 лет практики. Рекомендован Best Lawyers 2024.</p></div>
+        <div><i class="fas fa-user-shield" style="font-size: 4rem; color: #1f3a4b;"></i></div>
+        <div><h3>Екатерина Ветрова, к.ю.н.</h3><p>Специализация — налоговые споры и защита интеллектуальной собственности.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: отзывы / клиенты (текст) -->
+  <section class="block">
+    <div class="container reveal">
+      <i class="fas fa-quote-right" style="font-size: 3rem; opacity: 0.2;"></i>
+      <p style="font-size: 1.8rem; max-width: 800px; font-style: italic;">«Lex Aura помогли сохранить контроль над компанией в споре с миноритариями — спасли бизнес»</p>
+      <p>— основатель ГК «ТехноПром»</p>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: контакты / форма -->
+  <section id="contact" class="block">
+    <div class="container reveal">
+      <h2 style="font-size: 2.6rem;">назначить встречу</h2>
+      <div class="grid-2" style="margin-top: 2rem;">
+        <div>
+          <p><i class="fas fa-phone"></i> +7 (495) 123-45-67</p>
+          <p><i class="fas fa-envelope"></i> hello@lexaura.ru</p>
+          <p><i class="fas fa-location-dot"></i> Москва, Гагаринский пер., 3</p>
+        </div>
+        <div style="background: #fff; padding: 2rem; border-radius: 32px;">
+          <p>Заполните форму — мы свяжемся в течение 2 часов</p>
+          <div style="display: flex; gap: 1rem; margin-top: 1rem;"><input type="text" placeholder="телефон" style="padding: 1rem; width:100%; border: 1px solid #ccc; border-radius: 60px;"></div>
+          <div style="margin-top: 1rem;"><a href="#" style="background: #162b3a; color: white; padding: 0.9rem 2rem; border-radius: 60px; display: inline-block;">отправить →</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>© 2025 Lex Aura — адвокатское бюро</div>
+      <div><a href="#home">наверх <i class="fas fa-arrow-up"></i></a></div>
+    </div>
+  </footer>
+
+  <!-- анимации и скрипты -->
+  <script>
+    (function() {
+      // компактный хедер при скролле
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 40) {
+          header.classList.add('compact');
+        } else {
+          header.classList.remove('compact');
+        }
+      });
+
+      // активация блоков при скролле (reveal)
+      const reveals = document.querySelectorAll('.reveal');
+      function checkReveal() {
+        for (let el of reveals) {
+          const windowHeight = window.innerHeight;
+          const revealTop = el.getBoundingClientRect().top;
+          const revealPoint = 100;
+          if (revealTop < windowHeight - revealPoint) {
+            el.classList.add('active');
+          } else {
+            el.classList.remove('active'); // чтоб красиво убиралось, но можно оставить и без удаления
+          }
+        }
+      }
+      window.addEventListener('scroll', checkReveal);
+      window.addEventListener('load', checkReveal);
+
+      // canvas анимация в шапке (под блоком hero)
+      const canvas = document.getElementById('canvas-bg');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        particles = [];
+        for (let i = 0; i < 30; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.2,
+            radius: Math.random() * 2 + 1,
+            color: `rgba(43,75,92,${Math.random() * 0.3 + 0.1})`
+          });
+        }
+      }
+
+      function drawCanvas() {
+        ctx.clearRect(0, 0, width, height);
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > width) p.vx *= -1;
+          if (p.y < 0 || p.y > height) p.vy *= -1;
+        }
+        requestAnimationFrame(drawCanvas);
+      }
+
+      window.addEventListener('resize', () => {
+        initCanvas();
+      });
+
+      initCanvas();
+      drawCanvas();
+
+      // плавный скролл якорей
+      document.querySelectorAll('.nav-menu a, .footer a[href="#home"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          const href = this.getAttribute('href');
+          if (href && href.startsWith('#')) {
+            e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+
+    })();
+  </script>
+
+  <!-- All done! (ниже) -->
+</body>
+</html>
+All done!
+```

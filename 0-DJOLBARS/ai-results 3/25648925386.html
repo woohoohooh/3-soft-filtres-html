@@ -1,0 +1,578 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Иммерсивный портфолио · студия живого дизайна</title>
+    <!-- Font Awesome 6 (стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f7f7f9;
+            color: #1a1e2b;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* плавный скролл + якоря */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* кастомная анимация появления блоков (IntersectionObserver подключается в js) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .fade-up.appeared {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* фиксированная шапка с анимацией сжатия */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 28px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.4s ease;
+            background: rgba(247, 247, 249, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+        }
+
+        header.compact {
+            padding: 14px 48px;
+            background: rgba(247, 247, 249, 0.95);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.03);
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #21263f, #3f3f6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 44px;
+            font-weight: 500;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #1e1e2c;
+            font-size: 1.0rem;
+            position: relative;
+            transition: 0.2s;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: #5959b3;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* главная секция с анимацией js (титры + эффект) */
+        .hero {
+            margin-top: 140px;
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            padding: 0 48px;
+            background: #f7f7f9;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            position: relative;
+            z-index: 3;
+        }
+
+        .hero h1 {
+            font-size: 4.8rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(150deg, #141824, #38385c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: #3b3b4f;
+            max-width: 600px;
+            margin-bottom: 40px;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 16px 42px;
+            border-radius: 60px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.3s;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #1f2335;
+            color: white;
+            box-shadow: 0 15px 30px -10px rgba(26, 30, 43, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #2b2f4a;
+            transform: translateY(-4px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #1f2335;
+            color: #1f2335;
+        }
+
+        .btn-outline:hover {
+            background: #1f2335;
+            color: white;
+        }
+
+        /* фоновая анимация в шапке через js (вращающиеся иконки) */
+        .hero-bg-animation {
+            position: absolute;
+            top: 0;
+            right: -50px;
+            width: 700px;
+            height: 700px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.5;
+        }
+
+        .floating-icon {
+            position: absolute;
+            font-size: 2rem;
+            color: #c7c7dd;
+            transition: transform 0.2s;
+            animation: float 9s infinite alternate ease-in-out;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-40px) rotate(8deg); }
+        }
+
+        /* общие блоки */
+        .section {
+            padding: 110px 48px;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .section-title {
+            font-size: 3.2rem;
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            margin-bottom: 50px;
+            background: linear-gradient(130deg, #1b1f32, #494971);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid-2col, .grid-3col {
+            display: grid;
+            gap: 40px;
+        }
+
+        .grid-2col {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .grid-3col {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        /* карточки */
+        .card {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(6px);
+            padding: 40px 32px;
+            border-radius: 40px;
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.4s;
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        .card:hover {
+            transform: translateY(-12px) scale(1.01);
+            box-shadow: 0 40px 60px -15px rgba(60,60,120,0.2);
+        }
+
+        .card i {
+            font-size: 2.8rem;
+            color: #40407a;
+            margin-bottom: 25px;
+        }
+
+        .card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            color: #3e3e55;
+        }
+
+        /* иконки контактов / фишек */
+        .icon-lg {
+            font-size: 2.5rem;
+            color: #3b3b70;
+            margin-bottom: 20px;
+        }
+
+        /* футер */
+        footer {
+            padding: 60px 48px 40px;
+            background: #eaeaf0;
+            border-top: 1px solid #dbdbe5;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+
+        .social-links a {
+            color: #2e2e4a;
+            font-size: 1.8rem;
+            margin-left: 30px;
+            transition: 0.2s;
+        }
+
+        .social-links a:hover {
+            color: #5959b3;
+            transform: scale(1.15);
+        }
+
+        .copyright {
+            color: #4d4d66;
+        }
+
+        /* яркие точечные эффекты при скролле — подсветка активного меню */
+        .nav-links a.active {
+            color: #3f3f87;
+            font-weight: 600;
+        }
+
+        .nav-links a.active::after {
+            width: 100%;
+            background: #7d7dc0;
+        }
+    </style>
+</head>
+<body>
+    <!-- ФИКСИРОВАННАЯ ШАПКА (БЛОК 1) -->
+    <header id="mainHeader">
+        <div class="logo"><i class="fas fa-bolt" style="margin-right: 8px; color: #3f3f6b;"></i>im studio</div>
+        <div class="nav-links">
+            <a href="#hero">встреча</a>
+            <a href="#services">изюм</a>
+            <a href="#works">лента</a>
+            <a href="#about">ядро</a>
+            <a href="#contact">связь</a>
+        </div>
+    </header>
+
+    <!-- ГЛАВНЫЙ БЛОК 2: HERO с анимацией через JS (плавающие иконки) -->
+    <section id="hero" class="hero fade-up">
+        <div class="hero-content">
+            <h1>свежий код, <br>живые пиксели</h1>
+            <p>Показываю диджитал-работы так, что клиенты забывают про скучные брифинги. Интерактив, магия, результат.</p>
+            <div class="hero-cta">
+                <a href="#contact" class="btn btn-primary">начать проект</a>
+                <a href="#works" class="btn btn-outline">портфолио</a>
+            </div>
+        </div>
+        <!-- сюда js подвесит плавающие иконки -->
+        <div id="heroAnimation" class="hero-bg-animation"></div>
+    </section>
+
+    <!-- БЛОК 3: услуги / специализация -->
+    <section id="services" class="section fade-up">
+        <h2 class="section-title">в чём соль</h2>
+        <div class="grid-3col">
+            <div class="card">
+                <i class="fas fa-cubes"></i>
+                <h3>интерактив-дизайн</h3>
+                <p>Не просто картинка, а отклик на каждое движение. Сайты с душой и микро-анимацией.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-chart-line"></i>
+                <h3>рост метрик</h3>
+                <p>Лендинги под ключ, которые конвертят внимание в заявки. B2B, услуги, портфолио.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-paint-brush"></i>
+                <h3>айдентика жестов</h3>
+                <p>Логотипы, мелодия бренда и визуальный язык, который видно в каждой детали.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: недавние работы / портфолио (реальные кейсы) -->
+    <section id="works" class="section fade-up" style="background: #f0f0f5;">
+        <h2 class="section-title">свежие кадры</h2>
+        <div class="grid-2col">
+            <div class="card" style="background: white;">
+                <i class="fas fa-gem icon-lg"></i>
+                <h3>ювелирный бренд</h3>
+                <p>Анимация украшений при скролле — лиды +210% за месяц. (продающий лендинг)</p>
+            </div>
+            <div class="card" style="background: white;">
+                <i class="fas fa-mask icon-lg"></i>
+                <h3>адвокатское бюро</h3>
+                <p>Строгий стиль, но с живыми акцентами доверия. Кейсы вместо штампов.</p>
+            </div>
+            <div class="card" style="background: white;">
+                <i class="fas fa-hand-sparkles icon-lg"></i>
+                <h3>студия красоты</h3>
+                <p>До/после с параллаксом, бронь в один клик, wow-эффект для визажиста.</p>
+            </div>
+            <div class="card" style="background: white;">
+                <i class="fas fa-chart-pie icon-lg"></i>
+                <h3>финтех-дашборд</h3>
+                <p>Прототип для консультанта, интерактивные графики + понятные отчёты.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: процесс / как работаю (особенность) -->
+    <section class="section fade-up">
+        <h2 class="section-title">метод «ясный лёд»</h2>
+        <div class="grid-3col">
+            <div class="card">
+                <i class="fas fa-comments"></i>
+                <h3>01. Погружение</h3>
+                <p>Без воды — только ниша, конкуренты, точки касания. Фиксируем смыслы.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-code"></i>
+                <h3>02. Прототип + анимация</h3>
+                <p>Сразу живой html/css/js, никаких статичных картинок.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-rocket"></i>
+                <h3>03. обкатка</h3>
+                <p>Полировка взаимодействий, подсветка смыслов, запуск.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: обо мне (ядро) -->
+    <section id="about" class="section fade-up" style="background: #f2f2f8;">
+        <div style="max-width: 900px; margin: 0 auto; text-align: center;">
+            <i class="fas fa-user-astronaut" style="font-size: 4rem; color: #40407a; margin-bottom: 20px;"></i>
+            <h2 class="section-title" style="margin-bottom: 20px;">за пультом — Дэн</h2>
+            <p style="font-size: 1.3rem; color: #2f2f49;">10 лет во frontend и дизайне. Работал с финтехом, адвокатами, блогерами. Люблю, когда сайт щупают и не могут оторваться. Каждый пиксель — под задачу, каждый скролл — с интригой.</p>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: цифры / доверие -->
+    <section class="section fade-up">
+        <div class="grid-3col">
+            <div class="card" style="text-align: center;">
+                <i class="fas fa-bolt"></i>
+                <h2>127+</h2>
+                <p>проектов с живыми анимациями</p>
+            </div>
+            <div class="card" style="text-align: center;">
+                <i class="fas fa-smile"></i>
+                <h2>98%</h2>
+                <p>клиентов возвращаются</p>
+            </div>
+            <div class="card" style="text-align: center;">
+                <i class="fas fa-clock"></i>
+                <h2>14 дней</h2>
+                <p>средний срок лендинга</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: отзыв / соц.доказательство (имитация кейса) -->
+    <section class="section fade-up" style="background: #e8e8f0;">
+        <div style="max-width: 800px; margin: 0 auto; text-align: center;">
+            <i class="fas fa-quote-right" style="font-size: 3.5rem; color: #5c5c9c; opacity: 0.4;"></i>
+            <h3 style="font-size: 2rem; font-weight: 400; font-style: italic; line-height: 1.5;">«После обновления сайта клиенты думают, что мы крупная корпорация, хотя в штабе — 5 человек. Анимации делают своё дело.»</h3>
+            <p style="margin-top: 30px; font-weight: 600;">— Елена К., бухгалтерское бюро</p>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: КОНТАКТЫ / ФУТЕР (снизу футер, но мы делаем отдельный блок контактов + футер) 
+         фактически футер уже 9-й, но добавим контактный блок перед футером — итого 9 блоков.
+         Шапка (1) + hero(2) + сервисы(3) + works(4) + процесс(5) + about(6) + цифры(7) + testimonial(8) + contact(9) + футер.
+         но футер должен быть отдельно — давайте блок 9 будет контактный мини, а футер дополнительный, но тогда блоков 10.
+         уточнение: "шапка и футер = 2 блока, и так еще блоков 7 между ними, итого 9 блоков" — шапка(1), футер(9), и 7 блоков контента. 
+         Значит футер считаем отдельным, между ними ровно 7 блоков. Сделаем:
+         header (1)
+         hero (2)
+         services (3)
+         works (4)
+         process (5)
+         about (6)
+         numbers (7)
+         testimonial (8)
+         footer (9) — всё, 9 блоков.
+         Но контакты обычно внутри футера, так что добавим контактную информацию в footer.
+    -->
+    <footer id="contact" class="fade-up">
+        <div class="footer-content">
+            <div>
+                <div class="logo" style="font-size: 2rem;"><i class="fas fa-bolt"></i> im studio</div>
+                <p style="margin: 20px 0; max-width: 300px;">Наб. реки Фонтанки, 135 (online сначала)<br>+7 921 888-08-08<br>hello@imstudio.design</p>
+            </div>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-behance"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#"><i class="fab fa-github"></i></a>
+            </div>
+        </div>
+        <div class="copyright" style="margin-top: 50px; text-align: center; border-top: 1px dashed #b5b5d1; padding-top: 30px;">
+            <p>© 2025 — имиджевый лендинг для портфолио. Все реакции настоящие.</p>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // ========== 1. АНИМАЦИЯ ШАПКИ (компактная при скролле) ==========
+            const header = document.getElementById('mainHeader');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('compact');
+                } else {
+                    header.classList.remove('compact');
+                }
+            });
+
+            // ========== 2. ПЛАВАЮЩИЕ ИКОНКИ В HERO (JS анимация) ==========
+            const heroAnimationDiv = document.getElementById('heroAnimation');
+            const icons = ['fa-crown', 'fa-gem', 'fa-bolt', 'fa-cube', 'fa-hand-spock', 'fa-star', 'fa-meteor', 'fa-shapes'];
+            for (let i = 0; i < 14; i++) {
+                const iconEl = document.createElement('i');
+                const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+                iconEl.className = `fas ${randomIcon} floating-icon`;
+                // случайное положение внутри блока
+                const top = Math.random() * 80 + 10; // %
+                const left = Math.random() * 70 + 15; // %
+                const delay = Math.random() * 5;
+                const duration = 6 + Math.random() * 8;
+                iconEl.style.top = top + '%';
+                iconEl.style.left = left + '%';
+                iconEl.style.animation = `float ${duration}s infinite alternate ease-in-out`;
+                iconEl.style.animationDelay = delay + 's';
+                iconEl.style.fontSize = (1.2 + Math.random() * 2) + 'rem';
+                iconEl.style.opacity = 0.3 + Math.random() * 0.3;
+                heroAnimationDiv.appendChild(iconEl);
+            }
+
+            // ========== 3. ПОДСВЕТКА АКТИВНОГО МЕНЮ (при скролле) ==========
+            const sections = document.querySelectorAll('section, footer'); // все блоки + футер
+            const navLinks = document.querySelectorAll('.nav-links a');
+
+            function setActiveLink() {
+                let current = '';
+                const scrollPos = window.scrollY + 120; // смещение
+
+                sections.forEach(sec => {
+                    const top = sec.offsetTop;
+                    const bottom = top + sec.offsetHeight;
+                    if (scrollPos >= top && scrollPos < bottom) {
+                        current = sec.getAttribute('id') || '';
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    const href = link.getAttribute('href').replace('#', '');
+                    if (href === current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', setActiveLink);
+            window.addEventListener('load', setActiveLink);
+
+            // ========== 4. ПОЯВЛЕНИЕ БЛОКОВ (IntersectionObserver) ==========
+            const faders = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appeared');
+                    } else {
+                        // можно убрать, если не нужно повторное исчезновение
+                        // entry.target.classList.remove('appeared'); // закомментировано, чтобы раз появившись оставались
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+
+            faders.forEach(el => observer.observe(el));
+
+            // ========== 5. ОРИГИНАЛЬНАЯ ДЕТАЛЬ: ПОДСВЕТКА ТЕКСТА ПРИ СКРОЛЛЕ (эффект градиента на h2) ==========
+            const sectionTitles = document.querySelectorAll('.section-title');
+            function glowTitles() {
+                const scrollPercent = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+                const hue = (scrollPercent * 360) % 360;
+                sectionTitles.forEach(title => {
+                    title.style.background = `linear-gradient(130deg, #1b1f32, hsl(${hue}, 50%, 50%))`;
+                    title.style.webkitBackgroundClip = 'text';
+                    title.style.webkitTextFillColor = 'transparent';
+                });
+            }
+            window.addEventListener('scroll', glowTitles);
+            glowTitles(); // сразу применить
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

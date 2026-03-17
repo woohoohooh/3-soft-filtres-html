@@ -1,0 +1,499 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vizor · фотохудожник</title>
+  <!-- Font Awesome 6 (стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #f7f5f0;
+      color: #1c1c1c;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* плавный скролл + кастомный курсор (лёгкий намёк на портфолио) */
+    html {
+      scroll-behavior: smooth;
+      cursor: crosshair;
+    }
+
+    /* якорная шапка — фиксированная + трансформер при скролле */
+    .header {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      max-width: 1300px;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 60px;
+      padding: 0.9rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 15px 40px -10px rgba(0,0,0,0.1);
+      z-index: 999;
+      transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    /* компактный вариант при скролле (сработает через js) */
+    .header.scrolled {
+      top: 10px;
+      padding: 0.6rem 2rem;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 20px 35px -8px rgba(0,0,0,0.15);
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.7rem;
+      letter-spacing: -0.03em;
+      color: #2b2b2b;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo i {
+      font-size: 2.2rem;
+      color: #b24738;
+      transition: transform 0.5s ease;
+    }
+
+    .logo:hover i {
+      transform: rotate(15deg) scale(1.1);
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 3rem;
+      font-weight: 500;
+    }
+
+    .nav-menu a {
+      text-decoration: none;
+      color: #1e1e1e;
+      font-size: 1.05rem;
+      position: relative;
+      padding-bottom: 4px;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .nav-menu a:hover {
+      color: #b24738;
+      border-bottom-color: #b24738;
+    }
+
+    /* блоки-секции (9 штук) */
+    section {
+      min-height: 100vh;
+      width: 100%;
+      padding: 6rem 10% 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      will-change: transform, opacity;
+    }
+
+    /* фоновая сетка для ритма */
+    .grid-bg {
+      background-image: radial-gradient(#e0dbd1 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+
+    /* появление при скролле (Intersection Observer — добавим через js) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.19, 1, 0.22, 1), transform 0.9s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* заголовки */
+    h2 {
+      font-size: 4rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 2rem;
+    }
+    .accent {
+      color: #b24738;
+    }
+
+    /* карточки, каталог (для фотографа — якобы портфолио) */
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin: 3rem 0;
+    }
+
+    .port-item {
+      background: #ffffffc9;
+      backdrop-filter: blur(3px);
+      border-radius: 38px;
+      padding: 2rem 1.5rem;
+      box-shadow: 0 25px 35px -18px rgba(0,0,0,0.15);
+      transition: transform 0.4s, box-shadow 0.4s;
+      border: 1px solid rgba(255,255,255,0.6);
+      text-align: center;
+    }
+
+    .port-item:hover {
+      transform: translateY(-12px) scale(1.01);
+      box-shadow: 0 35px 45px -15px rgba(0,0,0,0.25);
+    }
+
+    .port-item i {
+      font-size: 3.2rem;
+      color: #b24738;
+      margin-bottom: 1.2rem;
+    }
+
+    .port-item h3 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .tag {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #6e6e6e;
+    }
+
+    /* до/после (бьюти-фишка) */
+    .ba-container {
+      display: flex;
+      gap: 2rem;
+      margin: 3rem 0;
+    }
+    .ba-card {
+      flex: 1;
+      background: white;
+      border-radius: 2.5rem;
+      padding: 2.5rem 1.8rem;
+      box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
+      border: 1px solid #f0eae1;
+    }
+    .ba-card i {
+      font-size: 3rem;
+      color: #b24738;
+      opacity: 0.7;
+    }
+    .ba-card .label {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin: 1rem 0 0.5rem;
+    }
+
+    /* цифры (доверие) */
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+      margin-top: 4rem;
+    }
+    .stat-item {
+      flex: 1;
+      border-left: 4px solid #b24738;
+      padding-left: 1.5rem;
+    }
+    .stat-num {
+      font-size: 3.8rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .stat-desc {
+      font-size: 1.2rem;
+      color: #4d4d4d;
+    }
+
+    /* простая форма / контакт */
+    .contact-flex {
+      display: flex;
+      gap: 4rem;
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(6px);
+      border-radius: 4rem;
+      padding: 3rem;
+      margin-top: 2rem;
+    }
+    .info {
+      flex: 1;
+    }
+    .info p {
+      font-size: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .info i {
+      width: 2.5rem;
+      color: #b24738;
+    }
+    .social-links {
+      margin-top: 2rem;
+    }
+    .social-links a {
+      color: #1c1c1c;
+      font-size: 2rem;
+      margin-right: 1.8rem;
+      transition: 0.2s;
+    }
+    .social-links a:hover {
+      color: #b24738;
+    }
+
+    /* футер */
+    .footer {
+      background: #1c1c1c;
+      color: #bbb;
+      padding: 2rem 10%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      border-top-left-radius: 3rem;
+      border-top-right-radius: 3rem;
+    }
+    .footer a {
+      color: #ddd;
+      text-decoration: none;
+      margin-left: 2rem;
+    }
+    .footer a:hover {
+      color: white;
+    }
+
+    /* адаптация под ПК, но без мобильных — как заказывали */
+    @media (max-width: 1000px) {
+      h2 { font-size: 3rem; }
+    }
+
+    /* анимация курсора дополнительно (js) — лёгкий трекинг */
+    .glow {
+      position: fixed;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle at center, #b2473820, transparent 80%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.2s;
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- декоративное свечение за курсором (js) -->
+  <div class="glow" id="glowCursor"></div>
+
+  <!-- ФИКСИРОВАННАЯ ШАПКА (блок 1) -->
+  <header class="header" id="mainHeader">
+    <div class="logo">
+      <i class="fas fa-camera-retro"></i> 
+      <span>VIZOR</span>
+    </div>
+    <nav class="nav-menu">
+      <a href="#work">портфолио</a>
+      <a href="#ba">до/после</a>
+      <a href="#about">обо мне</a>
+      <a href="#contact">контакт</a>
+    </nav>
+  </header>
+
+  <!-- БЛОК 2: HERO (вступление) -->
+  <section id="hero" class="grid-bg reveal" style="padding-top: 8rem;">
+    <h2>поймать <span class="accent">суть</span><br>за секунду</h2>
+    <div style="font-size: 2.4rem; max-width: 700px; font-weight: 300; margin: 1rem 0 3rem;">
+      репортажная и портретная съёмка · живая эстетика
+    </div>
+    <div class="stats" style="max-width: 700px;">
+      <div class="stat-item"><span class="stat-num">+47</span> <span class="stat-desc">свадеб</span></div>
+      <div class="stat-item"><span class="stat-num">120</span> <span class="stat-desc">историй</span></div>
+      <div class="stat-item"><span class="stat-num">8</span> <span class="stat-desc">лет опыта</span></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: ПОРТФОЛИО / услуги (как каталог) -->
+  <section id="work" class="reveal">
+    <h2>жанры,<br>в которых <span class="accent">горю</span></h2>
+    <div class="portfolio-grid">
+      <div class="port-item"><i class="fas fa-heart"></i><h3>Lovestory</h3><div class="tag">репортаж</div></div>
+      <div class="port-item"><i class="fas fa-city"></i><h3>городские</h3><div class="tag">streed photography</div></div>
+      <div class="port-item"><i class="fas fa-glass-cheers"></i><h3>wedding</h3><div class="tag">свадьба</div></div>
+      <div class="port-item"><i class="fas fa-child"></i><h3>family</h3><div class="tag">семья</div></div>
+      <div class="port-item"><i class="fas fa-crown"></i><h3>fashion</h3><div class="tag">lookbook</div></div>
+      <div class="port-item"><i class="fas fa-mask"></i><h3>театр</h3><div class="tag">закулисье</div></div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: ДО/ПОСЛЕ (бьюти-фишка для фотографа) -->
+  <section id="ba" class="reveal" style="background: #f0eae1;">
+    <h2>цвето·коррекция<br>и <span class="accent">ретушь</span></h2>
+    <div class="ba-container">
+      <div class="ba-card"><i class="fas fa-toggle-off"></i><div class="label">исходник</div>чистый raw, мягкий контраст</div>
+      <div class="ba-card"><i class="fas fa-toggle-on"></i><div class="label">финал</div>глубокая тонировка, пластика</div>
+    </div>
+    <div style="font-size: 1.4rem; margin-top: 2rem; background: white; border-radius: 3rem; padding: 1.3rem 2.3rem; max-width: fit-content; border: 1px solid #dad3c8;">
+      <i class="fas fa-magic" style="color: #b24738;"></i>  каждый кадр доводится до состояния «вау»
+    </div>
+  </section>
+
+  <!-- БЛОК 5: ОБО МНЕ (бизнес-коуч стиль, но для фотографа) -->
+  <section id="about" class="reveal">
+    <h2>личный <span class="accent">бренд</span><br>в каждом кадре</h2>
+    <div style="display: flex; gap: 5rem; align-items: center;">
+      <div style="flex: 2; font-size: 1.3rem; line-height: 1.7;">
+        <p>Меня зовут Катерина, за плечами — 8 лет съёмок для глянца и частных историй. Работаю так, что вы забудете о камере. Люблю свет, естественность и смех.</p>
+        <p style="margin-top: 1.5rem;">Публиковалась в Vogue, GQ, сотрудничала с брендами Larsen, Dior Beauty.</p>
+        <div style="margin-top: 2.5rem;"><i class="fas fa-check-circle" style="color: #b24738;"></i>  гарантия естественности</div>
+        <div><i class="fas fa-check-circle" style="color: #b24738;"></i>  авторский стиль цветокоррекции</div>
+      </div>
+      <div style="flex: 1; background: #b24738; height: 250px; border-radius: 4rem; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; rotate: 3deg;">
+        <i class="fas fa-camera"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: ЦИФРЫ ДОВЕРИЯ + отзыв (юридическая нотка) -->
+  <section class="reveal" style="background: #fff7ef;">
+    <h2>факты <span class="accent">без</span> прикрас</h2>
+    <div class="stats">
+      <div class="stat-item"><span class="stat-num">5</span> <span class="stat-desc">международных наград</span></div>
+      <div class="stat-item"><span class="stat-num">100%</span> <span class="stat-desc">договоров с прозрачными правами</span></div>
+      <div class="stat-item"><span class="stat-num">280</span> <span class="stat-desc">довольных пар</span></div>
+    </div>
+    <div style="margin-top: 3rem; padding: 2rem; border-left: 6px solid #b24738; background: white; border-radius: 2rem;">
+      <i class="fas fa-quote-right" style="float:right; font-size: 3rem; color: #b2473840;"></i>
+      «Катя видела нас насквозь — получились не просто фото, а история любви. Никакой натянутости» — Алена и Игорь
+    </div>
+  </section>
+
+  <!-- БЛОК 7: ПРОЦЕСС (как для b2b) -->
+  <section class="reveal">
+    <h2>снять как в <span class="accent">кино</span></h2>
+    <div style="display: grid; grid-template-columns: repeat(3,1fr); gap: 2rem;">
+      <div><i class="fas fa-comment-dots" style="font-size: 3rem;"></i><h3 style="font-size: 1.8rem;">1. Идея</h3>обсуждаем сценарий, локации</div>
+      <div><i class="fas fa-camera" style="font-size: 3rem;"></i><h3 style="font-size: 1.8rem;">2. Съёмка</h3>лёгкая, почти игра</div>
+      <div><i class="fas fa-film" style="font-size: 3rem;"></i><h3 style="font-size: 1.8rem;">3. Цвет</h3>фирменная тонировка</div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: КОНТАКТЫ / запись (лендинг-действие) -->
+  <section id="contact" class="reveal">
+    <h2>напишите <span class="accent">мне</span></h2>
+    <div class="contact-flex">
+      <div class="info">
+        <p><i class="fas fa-phone-alt"></i> +7 (916) 383-88-32</p>
+        <p><i class="fas fa-envelope"></i> hello@vizor.story</p>
+        <p><i class="fas fa-map-pin"></i> Москва / online</p>
+        <div class="social-links">
+          <a href="#"><i class="fab fa-telegram"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-vk"></i></a>
+        </div>
+      </div>
+      <div style="flex: 1;">
+        <div style="background: white; padding: 2rem; border-radius: 2rem;">
+          <p style="margin-bottom: 1rem;">заполните — я пришлю идеи для вашей съёмки</p>
+          <input type="text" placeholder="имя" style="width:100%; padding: 1rem; margin-bottom: 1rem; border-radius: 2rem; border: 1px solid #ccc;">
+          <input type="text" placeholder="телефон" style="width:100%; padding: 1rem; margin-bottom: 1rem; border-radius: 2rem; border: 1px solid #ccc;">
+          <button style="background:#b24738; color:white; padding:1rem 2rem; border:none; border-radius:3rem; font-weight:bold; width:100%;">хочу предварительный план</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: ФУТЕР (второй блок снизу) -->
+  <footer class="footer">
+    <span>© VIZOR · фотоистории</span>
+    <span style="display: flex; gap: 2rem;">
+      <a href="#">Telegram</a>
+      <a href="#">Instagram</a>
+      <a href="#">политика</a>
+    </span>
+  </footer>
+
+  <!-- JS: анимации, скролл-эффекты, компактная шапка, появление -->
+  <script>
+    (function() {
+      // 1 — изменение хедера при скролле (компактный)
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 40) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      });
+
+      // 2 — подсветка/анимация появления блоков (reveal)
+      const sections = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          } else {
+            // можно убрать, чтобы при уходе вверх снова исчезало — но эффектнее оставить
+            // entry.target.classList.remove('revealed'); // раскомментировать если нужно каждый раз появление
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px' });
+      sections.forEach(s => observer.observe(s));
+
+      // 3 — трекинг мыши (glow) 
+      const glow = document.getElementById('glowCursor');
+      document.addEventListener('mousemove', (e) => {
+        glow.style.opacity = '1';
+        glow.style.left = e.clientX + 'px';
+        glow.style.top = e.clientY + 'px';
+      });
+      document.addEventListener('mouseleave', () => glow.style.opacity = '0');
+
+      // 4 — дополнительная анимация для якорей с учётом высоты шапки
+      const navLinks = document.querySelectorAll('.nav-menu a');
+      navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('href'); // #work ...
+          const targetEl = document.querySelector(targetId);
+          if (targetEl) {
+            const headerHeight = header.offsetHeight + 15;
+            const targetPos = targetEl.getBoundingClientRect().top + window.scrollY - headerHeight;
+            window.scrollTo({ top: targetPos, behavior: 'smooth' });
+          }
+        });
+      });
+
+      // 5 — рандомная тема уже выбрана (фотограф / портфолио). добавим мелкий эффект на блоки
+      // при наведении мыши лёгкое изменение сетки (по желанию)
+    })();
+  </script>
+  <!-- финальная метка -->
+  All done!
+</body>
+</html>
+```

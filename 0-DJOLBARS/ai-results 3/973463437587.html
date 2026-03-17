@@ -1,0 +1,515 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vizor · монтаж / video</title>
+    <!-- только стильные иконки (Font Awesome 6 бесплатно) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0c0e;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #eaeef2;
+            line-height: 1.5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* глобальный импорт шрифта */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap');
+
+        /* кастомный скролл — тонкий */
+        ::-webkit-scrollbar {width: 6px;}
+        ::-webkit-scrollbar-track {background: #15181c;}
+        ::-webkit-scrollbar-thumb {background: #3b3f46; border-radius: 20px;}
+
+        /* фиксированный хедер с анимацией сжатия */
+        header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1300px;
+            background: rgba(15, 17, 22, 0.75);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(74, 144, 226, 0.15);
+            border-radius: 60px;
+            padding: 0.9rem 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.25, 0.1, 0.15, 1.2);
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.6);
+        }
+
+        header.scrolled {
+            top: 15px;
+            width: 75%;
+            padding: 0.5rem 2rem;
+            background: rgba(8, 12, 18, 0.9);
+            border-color: #2d3c53;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #fff, #a3c6ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.2rem;
+            font-weight: 500;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #dadfe6;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            border-bottom: 1px solid transparent;
+        }
+
+        .nav-links a:hover {
+            color: white;
+            border-bottom-color: #3c7ed6;
+        }
+
+        .contact-btn {
+            background: #1f2a3a;
+            border: none;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid #324459;
+        }
+
+        .contact-btn:hover {
+            background: #25476b;
+            border-color: #5880b0;
+        }
+
+        /* общий контейнер блоков */
+        section {
+            scroll-margin-top: 100px;
+        }
+
+        .block {
+            min-height: 90vh;
+            width: 100%;
+            padding: 6rem 8%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+
+        /* эффект появления при скролле (Intersection Observer) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.9s ease, transform 0.9s ease;
+        }
+
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* дополнительные задержки для детей */
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+
+        h1 {
+            font-size: 4.8rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            max-width: 1000px;
+        }
+
+        .accent-glow {
+            color: #b0d0ff;
+            text-shadow: 0 0 15px #275b9e33;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 2rem;
+        }
+
+        .section-title i {
+            color: #4f8cff;
+            margin-right: 15px;
+        }
+
+        .grid-2col, .grid-3col {
+            display: grid;
+            gap: 2.5rem;
+            margin-top: 2rem;
+        }
+
+        .grid-2col {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-3col {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .card {
+            background: #13171f;
+            border-radius: 40px;
+            padding: 2.4rem 2rem;
+            border: 1px solid #2a313e;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+        }
+
+        .card:hover {
+            border-color: #4d74af;
+            transform: translateY(-8px);
+            box-shadow: 0 25px 40px -20px #0e1a2b;
+        }
+
+        .card i {
+            font-size: 2.8rem;
+            color: #6992e0;
+            margin-bottom: 1.2rem;
+        }
+
+        .stats {
+            font-size: 2.3rem;
+            font-weight: 700;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #1d324b;
+            padding: 0.3rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
+            color: #bdd3ff;
+        }
+
+        .showreel-video-placeholder {
+            background: #10141c;
+            border-radius: 40px;
+            height: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #324253;
+            box-shadow: 0 0 40px #1d3145;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .showreel-video-placeholder i {
+            font-size: 5rem;
+            color: #3d6eb0;
+            opacity: 0.8;
+            transition: 0.4s;
+        }
+
+        .showreel-video-placeholder:hover i {
+            transform: scale(1.15);
+            color: #7ca5ff;
+        }
+
+        /* футер */
+        footer {
+            background: #070a0f;
+            padding: 4rem 8% 3rem;
+            border-top: 1px solid #1f2630;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .social-links a {
+            color: #b0bed6;
+            margin-left: 1.8rem;
+            font-size: 1.7rem;
+            transition: 0.2s;
+        }
+
+        .social-links a:hover {
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* анимация для иконки в шапке (js-анимация вращения) */
+        .header-icon {
+            font-size: 1.8rem;
+            color: #9bbaff;
+            transition: transform 0.1s linear;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        /* кастомный курсор или эффект */
+        .pill {
+            background: #19232e;
+            border-radius: 100px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 400;
+        }
+
+        /* адаптив не нужен, но для приличия */
+        @media (max-width: 1000px) {
+            h1 { font-size: 3.5rem; }
+            .grid-3col { grid-template-columns: repeat(2,1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ФИКСИРОВАННАЯ ШАПКА (БЛОК 1) -->
+    <header id="navbar">
+        <div class="logo">
+            <i class="fas fa-cut header-icon" id="spinningIcon"></i> VIZOR
+        </div>
+        <div class="nav-links">
+            <a href="#showreel">Showreel</a>
+            <a href="#work">Work</a>
+            <a href="#process">Process</a>
+            <a href="#about">About</a>
+        </div>
+        <button class="contact-btn" onclick="document.getElementById('footer').scrollIntoView()">Let's collab</button>
+    </header>
+
+    <!-- БЛОК 2: HERO -->
+    <section class="block" id="hero" style="padding-top: 140px;">
+        <div class="fade-up visible"> <!-- видим сразу, без анимации загрузки -->
+            <span class="badge"><i class="fa-regular fa-star" style="margin-right: 5px;"></i>REEL 2025 · 4K HDR</span>
+            <h1 style="margin-top: 1.5rem;">Editing that <span class="accent-glow">hits rhythm</span><br>not just cuts.</h1>
+            <div style="display: flex; gap: 2rem; margin-top: 2.5rem; font-size: 1.3rem; color: #b7c3d6;">
+                <div><i class="fa-regular fa-clock" style="color: #537ec9;"></i> 48h turnover</div>
+                <div><i class="fa-regular fa-image" style="color: #537ec9;"></i> Color grading</div>
+                <div><i class="fa-regular fa-keyboard" style="color: #537ec9;"></i> Sound design</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 3: SHOWREEL / ПРЕВЬЮ (с имитацией видео) -->
+    <section class="block" id="showreel">
+        <div class="fade-up">
+            <div class="section-title"><i class="fa-regular fa-clapperboard"></i> SHOWREEL 2025</div>
+            <div class="showreel-video-placeholder">
+                <i class="fa-regular fa-circle-play"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: ИЗБРАННЫЕ ПРОЕКТЫ / ПОРТФОЛИО (как каталог работ) -->
+    <section class="block" id="work">
+        <div class="fade-up">
+            <div class="section-title"><i class="fa-regular fa-folder-open"></i> selected cuts</div>
+            <div class="grid-3col">
+                <div class="card delay-1"><i class="fa-regular fa-camera"></i><h3>Nike tech</h3><p>dynamic sport edit, 15s spot</p></div>
+                <div class="card delay-2"><i class="fa-regular fa-microchip"></i><h3>Atomic Habits</h3><p>book trailer · 2.3M views</p></div>
+                <div class="card delay-3"><i class="fa-regular fa-hand-peace"></i><h3>Berlinale teaser</h3><p>festival ident, official selection</p></div>
+                <div class="card"><i class="fa-regular fa-crown"></i><h3>Dior fragrance</h3><p>fashion film, color grade</p></div>
+                <div class="card"><i class="fa-regular fa-bolt"></i><h3>Red Bull energy</h3><p>fast cut / action cams</p></div>
+                <div class="card"><i class="fa-regular fa-music"></i><h3>Doja Cat — remix</h3><p>music video treatment</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: ПРОЦЕСС / КАК РАБОТАЮ (стили иконок) -->
+    <section class="block" id="process">
+        <div class="fade-up">
+            <div class="section-title"><i class="fa-regular fa-diagram-next"></i> постпродакшн flow</div>
+            <div class="grid-2col">
+                <div class="card"><i class="fa-regular fa-pen-to-square"></i><h3>1. offline story</h3><p>assembly cut, selects, narrative structure</p></div>
+                <div class="card"><i class="fa-regular fa-gem"></i><h3>2. advanced grade</h3><p>Davinci Resolve, ACES / HDR10</p></div>
+                <div class="card"><i class="fa-regular fa-waveform"></i><h3>3. sound design</h3><p>foley, atmos, stem mixing</p></div>
+                <div class="card"><i class="fa-regular fa-arrow-up-right-dots"></i><h3>4. delivery</h3><p> ProRes, H.264, DCP on request</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: ЦИФРЫ / ДОВЕРИЕ (как у адвокатов, но в монтаже) -->
+    <section class="block">
+        <div class="fade-up">
+            <div class="section-title"><i class="fa-regular fa-chart-line"></i> метрики</div>
+            <div style="display: flex; gap: 3rem; flex-wrap: wrap; justify-content: space-between;">
+                <div><span class="stats">280+</span> <span class="badge">spots edited</span></div>
+                <div><span class="stats">15M</span> <span class="badge">total views</span></div>
+                <div><span class="stats">4.8</span> <span class="badge">client rating</span></div>
+                <div><span class="stats">12</span> <span class="badge">awards</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: ДЛЯ КОГО / B2B акцент (финансовый/корпоративный оттенок) -->
+    <section class="block">
+        <div class="fade-up">
+            <div class="section-title"><i class="fa-regular fa-building"></i> b2b / агенства</div>
+            <div class="grid-2col">
+                <div class="card"><i class="fa-regular fa-file-signature"></i><h3>корпоративные имиджи</h3><p>годовые отчёты, интервью, ESG-ролики</p></div>
+                <div class="card"><i class="fa-regular fa-handshake"></i><h3>рекламные интеграции</h3><p>product placement, youtube prerolls</p></div>
+                <div class="card"><i class="fa-regular fa-presentation-screen"></i><h3>конференции / keynotes</h3><p>live editing, спикер-поддержка</p></div>
+                <div class="card"><i class="fa-regular fa-chart-pie"></i><h3>финансовые презентации</h3><p>анимированная графика, инфографика</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: ОТЗЫВ (как соцдок) + кейс -->
+    <section class="block" id="about">
+        <div class="fade-up">
+            <div class="section-title"><i class="fa-regular fa-message"></i> коллаборации</div>
+            <div style="display: flex; gap: 3rem; align-items: center; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px;">
+                    <i class="fa-regular fa-quote-right" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <p style="font-size: 1.7rem; font-weight: 300; line-height: 1.3;">«Vizor сделал монтаж для нашего питча — инвесторы аплодировали. Ритм, цвет, атмосфера.»</p>
+                    <p style="margin-top: 1rem;">— CD, крупный fintech-бренд</p>
+                </div>
+                <div class="card" style="flex: 1;"><i class="fa-regular fa-briefcase"></i><h3>кейс: страховой гигант</h3><p>анимация explainer + живое видео, вовлечение +47%</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: ФУТЕР (как отдельный смысловой блок с контактами) -->
+    <footer id="footer">
+        <div class="fade-up">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2rem;">
+                <div>
+                    <div class="logo" style="font-size: 2rem;"><i class="fas fa-cut" style="color: #6f9eff;"></i> VIZOR</div>
+                    <div style="margin-top: 1.2rem;"><i class="fa-regular fa-envelope"></i> hi@vizor.cuts</div>
+                    <div><i class="fa-regular fa-phone"></i> +1 (213) 555 9640</div>
+                </div>
+                <div class="social-links">
+                    <a href="#"><i class="fa-brands fa-vimeo"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fa-brands fa-behance"></i></a>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 4rem; opacity: 0.5; font-size: 0.9rem;">
+                © vizor editorial 2025 · all cuts rhythm
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // --- 1. Intersection Observer (появление блоков + подсветка) ---
+            const faders = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // подсветка текста меню (доп. эффект) при нахождении в блоке
+                        const id = entry.target.closest('section')?.id || entry.target.closest('footer')?.id;
+                        if (id) {
+                            document.querySelectorAll('.nav-links a').forEach(a => {
+                                a.style.color = '#dadfe6';
+                                a.style.borderBottomColor = 'transparent';
+                                if (a.getAttribute('href') === '#' + id) {
+                                    a.style.color = '#ffffff';
+                                    a.style.borderBottomColor = '#3c7ed6';
+                                }
+                            });
+                        }
+                    }
+                });
+            }, { threshold: 0.25, rootMargin: '0px 0px -80px 0px' });
+
+            faders.forEach(fader => observer.observe(fader));
+
+            // --- 2. Анимация иконки в шапке (вращение от скролла) ---
+            const icon = document.getElementById('spinningIcon');
+            let rotation = 0;
+            window.addEventListener('scroll', function() {
+                // вращение
+                rotation = window.scrollY * 0.2;
+                icon.style.transform = `rotate(${rotation}deg)`;
+
+                // хедер сжимается
+                const header = document.getElementById('navbar');
+                if (window.scrollY > 30) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // плавный скролл для якорей (чтоб работало красиво)
+            document.querySelectorAll('.nav-links a, .contact-btn').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (href && href.startsWith('#')) {
+                        e.preventDefault();
+                        const target = document.querySelector(href);
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    } else if (this.classList.contains('contact-btn')) {
+                        e.preventDefault();
+                        document.getElementById('footer').scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+
+            // доп. эффект — затемнение фона при наведении на карточки (нет, уже есть)
+            // принудительно проверим первый блок — чтобы visible уже стоял на hero (он уже visible по умолчанию)
+            // также добавим visible для футера если он в зоне видимости при загрузке
+            setTimeout(() => {
+                document.querySelectorAll('.fade-up').forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < window.innerHeight - 150) {
+                        el.classList.add('visible');
+                    }
+                });
+            }, 200);
+        })();
+    </script>
+
+    <!-- небольшой псевдо-счетчик / параллакс не нужен, но добавим мелкую анимацию для иконок -->
+    <script>
+        (function second() {
+            // дополнительные эффекты "современные" — случайные искры на иконках? нет, просто пульс у плей
+            const playBtn = document.querySelector('.showreel-video-placeholder i');
+            if (playBtn) {
+                setInterval(() => {
+                    playBtn.style.textShadow = '0 0 18px #608cff';
+                    setTimeout(() => playBtn.style.textShadow = 'none', 300);
+                }, 3000);
+            }
+        })();
+    </script>
+</body>
+</html>
+All done!
+```

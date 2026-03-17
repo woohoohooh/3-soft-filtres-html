@@ -1,0 +1,644 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kinetic · студия режиссуры монтажа</title>
+  <!-- Font Awesome 6 (бесплатные стильные иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0b0b0b;
+      color: #eaeaea;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* кастомный скролл */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #121212; }
+    ::-webkit-scrollbar-thumb { background: #3d3d3d; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f5c518; }
+
+    /* якорная подсветка при навигации */
+    :target {
+      animation: blockPulse 1.2s ease-out;
+    }
+    @keyframes blockPulse {
+      0% { background-color: rgba(245, 197, 24, 0); }
+      15% { background-color: rgba(245, 197, 24, 0.12); }
+      100% { background-color: rgba(245, 197, 24, 0); }
+    }
+
+    /* фиксированное меню — элегантное, появляется компактнее */
+    .fixed-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+      padding: 1.2rem 4rem;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    /* компактный вариант при скролле вниз */
+    .fixed-header.compact {
+      padding: 0.6rem 4rem;
+      background: rgba(5, 5, 5, 0.95);
+      border-bottom-color: rgba(245, 197, 24, 0.4);
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.7rem;
+      letter-spacing: -0.02em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo i {
+      color: #f5c518;
+      font-size: 2rem;
+      transform: rotate(-5deg);
+      transition: transform 0.2s;
+    }
+    .fixed-header.compact .logo i { transform: rotate(0deg) scale(0.9); }
+
+    .nav-links {
+      display: flex;
+      gap: 3rem;
+      font-weight: 400;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+    }
+    .nav-links a {
+      color: #ddd;
+      text-decoration: none;
+      transition: 0.2s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: #f5c518;
+      transition: 0.3s;
+    }
+    .nav-links a:hover::after,
+    .nav-links a.active-nav::after {
+      width: 100%;
+    }
+    .nav-links a:hover, .nav-links a.active-nav {
+      color: #fff;
+    }
+
+    /* основной контейнер */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 4rem;
+    }
+
+    section {
+      padding: 7rem 0 6rem 0;
+      border-bottom: 1px solid #1f1f1f;
+    }
+
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.2rem;
+      line-height: 1.1;
+    }
+    h2 i { color: #f5c518; margin-right: 15px; }
+
+    .accent-gold {
+      color: #f5c518;
+    }
+
+    /* анимация появления при скролле (Intersection Observer) */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.3, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    .scroll-reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* шапка с видео‑анимацией через js (первый блок) */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      background: #030303;
+      padding-top: 120px;
+    }
+    .hero-bg-animation {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0;
+      overflow: hidden;
+    }
+    #kineticCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      opacity: 0.6;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+    }
+    .hero h1 {
+      font-size: 5.2rem;
+      font-weight: 600;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+    }
+    .hero .tagline {
+      font-size: 1.4rem;
+      color: #b0b0b0;
+      margin-bottom: 2.5rem;
+      max-width: 600px;
+    }
+    .cta-button {
+      background: #f5c518;
+      border: none;
+      color: #0b0b0b;
+      font-weight: 600;
+      padding: 1.2rem 3rem;
+      font-size: 1.1rem;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: 0.25s;
+      box-shadow: 0 10px 25px -8px rgba(245, 197, 24, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255,215,0,0.2);
+    }
+    .cta-button i { font-size: 1.2rem; }
+    .cta-button:hover {
+      background: #ffd966;
+      transform: scale(1.05);
+      box-shadow: 0 18px 30px -6px #f5c518;
+    }
+
+    /* блок 2: услуги / что я делаю (B2B) */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5rem;
+      margin-top: 3rem;
+    }
+    .service-card {
+      background: #151515;
+      border-radius: 28px;
+      padding: 2.5rem 2rem;
+      border: 1px solid #2a2a2a;
+      transition: 0.3s;
+    }
+    .service-card:hover {
+      border-color: #f5c518;
+      transform: translateY(-12px);
+      background: #1b1b1b;
+    }
+    .service-card i {
+      font-size: 3rem;
+      color: #f5c518;
+      margin-bottom: 1.5rem;
+    }
+
+    /* блок 3: демо-рил / reel (имитация видео) */
+    .reel-frame {
+      background: #1e1e1e;
+      border-radius: 32px;
+      padding: 2rem;
+      border: 1px solid #333;
+      box-shadow: 0 25px 40px -15px black;
+    }
+    .reel-placeholder {
+      background: #0c0c0c;
+      height: 380px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      font-size: 2rem;
+      color: #555;
+      border: 1px dashed #f5c51840;
+      transition: all 0.3s;
+    }
+    .reel-placeholder i {
+      font-size: 4rem;
+      color: #f5c518;
+      animation: softPulse 2.5s infinite;
+    }
+    @keyframes softPulse {
+      0% { opacity: 0.5; text-shadow: 0 0 0 #f5c518; }
+      50% { opacity: 1; text-shadow: 0 0 15px #f5c518; }
+      100% { opacity: 0.5; text-shadow: 0 0 0 #f5c518; }
+    }
+
+    /* блок 4: портфолио / проекты */
+    .project-grid {
+      display: flex;
+      gap: 1.8rem;
+      margin-top: 2rem;
+    }
+    .project-item {
+      background: #181818;
+      border-radius: 30px;
+      padding: 2rem;
+      flex: 1;
+      border-left: 6px solid #2a2a2a;
+      transition: 0.2s;
+    }
+    .project-item:hover {
+      border-left-color: #f5c518;
+      background: #202020;
+    }
+
+    /* блок 5: отзывы / клиенты */
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+    }
+    .testi-card {
+      background: #121212;
+      border-radius: 30px;
+      padding: 2.2rem;
+      border: 1px solid #282828;
+      position: relative;
+    }
+    .testi-card i.fa-quote-left {
+      color: #f5c518;
+      opacity: 0.2;
+      font-size: 2.5rem;
+      position: absolute;
+      top: 20px; right: 25px;
+    }
+
+    /* блок 6: цифры / результаты */
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      background: #0f0f0f;
+      border-radius: 70px;
+      padding: 3rem 2rem;
+      border: 1px solid #2b2b2b;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 3.2rem;
+      font-weight: 600;
+      color: #f5c518;
+    }
+
+    /* блок 7: партнёры / бренды (иконки) */
+    .brands {
+      display: flex;
+      justify-content: space-between;
+      font-size: 2.5rem;
+      color: #4d4d4d;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+    .brands i {
+      transition: 0.2s;
+      cursor: default;
+    }
+    .brands i:hover {
+      color: #f5c518;
+      transform: scale(1.2);
+    }
+
+    /* футер */
+    footer {
+      padding: 3rem 4rem;
+      background: #070707;
+      border-top: 1px solid #1f1f1f;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* остальное */
+    .small-text { color: #777; font-size: 0.9rem; }
+    hr { border-color: #262626; margin: 2rem 0; }
+
+    /* мобильные не нужны, но на предельный минимум */
+    @media (max-width: 1000px) { /* нетребование, просто чтоб не развалилось */ }
+  </style>
+</head>
+<body>
+  <!-- фиксированное меню (шапка) + JS компактности -->
+  <header class="fixed-header" id="mainHeader">
+    <div class="logo">
+      <i class="fas fa-cut"></i> KINETIC
+    </div>
+    <div class="nav-links">
+      <a href="#home" class="active-nav">HOME</a>
+      <a href="#services">WORK</a>
+      <a href="#reel">REEL</a>
+      <a href="#projects">PROJECTS</a>
+      <a href="#contact">CONTACT</a>
+    </div>
+  </header>
+
+  <!-- БЛОК 1: Hero с canvas анимацией (кинетическая типографика) -->
+  <section class="hero" id="home">
+    <div class="hero-bg-animation">
+      <canvas id="kineticCanvas"></canvas>
+    </div>
+    <div class="container hero-content">
+      <h1 class="scroll-reveal">МОНТАЖ<br><span class="accent-gold">КАК ИСКУССТВО</span></h1>
+      <p class="tagline scroll-reveal">Режиссура монтажа / demo-рил / музыкальные видео / реклама</p>
+      <button class="cta-button scroll-reveal"><i class="fa-brands fa-youtube"></i> Смотреть рил</button>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: услуги (что я делаю) -->
+  <section id="services">
+    <div class="container">
+      <h2 class="scroll-reveal"><i class="fa-regular fa-star"></i> Услуги</h2>
+      <div class="services-grid">
+        <div class="service-card scroll-reveal"><i class="fa-solid fa-scissors"></i><h3>Монтаж</h3><p>Тизеры, клипы, имиджевые ролики. Ритм, цвет, смысл.</p></div>
+        <div class="service-card scroll-reveal"><i class="fa-solid fa-camera"></i><h3>Color grading</h3><p>Кинематографичный Look, стилизация под проект.</p></div>
+        <div class="service-card scroll-reveal"><i class="fa-solid fa-music"></i><h3>Саунд-дизайн</h3><p>Сведение, шумы, музыка — полное погружение.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 3: DEMO REEL (видео placeholder c анимацией) -->
+  <section id="reel">
+    <div class="container">
+      <h2 class="scroll-reveal"><i class="fa-regular fa-clapperboard"></i> демо-рил 2025</h2>
+      <div class="reel-frame scroll-reveal">
+        <div class="reel-placeholder">
+          <i class="fa-solid fa-play"></i>
+          <i class="fa-solid fa-film"></i>
+          <i class="fa-solid fa-video"></i>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 4: портфолио (избранные проекты) -->
+  <section id="projects">
+    <div class="container">
+      <h2 class="scroll-reveal"><i class="fa-regular fa-folder-open"></i> проекты</h2>
+      <div class="project-grid">
+        <div class="project-item scroll-reveal"><i class="fa-solid fa-crown" style="color:#f5c518;"></i><h3>Nike Air</h3><p>рекламный ролик / реж. монтажа</p></div>
+        <div class="project-item scroll-reveal"><i class="fa-solid fa-microphone-lines" style="color:#f5c518;"></i><h3>Mona</h3><p>музыкальное видео (1M+ просмотров)</p></div>
+        <div class="project-item scroll-reveal"><i class="fa-solid fa-building" style="color:#f5c518;"></i><h3>Kaspersky</h3><p>имиджевый фильм / цветокоррекция</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 5: отзывы / testimonial -->
+  <section id="testimonials">
+    <div class="container">
+      <h2 class="scroll-reveal"><i class="fa-regular fa-message"></i> клиенты</h2>
+      <div class="testimonial-grid">
+        <div class="testi-card scroll-reveal"><i class="fa-solid fa-quote-left"></i><p>«Работает с кадром как скульптор. Сроки, качество, стиль — 10/10».</p><hr><span class="small-text">— А. Григорьев, продюсер</span></div>
+        <div class="testi-card scroll-reveal"><i class="fa-solid fa-quote-left"></i><p>«Лучший монтажёр, с кем работали. Оживил наш бренд через движение».</p><hr><span class="small-text">— Е. Мороз, арт-директор</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 6: статистика / цифры -->
+  <section id="stats">
+    <div class="container">
+      <div class="stats-row scroll-reveal">
+        <div class="stat-item"><span class="stat-number">80+</span> <div class="small-text">проектов</div></div>
+        <div class="stat-item"><span class="stat-number">15</span> <div class="small-text">наград</div></div>
+        <div class="stat-item"><span class="stat-number">7</span> <div class="small-text">лет опыта</div></div>
+        <div class="stat-item"><span class="stat-number">24M+</span> <div class="small-text">охват</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 7: бренды / партнёры (иконки) -->
+  <section id="brands">
+    <div class="container">
+      <h2 class="scroll-reveal"><i class="fa-regular fa-handshake"></i> доверили монтаж</h2>
+      <div class="brands scroll-reveal">
+        <i class="fa-brands fa-spotify"></i>
+        <i class="fa-brands fa-nike"></i>
+        <i class="fa-brands fa-reddit-alien"></i>
+        <i class="fa-brands fa-adobe"></i>
+        <i class="fa-brands fa-apple"></i>
+        <i class="fa-brands fa-sony"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 8: призыв / контакт -->
+  <section id="contact">
+    <div class="container">
+      <h2 class="scroll-reveal"><i class="fa-regular fa-paper-plane"></i> начать проект</h2>
+      <div style="display: flex; gap: 3rem; align-items: center;">
+        <div style="flex:1"><p class="scroll-reveal">Короткие сроки, творческий подход и полное погружение в задачу.</p>
+        <button class="cta-button" style="margin-top: 1.5rem;"><i class="fa-regular fa-envelope"></i> kinetix@edit.studio</button>
+        </div>
+        <div style="flex:1" class="scroll-reveal">
+          <i class="fa-solid fa-arrow-trend-up" style="font-size: 5rem; color: #f5c518; opacity: 0.6;"></i>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЛОК 9: футер (2й из 9, но по факту 9й блок) -->
+  <footer>
+    <span class="small-text">© 2025 Kinetic — режиссура монтажа</span>
+    <span class="small-text"><i class="fa-regular fa-registered"></i> все права защищены</span>
+  </footer>
+
+  <script>
+    (function() {
+      // --- компактный хедер при скролле ---
+      const header = document.getElementById('mainHeader');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 30) {
+          header.classList.add('compact');
+        } else {
+          header.classList.remove('compact');
+        }
+      });
+
+      // --- подсветка активного пункта меню (по якорям) + плавный скролл ---
+      const navLinks = document.querySelectorAll('.nav-links a');
+      const sections = document.querySelectorAll('section[id]');
+      
+      function setActiveLink() {
+        let scrollPos = window.scrollY + 150; // смещение для хедера
+        sections.forEach(sec => {
+          const top = sec.offsetTop;
+          const bottom = top + sec.offsetHeight;
+          const id = sec.getAttribute('id');
+          if (scrollPos >= top && scrollPos < bottom) {
+            navLinks.forEach(link => {
+              link.classList.remove('active-nav');
+              if (link.getAttribute('href') === '#' + id) {
+                link.classList.add('active-nav');
+              }
+            });
+          }
+        });
+      }
+      window.addEventListener('scroll', setActiveLink);
+      setActiveLink();
+
+      // якорный переход с учётом высоты шапки
+      navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('href').substring(1); // убираем #
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            const offset = header.offsetHeight + 10;
+            window.scrollTo({
+              top: targetEl.offsetTop - offset,
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+
+      // --- Intersection Observer для появления блоков (scroll reveal) ---
+      const revealElements = document.querySelectorAll('.scroll-reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          } else {
+            // можно убрать, чтобы анимация срабатывала каждый раз
+            // entry.target.classList.remove('revealed');
+          }
+        });
+      }, { threshold: 0.2, rootMargin: '0px' });
+      revealElements.forEach(el => observer.observe(el));
+
+      // --- Canvas анимация (кинетическая волна / частицы) ---
+      const canvas = document.getElementById('kineticCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+
+      function initParticles() {
+        const count = 60;
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random(),
+            y: Math.random(),
+            vx: (Math.random() - 0.5) * 0.002,
+            vy: (Math.random() - 0.5) * 0.002,
+            baseX: Math.random(),
+            baseY: Math.random(),
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawKinetic() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        
+        const time = Date.now() / 1000;
+        // фон
+        ctx.fillStyle = '#030303';
+        ctx.fillRect(0, 0, width, height);
+        
+        // линии сетки (эффект движения)
+        ctx.strokeStyle = '#f5c518';
+        ctx.lineWidth = 0.8;
+        ctx.globalAlpha = 0.25 + Math.sin(time * 0.5) * 0.1;
+        
+        const step = 45;
+        const offset = (time * 20) % step;
+        ctx.beginPath();
+        for (let i = -step; i < width + step; i += step) {
+          ctx.moveTo(i + offset, 0);
+          ctx.lineTo(i + offset - height * 0.6, height);
+        }
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let i = -step; i < height + step; i += step) {
+          ctx.moveTo(0, i + offset);
+          ctx.lineTo(width, i + offset - width * 0.2);
+        }
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+
+        // частицы
+        ctx.globalAlpha = 0.7;
+        particles.forEach(p => {
+          p.x += p.vx * 30;
+          p.y += p.vy * 30;
+          if (p.x < 0 || p.x > 1) { p.vx *= -1; p.x = Math.min(1, Math.max(0, p.x)); }
+          if (p.y < 0 || p.y > 1) { p.vy *= -1; p.y = Math.min(1, Math.max(0, p.y)); }
+
+          const x = p.x * width;
+          const y = p.y * height;
+          ctx.beginPath();
+          ctx.arc(x, y, 2 + Math.sin(time * 5 + p.x * 10) * 1, 0, Math.PI * 2);
+          ctx.fillStyle = '#f5c518';
+          ctx.fill();
+        });
+
+        requestAnimationFrame(drawKinetic);
+      }
+
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+      resizeCanvas();
+      initParticles();
+      drawKinetic();
+    })();
+  </script>
+</body>
+</html>
+All done!
+```

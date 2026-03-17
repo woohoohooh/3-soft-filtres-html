@@ -1,0 +1,513 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIVIENNE WEST · fashion-портфолио</title>
+    <!-- Font Awesome 6 (бесплатный набор) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f7f5f0;
+            color: #1e1e1e;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        /* кастомный скролл */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #eae7de; }
+        ::-webkit-scrollbar-thumb { background: #b9a38b; border-radius: 20px; }
+
+        /* фиксированная шапка с анимацией */
+        .header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1.2rem 3rem;
+            background: rgba(247, 245, 240, 0.75);
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            border-bottom: 1px solid rgba(30, 30, 30, 0.06);
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.02);
+        }
+
+        /* компактный вид при скролле — добавляется через JS */
+        .header.scrolled {
+            padding: 0.7rem 3rem;
+            background: rgba(247, 245, 240, 0.92);
+            backdrop-filter: blur(18px);
+            border-bottom-color: rgba(185, 163, 139, 0.2);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 350;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: #2b2b2b;
+        }
+        .logo span {
+            font-weight: 600;
+            color: #b6815a;
+            margin-left: 2px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 3.5rem;
+        }
+        .nav a {
+            text-decoration: none;
+            color: #2b2b2b;
+            font-weight: 400;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: 0.25s;
+            border-bottom: 1px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav a:hover {
+            border-bottom-color: #b6815a;
+            color: #b6815a;
+        }
+
+        /* основной контейнер */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 3rem;
+        }
+
+        /* каждый блок = минимальная высота, но не меньше 90vh */
+        section {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            will-change: transform, opacity;
+        }
+
+        /* эффекты при появлении (Intersection Observer) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .fade-up.appeared {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* акцентные линии/подсветка */
+        .accent-mask {
+            position: relative;
+            display: inline-block;
+        }
+        .accent-mask::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 4px;
+            width: 0%;
+            height: 6px;
+            background: #e6cfb6;
+            z-index: -1;
+            transition: width 1.2s ease 0.3s;
+        }
+        .appeared .accent-mask::after {
+            width: 100%;
+        }
+
+        /* иконки стилизуем */
+        .icon-circle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            background: #e6cfb6;
+            border-radius: 50%;
+            color: #2b2b2b;
+            font-size: 1.8rem;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px -12px rgba(0,0,0,0.3);
+        }
+
+        .icon-circle:hover {
+            background: #b6815a;
+            color: white;
+            transform: scale(0.95) rotate(2deg);
+        }
+
+        /* сетки */
+        .grid-2, .grid-3 {
+            display: grid;
+            gap: 3rem;
+        }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+        /* типовые отступы */
+        h1 { font-size: 4.8rem; font-weight: 350; line-height: 1.1; letter-spacing: -0.02em; }
+        h2 { font-size: 3.2rem; font-weight: 340; margin-bottom: 2rem; letter-spacing: -0.01em; }
+        h2 i { color: #b6815a; font-weight: 300; margin-right: 12px; }
+        h3 { font-size: 1.8rem; font-weight: 400; margin-bottom: 1.2rem; }
+        .lead { font-size: 1.25rem; opacity: 0.8; font-weight: 300; max-width: 620px; }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2.8rem;
+            background: #1e1e1e;
+            color: #f7f5f0;
+            text-decoration: none;
+            border-radius: 40px;
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            font-size: 0.9rem;
+            border: 1px solid transparent;
+            transition: 0.3s;
+            margin-top: 2rem;
+        }
+        .btn-outline {
+            background: transparent;
+            border-color: #1e1e1e;
+            color: #1e1e1e;
+        }
+        .btn:hover {
+            background: #b6815a;
+            border-color: #b6815a;
+            color: white;
+        }
+
+        /* cards */
+        .service-card, .project-card, .stat-card {
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(2px);
+            padding: 2.5rem 2rem;
+            border-radius: 32px;
+            border: 1px solid rgba(185, 163, 139, 0.2);
+            transition: all 0.4s ease;
+            box-shadow: 0 20px 35px -18px rgba(0,0,0,0.1);
+        }
+        .service-card:hover, .project-card:hover {
+            background: white;
+            border-color: #b6815a;
+            transform: translateY(-15px) scale(1.02);
+            box-shadow: 0 30px 40px -20px #b6815a70;
+        }
+
+        .stat-number {
+            font-size: 3.7rem;
+            font-weight: 300;
+            color: #b6815a;
+            line-height: 1;
+        }
+        .stat-label {
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 0.85rem;
+        }
+
+        footer {
+            background: #1e1e1e;
+            color: #eae7de;
+            padding: 4rem 3rem;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        footer a { color: #e6cfb6; text-decoration: none; border-bottom: 1px dotted; }
+
+        /* mobile not needed — но минимально */
+        @media (max-width: 900px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            h1 { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ФИКСИРОВАННАЯ ШАПКА -->
+<header class="header" id="mainHeader">
+    <div class="logo">VIVIENNE<span>WEST</span></div>
+    <nav class="nav">
+        <a href="#work">портфолио</a>
+        <a href="#services">услуги</a>
+        <a href="#about">обо мне</a>
+        <a href="#contact">контакт</a>
+    </nav>
+</header>
+
+<main style="margin-top: 90vh;"> <!-- отступ для якоря, но скролл сам работает-->
+
+<!-- БЛОК 1: ХИРО (ПЕРВЫЙ ЭКРАН) -->
+<section id="hero" class="fade-up" style="padding-top: 0;">
+    <div class="container" style="width:100%;">
+        <div class="grid-2" style="align-items: center;">
+            <div>
+                <p style="text-transform:uppercase; letter-spacing:6px; color:#b6815a; margin-bottom:1rem;">Lens · story · emotion</p>
+                <h1 class="accent-mask">визуальный<br>архитектор</h1>
+                <p class="lead" style="margin: 1.5rem 0 1rem;">Свадебный и репортажный фотограф, чьи кадры говорят громче слов. 12 лет создаю живые истории по всему миру.</p>
+                <a href="#contact" class="btn">обсудить съёмку <i class="fa-regular fa-paper-plane" style="margin-left: 10px;"></i></a>
+                <a href="#work" class="btn btn-outline" style="margin-left: 1rem;">портфолио</a>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
+                <!-- абстрактные анимированные иконки вместо картинок -->
+                <div style="text-align: center;">
+                    <div class="icon-circle" id="rotateIcon"><i class="fa-solid fa-camera-retro"></i></div>
+                    <p style="margin-top:1rem;">18k+ кадров</p>
+                </div>
+                <div style="text-align: center;">
+                    <div class="icon-circle" id="pulseIcon"><i class="fa-solid fa-heart"></i></div>
+                    <p style="margin-top:1rem;">150+ пар</p>
+                </div>
+                <div style="text-align: center;">
+                    <div class="icon-circle" id="floatIcon"><i class="fa-solid fa-globe"></i></div>
+                    <p style="margin-top:1rem;">24 страны</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 2: ПОРТФОЛИО (МИНИ-ГАЛЕРЕЯ) -->
+<section id="work" class="fade-up">
+    <div class="container">
+        <h2><i class="fa-regular fa-image"></i> последние проекты</h2>
+        <div class="grid-3">
+            <div class="project-card">
+                <i class="fa-regular fa-sun" style="font-size:2.2rem; color:#b6815a; margin-bottom:1rem;"></i>
+                <h3>Тоскана · Лаура & Марко</h3>
+                <p>Итальянское поместье, золотой час, слёзы счастья. Репортаж без постановки.</p>
+            </div>
+            <div class="project-card">
+                <i class="fa-regular fa-moon" style="font-size:2.2rem; color:#b6815a; margin-bottom:1rem;"></i>
+                <h3>Нью-Йорк · City elopement</h3>
+                <p>Только двое, джаз-бар и крыша в Манхэттене. Ночная съёмка с естественным светом.</p>
+            </div>
+            <div class="project-card">
+                <i class="fa-regular fa-star" style="font-size:2.2rem; color:#b6815a; margin-bottom:1rem;"></i>
+                <h3>Исландия · Vow renewal</h3>
+                <p>Ледяные лагуны, северное сияние и обновление клятв для пары из Лондона.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 3: УСЛУГИ И ПРАЙС (ДЛЯ ФОТОГРАФА) -->
+<section id="services" class="fade-up">
+    <div class="container">
+        <h2><i class="fa-regular fa-calendar"></i> формат работы</h2>
+        <div class="grid-2">
+            <div class="service-card">
+                <i class="fa-regular fa-clock" style="font-size:2.5rem; margin-bottom:1.5rem;"></i>
+                <h3>Полный день</h4>
+                <p>До 10 часов съёмки, второй фотограф, предсвадебная встреча, готовность через 4 недели.</p>
+                <div style="margin-top:2rem;"><span class="stat-number">2400</span> <span class="stat-label">€</span></div>
+            </div>
+            <div class="service-card">
+                <i class="fa-regular fa-hourglass-half" style="font-size:2.5rem; margin-bottom:1.5rem;"></i>
+                <h3>Минимальный</h4>
+                <p>5 часов, торжество без подготовки, 300+ финальных кадров, авторская ретушь.</p>
+                <div style="margin-top:2rem;"><span class="stat-number">1500</span> <span class="stat-label">€</span></div>
+            </div>
+        </div>
+        <div style="margin-top:2rem; background: #eae7de; padding:2rem; border-radius:40px;">
+            <p style="font-size:1.2rem;"><i class="fa-solid fa-crown" style="color:#b6815a; margin-right: 12px;"></i>выездная регистрация, Love Story, аренда студии — рассчитывается индивидуально.</p>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 4: ЦИФРЫ И ДОВЕРИЕ -->
+<section class="fade-up">
+    <div class="container">
+        <h2><i class="fa-regular fa-chart-bar"></i> в цифрах</h2>
+        <div class="grid-3">
+            <div class="stat-card">
+                <div class="stat-number">12</div>
+                <div class="stat-label">лет опыта</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">320+</div>
+                <div class="stat-label">свадеб</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">7</div>
+                <div class="stat-label">наград WPJA</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 5: ОТЗЫВ / ИСТОРИЯ -->
+<section class="fade-up">
+    <div class="container">
+        <div style="max-width:900px; margin:0 auto; text-align:center;">
+            <i class="fa-solid fa-quote-right" style="font-size:4rem; opacity:0.2; margin-bottom:1rem;"></i>
+            <h3 style="font-weight:300; font-size:2.2rem;">«Vivienne поймала те эмоции, о которых мы даже не рассказывали. Каждый снимок — кусочек нашей любви»</h3>
+            <p style="margin-top:2rem;">— Алиса и Дмитрий, Париж</p>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 6: ПРОЦЕСС РАБОТЫ -->
+<section class="fade-up">
+    <div class="container">
+        <h2><i class="fa-regular fa-compass"></i> как проходят съёмки</h2>
+        <div style="display:flex; gap:2rem; flex-wrap:wrap; justify-content:center;">
+            <div style="flex:1; min-width:180px;"><span style="background:#b6815a; color:white; border-radius:100px; padding:0.5rem 1.2rem;">01</span> <p style="margin-top:1rem;">Знакомство и скайп-звонок</p></div>
+            <div style="flex:1; min-width:180px;"><span style="background:#b6815a; color:white; border-radius:100px; padding:0.5rem 1.2rem;">02</span> <p style="margin-top:1rem;">Подбор локаций по вашему стилю</p></div>
+            <div style="flex:1; min-width:180px;"><span style="background:#b6815a; color:white; border-radius:100px; padding:0.5rem 1.2rem;">03</span> <p style="margin-top:1rem;">День съёмки без спешки</p></div>
+            <div style="flex:1; min-width:180px;"><span style="background:#b6815a; color:white; border-radius:100px; padding:0.5rem 1.2rem;">04</span> <p style="margin-top:1rem;">Личный кабинет с отбором</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 7: ДЛЯ БЛОГЕРОВ/МОДЕЛЕЙ (ДОП.УСЛУГА) -->
+<section class="fade-up">
+    <div class="container">
+        <div class="grid-2">
+            <div>
+                <h2><i class="fa-regular fa-id-card"></i> для личного бренда</h2>
+                <p class="lead">Портфолио для модели, контент для блогера, имиджевые съёмки. Стилизация, аренда студии, работа с ракурсами.</p>
+                <a href="#" class="btn btn-outline">запрос на портфолио</a>
+            </div>
+            <div style="background: #e6cfb6; border-radius: 3rem; padding: 2rem; text-align:center;">
+                <i class="fa-regular fa-face-smile" style="font-size:5rem; color:#1e1e1e;"></i>
+                <p style="margin-top:1rem;">Скидка 15% на вторую съёмку в том же сезоне</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- БЛОК 8: КОНТАКТНАЯ ФОРМА / ЗАПИСЬ -->
+<section id="contact" class="fade-up">
+    <div class="container" style="width:100%;">
+        <h2><i class="fa-regular fa-pen-to-square"></i> записаться или спросить</h2>
+        <div style="background:white; border-radius: 60px; padding:3rem; box-shadow: 0 30px 40px -40px #b6815a;">
+            <div class="grid-2">
+                <div>
+                    <p><i class="fa-regular fa-envelope" style="margin-right:1rem;"></i> hello@viviennewest.photo</p>
+                    <p><i class="fa-regular fa-mobile-notch" style="margin-right:1rem;"></i> +44 7700 123456</p>
+                    <p><i class="fa-regular fa-location-dot"></i> Лондон / Париж / весь мир</p>
+                    <div style="margin-top:2rem;">
+                        <i class="fa-brands fa-instagram icon-circle" style="width:44px; height:44px; font-size:1.4rem;"></i>
+                        <i class="fa-brands fa-behance icon-circle" style="width:44px; height:44px; font-size:1.4rem; margin-left:0.8rem;"></i>
+                    </div>
+                </div>
+                <div>
+                    <p style="margin-bottom:1rem;">Напишите пару слов о событии — я отвечу в течение дня.</p>
+                    <div style="background:#f7f5f0; border-radius:100px; padding:0.2rem 0.2rem 0.2rem 2rem; display:flex;">
+                        <input type="text" placeholder="Ваш email" style="flex:1; background:transparent; border:none; outline:none;">
+                        <button class="btn" style="margin-top:0; border-radius: 40px;">отправить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<!-- БЛОК 9: ФУТЕР -->
+<footer>
+    <div>© VIVIENNE WEST photography · эстетика в каждом пикселе</div>
+    <div>
+        <a href="#">Instagram</a> · <a href="#">Behance</a> · <a href="#">Pinterest</a>
+    </div>
+</footer>
+
+<!-- JS: анимации шапки, скролл-появление, эффекты иконок -->
+<script>
+    (function() {
+        // компактная шапка при скролле
+        const header = document.getElementById('mainHeader');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 30) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // INTERSECTION OBSERVER — появление блоков (fade-up)
+        const faders = document.querySelectorAll('.fade-up');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('appeared');
+                    // можно включить дополнительную анимацию подсветки текста
+                }
+            });
+        }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' }); 
+
+        faders.forEach(f => observer.observe(f));
+
+        // отдельные анимации для иконок в 1-м блоке через JS (интерактив)
+        const rotateIcon = document.getElementById('rotateIcon');
+        const pulseIcon = document.getElementById('pulseIcon');
+        const floatIcon = document.getElementById('floatIcon');
+
+        if (rotateIcon) {
+            setInterval(() => {
+                rotateIcon.style.transform = 'rotate(10deg) scale(1.05)';
+                setTimeout(() => rotateIcon.style.transform = '', 200);
+            }, 3000);
+        }
+        if (pulseIcon) {
+            setInterval(() => {
+                pulseIcon.style.backgroundColor = '#b6815a';
+                pulseIcon.style.color = 'white';
+                setTimeout(() => {
+                    pulseIcon.style.backgroundColor = '';
+                    pulseIcon.style.color = '';
+                }, 300);
+            }, 3800);
+        }
+        if (floatIcon) {
+            setInterval(() => {
+                floatIcon.style.transform = 'translateY(-10px)';
+                setTimeout(() => floatIcon.style.transform = '', 400);
+            }, 4200);
+        }
+
+        // дополнительная анимация якорей (плавный скролл)
+        document.querySelectorAll('.nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                const targetEl = document.querySelector(targetId);
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+    })();
+</script>
+
+<!-- небольшой твик для первого блока: так как фикс.шапка перекрывает якорь, учтем это -->
+<style>
+    section:first-of-type { scroll-margin-top: 100px; }
+    section { scroll-margin-top: 80px; }
+</style>
+
+All done!
+```

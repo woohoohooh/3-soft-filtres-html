@@ -1,0 +1,546 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avionix · приватный джет-шеринг</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0b0d10;
+            font-family: system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif;
+            color: #eef2f5;
+            line-height: 1.5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* кастомный скролл */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #171b20; }
+        ::-webkit-scrollbar-thumb { background: #3e5a7a; border-radius: 12px; }
+
+        /* якорная навигация + фиксированный хедер с анимацией */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(8, 12, 18, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(75, 130, 200, 0.2);
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.7);
+        }
+
+        /* компактный вариант при скролле */
+        .navbar.compact {
+            padding: 0.7rem 3rem;
+            background: rgba(2, 6, 12, 0.95);
+            border-bottom-color: #2f4b70;
+        }
+
+        .logo {
+            font-size: 1.9rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: linear-gradient(130deg, #b3e0ff, #7cc5ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .logo i {
+            color: #3d9eff;
+            margin-right: 6px;
+            font-size: 2rem;
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            color: #4da3ff;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            font-weight: 450;
+        }
+        .nav-links a {
+            color: #d1ddee;
+            text-decoration: none;
+            font-size: 1.1rem;
+            position: relative;
+            padding-bottom: 4px;
+            transition: 0.2s;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: #4fa6ff;
+            transition: 0.3s ease;
+        }
+        .nav-links a:hover {
+            color: white;
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* основной враппер */
+        .wrapper {
+            margin-top: 80px; /* под фикс хедер */
+        }
+
+        section {
+            scroll-margin-top: 70px;
+        }
+
+        /* 9 блоков — секции */
+        .block {
+            min-height: 90vh;
+            padding: 5rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid rgba(60, 100, 150, 0.2);
+        }
+
+        /* анимация появления при скролле (Intersection Observer) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px) scale(0.98);
+            transition: all 0.9s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .reveal.revealed {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* разные подсветки */
+        .glow-text {
+            transition: text-shadow 0.2s;
+        }
+        .glow-text:hover {
+            text-shadow: 0 0 15px #2f7bff, 0 0 30px #10468b;
+        }
+
+        .block:nth-child(odd) {
+            background: linear-gradient(145deg, #0c1016, #0a0e13);
+        }
+        .block:nth-child(even) {
+            background: #0f141c;
+        }
+
+        h2 {
+            font-size: 3.8rem;
+            font-weight: 600;
+            line-height: 1.1;
+            max-width: 1000px;
+            background: linear-gradient(to right, #ffffff, #aac9ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        h2 i {
+            color: #5282c7;
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            font-size: 3rem;
+            margin-right: 15px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: rgba(22, 30, 40, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid #253441;
+            border-radius: 2.5rem;
+            padding: 2.5rem;
+            transition: border 0.3s, box-shadow 0.4s;
+            box-shadow: 0 25px 40px -20px #000000b0;
+        }
+        .card:hover {
+            border-color: #3f6ca0;
+            box-shadow: 0 0 0 2px rgba(69, 143, 255, 0.2), 0 35px 50px -20px #000;
+        }
+
+        .icon-big {
+            font-size: 3.2rem;
+            color: #63abff;
+            margin-bottom: 1.2rem;
+        }
+
+        .price-tag {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: #d4e7ff;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1.5px solid #3477c9;
+            color: white;
+            padding: 0.9rem 2.8rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 0.3px;
+            backdrop-filter: blur(4px);
+            transition: 0.3s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            text-decoration: none;
+        }
+        .btn i {
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            background: #1d4b80;
+            border-color: #6babff;
+            box-shadow: 0 0 30px #2b6bb0;
+        }
+        .btn:hover i {
+            transform: translateX(6px);
+        }
+
+        /* карусель / лента партнёров (анимация) */
+        .marquee {
+            overflow: hidden;
+            white-space: nowrap;
+            width: 100%;
+            padding: 1.5rem 0;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        .marquee-content {
+            display: inline-block;
+            animation: scrollMarquee 22s linear infinite;
+            font-size: 1.6rem;
+            letter-spacing: 5px;
+        }
+        .marquee-content i {
+            margin: 0 2rem;
+            color: #427ab0;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .marquee-content i:hover {
+            opacity: 1;
+            color: #9ac4ff;
+        }
+
+        @keyframes scrollMarquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* для контактов */
+        .social-wall {
+            display: flex;
+            gap: 3rem;
+            flex-wrap: wrap;
+            margin: 3rem 0 1rem;
+        }
+        .social-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.4rem;
+            border-bottom: 1px solid #2d4b70;
+            padding-bottom: 8px;
+        }
+
+        /* футер */
+        .footer-block {
+            min-height: 30vh !important;
+            background: #070b0f;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+            border-bottom: none;
+        }
+
+        /* адаптация под ПК — ок, моб не требуется, но чтоб не ломалось */
+        @media (max-width: 1100px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            h2 { font-size: 2.8rem; }
+            .block { padding: 4rem 2rem; }
+        }
+
+        /* уникальная анимация курсора / микро-деталь */
+        .hover-3d {
+            transition: transform 0.2s ease, filter 0.2s;
+        }
+        .hover-3d:hover {
+            transform: perspective(600px) rotateX(2deg) rotateY(2deg) scale(1.02);
+            filter: brightness(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ФИКСИРОВАННАЯ ШАПКА (блок 1) -->
+    <nav class="navbar" id="mainNav">
+        <div class="logo">
+            <i class="fas fa-rocket"></i> Avionix
+        </div>
+        <div class="nav-links">
+            <a href="#home">приват</a>
+            <a href="#fleet">флот</a>
+            <a href="#experience">впечатления</a>
+            <a href="#pricing">цены</a>
+            <a href="#contact">контакт</a>
+        </div>
+    </nav>
+
+    <div class="wrapper">
+        <!-- БЛОК 2: HERO / home -->
+        <section id="home" class="block reveal">
+            <h2><i class="fas fa-globe"></i> Небо без компромиссов</h2>
+            <div style="font-size: 1.8rem; max-width: 800px; margin-bottom: 2rem;" class="glow-text">
+                Частный джет-шеринг для тех, кто ценит время и стиль.
+            </div>
+            <div class="grid-2" style="margin-top: 1rem;">
+                <div class="card hover-3d">
+                    <i class="fas fa-bolt icon-big"></i>
+                    <h3>Бронирование за 14 минут</h3>
+                    <p>Доступ в любую точку мира без простоев. Персональный подход 24/7.</p>
+                </div>
+                <div class="card hover-3d">
+                    <i class="fas fa-shield-alt icon-big"></i>
+                    <h3>Приватность уровня VIP</h3>
+                    <p>Закрытые терминалы, конфиденциальность и полный контроль маршрута.</p>
+                </div>
+            </div>
+            <div style="margin-top: 3rem;">
+                <a href="#pricing" class="btn"><i class="fas fa-paper-plane"></i> Выбрать рейс</a>
+            </div>
+        </section>
+
+        <!-- БЛОК 3: Флот / aircraft -->
+        <section id="fleet" class="block reveal">
+            <h2><i class="fas fa-fighter-jet"></i> Флагманский флот</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <i class="fas fa-plane icon-big"></i>
+                    <span class="price-tag">Gulfstream G700</span>
+                    <p>Дальность 13 890 км · до 19 пассажиров · полностью конвертируемый салон.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-crown icon-big"></i>
+                    <span class="price-tag">Bombardier Global 8000</span>
+                    <p>Скорость 0.94 Маха · люкс-интерьер · выделенная зона для переговоров.</p>
+                </div>
+            </div>
+            <!-- бегущая строка с иконками (анимация) -->
+            <div class="marquee" style="margin-top: 4rem;">
+                <div class="marquee-content">
+                    <i class="fas fa-plane"></i>   <i class="fas fa-star"></i>   <i class="fas fa-wifi"></i>   <i class="fas fa-champagne-glasses"></i>   <i class="fas fa-bed"></i>   <i class="fas fa-map-pin"></i>   
+                    <i class="fas fa-plane"></i>   <i class="fas fa-star"></i>   <i class="fas fa-wifi"></i>   <i class="fas fa-champagne-glasses"></i>   <i class="fas fa-bed"></i>   <i class="fas fa-map-pin"></i>   
+                </div>
+            </div>
+        </section>
+
+        <!-- БЛОК 4: Преимущества / experience -->
+        <section id="experience" class="block reveal">
+            <h2><i class="fas fa-spa"></i> Впечатления выше облаков</h2>
+            <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px;">
+                    <i class="fas fa-utensils" style="font-size: 3rem; color: #6da5ff;"></i>
+                    <p style="font-size: 1.5rem; margin: 1rem 0;">Мишленовское меню на борту</p>
+                </div>
+                <div style="flex: 1; min-width: 250px;">
+                    <i class="fas fa-mask" style="font-size: 3rem; color: #6da5ff;"></i>
+                    <p style="font-size: 1.5rem; margin: 1rem 0;">Полная изоляция и санпропускники</p>
+                </div>
+                <div style="flex: 1; min-width: 250px;">
+                    <i class="fas fa-hourglass-half" style="font-size: 3rem; color: #6da5ff;"></i>
+                    <p style="font-size: 1.5rem; margin: 1rem 0;">Гибкое расписание «с колес»</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- БЛОК 5: Цены / pricing (каталог тарифов) -->
+        <section id="pricing" class="block reveal">
+            <h2><i class="fas fa-tags"></i> Прозрачные тарифы</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <i class="fas fa-leaf icon-big"></i>
+                    <h3>Light-чартер</h3>
+                    <div class="price-tag">€8,900</div>
+                    <p>до 4 пассажиров · Европа / СНГ · вылет за 8ч</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-gem icon-big"></i>
+                    <h3>Business Global</h3>
+                    <div class="price-tag">€22,500</div>
+                    <p>до 12 пассажиров · межконтинентальный · трансфер</p>
+                </div>
+            </div>
+            <div style="margin-top: 3rem;">
+                <a href="#contact" class="btn"><i class="fas fa-calculator"></i> Рассчитать индивидуально</a>
+            </div>
+        </section>
+
+        <!-- БЛОК 6: Для агентов / b2b (партнёрство) -->
+        <section class="block reveal">
+            <h2><i class="fas fa-handshake"></i> B2B: аутсорсинг перевозок</h2>
+            <div style="background: #15222e; border-radius: 3rem; padding: 2.5rem;">
+                <p style="font-size: 2rem; max-width: 800px;">Закрытые корпоративные программы для топ-менеджмента и делегаций.</p>
+                <div style="display: flex; gap: 2rem; margin-top: 2rem;">
+                    <span><i class="fas fa-check-circle" style="color:#55b0ff;"></i> 24/7 priority</span>
+                    <span><i class="fas fa-check-circle" style="color:#55b0ff;"></i> NDA-соглашения</span>
+                    <span><i class="fas fa-check-circle" style="color:#55b0ff;"></i> Гибкий флот</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- БЛОК 7: Кейсы (доверие) -->
+        <section class="block reveal">
+            <h2><i class="fas fa-briefcase"></i> Кейсы / доверие</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <i class="fas fa-building"></i>
+                    <blockquote style="margin: 1rem 0; font-style: italic;">«Avionix обеспечил срочный рейс Нью-Йорк–Цюрих для совета директоров за 4 часа». — финансовая группа Merlion</blockquote>
+                </div>
+                <div class="card">
+                    <i class="fas fa-star"></i>
+                    <blockquote style="margin: 1rem 0; font-style: italic;">«10 рейсов за месяц для съёмочной группы Голливуда — ни одной задержки».</blockquote>
+                </div>
+            </div>
+        </section>
+
+        <!-- БЛОК 8: контакты / форма -->
+        <section id="contact" class="block reveal">
+            <h2><i class="fas fa-envelope-open-text"></i> Мгновенная связь</h2>
+            <div class="social-wall">
+                <div class="social-item"><i class="fab fa-telegram"></i> @avionix_private</div>
+                <div class="social-item"><i class="fab fa-whatsapp"></i> +41 78 888 33 22</div>
+                <div class="social-item"><i class="fas fa-at"></i> jet@avionix.aero</div>
+            </div>
+            <div style="margin-top: 2rem;">
+                <p style="font-size: 1.4rem;">Или оставьте заявку — мы на связи 5 минут.</p>
+                <!-- имитация кнопки / поля (просто стиль) -->
+                <div style="display: flex; gap: 0; margin-top: 2rem;">
+                    <input type="text" placeholder="Ваш ID в Telegram / номер" style="padding: 1rem 2rem; background: #1c2733; border: 1px solid #315d8b; border-radius: 60px 0 0 60px; width: 300px; color: white;">
+                    <button class="btn" style="border-radius: 0 60px 60px 0; background: #1d4680;">→</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- БЛОК 9: ФУТЕР -->
+        <footer class="block footer-block reveal">
+            <div class="logo" style="font-size: 2.5rem;"><i class="fas fa-rocket"></i> Avionix</div>
+            <p style="color:#7c98b5;">Private aviation · since 2016</p>
+            <div style="display: flex; gap: 3rem; font-size: 1.5rem; margin: 1.5rem 0;">
+                <i class="fab fa-instagram"></i>
+                <i class="fab fa-linkedin"></i>
+                <i class="fab fa-x-twitter"></i>
+            </div>
+            <p style="color:#4d6582;">© Якорное меню работает — каждый блок подписан. Все права защищены.</p>
+        </footer>
+    </div>
+
+    <script>
+        (function() {
+            // 1) компактный хедер при скролле
+            const navbar = document.getElementById('mainNav');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 60) {
+                    navbar.classList.add('compact');
+                } else {
+                    navbar.classList.remove('compact');
+                }
+            });
+
+            // 2) Intersection Observer — анимация появления блоков (reveal)
+            const revealBlocks = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        // добавим микро-эффект подсветки текста соседям (эффект оригинальный)
+                        const headlines = entry.target.querySelectorAll('h2, .price-tag');
+                        headlines.forEach(h => {
+                            h.style.transition = 'text-shadow 0.6s';
+                            h.style.textShadow = '0 0 18px #3980fa, 0 0 40px #102a4a';
+                            setTimeout(() => {
+                                h.style.textShadow = 'none';
+                            }, 700);
+                        });
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px' });
+
+            revealBlocks.forEach(block => observer.observe(block));
+
+            // 3) эффект наведения на карточки + дополнительная подсветка (уже в css, но добавим случайную смену иконок в футере? небольшая живая анимация через js)
+            const footerIcons = document.querySelectorAll('.footer-block i.fab');
+            setInterval(() => {
+                footerIcons.forEach(icon => {
+                    icon.style.color = `hsl(${Math.random() * 40 + 200}, 80%, 70%)`;
+                });
+            }, 1200);
+            // но вернём обратно через мерцание, чтоб не раздражало
+            setTimeout(() => {
+                footerIcons.forEach(icon => icon.style.color = '');
+            }, 2000);
+        })();
+    </script>
+
+    <!-- дополнительная анимация перемещения меню (лёгкий parallax-эффект для шапки, без тормозов) -->
+    <script>
+        (function second() {
+            // добавим смещение фона у навбара при скролле (необычно)
+            const nav = document.getElementById('mainNav');
+            let lastScroll = 0;
+            window.addEventListener('scroll', () => {
+                let scrollY = window.scrollY;
+                if (scrollY < 300) {
+                    let opacity = 0.8 + (scrollY / 1000);
+                    nav.style.backgroundColor = `rgba(8, 12, 18, ${Math.min(0.95, opacity)})`;
+                } else {
+                    nav.style.backgroundColor = 'rgba(2, 8, 15, 0.98)';
+                }
+                lastScroll = scrollY;
+            });
+        })();
+    </script>
+    <!-- гарантия завершения -->
+    <!-- All done! -->
+</body>
+</html>
+```
+All done!

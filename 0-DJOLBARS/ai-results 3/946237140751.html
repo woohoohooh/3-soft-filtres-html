@@ -1,0 +1,615 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Твой кадр · Портфолио фотографа</title>
+    <!-- Font Awesome 6 (стильные иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #0b0b0b;
+            color: #f0f0f0;
+            line-height: 1.5;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* кастомный скролл — трендово */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d4af37;
+            border-radius: 20px;
+        }
+
+        /* ФИКСИРОВАННЫЙ ХЕДЕР (изменяется при скролле) */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.8rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        header.scrolled {
+            padding: 0.8rem 4rem;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid #d4af37;
+            box-shadow: 0 10px 30px -10px rgba(212, 175, 55, 0.2);
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #fff 30%, #d4af37 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: 0.3s;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .nav-menu a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.1rem;
+            position: relative;
+            padding-bottom: 6px;
+        }
+
+        .nav-menu a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: #d4af37;
+            transition: width 0.3s ease;
+        }
+
+        .nav-menu a:hover::after {
+            width: 100%;
+        }
+
+        /* якоря отступов */
+        section {
+            scroll-margin-top: 90px;
+        }
+
+        /* блок 1 — hero с анимацией через js (эффект камеры) */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0 4rem;
+            position: relative;
+            background: radial-gradient(circle at 30% 30%, #2a2a2a, #030303);
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 700px;
+            z-index: 5;
+        }
+
+        .hero .title {
+            font-size: clamp(3rem, 8vw, 5.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero .title span {
+            color: #d4af37;
+            display: inline-block;
+            filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: #bbbbbb;
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #d4af37;
+            color: #0b0b0b;
+            font-weight: 600;
+            padding: 1rem 2.8rem;
+            border-radius: 50px;
+            text-decoration: none;
+            letter-spacing: 1px;
+            transition: 0.3s;
+            border: 1px solid #d4af37;
+            box-shadow: 0 10px 25px -8px #d4af37;
+        }
+
+        .btn:hover {
+            background: transparent;
+            color: #d4af37;
+            transform: translateY(-5px);
+        }
+
+        /* анимированные иконки / камера в hero */
+        .camera-overlay {
+            position: absolute;
+            right: 5%;
+            top: 20%;
+            width: 400px;
+            height: 400px;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .camera-overlay i {
+            font-size: 20rem;
+            color: #d4af37;
+            transform: rotate(10deg);
+            filter: blur(2px);
+            animation: floatCamera 6s infinite alternate ease-in-out;
+        }
+
+        @keyframes floatCamera {
+            0% { transform: rotate(5deg) scale(1); opacity: 0.2; }
+            100% { transform: rotate(15deg) scale(1.1); opacity: 0.4; }
+        }
+
+        /* общая анимация появления при скролле (Intersection Observer) */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* стили блоков */
+        .block {
+            padding: 6rem 4rem;
+            border-bottom: 1px solid #222;
+        }
+
+        .block:nth-child(even) {
+            background: #0f0f0f;
+        }
+
+        h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            display: inline-block;
+            border-left: 8px solid #d4af37;
+            padding-left: 1.5rem;
+        }
+
+        .grid-2, .grid-3, .grid-4 {
+            display: grid;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .grid-2 { grid-template-columns: repeat(2,1fr); }
+        .grid-3 { grid-template-columns: repeat(3,1fr); }
+        .grid-4 { grid-template-columns: repeat(4,1fr); }
+
+        .icon-card {
+            background: #1c1c1c;
+            padding: 2.5rem 2rem;
+            border-radius: 30px;
+            text-align: center;
+            border: 1px solid #2c2c2c;
+            transition: 0.4s;
+            box-shadow: 0 10px 30px -15px black;
+        }
+
+        .icon-card:hover {
+            border-color: #d4af37;
+            transform: translateY(-15px) scale(1.02);
+            background: #222;
+        }
+
+        .icon-card i {
+            font-size: 3.5rem;
+            color: #d4af37;
+            margin-bottom: 1.5rem;
+        }
+
+        .icon-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .icon-card p {
+            color: #aaa;
+        }
+
+        /* портфолио / карусель из иконок (стилизация) */
+        .portfolio-item {
+            background: #1a1a1a;
+            border-radius: 40px;
+            padding: 2rem;
+            text-align: center;
+            border: 1px solid #2a2a2a;
+            transition: 0.3s;
+        }
+
+        .portfolio-item i {
+            font-size: 5rem;
+            color: #d4af37;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 8px #d4af37);
+        }
+
+        .portfolio-item h4 {
+            font-size: 1.8rem;
+        }
+
+        .price-badge {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #d4af37;
+        }
+
+        /* отзывы (клиенты) */
+        .review {
+            background: #191919;
+            border-radius: 40px;
+            padding: 2.5rem;
+            border: 1px solid #333;
+            transition: 0.3s;
+        }
+
+        .review i {
+            color: #d4af37;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .review p {
+            font-style: italic;
+            margin: 1rem 0;
+        }
+
+        /* footer */
+        footer {
+            background: #050505;
+            padding: 3rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-top: 2px solid #d4af37;
+        }
+
+        .socials i {
+            font-size: 2rem;
+            margin-left: 2rem;
+            color: #777;
+            transition: 0.3s;
+        }
+
+        .socials i:hover {
+            color: #d4af37;
+            transform: scale(1.2);
+        }
+
+        /* адаптация для ПК — ок, под мобилки не надо, но минимум чтобы не развалилось */
+        @media (max-width: 1100px) {
+            .grid-4 { grid-template-columns: repeat(2,1fr); }
+            .grid-3 { grid-template-columns: repeat(2,1fr); }
+            header { padding: 1rem 2rem; }
+            .block { padding: 4rem 2rem; }
+        }
+
+        /* выделение якоря при скролле (подсветка) */
+        .nav-menu a.active {
+            color: #d4af37;
+        }
+        .nav-menu a.active::after {
+            width: 100%;
+            background: #d4af37;
+        }
+    </style>
+</head>
+<body>
+    <header id="main-header">
+        <div class="logo">TOY KADR</div>
+        <nav class="nav-menu">
+            <a href="#home">Главная</a>
+            <a href="#about">Обо мне</a>
+            <a href="#services">Услуги</a>
+            <a href="#portfolio">Портфолио</a>
+            <a href="#reviews">Отзывы</a>
+            <a href="#contact">Контакты</a>
+        </nav>
+    </header>
+
+    <!-- БЛОК 1: home -->
+    <section id="home" class="hero">
+        <div class="hero-content reveal">
+            <h1 class="title">Ловишь <span>эмоции</span> <br>навсегда</h1>
+            <p>Свадебный, репортажный и предметный фотограф. Не просто кадры — твоя история в свете и фактуре.</p>
+            <a href="#contact" class="btn">Забронировать дату</a>
+        </div>
+        <div class="camera-overlay">
+            <i class="fas fa-camera-retro"></i>
+        </div>
+    </section>
+
+    <!-- БЛОК 2: обо мне (акцент доверие) -->
+    <section id="about" class="block">
+        <h2 class="reveal">О доверии в деталях</h2>
+        <div class="grid-2">
+            <div class="icon-card reveal">
+                <i class="fas fa-award"></i>
+                <h3>10 лет опыта</h3>
+                <p>400+ свадеб, 50+ love-story, 100+ коммерческих съёмок. Член ассоциации свадебных фотографов Europe.</p>
+            </div>
+            <div class="icon-card reveal">
+                <i class="fas fa-heart"></i>
+                <h3>Деликатный стиль</h3>
+                <p>Не вмешиваюсь в моменты, но создаю условия для кадра. Со мной легко, а результат — естественный.</p>
+            </div>
+        </div>
+        <div style="margin-top: 3rem; font-size: 1.3rem; color:#ccc; text-align: center;" class="reveal">
+            <i class="fas fa-quote-right" style="color:#d4af37;"></i> Фотография — это способ чувствовать, касаться и любить. То, что ты поймал, уже не отнять.
+        </div>
+    </section>
+
+    <!-- БЛОК 3: услуги (прайс-иконки) -->
+    <section id="services" class="block">
+        <h2 class="reveal">Услуги и пакеты</h2>
+        <div class="grid-3">
+            <div class="icon-card reveal">
+                <i class="fas fa-ring"></i>
+                <h3>Свадьба</h3>
+                <p>Полный день (10 ч) — 70 000 ₽ <br>предсвадебная съёмка в подарок</p>
+            </div>
+            <div class="icon-card reveal">
+                <i class="fas fa-hand-sparkles"></i>
+                <h3>Love Story / Family</h3>
+                <p>2 часа — 25 000 ₽. <br>Все фото с авторской цветокоррекцией</p>
+            </div>
+            <div class="icon-card reveal">
+                <i class="fas fa-briefcase"></i>
+                <h3>Предметная / для брендов</h3>
+                <p>от 5 000 ₽ за артикул. <br>Стилизация, свет, фактура</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 4: портфолио (с иконками вместо реальных фото — стильно) -->
+    <section id="portfolio" class="block">
+        <h2 class="reveal">Недавние проекты</h2>
+        <div class="grid-4">
+            <div class="portfolio-item reveal">
+                <i class="fas fa-tree"></i>
+                <h4>Лесная свадьба</h4>
+                <p>Аня + Дмитрий</p>
+            </div>
+            <div class="portfolio-item reveal">
+                <i class="fas fa-city"></i>
+                <h4>Urban love</h4>
+                <p>Кристина + Марк</p>
+            </div>
+            <div class="portfolio-item reveal">
+                <i class="fas fa-wine-bottle"></i>
+                <h4>Предметная съёмка</h4>
+                <p>для винодельни</p>
+            </div>
+            <div class="portfolio-item reveal">
+                <i class="fas fa-crown"></i>
+                <h4>Бэби-студия</h4>
+                <p>семья Ивановых</p>
+            </div>
+        </div>
+        <div style="margin-top: 2rem; text-align: right;">
+            <a href="#" style="color:#d4af37;">смотреть всё <i class="fas fa-arrow-right"></i></a>
+        </div>
+    </section>
+
+    <!-- БЛОК 5: почему я (блок доверия + кейсы) -->
+    <section class="block">
+        <h2 class="reveal">Цифры и факты</h2>
+        <div class="grid-3">
+            <div class="icon-card reveal">
+                <i class="fas fa-camera"></i>
+                <h3>1,2 млн</h3>
+                <p>отснятых кадров за карьеру</p>
+            </div>
+            <div class="icon-card reveal">
+                <i class="fas fa-smile"></i>
+                <h3>98%</h3>
+                <p>клиентов рекомендуют друзьям</p>
+            </div>
+            <div class="icon-card reveal">
+                <i class="fas fa-trophy"></i>
+                <h3>15 наград</h3>
+                <p>международных конкурсов</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 6: процесс работы (иконки steps) -->
+    <section class="block">
+        <h2 class="reveal">Как мы творим</h2>
+        <div class="grid-4">
+            <div class="icon-card reveal"><i class="fas fa-comment-dots"></i><h3>1. Знакомство</h3><p>онлайн / встреча, обсуждаем идеи</p></div>
+            <div class="icon-card reveal"><i class="fas fa-calendar-check"></i><h3>2. Бронь</h3><p>договор и предоплата 30%</p></div>
+            <div class="icon-card reveal"><i class="fas fa-camera"></i><h3>3. Съёмка</h3><p>творческий день без стресса</p></div>
+            <div class="icon-card reveal"><i class="fas fa-images"></i><h3>4. Готово</h3><p>сдача через 3-4 недели</p></div>
+        </div>
+    </section>
+
+    <!-- БЛОК 7: отзывы (reviews) -->
+    <section id="reviews" class="block">
+        <h2 class="reveal">Клиенты о работе</h2>
+        <div class="grid-3">
+            <div class="review reveal">
+                <i class="fas fa-star"></i>
+                <p>"Так трепетно отнестись к нашему дню мог только профессионал с большой душой. Фото — магия!"</p>
+                <h4>— Екатерина, свадьба</h4>
+            </div>
+            <div class="review reveal">
+                <i class="fas fa-star"></i>
+                <p>"Снимали love-story на закате. Я стеснялась, но фотограф расположил к себе, результат огонь 🔥"</p>
+                <h4>— Алина и Саша</h4>
+            </div>
+            <div class="review reveal">
+                <i class="fas fa-star"></i>
+                <p>"Сотрудничаем для каталога уже 2 года. Предметка на высшем уровне, всегда вовремя."</p>
+                <h4>— бренд VASILISA</h4>
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 8: контакты / запись -->
+    <section id="contact" class="block" style="border-bottom: none;">
+        <h2 class="reveal">Напишите мне</h2>
+        <div class="grid-2">
+            <div class="icon-card reveal" style="text-align: left;">
+                <i class="fas fa-phone-alt"></i>
+                <h3>+7 (999) 888-77-66</h3>
+                <p>Telegram / WhatsApp предпочтительно</p>
+                <i class="fas fa-envelope" style="margin-top:1rem; display: block;"></i> hello@toykadr.ru
+            </div>
+            <div class="icon-card reveal" style="text-align: left;">
+                <i class="fas fa-map-pin"></i>
+                <h3>Москва, ул. Тверская 12</h3>
+                <p>Студия для встреч по предварительной записи.</p>
+                <i class="fas fa-clock"></i> пн-пт 10:00–19:00
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК 9: footer (последний) -->
+    <footer>
+        <div>© TOY KADR · Фотограф для твоих эмоций</div>
+        <div class="socials">
+            <i class="fab fa-instagram"></i>
+            <i class="fab fa-vk"></i>
+            <i class="fab fa-youtube"></i>
+            <i class="fab fa-telegram"></i>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            // header фикс с изменением класса
+            const header = document.getElementById('main-header');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // активный пункт меню (подсветка при скролле)
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-menu a');
+
+            function setActiveLink() {
+                let current = '';
+                const scrollPos = window.scrollY + 120; // смещение для фикс header
+
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', setActiveLink);
+            setActiveLink();
+
+            // Intersection Observer для анимации появления блоков (reveal)
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // можно добавить дополнительную анимацию для подсветки текста
+                        if (entry.target.classList.contains('icon-card') || entry.target.classList.contains('portfolio-item')) {
+                            entry.target.style.transition = 'transform 0.5s, border 0.3s, box-shadow 0.5s';
+                            entry.target.style.boxShadow = '0 0 0 2px rgba(212, 175, 55, 0.3)';
+                            setTimeout(() => {
+                                entry.target.style.boxShadow = 'none';
+                            }, 800);
+                        }
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+            reveals.forEach(r => observer.observe(r));
+
+            // микро-анимация на hero (дополнительная игра с камерой)
+            const camIcon = document.querySelector('.camera-overlay i');
+            if (camIcon) {
+                document.addEventListener('mousemove', (e) => {
+                    let x = (window.innerWidth - e.pageX * 2) / 100;
+                    let y = (window.innerHeight - e.pageY * 2) / 100;
+                    camIcon.style.transform = `rotate(${10 + x/5}deg) translate(${x/2}px, ${y/3}px)`;
+                });
+            }
+
+            // якорный клик с плавным скроллом (без дубля)
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    const targetEl = document.querySelector(targetId);
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
+All done!
+```
